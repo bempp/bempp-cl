@@ -899,6 +899,15 @@ def _get_shared_edge_information_for_two_elements(elements, elem0, elem1):
     index_pairs = _find_two_common_array_index_pairs(
         elements[:, elem0], elements[:, elem1]
     )
+
+    # Ensure that order of indices is the same as Bempp 3
+
+    if index_pairs[1, 1] < index_pairs[1, 0]:
+        for i in range(2):
+            tmp = index_pairs[i, 0]
+            index_pairs[i, 0] = index_pairs[i, 1]
+            index_pairs[i, 1] = tmp
+
     return index_pairs
 
 

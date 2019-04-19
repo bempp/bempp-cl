@@ -134,3 +134,12 @@ class Helpers(object):
     def bempp_path():
         """Return path of the bempp module."""
         return os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+    @staticmethod
+    def default_tolerance(precision):
+        """Given a precision return default tolerance."""
+        if precision == 'single':
+            return 5E-4
+        if precision == 'double':
+            return 1E-10
+

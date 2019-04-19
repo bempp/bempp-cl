@@ -6,7 +6,7 @@
 import numpy as _np
 import pytest
 
-pytestmark = pytest.mark.usefixtures("default_parameters", "helpers", "small_sphere")
+pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
 
 def test_laplace_single_layer_p0(
@@ -16,12 +16,9 @@ def test_laplace_single_layer_p0(
     from bempp.api import function_space
     from bempp.api.operators.boundary.laplace import single_layer
 
-    grid = helpers.load_grid("sphere_h_01")
+    grid = helpers.load_grid("sphere")
 
     space = function_space(grid, "DP", 0)
-
-    default_parameters.quadrature.singular = 8
-    default_parameters.quadrature.regular = 8
 
     discrete_op = single_layer(
         space,
@@ -33,18 +30,21 @@ def test_laplace_single_layer_p0(
         precision=precision,
     ).assemble()
 
-    expected = helpers.load_npy_data("laplace_single_layer_sphere_h_01")
-    _np.testing.assert_allclose(discrete_op.A, expected, rtol=1e-5)
+    expected = helpers.load_npy_data("laplace_single_layer_boundary_p0_p0")
+    _np.testing.assert_allclose(
+        discrete_op.A, expected, rtol=helpers.default_tolerance(precision)
+    )
 
 
 def test_laplace_single_layer_p1_disc(
-    default_parameters, small_sphere, helpers, precision, device_interface
+    default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for the Laplace slp with disc. p1 basis."""
     from bempp.api.operators.boundary.laplace import single_layer
     from bempp.api import function_space
 
-    space = function_space(small_sphere, "DP", 1)
+    grid = helpers.load_grid("sphere")
+    space = function_space(grid, "DP", 1)
 
     discrete_op = single_layer(
         space,
@@ -56,19 +56,23 @@ def test_laplace_single_layer_p1_disc(
         parameters=default_parameters,
     ).assemble()
 
-    expected = helpers.load_npy_data("laplace_small_sphere_p1_disc")
-    _np.testing.assert_allclose(discrete_op.A, expected, rtol=1e-3)
+    expected = helpers.load_npy_data("laplace_single_layer_boundary_dp1_dp1")
+    _np.testing.assert_allclose(
+        discrete_op.A, expected, rtol=helpers.default_tolerance(precision)
+    )
 
 
 def test_laplace_single_layer_p1_p0(
-    default_parameters, small_sphere, helpers, precision, device_interface
+    default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for the slp with disc. p1/p0 basis."""
     from bempp.api.operators.boundary.laplace import single_layer
     from bempp.api import function_space
 
-    space0 = function_space(small_sphere, "DP", 0)
-    space1 = function_space(small_sphere, "DP", 1)
+    grid = helpers.load_grid("sphere")
+
+    space0 = function_space(grid, "DP", 0)
+    space1 = function_space(grid, "DP", 1)
 
     discrete_op = single_layer(
         space0,
@@ -80,19 +84,23 @@ def test_laplace_single_layer_p1_p0(
         parameters=default_parameters,
     ).assemble()
 
-    expected = helpers.load_npy_data("laplace_small_sphere_p1_p0_disc")
-    _np.testing.assert_allclose(discrete_op.A, expected, rtol=1e-3)
+    expected = helpers.load_npy_data("laplace_single_layer_boundary_dp1_p0")
+    _np.testing.assert_allclose(
+        discrete_op.A, expected, rtol=helpers.default_tolerance(precision)
+    )
 
 
 def test_laplace_single_layer_p0_p1(
-    default_parameters, small_sphere, helpers, precision, device_interface
+    default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for the slp with disc. p0/p1 basis."""
     from bempp.api.operators.boundary.laplace import single_layer
     from bempp.api import function_space
 
-    space0 = function_space(small_sphere, "DP", 0)
-    space1 = function_space(small_sphere, "DP", 1)
+    grid = helpers.load_grid("sphere")
+
+    space0 = function_space(grid, "DP", 0)
+    space1 = function_space(grid, "DP", 1)
 
     discrete_op = single_layer(
         space1,
@@ -104,8 +112,10 @@ def test_laplace_single_layer_p0_p1(
         parameters=default_parameters,
     ).assemble()
 
-    expected = helpers.load_npy_data("laplace_small_sphere_p0_p1_disc")
-    _np.testing.assert_allclose(discrete_op.A, expected, rtol=1e-3)
+    expected = helpers.load_npy_data("laplace_single_layer_boundary_p0_dp1")
+    _np.testing.assert_allclose(
+        discrete_op.A, expected, rtol=helpers.default_tolerance(precision)
+    )
 
 
 def test_laplace_single_layer_p1_cont(
@@ -115,12 +125,9 @@ def test_laplace_single_layer_p1_cont(
     from bempp.api import function_space
     from bempp.api.operators.boundary.laplace import single_layer
 
-    grid = helpers.load_grid("sphere_h_01")
+    grid = helpers.load_grid("sphere")
 
     space = function_space(grid, "P", 1)
-
-    default_parameters.quadrature.singular = 8
-    default_parameters.quadrature.regular = 8
 
     discrete_op = single_layer(
         space,
@@ -132,8 +139,10 @@ def test_laplace_single_layer_p1_cont(
         parameters=default_parameters,
     ).assemble()
 
-    expected = helpers.load_npy_data("laplace_single_layer_sphere_h_01_p1_cont")
-    _np.testing.assert_allclose(discrete_op.A, expected, rtol=1e-5)
+    expected = helpers.load_npy_data("laplace_single_layer_boundary_p1_p1")
+    _np.testing.assert_allclose(
+        discrete_op.A, expected, rtol=helpers.default_tolerance(precision)
+    )
 
 
 def test_laplace_double_layer_p1_cont(
@@ -143,12 +152,9 @@ def test_laplace_double_layer_p1_cont(
     from bempp.api import function_space
     from bempp.api.operators.boundary.laplace import double_layer
 
-    grid = helpers.load_grid("sphere_h_01")
+    grid = helpers.load_grid("sphere")
 
     space = function_space(grid, "P", 1)
-
-    default_parameters.quadrature.singular = 8
-    default_parameters.quadrature.regular = 8
 
     discrete_op = double_layer(
         space,
@@ -160,10 +166,10 @@ def test_laplace_double_layer_p1_cont(
         parameters=default_parameters,
     ).assemble()
 
-    expected = helpers.load_npz_data("laplace_double_layer_sphere_h_01_p1_cont")[
-        "arr_0"
-    ]
-    _np.testing.assert_allclose(discrete_op.A, expected, rtol=1e-4)
+    expected = helpers.load_npy_data("laplace_double_layer_boundary")
+    _np.testing.assert_allclose(
+        discrete_op.A, expected, rtol=helpers.default_tolerance(precision)
+    )
 
 
 def test_laplace_adjoint_double_layer_p1_cont(
@@ -173,12 +179,9 @@ def test_laplace_adjoint_double_layer_p1_cont(
     from bempp.api import function_space
     from bempp.api.operators.boundary.laplace import adjoint_double_layer
 
-    grid = helpers.load_grid("sphere_h_01")
+    grid = helpers.load_grid("sphere")
 
     space = function_space(grid, "P", 1)
-
-    default_parameters.quadrature.singular = 8
-    default_parameters.quadrature.regular = 8
 
     discrete_op = adjoint_double_layer(
         space,
@@ -190,10 +193,10 @@ def test_laplace_adjoint_double_layer_p1_cont(
         parameters=default_parameters,
     ).assemble()
 
-    expected = helpers.load_npz_data(
-        "laplace_adjoint_double_layer_sphere_h_01_p1_cont"
-    )["arr_0"]
-    _np.testing.assert_allclose(discrete_op.A, expected, rtol=1e-4)
+    expected = helpers.load_npy_data("laplace_adj_double_layer_boundary")
+    _np.testing.assert_allclose(
+        discrete_op.A, expected, rtol=helpers.default_tolerance(precision)
+    )
 
 
 def test_laplace_hypersingular(
@@ -203,12 +206,9 @@ def test_laplace_hypersingular(
     from bempp.api import function_space
     from bempp.api.operators.boundary.laplace import hypersingular
 
-    grid = helpers.load_grid("sphere_h_01")
+    grid = helpers.load_grid("sphere")
 
     space = function_space(grid, "P", 1)
-
-    default_parameters.quadrature.singular = 10
-    default_parameters.quadrature.regular = 10
 
     discrete_op = hypersingular(
         space,
@@ -220,36 +220,227 @@ def test_laplace_hypersingular(
         parameters=default_parameters,
     ).assemble()
 
-    expected = helpers.load_npz_data("laplace_hypersingular")["arr_0"]
+    expected = helpers.load_npy_data("laplace_hypersingular_boundary")
+    _np.testing.assert_allclose(
+        discrete_op.A, expected, rtol=helpers.default_tolerance(precision)
+    )
 
-    if precision == "single":
-        rtol = 1e-2
-    if precision == "double":
-        rtol = 1e-5
 
-    _np.testing.assert_allclose(discrete_op.A, expected, rtol=rtol)
-
-def test_laplace_single_layer_evaluator(
+def test_laplace_single_layer_evaluator_p0_p0(
     default_parameters, helpers, precision, device_interface
 ):
-    """Test dense assembler for the Laplace slp with p0 basis."""
+    """Test dense evaluator for the Laplace slp with p0 basis."""
     from bempp.api import function_space
     from bempp.api.operators.boundary.laplace import single_layer
 
-    grid = helpers.load_grid("sphere_h_01")
+    grid = helpers.load_grid("sphere")
 
-    space = function_space(grid, "DP", 0)
-
-    default_parameters.quadrature.singular = 4
-    default_parameters.quadrature.regular = 4
+    space1 = function_space(grid, "DP", 0)
+    space2 = function_space(grid, "DP", 0)
 
     discrete_op = single_layer(
-        space,
-        space,
-        space,
+        space1,
+        space1,
+        space2,
         assembler="dense_evaluator",
         parameters=default_parameters,
         device_interface=device_interface,
         precision=precision,
     ).assemble()
 
+    mat = single_layer(
+        space1,
+        space1,
+        space2,
+        assembler="dense",
+        parameters=default_parameters,
+        device_interface=device_interface,
+        precision=precision,
+    ).assemble()
+
+    x = _np.random.RandomState(0).randn(space1.global_dof_count)
+
+    actual = discrete_op @ x
+    expected = mat @ x
+
+    if precision == "single":
+        tol = 1e-4
+    else:
+        tol = 1e-12
+
+    _np.testing.assert_allclose(actual, expected, rtol=tol)
+
+
+def test_laplace_single_layer_evaluator_p0_dp1(
+    default_parameters, helpers, precision, device_interface
+):
+    """Test dense evaluator for the Laplace slp with p0/dp1 basis."""
+    from bempp.api import function_space
+    from bempp.api.operators.boundary.laplace import single_layer
+
+    grid = helpers.load_grid("sphere")
+
+    space1 = function_space(grid, "DP", 1)
+    space2 = function_space(grid, "DP", 0)
+
+    discrete_op = single_layer(
+        space1,
+        space1,
+        space2,
+        assembler="dense_evaluator",
+        parameters=default_parameters,
+        device_interface=device_interface,
+        precision=precision,
+    ).assemble()
+
+    mat = single_layer(
+        space1,
+        space1,
+        space2,
+        assembler="dense",
+        parameters=default_parameters,
+        device_interface=device_interface,
+        precision=precision,
+    ).assemble()
+
+    x = _np.random.RandomState(0).randn(space1.global_dof_count)
+
+    actual = discrete_op @ x
+    expected = mat @ x
+
+    if precision == "single":
+        tol = 1e-4
+    else:
+        tol = 1e-12
+
+    _np.testing.assert_allclose(actual, expected, rtol=tol)
+
+
+def test_laplace_single_layer_evaluator_p0_p1(
+    default_parameters, helpers, precision, device_interface
+):
+    """Test dense evaluator for the Laplace slp with p0/p1 basis."""
+    from bempp.api import function_space
+    from bempp.api.operators.boundary.laplace import single_layer
+
+    grid = helpers.load_grid("sphere")
+
+    space1 = function_space(grid, "P", 1)
+    space2 = function_space(grid, "DP", 0)
+
+    discrete_op = single_layer(
+        space1,
+        space1,
+        space2,
+        assembler="dense_evaluator",
+        parameters=default_parameters,
+        device_interface=device_interface,
+        precision=precision,
+    ).assemble()
+
+    mat = single_layer(
+        space1,
+        space1,
+        space2,
+        assembler="dense",
+        parameters=default_parameters,
+        device_interface=device_interface,
+        precision=precision,
+    ).assemble()
+
+    x = _np.random.RandomState(0).randn(space1.global_dof_count)
+
+    actual = discrete_op @ x
+    expected = mat @ x
+
+    if precision == "single":
+        tol = 1e-4
+    else:
+        tol = 1e-12
+
+    _np.testing.assert_allclose(actual, expected, rtol=tol)
+
+
+def test_laplace_single_layer_evaluator_complex(
+    default_parameters, helpers, precision, device_interface
+):
+    """Test dense evaluator with complex vector."""
+    from bempp.api import function_space
+    from bempp.api.operators.boundary.laplace import single_layer
+
+    grid = helpers.load_grid("sphere")
+
+    space1 = function_space(grid, "DP", 0)
+    space2 = function_space(grid, "DP", 0)
+
+    discrete_op = single_layer(
+        space1,
+        space1,
+        space2,
+        assembler="dense_evaluator",
+        parameters=default_parameters,
+        device_interface=device_interface,
+        precision=precision,
+    ).assemble()
+
+    mat = single_layer(
+        space1,
+        space1,
+        space2,
+        assembler="dense",
+        parameters=default_parameters,
+        device_interface=device_interface,
+        precision=precision,
+    ).assemble()
+
+    x = _np.random.RandomState(0).randn(
+        space1.global_dof_count
+    ) + 1j * _np.random.RandomState(0).randn(space1.global_dof_count)
+
+    actual = discrete_op @ x
+    expected = mat @ x
+
+    if precision == "single":
+        tol = 1e-4
+    else:
+        tol = 1e-12
+
+    _np.testing.assert_allclose(actual, expected, rtol=tol)
+
+
+def test_laplace_double_layer_evaluator(
+    default_parameters, helpers, precision, device_interface
+):
+    """Test dense evaluator for the Laplace dlp with p0 basis."""
+    from bempp.api import function_space
+    from bempp.api.operators.boundary.laplace import double_layer
+
+    grid = helpers.load_grid("sphere")
+
+    space1 = function_space(grid, "DP", 0)
+    space2 = function_space(grid, "DP", 0)
+
+    discrete_op = double_layer(
+        space1,
+        space1,
+        space2,
+        assembler="dense_evaluator",
+        parameters=default_parameters,
+        device_interface=device_interface,
+        precision=precision,
+    ).assemble()
+
+    mat = double_layer(
+        space1,
+        space1,
+        space2,
+        assembler="dense",
+        parameters=default_parameters,
+        device_interface=device_interface,
+        precision=precision,
+    ).assemble()
+
+    x = _np.random.RandomState(0).randn(space1.global_dof_count)
+
+    actual = discrete_op @ x
+    expected = mat @ x

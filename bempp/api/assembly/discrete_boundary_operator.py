@@ -145,7 +145,7 @@ class GenericDiscreteBoundaryOperator(DiscreteBoundaryOperator):
         if self._is_complex:
             return self._evaluator.matvec(x)
         if _np.iscomplexobj(x):
-            return self._evaluator.matvec(_np.real(x)) + self._evaluator.matvec(
+            return self._evaluator.matvec(_np.real(x)) + 1j * self._evaluator.matvec(
                 _np.imag(x)
             )
         else:
