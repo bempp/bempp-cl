@@ -32,9 +32,9 @@ def generate_bem_matrix(dual_to_range, domain, fname, operator, wavenumber=None)
     print("Generating " + fname)
 
     if wavenumber is None:
-        mat = operator(domain, domain, dual_to_range).weak_form().A
+        mat = operator(domain, domain, dual_to_range, use_projection_spaces=False).weak_form().A
     else:
-        mat = operator(domain, domain, dual_to_range, wavenumber).weak_form().A
+        mat = operator(domain, domain, dual_to_range, wavenumber, use_projection_spaces=False).weak_form().A
     np.save(fname, mat)
 
 
@@ -99,57 +99,99 @@ generate_bem_matrix(
 print("Generating Helmholtz BEM matrices.")
 
 wavenumber = 2.5
+wavenumber_complex = 2.5 + 1j
 
 generate_bem_matrix(
     p0,
     p0,
     "helmholtz_single_layer_boundary_p0_p0",
     bempp.api.operators.boundary.helmholtz.single_layer,
+    wavenumber
 )
 
 generate_bem_matrix(
     p0,
     dp1,
-    "laplace_single_layer_boundary_p0_dp1",
-    bempp.api.operators.boundary.laplace.single_layer,
+    "helmholtz_single_layer_boundary_p0_dp1",
+    bempp.api.operators.boundary.helmholtz.single_layer,
+    wavenumber
 )
 
 generate_bem_matrix(
     dp1,
     p0,
-    "laplace_single_layer_boundary_dp1_p0",
-    bempp.api.operators.boundary.laplace.single_layer,
+    "helmholtz_single_layer_boundary_dp1_p0",
+    bempp.api.operators.boundary.helmholtz.single_layer,
+    wavenumber
 )
 generate_bem_matrix(
     dp1,
     dp1,
-    "laplace_single_layer_boundary_dp1_dp1",
-    bempp.api.operators.boundary.laplace.single_layer,
+    "helmholtz_single_layer_boundary_dp1_dp1",
+    bempp.api.operators.boundary.helmholtz.single_layer,
+    wavenumber
 )
 generate_bem_matrix(
     p1,
     p1,
-    "laplace_single_layer_boundary_p1_p1",
-    bempp.api.operators.boundary.laplace.single_layer,
+    "helmholtz_single_layer_boundary_p1_p1",
+    bempp.api.operators.boundary.helmholtz.single_layer,
+    wavenumber
 )
 
 generate_bem_matrix(
     p1,
     p1,
-    "laplace_double_layer_boundary",
-    bempp.api.operators.boundary.laplace.double_layer,
+    "helmholtz_double_layer_boundary",
+    bempp.api.operators.boundary.helmholtz.double_layer,
+    wavenumber
 )
 
 generate_bem_matrix(
     p1,
     p1,
-    "laplace_adj_double_layer_boundary",
-    bempp.api.operators.boundary.laplace.adjoint_double_layer,
+    "helmholtz_adj_double_layer_boundary",
+    bempp.api.operators.boundary.helmholtz.adjoint_double_layer,
+    wavenumber
 )
 
 generate_bem_matrix(
     p1,
     p1,
-    "laplace_hypersingular_boundary",
-    bempp.api.operators.boundary.laplace.hypersingular,
+    "helmholtz_hypersingular_boundary",
+    bempp.api.operators.boundary.helmholtz.hypersingular,
+    wavenumber
 )
+
+generate_bem_matrix(
+    p1,
+    p1,
+    "helmholtz_complex_single_layer_boundary",
+    bempp.api.operators.boundary.helmholtz.single_layer,
+    wavenumber_complex
+)
+
+generate_bem_matrix(
+    p1,
+    p1,
+    "helmholtz_complex_double_layer_boundary",
+    bempp.api.operators.boundary.helmholtz.double_layer,
+    wavenumber_complex
+)
+generate_bem_matrix(
+    p1,
+    p1,
+    "helmholtz_complex_adj_double_layer_boundary",
+    bempp.api.operators.boundary.helmholtz.adjoint_double_layer,
+    wavenumber_complex
+)
+
+generate_bem_matrix(
+    p1,
+    p1,
+    "helmholtz_complex_hypersingular_boundary",
+    bempp.api.operators.boundary.helmholtz.hypersingular,
+    wavenumber_complex
+)
+
+

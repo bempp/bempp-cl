@@ -92,6 +92,7 @@ __kernel __attribute__((vec_type_hint(REALTYPE16))) void evaluate_dense_regular(
   REALTYPE16 tempFirstTerm;
 
 #else
+  REALTYPE16 tmp[2];
   REALTYPE16 kernelValue[2];
   REALTYPE16 tempResult[NUMBER_OF_TRIAL_SHAPE_FUNCTIONS][2];
   REALTYPE16 tempFactor[2];
@@ -289,15 +290,17 @@ __kernel __attribute__((vec_type_hint(REALTYPE16))) void evaluate_dense_regular(
 
   for (i = 0; i < 3; ++i)
     for (j = 0; j < 3; ++j) {
+      tmp[0] = shapeIntegral[i][j][0];
+      tmp[1] = shapeIntegral[i][j][1];
       shapeIntegral[i][j][0] =
-          (-(wavenumberProduct[0] * shapeIntegral[i][j][0] -
-             wavenumberProduct[1] * shapeIntegral[i][j][1]) *
+          (-(wavenumberProduct[0] * tmp[0] -
+             wavenumberProduct[1] * tmp[1]) *
                normalProduct +
            firstTermIntegral[0] * basisProduct[i][j]) *
           testIntElem * trialIntElem;
       shapeIntegral[i][j][1] =
-          (-(wavenumberProduct[0] * shapeIntegral[i][j][1] +
-             wavenumberProduct[1] * shapeIntegral[i][j][0]) *
+          (-(wavenumberProduct[0] * tmp[1] +
+             wavenumberProduct[1] * tmp[0]) *
                normalProduct +
            firstTermIntegral[1] * basisProduct[i][j]) *
           testIntElem * trialIntElem;

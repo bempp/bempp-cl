@@ -444,3 +444,79 @@ def test_laplace_double_layer_evaluator(
 
     actual = discrete_op @ x
     expected = mat @ x
+
+
+def test_laplace_adjoint_double_layer_evaluator(
+    default_parameters, helpers, precision, device_interface
+):
+    """Test dense evaluator for the Laplace adjoint dlp with p0 basis."""
+    from bempp.api import function_space
+    from bempp.api.operators.boundary.laplace import adjoint_double_layer
+
+    grid = helpers.load_grid("sphere")
+
+    space1 = function_space(grid, "DP", 0)
+    space2 = function_space(grid, "DP", 0)
+
+    discrete_op = adjoint_double_layer(
+        space1,
+        space1,
+        space2,
+        assembler="dense_evaluator",
+        parameters=default_parameters,
+        device_interface=device_interface,
+        precision=precision,
+    ).assemble()
+
+    mat = adjoint_double_layer(
+        space1,
+        space1,
+        space2,
+        assembler="dense",
+        parameters=default_parameters,
+        device_interface=device_interface,
+        precision=precision,
+    ).assemble()
+
+    x = _np.random.RandomState(0).randn(space1.global_dof_count)
+
+    actual = discrete_op @ x
+    expected = mat @ x
+
+
+def test_laplace_hypersingular_evaluator(
+    default_parameters, helpers, precision, device_interface
+):
+    """Test dense evaluator for the Laplace hypersingular with p1 basis."""
+    from bempp.api import function_space
+    from bempp.api.operators.boundary.laplace import hypersingular
+
+    grid = helpers.load_grid("sphere")
+
+    space1 = function_space(grid, "P", 1)
+    space2 = function_space(grid, "P", 1)
+
+    discrete_op = hypersingular(
+        space1,
+        space1,
+        space2,
+        assembler="dense_evaluator",
+        parameters=default_parameters,
+        device_interface=device_interface,
+        precision=precision,
+    ).assemble()
+
+    mat = hypersingular(
+        space1,
+        space1,
+        space2,
+        assembler="dense",
+        parameters=default_parameters,
+        device_interface=device_interface,
+        precision=precision,
+    ).assemble()
+
+    x = _np.random.RandomState(0).randn(space1.global_dof_count)
+
+    actual = discrete_op @ x
+    expected = mat @ x
