@@ -30,7 +30,7 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
         self._trial_to_localised = None
         self._test_to_localised = None
 
-        self._workgroup_size = 128
+        self._workgroup_size = 64
 
         self._dtype = None
 

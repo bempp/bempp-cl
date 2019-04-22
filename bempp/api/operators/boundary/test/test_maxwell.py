@@ -8,7 +8,7 @@ import pytest
 
 import bempp.api
 
-pytestmark = pytest.mark.usefixtures("default_parameters", "helpers", "small_sphere")
+pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
 
 def test_maxwell_electric_field_sphere(
@@ -19,10 +19,7 @@ def test_maxwell_electric_field_sphere(
     from bempp.api import function_space
     from bempp.api.operators.boundary.maxwell import electric_field
 
-    grid = helpers.load_grid("sphere_h_01")
-
-    default_parameters.quadrature.singular = 10
-    default_parameters.quadrature.regular = 10
+    grid = helpers.load_grid("sphere")
 
     space1 = function_space(grid, "RWG", 0)
     space2 = function_space(grid, "SNC", 0)
@@ -38,10 +35,15 @@ def test_maxwell_electric_field_sphere(
         parameters=default_parameters,
     ).assemble()
 
-    expected = helpers.load_npz_data("maxwell_electric_field_sphere_h_01_w_2_5")[
-        "arr_0"
-    ]
-    _np.testing.assert_allclose(discrete_op.A, expected, rtol=1e-5, atol=1e-8)
+    if precision == 'single':
+        rtol = 1E-5
+        atol = 1E-7
+    else:
+        rtol = 1E-10
+        atol = 1E-14
+
+    expected = helpers.load_npy_data("maxwell_electric_field_boundary")
+    _np.testing.assert_allclose(discrete_op.A, expected, rtol=rtol, atol=atol)
 
 
 def test_maxwell_electric_field_screen(
@@ -52,15 +54,7 @@ def test_maxwell_electric_field_screen(
     from bempp.api import function_space
     from bempp.api.operators.boundary.maxwell import electric_field
 
-    if precision == "single":
-        rtol = 1e-3
-    else:
-        rtol = 5e-5
-
     grid = helpers.load_grid("structured_grid")
-
-    default_parameters.quadrature.singular = 8
-    default_parameters.quadrature.regular = 10
 
     space1 = function_space(grid, "RWG", 0)
     space2 = function_space(grid, "SNC", 0)
@@ -76,8 +70,15 @@ def test_maxwell_electric_field_screen(
         parameters=default_parameters,
     ).assemble()
 
-    expected = helpers.load_npz_data("maxwell_electric_field_screen_w_2_5")["arr_0"]
-    _np.testing.assert_allclose(discrete_op.A, expected, rtol=rtol)
+    if precision == 'single':
+        rtol = 1E-5
+        atol = 1E-7
+    else:
+        rtol = 1E-10
+        atol = 1E-14
+
+    expected = helpers.load_npy_data("maxwell_electric_field_structured_boundary")
+    _np.testing.assert_allclose(discrete_op.A, expected, rtol=rtol, atol=atol)
 
 
 def test_maxwell_magnetic_field_sphere(
@@ -88,22 +89,7 @@ def test_maxwell_magnetic_field_sphere(
     from bempp.api import function_space
     from bempp.api.operators.boundary.maxwell import magnetic_field
 
-    # if precision == 'single':
-    #    pytest.skip("Test runs only in double precision mode.")
-
-    if precision == "double":
-        rtol = 1e-4
-        atol = 1e-9
-    elif precision == "single":
-        rtol = 1e-3
-        atol = 1e-8
-    else:
-        raise ValueError("precision must be one of 'single' or 'double'")
-
-    grid = helpers.load_grid("sphere_h_01")
-
-    default_parameters.quadrature.singular = 6
-    default_parameters.quadrature.regular = 6
+    grid = helpers.load_grid("sphere")
 
     space1 = function_space(grid, "RWG", 0)
     space2 = function_space(grid, "SNC", 0)
@@ -119,11 +105,113 @@ def test_maxwell_magnetic_field_sphere(
         parameters=default_parameters,
     ).assemble()
 
-    expected = helpers.load_npz_data("maxwell_magnetic_field")["arr_0"]
+    if precision == 'single':
+        rtol = 1E-5
+        atol = 1E-7
+    else:
+        rtol = 1E-10
+        atol = 1E-14
+
+    expected = helpers.load_npy_data("maxwell_magnetic_field_boundary")
     _np.testing.assert_allclose(discrete_op.A, expected, rtol=rtol, atol=atol)
 
+def test_maxwell_electric_field_sphere_evaluator(
+    default_parameters, helpers, device_interface, precision
+):
+    """Test Maxwell electric field evaluator on sphere."""
+    from bempp.api import get_precision
+    from bempp.api import function_space
+    from bempp.api.operators.boundary.maxwell import electric_field
 
-def test_maxwell_multitrace_sphere(default_parameters, device_interface, precision):
+    grid = helpers.load_grid("sphere")
+
+    space1 = function_space(grid, "RWG", 0)
+    space2 = function_space(grid, "SNC", 0)
+
+    discrete_op = electric_field(
+        space1,
+        space1,
+        space2,
+        2.5,
+        assembler="dense_evaluator",
+        device_interface=device_interface,
+        precision=precision,
+        parameters=default_parameters,
+    ).assemble()
+
+    mat = electric_field(
+        space1,
+        space1,
+        space2,
+        2.5,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+        parameters=default_parameters,
+    ).assemble()
+
+
+    x = _np.random.RandomState(0).randn(space1.global_dof_count)
+
+    actual = discrete_op @ x
+    expected = mat @ x
+
+    if precision == "single":
+        tol = 1e-4
+    else:
+        tol = 1e-12
+
+    _np.testing.assert_allclose(actual, expected, rtol=tol)
+
+def test_maxwell_magnetic_field_sphere_evaluator(
+    default_parameters, helpers, device_interface, precision
+):
+    """Test Maxwell magnetic field evaluator on sphere."""
+    from bempp.api import get_precision
+    from bempp.api import function_space
+    from bempp.api.operators.boundary.maxwell import magnetic_field
+
+    grid = helpers.load_grid("sphere")
+
+    space1 = function_space(grid, "RWG", 0)
+    space2 = function_space(grid, "SNC", 0)
+
+    discrete_op = magnetic_field(
+        space1,
+        space1,
+        space2,
+        2.5,
+        assembler="dense_evaluator",
+        device_interface=device_interface,
+        precision=precision,
+        parameters=default_parameters,
+    ).assemble()
+
+    mat = magnetic_field(
+        space1,
+        space1,
+        space2,
+        2.5,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+        parameters=default_parameters,
+    ).assemble()
+
+
+    x = _np.random.RandomState(0).randn(space1.global_dof_count)
+
+    actual = discrete_op @ x
+    expected = mat @ x
+
+    if precision == "single":
+        tol = 1e-4
+    else:
+        tol = 1e-12
+
+    _np.testing.assert_allclose(actual, expected, rtol=tol)
+
+def test_maxwell_multitrace_sphere(default_parameters, helpers, device_interface, precision):
     """Test Maxwell magnetic field on sphere."""
     from bempp.api import get_precision
     from bempp.api import function_space
@@ -134,17 +222,7 @@ def test_maxwell_multitrace_sphere(default_parameters, device_interface, precisi
     # if precision == 'single':
     #    pytest.skip("Test runs only in double precision mode.")
 
-    if precision == "double":
-        rtol = 1e-14
-    elif precision == "single":
-        rtol = 1e-6
-    else:
-        raise ValueError("precision must be one of 'single' or 'double'")
-
-    grid = regular_sphere(3)
-
-    default_parameters.quadrature.singular = 6
-    default_parameters.quadrature.regular = 6
+    grid = helpers.load_grid('sphere')
 
     op = bempp.api.operators.boundary.maxwell.multitrace_operator(
         grid,
@@ -185,11 +263,10 @@ def test_maxwell_multitrace_sphere(default_parameters, device_interface, precisi
     y_expected = expected @ x
     y_actual = op.weak_form() @ x
 
-    error = _np.linalg.norm(y_expected - y_actual) / _np.linalg.norm(y_expected)
-    assert error < rtol
+    _np.testing.assert_allclose(y_actual, y_expected, rtol=helpers.default_tolerance(precision))
 
 
-def test_maxwell_transmission_sphere(default_parameters, device_interface, precision):
+def test_maxwell_transmission_sphere(default_parameters, helpers, device_interface, precision):
     """Test Maxwell magnetic field on sphere."""
     from bempp.api import get_precision
     from bempp.api import function_space
@@ -197,20 +274,7 @@ def test_maxwell_transmission_sphere(default_parameters, device_interface, preci
     from bempp.api.operators.boundary.maxwell import electric_field, magnetic_field
     from bempp.api.assembly.blocked_operator import BlockedDiscreteOperator
 
-    # if precision == 'single':
-    #    pytest.skip("Test runs only in double precision mode.")
-
-    if precision == "double":
-        rtol = 1e-14
-    elif precision == "single":
-        rtol = 1e-6
-    else:
-        raise ValueError("precision must be one of 'single' or 'double'")
-
-    grid = regular_sphere(3)
-
-    default_parameters.quadrature.singular = 6
-    default_parameters.quadrature.regular = 6
+    grid = helpers.load_grid('sphere')
 
     eps_rel = 1.3
     mu_rel = 1.5
@@ -302,6 +366,4 @@ def test_maxwell_transmission_sphere(default_parameters, device_interface, preci
     y_expected = expected @ x
     y_actual = op.weak_form() @ x
 
-    error = _np.linalg.norm(y_expected - y_actual) / _np.linalg.norm(y_expected)
-    assert error < rtol
-
+    _np.testing.assert_allclose(y_actual, y_expected, rtol=helpers.default_tolerance(precision))

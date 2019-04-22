@@ -22,10 +22,16 @@ parameters.quadrature.far.single_order = regular_order
 parameters.quadrature.double_singular = singular_order
 
 grid = bempp.api.import_grid("sphere.msh")
+grid_structured = bempp.api.import_grid("structured_grid.msh")
 
 p0 = bempp.api.function_space(grid, "DP", 0)
 dp1 = bempp.api.function_space(grid, "DP", 1)
 p1 = bempp.api.function_space(grid, "P", 1)
+rwg = bempp.api.function_space(grid, "RWG", 0)
+snc = bempp.api.function_space(grid, "SNC", 0)
+rwg_structured = bempp.api.function_space(grid_structured, "RWG", 0)
+snc_structured = bempp.api.function_space(grid_structured, "SNC", 0)
+
 
 def generate_bem_matrix(dual_to_range, domain, fname, operator, wavenumber=None):
     """Generate test matrix."""
@@ -194,4 +200,67 @@ generate_bem_matrix(
     wavenumber_complex
 )
 
+##################################
 
+print("Generate modified Helmholtz BEM matrices.")
+
+omega = 2.5
+
+generate_bem_matrix(
+    p1,
+    p1,
+    "modified_helmholtz_single_layer_boundary",
+    bempp.api.operators.boundary.modified_helmholtz.single_layer,
+    omega
+)
+
+generate_bem_matrix(
+    p1,
+    p1,
+    "modified_helmholtz_double_layer_boundary",
+    bempp.api.operators.boundary.modified_helmholtz.double_layer,
+    omega
+)
+generate_bem_matrix(
+    p1,
+    p1,
+    "modified_helmholtz_adj_double_layer_boundary",
+    bempp.api.operators.boundary.modified_helmholtz.adjoint_double_layer,
+    omega
+)
+
+generate_bem_matrix(
+    p1,
+    p1,
+    "modified_helmholtz_hypersingular_boundary",
+    bempp.api.operators.boundary.modified_helmholtz.hypersingular,
+    omega
+)
+
+#####################################
+
+print("Generate Maxwell BEM matrices.")
+
+generate_bem_matrix(
+        snc,
+        rwg,
+        "maxwell_electric_field_boundary",
+        bempp.api.operators.boundary.maxwell.electric_field,
+        wavenumber
+)
+
+generate_bem_matrix(
+        snc,
+        rwg,
+        "maxwell_magnetic_field_boundary",
+        bempp.api.operators.boundary.maxwell.magnetic_field,
+        wavenumber
+)
+
+generate_bem_matrix(
+        snc_structured,
+        rwg_structured,
+        "maxwell_electric_field_structured_boundary",
+        bempp.api.operators.boundary.maxwell.electric_field,
+        wavenumber
+)

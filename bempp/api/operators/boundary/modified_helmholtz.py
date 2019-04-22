@@ -27,7 +27,7 @@ def single_layer(
         "default_scalar",
         device_interface,
         precision,
-    )  # Ensure that variable is float type
+    )  
 
 
 def double_layer(
@@ -55,7 +55,7 @@ def double_layer(
         "default_scalar",
         device_interface,
         precision,
-    )  # Ensure that variable is float type
+    )  
 
 
 def adjoint_double_layer(
@@ -98,7 +98,7 @@ def hypersingular(
 ):
     """Assemble the mod. Helmholtz hypersingular boundary op."""
     return _common.create_operator(
-        "modified_helmholtz_real_hypersingular_boundary",
+        "helmholtz_hypersingular_boundary",
         domain,
         range_,
         dual_to_range,

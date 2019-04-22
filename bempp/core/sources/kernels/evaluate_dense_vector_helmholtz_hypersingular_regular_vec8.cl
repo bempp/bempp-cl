@@ -272,8 +272,7 @@ __kernel __attribute__((vec_type_hint(REALTYPE8))) void evaluate_dense_regular(
         for (j = 0; j < 3; ++j)
             shapeIntegral[i][j] =
                 (OMEGA * OMEGA * shapeIntegral[i][j] * normalProduct +
-                 firstTermIntegral * basisProduct[i][j]) *
-                testIntElem * trialIntElem;
+                 firstTermIntegral * basisProduct[i][j]);
 
 #else
 
