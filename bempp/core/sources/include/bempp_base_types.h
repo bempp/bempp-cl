@@ -57,4 +57,7 @@ typedef struct Geometry
     REALTYPE volume;
 } Geometry;
 
+#define VEC_ELEMENT(A, INDEX) ((REALTYPE*)&A)[INDEX]
+
+
 #endif

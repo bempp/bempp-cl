@@ -258,6 +258,22 @@ generate_bem_matrix(
 )
 
 generate_bem_matrix(
+        snc,
+        rwg,
+        "maxwell_electric_field_complex_boundary",
+        bempp.api.operators.boundary.maxwell.electric_field,
+        wavenumber_complex
+)
+
+generate_bem_matrix(
+        snc,
+        rwg,
+        "maxwell_magnetic_field_complex_boundary",
+        bempp.api.operators.boundary.maxwell.magnetic_field,
+        wavenumber_complex
+)
+
+generate_bem_matrix(
         snc_structured,
         rwg_structured,
         "maxwell_electric_field_structured_boundary",
