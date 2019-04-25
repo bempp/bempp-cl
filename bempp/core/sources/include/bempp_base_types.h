@@ -57,7 +57,10 @@ typedef struct Geometry
     REALTYPE volume;
 } Geometry;
 
+/* Access an element of a vector type. */
 #define VEC_ELEMENT(A, INDEX) ((REALTYPE*)&A)[INDEX]
 
+/* Print out a complex variable for debugging. */
+#define PRINT_COMPLEX(A, INFO) printf(INFO" %e %e\n", A[0], A[1])
 
 #endif

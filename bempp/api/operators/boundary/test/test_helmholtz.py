@@ -674,3 +674,128 @@ def test_helmholtz_hypersingular_evaluator(
 
     _np.testing.assert_allclose(actual, expected, rtol=tol)
 
+def test_helmholtz_hypersingular_complex_evaluator(
+    default_parameters, helpers, precision, device_interface
+):
+    """Test dense evaluator for the Helmholtz hypersingular op with complex wavenumber."""
+    from bempp.api import function_space
+    from bempp.api.operators.boundary.helmholtz import hypersingular
+
+    grid = helpers.load_grid("sphere")
+
+    space1 = function_space(grid, "P", 1)
+    space2 = function_space(grid, "P", 1)
+
+    discrete_op = hypersingular(
+        space1,
+        space1,
+        space2,
+        WAVENUMBER_COMPLEX,
+        assembler="dense_evaluator",
+        parameters=default_parameters,
+        device_interface=device_interface,
+        precision=precision,
+    ).assemble()
+
+    mat = hypersingular(
+        space1,
+        space1,
+        space2,
+        WAVENUMBER_COMPLEX,
+        assembler="dense",
+        parameters=default_parameters,
+        device_interface=device_interface,
+        precision=precision,
+    ).assemble()
+
+    x = _np.random.RandomState(0).randn(space1.global_dof_count)
+
+    actual = discrete_op @ x
+    expected = mat @ x
+
+    if precision == "single":
+        tol = 1e-4
+    else:
+        tol = 1e-12
+
+    _np.testing.assert_allclose(actual, expected, rtol=tol)
+
+
+def test_helmholtz_multitrace_sphere(default_parameters, helpers, device_interface, precision):
+    """Test Maxwell magnetic field on sphere."""
+    import bempp.api
+    from bempp.api import get_precision
+    from bempp.api import function_space
+    from bempp.api.shapes import regular_sphere
+    from bempp.api.operators.boundary.helmholtz import single_layer, double_layer, \
+            adjoint_double_layer, hypersingular
+    from bempp.api.assembly.blocked_operator import BlockedDiscreteOperator
+
+    # if precision == 'single':
+    #    pytest.skip("Test runs only in double precision mode.")
+
+    grid = helpers.load_grid('sphere')
+
+    op = bempp.api.operators.boundary.helmholtz.multitrace_operator(
+        grid,
+        2.5,
+        default_parameters,
+        assembler="multitrace_evaluator",
+        device_interface=device_interface,
+        precision=precision,
+    )
+
+    slp = single_layer(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        2.5,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    dlp = double_layer(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        2.5,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    adlp = adjoint_double_layer(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        2.5,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+
+    hyp = hypersingular(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        2.5,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    expected = BlockedDiscreteOperator(_np.array([[-dlp, slp], [hyp, adlp]]))
+
+    rand = _np.random.RandomState(0)
+    x = rand.randn(expected.shape[1])
+
+    y_expected = expected @ x
+    y_actual = op.weak_form() @ x
+
+    _np.testing.assert_allclose(y_actual, y_expected, rtol=helpers.default_tolerance(precision))

@@ -38,5 +38,7 @@ def choose_source_name_dense_multitrace_evaluator(compute_kernel):
 
     if compute_kernel == "maxwell_multitrace":
         return "evaluate_dense_vector_maxwell_multitrace"
+    if compute_kernel == "helmholtz_multitrace":
+        return "evaluate_dense_vector_helmholtz_multitrace"
 
     raise ValueError("Unknown compute kernel identifier.")

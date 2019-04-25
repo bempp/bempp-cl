@@ -51,6 +51,7 @@ __kernel void evaluate_dense_helmholtz_hypersingular_novec(
 
   REALTYPE testInv[2][2];
   REALTYPE trialInv[2][2];
+  REALTYPE tmp[2];
 
   REALTYPE3 trialCurl[3];
   REALTYPE3 testCurl[3];
@@ -245,14 +246,16 @@ __local REALTYPE localResult[WORKGROUP_SIZE][3][3];
 
   for (i = 0; i < 3; ++i)
     for (j = 0; j < 3; ++j) {
+      tmp[0] = shapeIntegral[i][j][0];
+      tmp[1] = shapeIntegral[i][j][1];
       shapeIntegral[i][j][0] =
-          -(wavenumberProduct[0] * shapeIntegral[i][j][0] -
-            wavenumberProduct[1] * shapeIntegral[i][j][1]) *
+          -(wavenumberProduct[0] * tmp[0] -
+            wavenumberProduct[1] * tmp[1]) *
               normalProduct +
           firstTermIntegral[0] * basisProduct[i][j];
       shapeIntegral[i][j][1] =
-          -(wavenumberProduct[0] * shapeIntegral[i][j][1] +
-            wavenumberProduct[1] * shapeIntegral[i][j][0]) *
+          -(wavenumberProduct[0] * tmp[1] +
+            wavenumberProduct[1] * tmp[0]) *
               normalProduct +
           firstTermIntegral[1] * basisProduct[i][j];
     }
