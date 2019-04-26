@@ -268,8 +268,67 @@ __kernel void evaluate_dense_helmholtz_multitrace_vector_regular(
       tempShapeIntegralHypersingular[0] += kernelValue[0];
       tempShapeIntegralHypersingular[1] += kernelValue[1];
 
+#ifdef TRANSMISSION
+
+      kernelValue[0] = M_INV_4PI * cos(WAVENUMBER_INT_REAL * dist) * rdist *
+                       quadWeights[trialQuadIndex];
+      kernelValue[1] = M_INV_4PI * sin(WAVENUMBER_INT_REAL * dist) * rdist *
+                       quadWeights[trialQuadIndex];
+
+#ifdef WAVENUMBER_INT_COMPLEX
+      kernelValue[0] *= exp(-WAVENUMBER_INT_COMPLEX * dist);
+      kernelValue[1] *= exp(-WAVENUMBER_INT_COMPLEX * dist);
+#endif
+
+      factor1[0] = kernelValue[0] * rdist * rdist;
+      factor1[1] = kernelValue[1] * rdist * rdist;
+
+      factor2[0] = -M_ONE;
+      factor2[1] = WAVENUMBER_INT_REAL * dist;
+
+#ifdef WAVENUMBER_INT_COMPLEX
+      factor2[0] += -WAVENUMBER_INT_COMPLEX * dist;
+#endif
+
+      product[0] = -(factor1[0] * factor2[0] - factor1[1] * factor2[1]);
+      product[1] = -(factor1[0] * factor2[1] + factor1[1] * factor2[0]);
+
+      kernelGradient[0][0] = product[0] * diff.x;
+      kernelGradient[0][1] = product[1] * diff.x;
+      kernelGradient[1][0] = product[0] * diff.y;
+      kernelGradient[1][1] = product[1] * diff.y;
+      kernelGradient[2][0] = product[0] * diff.z;
+      kernelGradient[2][1] = product[1] * diff.z;
+
+      tempFactorDouble[0] = -(kernelGradient[0][0] * trialNormal.x +
+                            kernelGradient[1][0] * trialNormal.y +
+                            kernelGradient[2][0] * trialNormal.z);
+      tempFactorDouble[1] = -(kernelGradient[0][1] * trialNormal.x +
+                            kernelGradient[1][1] * trialNormal.y +
+                            kernelGradient[2][1] * trialNormal.z);
+      tempFactorAdj[0] = (kernelGradient[0][0] * testNormal.x +
+                            kernelGradient[1][0] * testNormal.y +
+                            kernelGradient[2][0] * testNormal.z);
+      tempFactorAdj[1] = (kernelGradient[0][1] * testNormal.x +
+                            kernelGradient[1][1] * testNormal.y +
+                            kernelGradient[2][1] * testNormal.z);
+
+      for (j = 0; j < 3; ++j) {
+        tempShapeIntegralSingleLayerInt[j][0] += kernelValue[0] * trialValue[j];
+        tempShapeIntegralDoubleLayerInt[j][0] += tempFactorDouble[0] * trialValue[j];
+        tempShapeIntegralAdjDoubleLayerInt[j][0] += tempFactorAdj[0] * trialValue[j];
+        tempShapeIntegralSingleLayerInt[j][1] += kernelValue[1] * trialValue[j];
+        tempShapeIntegralDoubleLayerInt[j][1] += tempFactorDouble[1] * trialValue[j];
+        tempShapeIntegralAdjDoubleLayerInt[j][1] += tempFactorAdj[1] * trialValue[j];
+      }
+
+      tempShapeIntegralHypersingularInt[0] += kernelValue[0];
+      tempShapeIntegralHypersingularInt[1] += kernelValue[1];
+#endif
+
 
     }
+
 
     for (i = 0; i < 3; ++i)
       for (j = 0; j < 3; ++j)
@@ -281,6 +340,19 @@ __kernel void evaluate_dense_helmholtz_multitrace_vector_regular(
 
     shapeIntegralHypersingularFirstComp[0] += quadWeights[testQuadIndex] * tempShapeIntegralHypersingular[0];
     shapeIntegralHypersingularFirstComp[1] += quadWeights[testQuadIndex] * tempShapeIntegralHypersingular[1];
+
+#ifdef TRANSMISSION
+    for (i = 0; i < 3; ++i)
+      for (j = 0; j < 3; ++j)
+        for (k = 0; k < 2; ++k){
+          shapeIntegralSingleLayerInt[i][j][k] += quadWeights[testQuadIndex] * testValue[i] * tempShapeIntegralSingleLayerInt[j][k];
+          shapeIntegralDoubleLayerInt[i][j][k] += quadWeights[testQuadIndex] * testValue[i] * tempShapeIntegralDoubleLayerInt[j][k];
+          shapeIntegralAdjDoubleLayerInt[i][j][k] += quadWeights[testQuadIndex] * testValue[i] * tempShapeIntegralAdjDoubleLayerInt[j][k];
+      }
+
+    shapeIntegralHypersingularFirstCompInt[0] += quadWeights[testQuadIndex] * tempShapeIntegralHypersingularInt[0];
+    shapeIntegralHypersingularFirstCompInt[1] += quadWeights[testQuadIndex] * tempShapeIntegralHypersingularInt[1];
+#endif
 
 
   }
@@ -308,7 +380,6 @@ __kernel void evaluate_dense_helmholtz_multitrace_vector_regular(
     }
 
 
-
   for (i = 0; i < 3; ++i)
       for (j = 0; j < 3; ++j)
           for (k = 0; k < 2; ++k){
@@ -319,13 +390,50 @@ __kernel void evaluate_dense_helmholtz_multitrace_vector_regular(
           }
 
 
-if (gid[0] == 0 && gid[1] == 50){
-    PRINT_COMPLEX(shapeIntegralSingleLayer[0][0], "SLP:");
-    PRINT_COMPLEX(shapeIntegralDoubleLayer[0][0], "DLP:");
-    PRINT_COMPLEX(shapeIntegralAdjDoubleLayer[0][0], "ADLP:");
-    PRINT_COMPLEX(shapeIntegralHypersingular[0][0], "HYP:");
-}
+#ifdef TRANSMISSION
 
+#ifdef WAVENUMBER_INT_COMPLEX
+  wavenumberProduct[0] = WAVENUMBER_INT_REAL * WAVENUMBER_INT_REAL -
+                         WAVENUMBER_INT_COMPLEX * WAVENUMBER_INT_COMPLEX;
+  wavenumberProduct[1] = M_TWO * WAVENUMBER_INT_REAL * WAVENUMBER_INT_COMPLEX;
+#else
+  wavenumberProduct[0] = WAVENUMBER_INT_REAL * WAVENUMBER_INT_REAL;
+  wavenumberProduct[1] = M_ZERO;
+#endif
+
+  for (i = 0; i < 3; ++i)
+    for (j = 0; j < 3; ++j) {
+      shapeIntegralHypersingularInt[i][j][0] = shapeIntegralHypersingularFirstCompInt[0] * basisProduct[i][j]
+          -(wavenumberProduct[0] * shapeIntegralSingleLayerInt[i][j][0] -
+            wavenumberProduct[1] * shapeIntegralSingleLayerInt[i][j][1]) *
+              normalProduct;
+      shapeIntegralHypersingularInt[i][j][1] = shapeIntegralHypersingularFirstCompInt[1] * basisProduct[i][j]
+          -(wavenumberProduct[0] * shapeIntegralSingleLayerInt[i][j][1] +
+            wavenumberProduct[1] * shapeIntegralSingleLayerInt[i][j][0]) *
+              normalProduct;
+    }
+
+
+  for (i = 0; i < 3; ++i)
+      for (j = 0; j < 3; ++j)
+          for (k = 0; k < 2; ++k){
+            shapeIntegralSingleLayerInt[i][j][k] *= testIntElem * trialIntElem;
+            shapeIntegralDoubleLayerInt[i][j][k] *= testIntElem * trialIntElem;
+            shapeIntegralAdjDoubleLayerInt[i][j][k] *= testIntElem * trialIntElem;
+            shapeIntegralHypersingularInt[i][j][k] *= testIntElem * trialIntElem;
+          }
+
+  for (i = 0; i < 3; ++i)
+      for (j = 0; j < 3; ++j)
+          for (k = 0; k < 2; ++k){
+            shapeIntegralSingleLayer[i][j][k] += RHO_REL_REAL * shapeIntegralSingleLayerInt[i][j][k];
+            shapeIntegralDoubleLayer[i][j][k] += shapeIntegralDoubleLayerInt[i][j][k];
+            shapeIntegralAdjDoubleLayer[i][j][k] += shapeIntegralAdjDoubleLayerInt[i][j][k];
+            shapeIntegralHypersingular[i][j][k] += M_ONE / RHO_REL_REAL * shapeIntegralHypersingularInt[i][j][k];
+          }
+
+
+#endif 
 
   if (!elementsAreAdjacent(testElement, trialElement, gridsAreDisjoint)) {
     for (j = 0; j < 3; ++j) {
@@ -366,6 +474,7 @@ if (gid[0] == 0 && gid[1] == 50){
   }
 
   barrier(CLK_LOCAL_MEM_FENCE);
+
 
   if (lid == 0) {
     for (localIndex = 1; localIndex < WORKGROUP_SIZE; ++localIndex)

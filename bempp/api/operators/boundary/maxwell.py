@@ -226,7 +226,7 @@ def transmission_operator(
         dtype=_np.object,
     )
     return _common.create_multitrace_operator(
-        "maxwell_multitrace",
+        "maxwell_transmission",
         [domain, domain],
         [range_, range_],
         [dual_to_range, dual_to_range],

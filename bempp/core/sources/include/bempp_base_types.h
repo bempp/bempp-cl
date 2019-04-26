@@ -60,6 +60,10 @@ typedef struct Geometry
 /* Access an element of a vector type. */
 #define VEC_ELEMENT(A, INDEX) ((REALTYPE*)&A)[INDEX]
 
+/* Multiply two components of complex vectors. */
+#define CMP_MULT_REAL_VEC_INDEX(A, B, INDEX) (VEC_ELEMENT((A)[0], INDEX) * VEC_ELEMENT((B)[0], INDEX) - VEC_ELEMENT((A)[1], INDEX) * VEC_ELEMENT((B)[1], INDEX))
+#define CMP_MULT_IMAG_VEC_INDEX(A, B, INDEX) (VEC_ELEMENT((A)[0], INDEX) * VEC_ELEMENT((B)[1], INDEX) + VEC_ELEMENT((A)[1], INDEX) * VEC_ELEMENT((B)[0], INDEX))
+
 /* Print out a complex variable for debugging. */
 #define PRINT_COMPLEX(A, INFO) printf(INFO" %e %e\n", A[0], A[1])
 

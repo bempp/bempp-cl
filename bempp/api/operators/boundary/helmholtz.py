@@ -269,3 +269,137 @@ def multitrace_operator(
         precision,
     )
 
+def transmission_operator(
+    grid,
+    wavenumber,
+    rho_rel,
+    refractive_index,
+    parameters=None,
+    assembler="default_nonlocal",
+    device_interface=None,
+    precision=None,
+):
+    """Assemble the Helmholtz transmission operator."""
+    from bempp.api.space import function_space
+    from bempp.api.operators import _add_wavenumber
+
+    if assembler != "multitrace_evaluator":
+        raise ValueError("Only multitrace evaluator supported.")
+
+    wavenumber_int = wavenumber * refractive_index
+
+    domain = function_space(grid, "P", 1)
+    range_ = domain
+    dual_to_range = domain
+
+    slp = single_layer(
+        domain,
+        range_,
+        dual_to_range,
+        wavenumber,
+        parameters,
+        "only_singular_part",
+        device_interface,
+        precision,
+    )
+
+    slp_int = single_layer(
+        domain,
+        range_,
+        dual_to_range,
+        wavenumber_int,
+        parameters,
+        "only_singular_part",
+        device_interface,
+        precision,
+    )
+
+    dlp = double_layer(
+        domain,
+        range_,
+        dual_to_range,
+        wavenumber,
+        parameters,
+        "only_singular_part",
+        device_interface,
+        precision,
+    )
+
+    dlp_int = double_layer(
+        domain,
+        range_,
+        dual_to_range,
+        wavenumber_int,
+        parameters,
+        "only_singular_part",
+        device_interface,
+        precision,
+    )
+
+    adlp = adjoint_double_layer(
+        domain,
+        range_,
+        dual_to_range,
+        wavenumber,
+        parameters,
+        "only_singular_part",
+        device_interface,
+        precision,
+    )
+
+    adlp_int = adjoint_double_layer(
+        domain,
+        range_,
+        dual_to_range,
+        wavenumber_int,
+        parameters,
+        "only_singular_part",
+        device_interface,
+        precision,
+    )
+
+    hyp = hypersingular(
+        domain,
+        range_,
+        dual_to_range,
+        wavenumber,
+        parameters,
+        "only_singular_part",
+        device_interface,
+        precision,
+    )
+
+    hyp_int = hypersingular(
+        domain,
+        range_,
+        dual_to_range,
+        wavenumber_int,
+        parameters,
+        "only_singular_part",
+        device_interface,
+        precision,
+    )
+
+    options = {"COMPLEX_KERNEL": None, "TRANSMISSION": None}
+
+    _add_wavenumber(options, wavenumber)
+    _add_wavenumber(options, rho_rel, "RHO_REL")
+    _add_wavenumber(options, wavenumber_int, "WAVENUMBER_INT")
+
+    singular_contribution = _np.array(
+        [[-dlp - dlp_int, slp + rho_rel * slp_int], [hyp + 1. / rho_rel * hyp_int, adlp + adlp_int]], dtype=_np.object
+    )
+
+    return _common.create_multitrace_operator(
+        "helmholtz_transmission",
+        [domain, domain],
+        [range_, range_],
+        [dual_to_range, dual_to_range],
+        parameters,
+        assembler,
+        options,
+        "helmholtz_multitrace",
+        singular_contribution,
+        device_interface,
+        precision,
+    )

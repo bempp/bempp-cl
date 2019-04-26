@@ -372,7 +372,6 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
             event.wait()
             runtime += event.runtime()
 
-
             event = self._sum_kernel.run(
                 self._device_interface,
                 (
@@ -390,6 +389,7 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
             event.wait()
             runtime += event.runtime()
 
+            
 
         if self._remainder_size > 0:
 

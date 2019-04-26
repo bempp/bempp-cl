@@ -799,3 +799,265 @@ def test_helmholtz_multitrace_sphere(default_parameters, helpers, device_interfa
     y_actual = op.weak_form() @ x
 
     _np.testing.assert_allclose(y_actual, y_expected, rtol=helpers.default_tolerance(precision))
+
+
+def test_helmholtz_transmission_sphere(default_parameters, helpers, device_interface, precision):
+    """Test Helmholtz transmission on sphere."""
+    import bempp.api
+    from bempp.api import get_precision
+    from bempp.api import function_space
+    from bempp.api.shapes import regular_sphere
+    from bempp.api.operators.boundary.helmholtz import single_layer, double_layer, \
+            adjoint_double_layer, hypersingular
+    from bempp.api.assembly.blocked_operator import BlockedDiscreteOperator
+
+    # if precision == 'single':
+    #    pytest.skip("Test runs only in double precision mode.")
+
+    grid = helpers.load_grid('sphere')
+
+    wavenumber = 2.5
+    refractive_index = 1.5
+    rho_rel = 1.3
+
+    wavenumber_int = wavenumber * refractive_index
+
+    op = bempp.api.operators.boundary.helmholtz.transmission_operator(
+        grid,
+        wavenumber,
+        rho_rel,
+        refractive_index,
+        default_parameters,
+        assembler="multitrace_evaluator",
+        device_interface=device_interface,
+        precision=precision,
+    )
+
+    slp = single_layer(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        wavenumber,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    slp_int = single_layer(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        wavenumber_int,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    dlp = double_layer(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        wavenumber,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    dlp_int = double_layer(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        wavenumber_int,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    adlp = adjoint_double_layer(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        wavenumber,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    adlp_int = adjoint_double_layer(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        wavenumber_int,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    hyp = hypersingular(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        wavenumber,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    hyp_int = hypersingular(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        wavenumber_int,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    expected = BlockedDiscreteOperator(_np.array([[-dlp - dlp_int, slp + rho_rel * slp_int], [hyp + 1. / rho_rel * hyp_int, adlp + adlp_int]]))
+
+    rand = _np.random.RandomState(0)
+    x = rand.randn(expected.shape[1])
+
+    y_expected = expected @ x
+    y_actual = op.weak_form() @ x
+
+    _np.testing.assert_allclose(y_actual, y_expected, rtol=helpers.default_tolerance(precision))
+
+
+def test_helmholtz_transmission_complex_sphere(default_parameters, helpers, device_interface, precision):
+    """Test Helmholtz transmission on sphere with cmplex wavenumber."""
+    import bempp.api
+    from bempp.api import get_precision
+    from bempp.api import function_space
+    from bempp.api.shapes import regular_sphere
+    from bempp.api.operators.boundary.helmholtz import single_layer, double_layer, \
+            adjoint_double_layer, hypersingular
+    from bempp.api.assembly.blocked_operator import BlockedDiscreteOperator
+
+    if precision == 'single':
+       pytest.skip("Test runs only in double precision mode.")
+
+    grid = helpers.load_grid('sphere')
+
+    wavenumber = 2.5 + 1j
+    refractive_index = 1.5 + .7j
+    rho_rel = 1.3
+
+    wavenumber_int = wavenumber * refractive_index
+
+    op = bempp.api.operators.boundary.helmholtz.transmission_operator(
+        grid,
+        wavenumber,
+        rho_rel,
+        refractive_index,
+        default_parameters,
+        assembler="multitrace_evaluator",
+        device_interface=device_interface,
+        precision=precision,
+    )
+
+    slp = single_layer(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        wavenumber,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    slp_int = single_layer(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        wavenumber_int,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    dlp = double_layer(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        wavenumber,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    dlp_int = double_layer(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        wavenumber_int,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    adlp = adjoint_double_layer(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        wavenumber,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    adlp_int = adjoint_double_layer(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        wavenumber_int,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    hyp = hypersingular(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        wavenumber,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    hyp_int = hypersingular(
+        op.domain_spaces[0],
+        op.range_spaces[0],
+        op.dual_to_range_spaces[0],
+        wavenumber_int,
+        parameters=default_parameters,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+    ).weak_form()
+
+    expected = BlockedDiscreteOperator(_np.array([[-dlp - dlp_int, slp + rho_rel * slp_int], [hyp + 1. / rho_rel * hyp_int, adlp + adlp_int]]))
+
+    rand = _np.random.RandomState(0)
+    x = rand.randn(expected.shape[1])
+
+    y_expected = expected @ x
+    y_actual = op.weak_form() @ x
+
+    _np.testing.assert_allclose(y_actual, y_expected, rtol=helpers.default_tolerance(precision))
