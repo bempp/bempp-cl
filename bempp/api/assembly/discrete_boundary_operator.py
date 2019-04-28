@@ -295,13 +295,11 @@ class DenseDiscreteBoundaryOperator(DiscreteBoundaryOperator):
         super(DenseDiscreteBoundaryOperator, self).__init__(impl.dtype, impl.shape)
 
     def _matvec(self, x):
-        return self._matmat(x)
 
-    def _matmat(self, x):
-        return self.A.dot(x)
-
-    def _rmatvec(self, x):
-        return x.dot(self.A)
+        if _np.iscomplexobj(x) and not _np.iscomplexobj(self.A):
+            return self.A.dot(_np.real(x).astype(self.dtype)) + \
+                    1j * self.A.dot(_np.imag(x).astype(self.dtype))
+        return self.A.dot(x.astype(self.dtype))
 
     def __add__(self, other):
         if isinstance(other, DenseDiscreteBoundaryOperator):
@@ -320,7 +318,8 @@ class DenseDiscreteBoundaryOperator(DiscreteBoundaryOperator):
         if isinstance(other, DenseDiscreteBoundaryOperator):
             return DenseDiscreteBoundaryOperator(self.A.dot(other.A))
         if _np.isscalar(other):
-            return DenseDiscreteBoundaryOperator(self.A * other)
+            return DenseDiscreteBoundaryOperator(
+                    self.A * _np.dtype(self.dtype).type(other))
         return super(DenseDiscreteBoundaryOperator, self).dot(other)
 
     def __rmul__(self, other):

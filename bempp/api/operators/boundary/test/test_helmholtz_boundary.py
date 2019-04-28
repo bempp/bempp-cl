@@ -942,9 +942,6 @@ def test_helmholtz_transmission_complex_sphere(default_parameters, helpers, devi
             adjoint_double_layer, hypersingular
     from bempp.api.assembly.blocked_operator import BlockedDiscreteOperator
 
-    if precision == 'single':
-       pytest.skip("Test runs only in double precision mode.")
-
     grid = helpers.load_grid('sphere')
 
     wavenumber = 2.5 + 1j

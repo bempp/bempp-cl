@@ -277,6 +277,35 @@ class GridFunction(object):
         return self._coefficients
 
     @property
+    def real(self):
+        """Return a new grid function consisting of the real part of this function."""
+        import numpy as np
+        import bempp.api
+        if self.representation == 'primal':
+            return bempp.api.GridFunction(
+                space=self.space, dual_space=self.dual_space,
+                coefficients=np.real(self.coefficients))
+        else:
+            return bempp.api.GridFunction(
+                space=self.space, dual_space=self.dual_space,
+                projections=np.real(self.projections()))
+
+    @property
+    def imag(self):
+        """Return a new grid function consisting of the imaginary part of this function."""
+        import numpy as np
+        import bempp.api
+        if self.representation == 'primal':
+            return bempp.api.GridFunction(
+                space=self.space, dual_space=self.dual_space,
+                coefficients=np.imag(self.coefficients))
+        else:
+            return bempp.api.GridFunction(
+                space=self.space, dual_space=self.dual_space,
+                projections=np.imag(self.projections()))
+
+
+    @property
     def component_count(self):
         """Return number of components."""
         return self.space.codomain_dimension
@@ -451,6 +480,31 @@ class GridFunction(object):
             raise ValueError("Spaces are not identical.")
 
         return self + (-other)
+
+    @classmethod
+    def from_random(cls, space):
+        """Create a random grid function normalized to unit norm. """
+        from numpy.random import randn
+        ndofs = space.global_dof_count
+        fun = cls(space, coefficients=randn(ndofs))
+        return fun / fun.l2_norm()
+
+    @classmethod
+    def from_ones(cls, space):
+        """Create a grid function with all coefficients set to one. """
+        from numpy import ones
+        ndofs = space.global_dof_count
+
+        return cls(space, coefficients=ones(ndofs))
+
+    @classmethod
+    def from_zeros(cls, space):
+        """Create a grid function with all coefficients set to one. """
+        from numpy import zeros
+        ndofs = space.global_dof_count
+
+        return cls(space, coefficients=zeros(ndofs))
+
 
 
 # Must be used in jit mode as fun might just be a Python callable and not numba compiled.

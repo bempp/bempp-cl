@@ -80,7 +80,7 @@ def multitrace_operator(
     grid,
     wavenumber,
     parameters=None,
-    assembler="default_nonlocal",
+    assembler="multitrace_evaluator",
     device_interface=None,
     precision=None,
 ):
@@ -143,7 +143,7 @@ def transmission_operator(
     eps_rel,
     mu_rel,
     parameters=None,
-    assembler="default_nonlocal",
+    assembler="multitrace_evaluator",
     device_interface=None,
     precision=None,
 ):

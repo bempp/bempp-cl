@@ -189,7 +189,7 @@ def multitrace_operator(
     grid,
     wavenumber,
     parameters=None,
-    assembler="default_nonlocal",
+    assembler="multitrace_evaluator",
     device_interface=None,
     precision=None,
 ):
@@ -275,7 +275,7 @@ def transmission_operator(
     rho_rel,
     refractive_index,
     parameters=None,
-    assembler="default_nonlocal",
+    assembler="multitrace_evaluator",
     device_interface=None,
     precision=None,
 ):

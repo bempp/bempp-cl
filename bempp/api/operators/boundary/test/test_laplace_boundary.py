@@ -309,7 +309,7 @@ def test_laplace_single_layer_evaluator_p0_dp1(
     expected = mat @ x
 
     if precision == "single":
-        tol = 1e-4
+        tol = 2e-4
     else:
         tol = 1e-12
 

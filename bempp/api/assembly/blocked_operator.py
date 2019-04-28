@@ -150,29 +150,11 @@ class BlockedOperatorBase(object):
                         "All items in the input list must be grid functions."
                     )
             weak_op = self.weak_form()
-            input_type = list_input[0].coefficients.dtype
-            for item in list_input:
-                input_type = _np.promote_types(input_type, item.coefficients.dtype)
-            x_in = _np.zeros(weak_op.shape[1], dtype=input_type)
-            col_pos = _np.hstack([[0], _np.cumsum(weak_op.column_dimensions)])
-            row_pos = _np.hstack([[0], _np.cumsum(weak_op.row_dimensions)])
-            for index in range(weak_op.ndims[1]):
-                x_in[col_pos[index] : col_pos[index + 1]] = list_input[
-                    index
-                ].coefficients
+            x_in = coefficients_from_grid_functions_list(list_input)
             res = weak_op * x_in
 
             # Now assemble the output grid functions back together.
-            output_list = []
-
-            for index in range(weak_op.ndims[0]):
-                output_list.append(
-                    GridFunction(
-                        self.range_spaces[index],
-                        dual_space=self.dual_to_range_spaces[index],
-                        projections=res[row_pos[index] : row_pos[index + 1]],
-                    )
-                )
+            output_list = grid_function_list_from_projections(res, self.dual_to_range_spaces)
             return output_list
 
         else:
@@ -471,7 +453,8 @@ class ScaledBlockedOperator(BlockedOperatorBase):
 
         super(ScaledBlockedOperator, self).__init__(op.ndims[0], op.ndims[1])
 
-    def _weak_form_impl(self):
+    def assemble(self, *args, **kwargs):
+        """Assemble operator."""
         return self._alpha * self._op.weak_form()
 
     def __getitem__(self, key):
@@ -935,7 +918,7 @@ class BlockedScaledDiscreteOperator(BlockedDiscreteOperatorBase):
 
 
 # pylint: disable=invalid-name
-def coefficients_of_grid_function_list(grid_funs):
+def coefficients_from_grid_functions_list(grid_funs):
     """
     Return a vector of coefficients of a list of grid functions.
 
@@ -948,7 +931,7 @@ def coefficients_of_grid_function_list(grid_funs):
         A list containing the grid functions
     """
     vec_len = 0
-    input_type = _np.dtype("float64")
+    input_type = _np.dtype("float32")
     for item in grid_funs:
         input_type = _np.promote_types(input_type, item.coefficients.dtype)
         vec_len += item.space.global_dof_count
@@ -961,7 +944,7 @@ def coefficients_of_grid_function_list(grid_funs):
     return res
 
 
-def projections_of_grid_function_list(grid_funs, projection_spaces):
+def projections_from_grid_functions_list(grid_funs, projection_spaces):
     """
     Return a vector of projections of a list of grid functions.
 
@@ -983,7 +966,7 @@ def projections_of_grid_function_list(grid_funs, projection_spaces):
     for item, proj_space in zip(grid_funs, projection_spaces):
         projections.append(item.projections(proj_space))
     vec_len = 0
-    input_type = _np.dtype("float64")
+    input_type = _np.dtype("float32")
     for item in projections:
         input_type = _np.promote_types(input_type, item.dtype)
         vec_len += len(item)
@@ -1017,6 +1000,38 @@ def grid_function_list_from_coefficients(coefficients, spaces):
         dof_count = space.global_dof_count
         res_list.append(
             GridFunction(space, coefficients=coefficients[pos : pos + dof_count])
+        )
+        pos += dof_count
+    return res_list
+
+
+# pylint: disable=invalid-name
+def grid_function_list_from_projections(projections, spaces, dual_spaces=None):
+    """
+    Create a list of grid functions from a long vector of projections.
+
+    Parameters
+    ----------
+    coefficients : np.ndarray
+        One-dimensional array of coefficients
+    spaces : list of Space objects
+        The sum of the global dofs of the spaces must be equal to the
+        length of the coefficients vector.
+    dual_spaces : list of Space objects
+        The associated dual spaces. If None use the spaces as dual spaces.
+    """
+    from bempp.api import GridFunction
+
+    pos = 0
+    res_list = []
+    if dual_spaces is None:
+        dual_spaces = spaces
+    if len(spaces) != len(dual_spaces):
+        raise ValueError("spaces must have the same length as dual_spaces")
+    for space, dual in zip(spaces, dual_spaces):
+        dof_count = space.global_dof_count
+        res_list.append(
+            GridFunction(space, projections=projections[pos : pos + dof_count], dual_space=dual)
         )
         pos += dof_count
     return res_list

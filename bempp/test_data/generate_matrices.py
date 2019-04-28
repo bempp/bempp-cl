@@ -43,6 +43,12 @@ def generate_bem_matrix(dual_to_range, domain, fname, operator, wavenumber=None)
         mat = operator(domain, domain, dual_to_range, wavenumber, use_projection_spaces=False).weak_form().A
     np.save(fname, mat)
 
+def generate_sparse_bem_matrix(dual_to_range, domain, fname, operator):
+    """Generate test matrix."""
+    print("Generating " + fname)
+
+    mat = operator(domain, domain, dual_to_range).weak_form().sparse_operator.todense()
+    np.save(fname, mat)
 
 print("Generating Laplace BEM matrices.")
 
@@ -280,3 +286,29 @@ generate_bem_matrix(
         bempp.api.operators.boundary.maxwell.electric_field,
         wavenumber
 )
+
+generate_sparse_bem_matrix(
+        p0, p0,
+        "sparse_identity_p0_p0",
+        bempp.api.operators.boundary.sparse.identity)
+
+generate_sparse_bem_matrix(
+        p1, p1,
+        "sparse_identity_p1_p1",
+        bempp.api.operators.boundary.sparse.identity)
+
+generate_sparse_bem_matrix(
+        p0, p1,
+        "sparse_identity_p0_p1",
+        bempp.api.operators.boundary.sparse.identity)
+
+generate_sparse_bem_matrix(
+        p1, p0,
+        "sparse_identity_p1_p0",
+        bempp.api.operators.boundary.sparse.identity)
+
+generate_sparse_bem_matrix(
+        snc, rwg,
+        "sparse_identity_snc_rwg",
+        bempp.api.operators.boundary.sparse.identity)
+
