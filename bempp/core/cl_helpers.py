@@ -548,18 +548,39 @@ def get_type(precision):
 def default_device():
     """Return the default device."""
     import bempp.api
+    import os
 
     # pylint: disable=W0603
     global _DEFAULT_DEVICE
     global _DEFAULT_CONTEXT
 
     if _DEFAULT_DEVICE is None:
+        if not "PYOPENCL_CTX" in os.environ:
+            pair = find_cpu_driver()
+            if pair is not None:
+                _DEFAULT_CONTEXT = pair[0]
+                _DEFAULT_DEVICE = pair[1]
+                bempp.api.log(
+                    f"OpenCL Device set to: {_DEFAULT_DEVICE.name}")
+                return _DEFAULT_DEVICE
         context = Context(_cl.create_some_context(interactive=False))
         _DEFAULT_CONTEXT = context
         _DEFAULT_DEVICE = context.devices[0]
         bempp.api.log(f"OpenCL Device set to: {_DEFAULT_DEVICE.name}")
 
     return _DEFAULT_DEVICE
+
+def find_cpu_driver():
+    """Find the first available CPU OpenCL driver."""
+
+    for platform in _cl.get_platforms():
+        ctx = Context(_cl.Context(
+            dev_type=_cl.device_type.ALL,
+	    properties=[(_cl.context_properties.PLATFORM, platform)]))
+        for device in ctx.devices:
+            if device.type == 'cpu':
+                return ctx, device
+    return None
 
 
 def default_context():
