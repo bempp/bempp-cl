@@ -6,8 +6,11 @@ from collections import namedtuple as _namedtuple
 import numpy as _np
 
 
-def function_space(grid, kind, degree):
+def function_space(grid, kind, degree, support_elements=None, segments=None, **kwargs) :
     """Initialize a function space."""
+
+    if _np.count_nonzero([support_elements, segments]) > 1:
+        raise ValueError("Only one of 'support_elements' and 'segments' must be nonzero.")
 
     if kind == "DP":
         if degree == 0:
@@ -29,13 +32,13 @@ def function_space(grid, kind, degree):
         if degree == 0:
             from .rwg0_space import Rwg0FunctionSpace
 
-            return Rwg0FunctionSpace(grid)
+            return Rwg0FunctionSpace(grid, support_elements, segments, **kwargs)
 
     if kind == "SNC":
         if degree == 0:
             from .snc0_space import Snc0FunctionSpace
 
-            return Snc0FunctionSpace(grid)
+            return Snc0FunctionSpace(grid, support_elements, segments, **kwargs)
 
 
     raise ValueError("Requested space not implemented.")
@@ -85,6 +88,9 @@ class _FunctionSpace(_abc.ABC):
             self._global_dof_count,
         )
 
+        self._number_of_support_elements = _np.count_nonzero(self._support)
+        self._support_elements = _np.flatnonzero(self._support).astype("uint32")
+
         self._mass_matrix = None
         self._inverse_mass_matrix = None
 
@@ -130,6 +136,16 @@ class _FunctionSpace(_abc.ABC):
     def number_of_shape_functions(self):
         """Return the number of shape functions on each element."""
         return self._shapeset.number_of_shape_functions
+
+    @property
+    def number_of_support_elements(self):
+        """The number of elements that form the support."""
+        return self._number_of_support_elements
+
+    @property
+    def support_elements(self):
+        """Return the list of elements on which space is supported."""
+        return self._support_elements
 
     @property
     def identifier(self):
@@ -234,7 +250,7 @@ class _FunctionSpace(_abc.ABC):
 
     def _compute_elements_by_color(self):
         """Implement elements by color computation."""
-        sorted_indices = _np.empty(self.grid.number_of_elements, dtype="uint32")
+        sorted_indices = _np.empty(self.number_of_support_elements, dtype="uint32")
         ncolors = 1 + max(self.color_map)
         indexptr = _np.zeros(1 + ncolors, dtype="uint32")
 

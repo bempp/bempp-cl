@@ -209,7 +209,7 @@ class GridFunction(object):
             _project_function(
                 fun,
                 dual_space.grid.data,
-                dual_space.support,
+                dual_space.support_elements,
                 dual_space.local2global,
                 dual_space.local_multipliers,
                 dual_space.numba_evaluate,
@@ -512,7 +512,7 @@ class GridFunction(object):
 def _project_function(
     fun,
     grid_data,
-    support,
+    support_elements,
     local2global,
     local_multipliers,
     evaluate_on_element,
@@ -531,9 +531,7 @@ def _project_function(
     fun_result = _np.empty(codomain_dimension, dtype=projections.dtype)
     point = _np.empty(3, dtype=_np.float64)
 
-    for index in range(number_of_elements):
-        if not support[index]:
-            continue
+    for index in support_elements:
 
         element_vals = evaluate_on_element(
             index, shapeset_evaluate, points, grid_data, local_multipliers

@@ -3,13 +3,15 @@
 #include "bempp_spaces.h"
 
 __kernel void evaluate(__global REALTYPE *grid,
+                       __global uint *indices,
                        __constant REALTYPE* quadPoints,
                        __constant REALTYPE *quadWeights,
                        __global REALTYPE *globalResult, int nelements) {
   /* Variable declarations */
 
   // globalId(0) is always zero
-  size_t elementIndex = get_global_id(1);
+  size_t gid = get_global_id(1);
+  size_t elementIndex = indices[gid];
 
   size_t quadIndex;
   size_t globalIndex;
@@ -47,7 +49,7 @@ __kernel void evaluate(__global REALTYPE *grid,
   }
 
   globalIndex = NUMBER_OF_TEST_SHAPE_FUNCTIONS *
-                NUMBER_OF_TRIAL_SHAPE_FUNCTIONS * elementIndex;
+                NUMBER_OF_TRIAL_SHAPE_FUNCTIONS * gid;
 
   for (i = 0; i < NUMBER_OF_TEST_SHAPE_FUNCTIONS; ++i)
     for (j = 0; j < NUMBER_OF_TRIAL_SHAPE_FUNCTIONS; ++j)
