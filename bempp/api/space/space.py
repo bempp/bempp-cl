@@ -16,7 +16,7 @@ def function_space(grid, kind, degree, support_elements=None, segments=None, **k
         if degree == 0:
             from .p0_discontinuous_space import P0DiscontinuousFunctionSpace
 
-            return P0DiscontinuousFunctionSpace(grid)
+            return P0DiscontinuousFunctionSpace(grid, support_elements, segments)
         if degree == 1:
             from .p1_discontinuous_space import P1DiscontinuousFunctionSpace
 
@@ -262,3 +262,25 @@ class _FunctionSpace(_abc.ABC):
             count += colors_length
             indexptr[index + 1] = count
         self._sorted_indices, self._indexptr = sorted_indices, indexptr
+
+
+def _process_segments(grid, support_elements, segments):
+    """Pocess information from support_elements and segments vars."""
+
+    if _np.count_nonzero([support_elements, segments]) > 1:
+        raise ValueError("Only one of 'support_elements' and 'segments' must be nonzero.")
+
+    number_of_elements = grid.number_of_elements
+
+    if support_elements is not None:
+        support = _np.full(number_of_elements, False, dtype=bool)
+        support[support_elements] = True
+    elif segments is not None:
+        support = _np.full(number_of_elements, False, dtype=bool)
+        for element_index in range(number_of_elements):
+            if grid.domain_indices[element_index] in segments:
+                support[element_index] = True
+    else:
+        support = _np.full(number_of_elements, True, dtype=bool)
+
+    return support

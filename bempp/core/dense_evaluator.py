@@ -97,15 +97,17 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
                 self._dtype = _np.float32
 
         self._prepare_buffers(complex_kernel, device_interface, precision)
+        
+        domain_support_size = localised_domain.number_of_support_elements
+        dual_to_range_support_size = localised_dual_to_range.number_of_support_elements
 
         options["NUMBER_OF_QUAD_POINTS"] = len(quad_weights)
         options["TEST"] = localised_dual_to_range.shapeset.identifier
         options["TRIAL"] = localised_domain.shapeset.identifier
-        options["TRIAL_NUMBER_OF_ELEMENTS"] = localised_domain.grid.number_of_elements
+        options["TRIAL_NUMBER_OF_ELEMENTS"] = domain_support_size
         options[
             "TEST_NUMBER_OF_ELEMENTS"
-        ] = localised_dual_to_range.grid.number_of_elements
-        options["KERNEL_DIMENSION"] = 1
+        ] = dual_to_range_support_size
 
         options[
             "NUMBER_OF_TEST_SHAPE_FUNCTIONS"
@@ -129,7 +131,7 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
         source_name = choose_source_name_dense_evaluator(operator_descriptor.compute_kernel)
 
         self._main_size, self._remainder_size = kernel_helpers.closest_multiple_to_number(
-            self.domain.grid.number_of_elements, self._workgroup_size
+            domain_support_size, self._workgroup_size
         )
 
         options["WORKGROUP_SIZE"] = self._workgroup_size
@@ -159,13 +161,9 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
                 remainder_source, device_interface.context, precision
             )
 
-        test_indices = _np.arange(
-            localised_dual_to_range.grid.number_of_elements, dtype="uint32"
-        )
-        trial_indices = _np.arange(
-            localised_domain.grid.number_of_elements, dtype="uint32"
-        )
-
+        test_indices = localised_dual_to_range.support_elements.astype("uint32")
+        trial_indices = localised_domain.support_elements.astype("uint32")
+        
         test_indices_buffer = _cl_helpers.DeviceBuffer.from_array(
             test_indices, device_interface, dtype=_np.uint32, access_mode="read_only"
         )
@@ -186,6 +184,9 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
 
         trial_grid = self.domain.localised_space.grid
         test_grid = self.dual_to_range.localised_space.grid
+
+        domain_support_size = self.domain.localised_space.number_of_support_elements
+        dual_to_range_support_size = self.dual_to_range.localised_space.number_of_support_elements
 
         shape = (
             self.dual_to_range.localised_space.global_dof_count,
@@ -245,7 +246,7 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
         )
 
         sum_buffer = _cl_helpers.DeviceBuffer(
-            (shape[0], trial_grid.number_of_elements // self._workgroup_size),
+            (shape[0], domain_support_size // self._workgroup_size),
             result_type,
             device_interface.context,
             access_mode="read_write",
@@ -299,7 +300,7 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
             event = self._main_kernel.run(
                 self._device_interface,
                 (
-                    self.dual_to_range.grid.number_of_elements,
+                    self.dual_to_range.localised_space.number_of_support_elements,
                     self._main_size // self._vec_length,
                 ),
                 (1, self._workgroup_size // self._vec_length),
@@ -326,7 +327,8 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
 
             event = self._remainder_kernel.run(
                 self._device_interface,
-                (self.dual_to_range.grid.number_of_elements, self._remainder_size),
+                (self.dual_to_range.localised_space.number_of_support_elements, 
+                        self._remainder_size),
                 (1, self._remainder_size),
                 *self._buffers, self._result_buffer,
                 global_offset=(0, self._main_size)

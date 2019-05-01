@@ -5,27 +5,34 @@
 import numpy as _np
 import numba as _numba
 
-from .space import _FunctionSpace, _SpaceData
+from .space import (_FunctionSpace, _SpaceData,
+        _process_segments)
 
 
 class P0DiscontinuousFunctionSpace(_FunctionSpace):
     """A space of piecewise constant functions."""
 
-    def __init__(self, grid):
+    def __init__(self, grid, support_elements=None, segments=None):
         """Initialize with a given grid."""
         from scipy.sparse import identity
 
         shapeset = "p0_discontinuous"
 
-        global_dof_count = grid.entity_count(0)
+        number_of_elements = grid.number_of_elements
 
-        local2global_map = _np.expand_dims(
-            _np.arange(global_dof_count, dtype="uint32"), 1
+        support = _process_segments(grid, support_elements, segments)
+
+        elements_in_support = _np.flatnonzero(support)
+        support_size = len(elements_in_support)
+
+        local2global_map = _np.zeros((number_of_elements, 1), dtype="uint32")
+
+        local2global_map[support] = _np.expand_dims(
+            _np.arange(support_size, dtype="uint32"), 1
         )
 
-        local_multipliers = _np.ones((global_dof_count, 1), dtype="float64")
-
-        support = _np.full(grid.number_of_elements, True, dtype=bool)
+        local_multipliers = _np.zeros((number_of_elements, 1), dtype="float64")
+        local_multipliers[support] = 1
 
         codomain_dimension = 1
         order = 0
@@ -33,16 +40,16 @@ class P0DiscontinuousFunctionSpace(_FunctionSpace):
 
         localised_space = self
 
-        color_map = _np.zeros(grid.entity_count(0), dtype="uint32")
+        color_map = _np.zeros(support_size, dtype="uint32")
 
         map_to_localised_space = identity(
-            grid.number_of_elements, dtype="float64", format="csr"
+            support_size, dtype="float64", format="csr"
         )
 
         space_data = _SpaceData(
             grid,
             codomain_dimension,
-            global_dof_count,
+            support_size,
             order,
             shapeset,
             local2global_map,
@@ -53,6 +60,9 @@ class P0DiscontinuousFunctionSpace(_FunctionSpace):
             color_map,
             map_to_localised_space,
         )
+
+        #from IPython import embed
+        #embed()
 
         super().__init__(space_data)
 

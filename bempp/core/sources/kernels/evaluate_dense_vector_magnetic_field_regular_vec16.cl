@@ -209,8 +209,8 @@ evaluate_dense_magnetic_field_regular(
                 localResult[0][i][0][0] += localResult[0][i][j][0];
                 localResult[0][i][0][1] += localResult[0][i][j][1];
             }
-            globalResult[2 * (numGroups * (NUMBER_OF_TEST_SHAPE_FUNCTIONS * testIndex + i) + groupId)] += localResult[0][i][0][0];
-            globalResult[2 * (numGroups * (NUMBER_OF_TEST_SHAPE_FUNCTIONS * testIndex + i) + groupId) + 1] += localResult[0][i][0][1];
+            globalResult[2 * (numGroups * (NUMBER_OF_TEST_SHAPE_FUNCTIONS * gid[0] + i) + groupId)] += localResult[0][i][0][0];
+            globalResult[2 * (numGroups * (NUMBER_OF_TEST_SHAPE_FUNCTIONS * gid[0] + i) + groupId) + 1] += localResult[0][i][0][1];
         }
     }
 

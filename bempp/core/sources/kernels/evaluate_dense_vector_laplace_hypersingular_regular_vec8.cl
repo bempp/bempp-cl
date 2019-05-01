@@ -202,7 +202,7 @@ evaluate_dense_laplace_hypersingular_regular(
         {
             for (j = 1; j < NUMBER_OF_TRIAL_SHAPE_FUNCTIONS; ++j)
                 localResult[0][i][0] += localResult[0][i][j];
-            globalResult[numGroups * (NUMBER_OF_TEST_SHAPE_FUNCTIONS * testIndex + i) + groupId] += localResult[0][i][0];
+            globalResult[numGroups * (NUMBER_OF_TEST_SHAPE_FUNCTIONS * gid[0] + i) + groupId] += localResult[0][i][0];
         }
     }
 

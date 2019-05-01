@@ -5,7 +5,9 @@
 import numpy as _np
 import numba as _numba
 
-from .space import _FunctionSpace, _SpaceData
+from .space import (_FunctionSpace, _SpaceData,
+        _process_segments)
+
 
 
 class Rwg0FunctionSpace(_FunctionSpace):
@@ -20,24 +22,9 @@ class Rwg0FunctionSpace(_FunctionSpace):
         shapeset = "rwg0"
         number_of_elements = grid.number_of_elements
 
-
-        if _np.count_nonzero([support_elements, segments]) > 1:
-            raise ValueError("Only one of 'support_elements' and 'segments' must be nonzero.")
-
-
-        if support_elements is not None:
-            support = _np.full(number_of_elements, False, dtype=bool)
-            support[support_elements] = True
-        elif segments is not None:
-            support = _np.full(number_of_elements, False, dtype=bool)
-            for element_index in range(number_of_elements):
-                if grid.domain_indices[element_index] in segments:
-                    support[element_index] = True
-        else:
-            support = _np.full(number_of_elements, True, dtype=bool)
+        support = _process_segments(grid, support_elements, segments)
 
         elements_in_support = _np.flatnonzero(support)
-
 
         local2global_map = _np.zeros((number_of_elements, 3), dtype="uint32")
         local_multipliers = _np.zeros((number_of_elements, 3), dtype="float64")
