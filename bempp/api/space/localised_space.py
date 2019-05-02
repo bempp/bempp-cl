@@ -83,6 +83,7 @@ class LocalisedFunctionSpace(_FunctionSpace):
             local_coordinates,
             self.grid.data,
             self.local_multipliers,
+            self.normal_multipliers,
         )
 
     def surface_gradient(self, element, local_coordinates):
@@ -92,6 +93,7 @@ class LocalisedFunctionSpace(_FunctionSpace):
                 self.shapeset.evaluate,
                 local_coordinates,
                 self.grid.data,
-                self.local_multipliers)
+                self.local_multipliers,
+                self.normal_multipliers)
 
 

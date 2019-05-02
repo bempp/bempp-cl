@@ -177,10 +177,23 @@ def _prepare_buffers(
         order="C",
     )
 
+    test_normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
+        dual_to_range.normal_multipliers,
+        device_interface,
+        dtype=_np.int32,
+        access_mode="read_only",
+    )
+    trial_normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
+        domain.normal_multipliers, device_interface, dtype=_np.int32, access_mode="read_only"
+    )
+
+
 
     buffers = [
         grid_buffer,
         elements_buffer,
+        test_normal_signs_buffer,
+        trial_normal_signs_buffer,
         quad_points_buffer,
         quad_weights_buffer,
         result_buffer,

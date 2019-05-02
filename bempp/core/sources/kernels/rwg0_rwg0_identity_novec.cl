@@ -24,36 +24,42 @@ __kernel void evaluate(__global REALTYPE *grid,
   REALTYPE3 jacobian[2];
   REALTYPE intElem;
   REALTYPE3 normal;
-  REALTYPE testValue[NUMBER_OF_TEST_SHAPE_FUNCTIONS];
-  REALTYPE trialValue[NUMBER_OF_TRIAL_SHAPE_FUNCTIONS];
+  REALTYPE basisValue[3][2];
+  REALTYPE3 elementValue[3];
+  REALTYPE edgeLength[3];
 
-  REALTYPE shapeIntegral[NUMBER_OF_TEST_SHAPE_FUNCTIONS]
-                        [NUMBER_OF_TRIAL_SHAPE_FUNCTIONS];
+  REALTYPE shapeIntegral[3]
+                        [3];
 
-  for (i = 0; i < NUMBER_OF_TEST_SHAPE_FUNCTIONS; ++i)
-    for (j = 0; j < NUMBER_OF_TRIAL_SHAPE_FUNCTIONS; ++j)
+  for (i = 0; i < 3; ++i)
+    for (j = 0; j < 3; ++j)
       shapeIntegral[i][j] = M_ZERO;
 
   getCorners(grid, elementIndex, corners);
   getJacobian(corners, jacobian);
   getNormalAndIntegrationElement(jacobian, &normal, &intElem);
+  computeEdgeLength(corners, edgeLength);
+
+  updateNormals(elementIndex, testNormalSigns, &normal);
 
   for (quadIndex = 0; quadIndex < NUMBER_OF_QUAD_POINTS; ++quadIndex) {
     point = (REALTYPE2)(quadPoints[2 * quadIndex], quadPoints[2 * quadIndex + 1]);
-    BASIS(TEST, evaluate)(&point, &testValue[0]);
-    BASIS(TRIAL, evaluate)(&point, &trialValue[0]);
+    globalPoint = getGlobalPoint(corners, &point);
+    BASIS(TEST, evaluate)(&point, &basisValue[0][0]);
+    getPiolaTransform(intElem, jacobian, basisValue, elementValue);
 
-    for (i = 0; i < NUMBER_OF_TEST_SHAPE_FUNCTIONS; ++i)
-      for (j = 0; j < NUMBER_OF_TRIAL_SHAPE_FUNCTIONS; ++j)
+    for (i = 0; i < 3; ++i){
+      for (j = 0; j < 3; ++j)
         shapeIntegral[i][j] +=
-            quadWeights[quadIndex] * testValue[i] * trialValue[j];
+            quadWeights[quadIndex] * 
+              dot(elementValue[j], elementValue[i]) * edgeLength[i] * edgeLength[j];
+    }
   }
 
-  globalIndex = NUMBER_OF_TEST_SHAPE_FUNCTIONS *
-                NUMBER_OF_TRIAL_SHAPE_FUNCTIONS * gid;
+  globalIndex = 9 * gid; 
 
-  for (i = 0; i < NUMBER_OF_TEST_SHAPE_FUNCTIONS; ++i)
-    for (j = 0; j < NUMBER_OF_TRIAL_SHAPE_FUNCTIONS; ++j)
-      globalResult[globalIndex + i * NUMBER_OF_TRIAL_SHAPE_FUNCTIONS + j] =
+  for (i = 0; i < 3; ++i)
+    for (j = 0; j < 3; ++j)
+      globalResult[globalIndex + i * 3 + j] =
           shapeIntegral[i][j] * intElem;
 }

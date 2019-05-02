@@ -4,6 +4,7 @@
 
 __kernel void evaluate(__global REALTYPE *grid,
                        __global uint *indices,
+                       __global int *testNormalSigns, __global int *trialNormalSigns,
                        __constant REALTYPE* quadPoints,
                        __constant REALTYPE *quadWeights,
                        __global REALTYPE *globalResult, int nelements) {
@@ -39,6 +40,8 @@ __kernel void evaluate(__global REALTYPE *grid,
   getJacobian(corners, jacobian);
   getNormalAndIntegrationElement(jacobian, &normal, &intElem);
   computeEdgeLength(corners, edgeLength);
+
+  updateNormals(elementIndex, testNormalSigns, &normal);
 
   for (quadIndex = 0; quadIndex < NUMBER_OF_QUAD_POINTS; ++quadIndex) {
     point = (REALTYPE2)(quadPoints[2 * quadIndex], quadPoints[2 * quadIndex + 1]);

@@ -152,6 +152,7 @@ class Snc0FunctionSpace(_FunctionSpace):
             local_coordinates,
             self.grid.data,
             self.local_multipliers,
+            self.normal_multipliers,
         )
 
     def surface_gradient(self, element, local_coordinates):
@@ -161,14 +162,14 @@ class Snc0FunctionSpace(_FunctionSpace):
 
 @_numba.njit
 def _numba_evaluate(
-    element_index, shapeset_evaluate, local_coordinates, grid_data, local_multipliers
+    element_index, shapeset_evaluate, local_coordinates, grid_data, local_multipliers, normal_multipliers
 ):
     """Evaluate the basis on an element."""
     reference_values = shapeset_evaluate(local_coordinates)
     npoints = local_coordinates.shape[1]
     result = _np.empty((3, 3, npoints), dtype=_np.float64)
     tmp = _np.empty((3, 3, npoints), dtype=_np.float64)
-    normal = grid_data.normals[element_index]
+    normal = grid_data.normals[element_index] * normal_multipliers[element_index]
 
 
     edge_lengths = _np.empty(3, dtype=_np.float64)
