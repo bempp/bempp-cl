@@ -167,6 +167,7 @@ class Rwg0FunctionSpace(_FunctionSpace):
             local_coordinates,
             self.grid.data,
             self.local_multipliers,
+            self.normal_multipliers
         )
 
     def surface_gradient(self, element, local_coordinates):
@@ -176,7 +177,7 @@ class Rwg0FunctionSpace(_FunctionSpace):
 
 @_numba.njit
 def _numba_evaluate(
-    element_index, shapeset_evaluate, local_coordinates, grid_data, local_multipliers
+    element_index, shapeset_evaluate, local_coordinates, grid_data, local_multipliers, normal_multipliers
 ):
     """Evaluate the basis on an element."""
     reference_values = shapeset_evaluate(local_coordinates)
