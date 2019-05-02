@@ -7,6 +7,7 @@
 __kernel __attribute__((vec_type_hint(REALTYPE8)))
 void evaluate_dense_electric_field_regular(
     __global uint *testIndices, __global uint *trialIndices,
+    __global int *testNormalSigns, __global int *trialNormalSigns,
     __global REALTYPE *testGrid, __global REALTYPE *trialGrid,
     __global uint *testConnectivity, __global uint *trialConnectivity,
     __constant REALTYPE* quadPoints,
@@ -125,6 +126,9 @@ void evaluate_dense_electric_field_regular(
 
     computeEdgeLength(testCorners, testEdgeLength);
     computeEdgeLengthVec8(trialCorners, trialEdgeLength);
+
+    updateNormals(testIndex, testNormalSigns, &testNormal);
+    updateNormalsVec8(trialIndex, trialNormalSigns, trialNormal);
 
     for (testQuadIndex = 0; testQuadIndex < NUMBER_OF_QUAD_POINTS;
             ++testQuadIndex) {

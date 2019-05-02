@@ -5,6 +5,7 @@
 
 __kernel void evaluate_dense_maxwell_multitrace_vector_regular(
     __global uint *testIndices, __global uint *trialIndices,
+    __global int *testNormalSigns, __global int *trialNormalSigns,
     __global REALTYPE *testGrid, __global REALTYPE *trialGrid,
     __global uint *testConnectivity, __global uint *trialConnectivity,
     __constant REALTYPE *quadPoints, __constant REALTYPE *quadWeights,
@@ -168,6 +169,9 @@ __kernel void evaluate_dense_maxwell_multitrace_vector_regular(
 
     computeEdgeLength(testCorners, testEdgeLength);
     computeEdgeLength(trialCorners, trialEdgeLength);
+
+    updateNormals(testIndex, testNormalSigns, &testNormal);
+    updateNormals(trialIndex, trialNormalSigns, &trialNormal);
 
     for (testQuadIndex = 0; testQuadIndex < NUMBER_OF_QUAD_POINTS;
             ++testQuadIndex) {
@@ -594,16 +598,16 @@ __kernel void evaluate_dense_maxwell_multitrace_vector_regular(
                 localResultMagnetic[0][i][0][1] += localResultMagnetic[0][i][j][1];
             }
 
-            globalResult[2 * (numGroups * (3 * testIndex + i) + groupId)] +=
+            globalResult[2 * (numGroups * (3 * gid[0] + i) + groupId)] +=
                 localResultElectric[0][i][0][0];
-            globalResult[2 * (numGroups * (3 * testIndex + i) + groupId) + 1] +=
+            globalResult[2 * (numGroups * (3 * gid[0] + i) + groupId) + 1] +=
                 localResultElectric[0][i][0][1];
 
             globalResult[6 * TRIAL0_NUMBER_OF_ELEMENTS * numGroups +
-                           2 * (numGroups * (3 * testIndex + i) + groupId)] +=
+                           2 * (numGroups * (3 * gid[0] + i) + groupId)] +=
                              localResultMagnetic[0][i][0][0];
             globalResult[6 * TRIAL0_NUMBER_OF_ELEMENTS * numGroups +
-                           2 * (numGroups * (3 * testIndex + i) + groupId) + 1] +=
+                           2 * (numGroups * (3 * gid[0] + i) + groupId) + 1] +=
                              localResultMagnetic[0][i][0][1];
         }
     }

@@ -5,8 +5,8 @@
 
 __kernel void evaluate_dense_electric_field_regular(
     __global uint *testIndices, __global uint *trialIndices,
-    __global REALTYPE *testGrid, __global REALTYPE *trialGrid,
     __global int *testNormalSigns, __global int *trialNormalSigns,
+    __global REALTYPE *testGrid, __global REALTYPE *trialGrid,
     __global uint *testConnectivity, __global uint *trialConnectivity,
     __global uint *testLocal2Global, __global uint *trialLocal2Global,
     __global REALTYPE *testLocalMultipliers,
