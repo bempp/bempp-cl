@@ -584,20 +584,22 @@ class DiscreteRankOneOperator(DiscreteBoundaryOperator):
 
 def as_matrix(operator):
     """
-    Convert a discrte operator into a dense matrix.
+    Convert a discrte operator into a dense or sparse matrix.
 
     Parameters
     ----------
     operator : scipy.sparse.linalg.interface.LinearOperator
-        The linear operator to be converted into a dense matrix.
+        The linear operator to be converted into a matrix.
 
 
     Notes
     -----
     Note that this function may be slow depending on how the original
     discrete operator was stored. In the case of a dense assembly simple
-    the underlying NumPy matrix is returned. Otherwise, the operator needs
-    to be converted to an array, which can take a long time.
+    the underlying NumPy matrix is returned. For sparse matrices the
+    corresponding Scipy sparse matrix is returned. Otherwise, the operator needs
+    to be converted to an array, which can take a long time depending on
+    the assembler type.
 
     """
     from numpy import eye
@@ -606,7 +608,7 @@ def as_matrix(operator):
     if isinstance(operator, DenseDiscreteBoundaryOperator):
         return operator.A
     elif isinstance(operator, SparseDiscreteBoundaryOperator):
-        return operator.sparse_matrix
+        return operator.A
     else:
         return operator * eye(cols, cols)
 
