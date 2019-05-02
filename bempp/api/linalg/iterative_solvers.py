@@ -242,11 +242,11 @@ def _gmres_block_op_imp(
     # Assemble weak form before the logging messages
 
     if use_strong_form:
-        b_vec = coefficients_of_grid_function_list(b)
+        b_vec = coefficients_from_grid_functions_list(b)
         A_op = A.strong_form()
     else:
         A_op = A.weak_form()
-        b_vec = projections_of_grid_function_list(b, A.dual_to_range_spaces)
+        b_vec = projections_from_grid_functions_list(b, A.dual_to_range_spaces)
 
     callback = _it_counter(return_residuals)
 

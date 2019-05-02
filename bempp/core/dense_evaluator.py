@@ -261,7 +261,20 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
             order="C",
         )
 
+
+        test_normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
+            self.dual_to_range.localised_space.normal_multipliers,
+            device_interface,
+            dtype=_np.int32,
+            access_mode="read_only",
+        )
+        trial_normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
+            self.domain.localised_space.normal_multipliers, device_interface, dtype=_np.int32, access_mode="read_only"
+        )
+
         buffers = [
+            test_normal_signs_buffer,
+            trial_normal_signs_buffer,
             test_grid_buffer,
             trial_grid_buffer,
             test_connectivity,
@@ -317,7 +330,7 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
                 (1,),
                 self._sum_buffer,
                 self._result_buffer,
-                _np.uint32(self.domain.grid.number_of_elements // self._workgroup_size)
+                _np.uint32(self.domain.localised_space.number_of_support_elements // self._workgroup_size)
             )
 
             event.wait()
