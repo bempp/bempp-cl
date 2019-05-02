@@ -5,13 +5,12 @@
 import numpy as _np
 import numba as _numba
 
-from .space import _FunctionSpace, _SpaceData
-
+from .space import _FunctionSpace, _SpaceData, _process_segments
 
 class Snc0FunctionSpace(_FunctionSpace):
     """A space of RWG functions."""
 
-    def __init__(self, grid, support_elements=None, segments=None, include_boundary_dofs=False):
+    def __init__(self, grid, support_elements=None, segments=None, swapped_normals=None, include_boundary_dofs=False):
         """Initialize with a given grid."""
         from .localised_space import LocalisedFunctionSpace
 
@@ -20,21 +19,10 @@ class Snc0FunctionSpace(_FunctionSpace):
         shapeset = "rwg0"
         number_of_elements = grid.number_of_elements
 
+        support, normal_mult = _process_segments(
+            grid, support_elements, segments, swapped_normals
+        )
 
-        if _np.count_nonzero([support_elements, segments]) > 1:
-            raise ValueError("Only one of 'support_elements' and 'segments' must be nonzero.")
-
-
-        if support_elements is not None:
-            support = _np.full(number_of_elements, False, dtype=bool)
-            support[support_elements] = True
-        elif segments is not None:
-            support = _np.full(number_of_elements, False, dtype=bool)
-            for element_index in range(number_of_elements):
-                if grid.domain_indices[element_index] in segments:
-                    support[element_index] = True
-        else:
-            support = _np.full(number_of_elements, True, dtype=bool)
 
         elements_in_support = _np.flatnonzero(support)
 
@@ -114,7 +102,7 @@ class Snc0FunctionSpace(_FunctionSpace):
 
         localised_space = LocalisedFunctionSpace(
                 grid, codomain_dimension, order, shapeset,
-                identifier, support, self.numba_evaluate,
+                identifier, support, normal_mult, self.numba_evaluate,
                 None)
 
         map_to_localised_space = coo_matrix(
@@ -141,6 +129,7 @@ class Snc0FunctionSpace(_FunctionSpace):
             localised_space,
             color_map,
             map_to_localised_space,
+            normal_mult
         )
 
         super().__init__(space_data)

@@ -5,15 +5,20 @@
 import numpy as _np
 import numba as _numba
 
-from .space import (_FunctionSpace, _SpaceData,
-        _process_segments)
-
+from .space import _FunctionSpace, _SpaceData, _process_segments
 
 
 class Rwg0FunctionSpace(_FunctionSpace):
     """A space of RWG functions."""
 
-    def __init__(self, grid, support_elements=None, segments=None, include_boundary_dofs=False):
+    def __init__(
+        self,
+        grid,
+        support_elements=None,
+        segments=None,
+        swapped_normals=None,
+        include_boundary_dofs=False,
+    ):
         """Initialize with a given grid."""
         from .localised_space import LocalisedFunctionSpace
 
@@ -22,7 +27,9 @@ class Rwg0FunctionSpace(_FunctionSpace):
         shapeset = "rwg0"
         number_of_elements = grid.number_of_elements
 
-        support = _process_segments(grid, support_elements, segments)
+        support, normal_mult = _process_segments(
+            grid, support_elements, segments, swapped_normals
+        )
 
         elements_in_support = _np.flatnonzero(support)
 
@@ -40,16 +47,19 @@ class Rwg0FunctionSpace(_FunctionSpace):
                 edge_neighbors = grid.edge_neighbors[edge_index]
 
                 if len(edge_neighbors) == 1:
-                    other = -1 # There is no other neighbor
+                    other = -1  # There is no other neighbor
                 else:
-                    other = (edge_neighbors[1] if element_index == edge_neighbors[0] 
-                            else edge_neighbors[0])
+                    other = (
+                        edge_neighbors[1]
+                        if element_index == edge_neighbors[0]
+                        else edge_neighbors[0]
+                    )
                     if not support[other]:
                         # Neighbor element not in the support
                         other = -1
 
                 if other == -1:
-                    # We are at the boundary. 
+                    # We are at the boundary.
                     if not include_boundary_dofs:
                         local_multipliers[element_index, local_index] = 0
                     else:
@@ -65,7 +75,7 @@ class Rwg0FunctionSpace(_FunctionSpace):
                         edge_dofs[edge_index] = count
                         count += 1
                     dofmap[local_index] = edge_dofs[edge_index]
-            
+
             # Check if no dof was assigned to element. In that case the element
             # needs to be deleted from the support.
             if _np.all(dofmap == -1):
@@ -89,7 +99,6 @@ class Rwg0FunctionSpace(_FunctionSpace):
         for index in delete_from_support:
             support[index] = False
 
-
         support_size = _np.count_nonzero(support)
 
         if support_size == 0:
@@ -100,9 +109,16 @@ class Rwg0FunctionSpace(_FunctionSpace):
         identifier = "rwg0"
 
         localised_space = LocalisedFunctionSpace(
-                grid, codomain_dimension, order, shapeset,
-                identifier, support, self.numba_evaluate,
-                None)
+            grid,
+            codomain_dimension,
+            order,
+            shapeset,
+            identifier,
+            support,
+            normal_mult,
+            self.numba_evaluate,
+            None,
+        )
 
         map_to_localised_space = coo_matrix(
             (
@@ -128,6 +144,7 @@ class Rwg0FunctionSpace(_FunctionSpace):
             localised_space,
             color_map,
             map_to_localised_space,
+            normal_mult
         )
 
         super().__init__(space_data)

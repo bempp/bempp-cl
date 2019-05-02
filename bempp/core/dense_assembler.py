@@ -131,12 +131,28 @@ def assemble_dense(
         trial_indices, device_interface, dtype=_np.uint32, access_mode="read_only"
     )
 
+    test_normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
+        dual_to_range.normal_multipliers,
+        device_interface,
+        dtype=_np.int32,
+        access_mode="read_only",
+    )
+    trial_normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
+        domain.normal_multipliers, device_interface, dtype=_np.int32, access_mode="read_only"
+    )
+
     runtime = kernel_helpers.run_chunked_kernel(
         main_kernel,
         remainder_kernel,
         device_interface,
         vec_length,
-        [test_indices_buffer, trial_indices_buffer, *buffers],
+        [
+            test_indices_buffer,
+            trial_indices_buffer,
+            test_normal_signs_buffer,
+            trial_normal_signs_buffer,
+            *buffers,
+        ],
         parameters,
         chunks=(test_color_indexptr, trial_color_indexptr),
     )
@@ -282,5 +298,3 @@ def _prepare_buffers(
     ]
 
     return buffers
-
-

@@ -6,11 +6,21 @@ from collections import namedtuple as _namedtuple
 import numpy as _np
 
 
-def function_space(grid, kind, degree, support_elements=None, segments=None, **kwargs) :
+def function_space(
+    grid,
+    kind,
+    degree,
+    support_elements=None,
+    segments=None,
+    swapped_normals=None,
+    **kwargs
+):
     """Initialize a function space."""
 
     if _np.count_nonzero([support_elements, segments]) > 1:
-        raise ValueError("Only one of 'support_elements' and 'segments' must be nonzero.")
+        raise ValueError(
+            "Only one of 'support_elements' and 'segments' must be nonzero."
+        )
 
     if kind == "DP":
         if degree == 0:
@@ -32,14 +42,17 @@ def function_space(grid, kind, degree, support_elements=None, segments=None, **k
         if degree == 0:
             from .rwg0_space import Rwg0FunctionSpace
 
-            return Rwg0FunctionSpace(grid, support_elements, segments, **kwargs)
+            return Rwg0FunctionSpace(
+                grid, support_elements, segments, swapped_normals, **kwargs
+            )
 
     if kind == "SNC":
         if degree == 0:
             from .snc0_space import Snc0FunctionSpace
 
-            return Snc0FunctionSpace(grid, support_elements, segments, **kwargs)
-
+            return Snc0FunctionSpace(
+                grid, support_elements, segments, swapped_normals, **kwargs
+            )
 
     raise ValueError("Requested space not implemented.")
 
@@ -59,6 +72,7 @@ _SpaceData = _namedtuple(
         "localised_space",
         "color_map",
         "map_to_localised_space",
+        "normal_multipliers",
     ],
 )
 
@@ -87,6 +101,8 @@ class _FunctionSpace(_abc.ABC):
             self._grid.number_of_elements,
             self._global_dof_count,
         )
+
+        self._normal_multipliers = space_data.normal_multipliers
 
         self._number_of_support_elements = _np.count_nonzero(self._support)
         self._support_elements = _np.flatnonzero(self._support).astype("uint32")
@@ -126,6 +142,11 @@ class _FunctionSpace(_abc.ABC):
     def local_multipliers(self):
         """Return the multipliers for each local dof."""
         return self._local_multipliers
+
+    @property
+    def normal_multipliers(self):
+        """Return the normal multipliers for each grid element."""
+        return self._normal_multipliers
 
     @property
     def global2local(self):
@@ -216,6 +237,7 @@ class _FunctionSpace(_abc.ABC):
 
         if self._mass_matrix is None:
             from bempp.api.operators.boundary.sparse import identity
+
             self._mass_matrix = identity(self, self, self).weak_form()
 
         return self._mass_matrix
@@ -223,12 +245,14 @@ class _FunctionSpace(_abc.ABC):
     def inverse_mass_matrix(self):
         """Return the inverse mass matrix for this space."""
 
-        from bempp.api.assembly.discrete_boundary_operator import \
-            InverseSparseDiscreteBoundaryOperator
+        from bempp.api.assembly.discrete_boundary_operator import (
+            InverseSparseDiscreteBoundaryOperator,
+        )
 
         if self._inverse_mass_matrix is None:
             self._inverse_mass_matrix = InverseSparseDiscreteBoundaryOperator(
-                self.mass_matrix())
+                self.mass_matrix()
+            )
         return self._inverse_mass_matrix
 
     def is_compatible(self, other):
@@ -264,13 +288,25 @@ class _FunctionSpace(_abc.ABC):
         self._sorted_indices, self._indexptr = sorted_indices, indexptr
 
 
-def _process_segments(grid, support_elements, segments):
+def _process_segments(grid, support_elements, segments, swapped_normals):
     """Pocess information from support_elements and segments vars."""
 
     if _np.count_nonzero([support_elements, segments]) > 1:
-        raise ValueError("Only one of 'support_elements' and 'segments' must be nonzero.")
+        raise ValueError(
+            "Only one of 'support_elements' and 'segments' must be nonzero."
+        )
+
+    if swapped_normals is None:
+        swapped_normals = {}
 
     number_of_elements = grid.number_of_elements
+    normal_multipliers = _np.zeros(number_of_elements, dtype=_np.int32)
+
+    for element_index in range(number_of_elements):
+        if grid.domain_indices[element_index] in swapped_normals:
+            normal_multipliers[element_index] = -1
+        else:
+            normal_multipliers[element_index] = 1
 
     if support_elements is not None:
         support = _np.full(number_of_elements, False, dtype=bool)
@@ -283,4 +319,4 @@ def _process_segments(grid, support_elements, segments):
     else:
         support = _np.full(number_of_elements, True, dtype=bool)
 
-    return support
+    return support, normal_multipliers

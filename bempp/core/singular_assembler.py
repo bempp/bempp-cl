@@ -121,7 +121,8 @@ def assemble_singular_part(
     kernel = cl_helpers.Kernel(kernel_source, device_interface.context, precision)
 
     rule = _SingularQuadratureRuleInterface(
-            grid, order, dual_to_range.support, domain.support, parameters)
+        grid, order, dual_to_range.support, domain.support, parameters
+    )
 
     number_of_singular_indices = rule.index_count["all"]
 
@@ -146,7 +147,20 @@ def assemble_singular_part(
         device_interface, precision, WORKGROUP_SIZE
     )
 
-    all_buffers = [grid_buffer, *quadrature_buffers, result_buffer]
+    test_normal_signs_buffer = cl_helpers.DeviceBuffer.from_array(
+        dual_to_range.normal_multipliers, device_interface, dtype=_np.int32, access_mode="read_only"
+    )
+    trial_normal_signs_buffer = cl_helpers.DeviceBuffer.from_array(
+        domain.normal_multipliers, device_interface, dtype=_np.int32, access_mode="read_only"
+    )
+
+    all_buffers = [
+        grid_buffer,
+        test_normal_signs_buffer,
+        trial_normal_signs_buffer,
+        *quadrature_buffers,
+        result_buffer,
+    ]
 
     event = kernel.run(
         device_interface,
@@ -216,29 +230,28 @@ class _SingularQuadratureRuleInterface(object):
             *_duffy.rule(order, "vertex_adjacent")
         )
 
-
         # Iterate through the singular pairs and only add those that are
         # in the support of the space.
 
         self._index_count = {}
 
-
-        self._coincident_indices = _np.flatnonzero(
-                test_support * trial_support)
+        self._coincident_indices = _np.flatnonzero(test_support * trial_support)
         self._index_count["coincident"] = len(self._coincident_indices)
 
         # test_support and trial_support are boolean arrays.
         # * operation corresponds to and op between the arrays.
 
         edge_adjacent_pairs = _np.flatnonzero(
-                test_support[grid.edge_adjacency[0, :]] * 
-                trial_support[grid.edge_adjacency[1, :]])
+            test_support[grid.edge_adjacency[0, :]]
+            * trial_support[grid.edge_adjacency[1, :]]
+        )
 
         self._edge_adjacency = grid.edge_adjacency[:, edge_adjacent_pairs]
 
         vertex_adjacent_pairs = _np.flatnonzero(
-                test_support[grid.vertex_adjacency[0, :]] *
-                trial_support[grid.vertex_adjacency[1, :]])
+            test_support[grid.vertex_adjacency[0, :]]
+            * trial_support[grid.vertex_adjacency[1, :]]
+        )
 
         self._vertex_adjacency = grid.vertex_adjacency[:, vertex_adjacent_pairs]
 
@@ -250,7 +263,6 @@ class _SingularQuadratureRuleInterface(object):
             + self._index_count["edge_adjacent"]
             + self._index_count["vertex_adjacent"]
         )
-
 
     @property
     def order(self):

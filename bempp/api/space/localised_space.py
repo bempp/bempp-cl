@@ -12,7 +12,7 @@ class LocalisedFunctionSpace(_FunctionSpace):
     """Generic definition of a localised space."""
 
     def __init__(self, grid, codomain_dimension, order, 
-            shapeset, identifier, support, 
+            shapeset, identifier, support, normal_multipliers, 
             numba_evaluate, numba_surface_gradient):
         """Initialize with a given grid."""
 
@@ -53,7 +53,8 @@ class LocalisedFunctionSpace(_FunctionSpace):
                 support,
                 self,
                 color_map,
-                map_to_localised_space)
+                map_to_localised_space,
+                normal_multipliers)
 
 
         self._numba_evaluate = numba_evaluate

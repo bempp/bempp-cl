@@ -4,7 +4,9 @@
 #include "kernels.h"
 
 __kernel void evaluate_electric_field_singular(
-    __global REALTYPE *grid, __global REALTYPE *testPoints,
+    __global REALTYPE *grid, 
+    __global int *testNormalSigns, __global int *trialNormalSigns,
+    __global REALTYPE *testPoints,
     __global REALTYPE *trialPoints, __global REALTYPE *quadWeights,
     __global uint *testIndices, __global uint *trialIndices,
     __global uint *testOffsets, __global uint *trialOffsets,
@@ -90,6 +92,9 @@ __kernel void evaluate_electric_field_singular(
 
   computeEdgeLength(testCorners, testEdgeLength);
   computeEdgeLength(trialCorners, trialEdgeLength);
+
+  updateNormals(testIndex, testNormalSigns, &testNormal);
+  updateNormals(trialIndex, trialNormalSigns, &trialNormal);
 
 // Computation of 1i * wavenumber and 1 / (1i * wavenumber)
 #ifdef WAVENUMBER_COMPLEX
