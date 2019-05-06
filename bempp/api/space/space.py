@@ -246,3 +246,7 @@ class _FunctionSpace(_abc.ABC):
             count += colors_length
             indexptr[index + 1] = count
         self._sorted_indices, self._indexptr = sorted_indices, indexptr
+
+    def __eq__(self, other):
+        """Check equality of spaces."""
+        return self.grid == other.grid and self.identifier == other.identifier
