@@ -12,7 +12,7 @@ from .space import (_FunctionSpace, _SpaceData,
 class P0DiscontinuousFunctionSpace(_FunctionSpace):
     """A space of piecewise constant functions."""
 
-    def __init__(self, grid, support_elements=None, segments=None):
+    def __init__(self, grid, support_elements=None, segments=None, swapped_normals=None):
         """Initialize with a given grid."""
         from scipy.sparse import identity
 
@@ -20,7 +20,7 @@ class P0DiscontinuousFunctionSpace(_FunctionSpace):
 
         number_of_elements = grid.number_of_elements
 
-        support = _process_segments(grid, support_elements, segments)
+        support, normal_multipliers = _process_segments(grid, support_elements, segments, swapped_normals)
 
         elements_in_support = _np.flatnonzero(support)
         support_size = len(elements_in_support)
@@ -59,10 +59,8 @@ class P0DiscontinuousFunctionSpace(_FunctionSpace):
             localised_space,
             color_map,
             map_to_localised_space,
+            normal_multipliers
         )
-
-        #from IPython import embed
-        #embed()
 
         super().__init__(space_data)
 
@@ -84,6 +82,7 @@ class P0DiscontinuousFunctionSpace(_FunctionSpace):
             local_coordinates,
             self.grid.data,
             self.local_multipliers,
+            self.normal_multipliers
         )
 
     def surface_gradient(self, element, local_coordinates):
@@ -94,12 +93,13 @@ class P0DiscontinuousFunctionSpace(_FunctionSpace):
             local_coordinates,
             self.grid.data,
             self.local_multipliers,
+            self.normal_multipliers
         )
 
 
 @_numba.njit
 def _numba_evaluate(
-    element_index, shapeset_evaluate, local_coordinates, grid_data, local_multipliers
+    element_index, shapeset_evaluate, local_coordinates, grid_data, local_multipliers, normal_multipliers
 ):
     """Evaluate the basis on an element."""
     return shapeset_evaluate(local_coordinates)
@@ -107,7 +107,7 @@ def _numba_evaluate(
 
 @_numba.njit
 def _numba_surface_gradient(
-    element_index, shapeset_gradient, local_coordinates, grid_data, local_multipliers
+    element_index, shapeset_gradient, local_coordinates, grid_data, local_multipliers, normal_multipliers
 ):
     """Evaluate the surface gradient."""
     return _np.zeros((1, 3, 1, local_coordinates.shape[1]), dtype=_np.float64)

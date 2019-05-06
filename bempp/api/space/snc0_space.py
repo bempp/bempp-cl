@@ -101,7 +101,7 @@ class Snc0FunctionSpace(_FunctionSpace):
         identifier = "snc0"
 
         localised_space = LocalisedFunctionSpace(
-                grid, codomain_dimension, order, shapeset,
+                grid, codomain_dimension, order, shapeset, 3,
                 identifier, support, normal_mult, self.numba_evaluate,
                 None)
 

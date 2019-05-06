@@ -26,17 +26,23 @@ def function_space(
         if degree == 0:
             from .p0_discontinuous_space import P0DiscontinuousFunctionSpace
 
-            return P0DiscontinuousFunctionSpace(grid, support_elements, segments)
+            return P0DiscontinuousFunctionSpace(
+                grid, support_elements, segments, swapped_normals
+            )
         if degree == 1:
             from .p1_discontinuous_space import P1DiscontinuousFunctionSpace
 
-            return P1DiscontinuousFunctionSpace(grid)
+            return P1DiscontinuousFunctionSpace(
+                grid, support_elements, segments, swapped_normals
+            )
 
     if kind == "P":
         if degree == 1:
             from .p1_continuous_space import P1ContinuousFunctionSpace
 
-            return P1ContinuousFunctionSpace(grid)
+            return P1ContinuousFunctionSpace(
+                grid, support_elements, segments, swapped_normals, **kwargs
+            )
 
     if kind == "RWG":
         if degree == 0:

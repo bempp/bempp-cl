@@ -37,6 +37,7 @@ class Rwg0FunctionSpace(_FunctionSpace):
         local_multipliers = _np.zeros((number_of_elements, 3), dtype="float64")
         edge_dofs = -_np.ones(grid.number_of_edges, dtype="int32")
 
+
         delete_from_support = []
 
         count = 0
@@ -113,6 +114,7 @@ class Rwg0FunctionSpace(_FunctionSpace):
             codomain_dimension,
             order,
             shapeset,
+            3,
             identifier,
             support,
             normal_mult,

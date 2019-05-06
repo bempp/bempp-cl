@@ -12,7 +12,7 @@ class LocalisedFunctionSpace(_FunctionSpace):
     """Generic definition of a localised space."""
 
     def __init__(self, grid, codomain_dimension, order, 
-            shapeset, identifier, support, normal_multipliers, 
+            shapeset, local_size, identifier, support, normal_multipliers, 
             numba_evaluate, numba_surface_gradient):
         """Initialize with a given grid."""
 
@@ -22,21 +22,21 @@ class LocalisedFunctionSpace(_FunctionSpace):
         support_size = _np.count_nonzero(support)
 
         support_size = _np.count_nonzero(support)
-        local2global_map = _np.zeros((number_of_elements, 3), dtype="uint32")
+        local2global_map = _np.zeros((number_of_elements, local_size), dtype="uint32")
         local2global_map[support] = _np.arange(
-                3 * support_size, dtype="uint32").reshape(
+                local_size * support_size, dtype="uint32").reshape(
                         (support_size, 3)
         )
 
-        local_multipliers = _np.zeros((number_of_elements, 3), dtype="float64")
+        local_multipliers = _np.zeros((number_of_elements, local_size), dtype="float64")
         local_multipliers[support] = 1
 
-        global_dof_count = 3 * support_size
+        global_dof_count = local_size * support_size
 
         localised_space = self
 
         map_to_localised_space = identity(
-            3 * support_size, dtype="float64", format="csr"
+            local_size * support_size, dtype="float64", format="csr"
         )
 
         color_map = _np.zeros(support_size, dtype="uint32")
