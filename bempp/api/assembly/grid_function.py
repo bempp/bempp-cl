@@ -328,6 +328,9 @@ class GridFunction(object):
         """
         import bempp.api
 
+        if dual_space is None:
+            dual_space = self.dual_space
+
         if (dual_space == self._dual_space and
                 self._projections is not None):
             return self._projections
