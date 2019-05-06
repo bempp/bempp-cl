@@ -318,8 +318,15 @@ class DenseDiscreteBoundaryOperator(DiscreteBoundaryOperator):
         if isinstance(other, DenseDiscreteBoundaryOperator):
             return DenseDiscreteBoundaryOperator(self.A.dot(other.A))
         if _np.isscalar(other):
-            return DenseDiscreteBoundaryOperator(
-                    self.A * _np.dtype(self.dtype).type(other))
+            if self.A.dtype in ['float32', 'complex64']:
+                # Necessary to ensure that scalar multiplication does not change
+                # precision to double precision.
+                if _np.iscomplexobj(other):
+                    return DenseDiscreteBoundaryOperator(self.A * _np.dtype('complex64').type(other))
+                else:
+                    return DenseDiscreteBoundaryOperator(self.A * _np.dtype('float32').type(other))
+            else:
+                return DenseDiscreteBoundaryOperator(self.A * other)
         return super(DenseDiscreteBoundaryOperator, self).dot(other)
 
     def __rmul__(self, other):
