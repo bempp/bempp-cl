@@ -4,13 +4,18 @@
 #include "kernels.h"
 
 __kernel void evaluate_electric_field_potential_novec(
-    __global REALTYPE *grid, __global REALTYPE *evalPoints,
+    __global REALTYPE *grid, 
+    __global uint* indices,
+    __global int* normalSigns,
+    __global REALTYPE *evalPoints,
     __global REALTYPE *coefficients, __constant REALTYPE *quadPoints,
     __constant REALTYPE *quadWeights, __global REALTYPE *globalResult) {
   size_t gid[2];
 
   gid[0] = get_global_id(0);
   gid[1] = get_global_id(1);
+
+  size_t elementIndex = indices[gid[1]];
 
   size_t lid = get_local_id(1);
   size_t groupId = get_group_id(1);
@@ -64,8 +69,8 @@ __kernel void evaluate_electric_field_potential_novec(
   }
 #else
   for (i = 0; i < 3; ++i) {
-    myCoefficients[i][0] = coefficients[2 * (3 * gid[1] + i)];
-    myCoefficients[i][1] = coefficients[2 * (3 * gid[1] + i) + 1];
+    myCoefficients[i][0] = coefficients[2 * (3 * elementIndex + i)];
+    myCoefficients[i][1] = coefficients[2 * (3 * elementIndex + i) + 1];
   }
 #endif
 
@@ -90,9 +95,11 @@ __kernel void evaluate_electric_field_potential_novec(
       shapeIntegral[i][j][1] = M_ZERO;
     }
 
-  getCorners(grid, gid[1], corners);
+  getCorners(grid, elementIndex, corners);
   getJacobian(corners, jacobian);
   getNormalAndIntegrationElement(jacobian, &normal, &intElem);
+
+  updateNormals(elementIndex, normalSigns, &normal);
 
   computeEdgeLength(corners, edgeLengths);
 

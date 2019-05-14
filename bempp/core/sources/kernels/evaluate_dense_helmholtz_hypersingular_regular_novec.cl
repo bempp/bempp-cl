@@ -5,6 +5,7 @@
 
 __kernel void evaluate_dense_helmholtz_hypersingular_novec(
     __global uint* testIndices, __global uint* trialIndices,
+    __global int *testNormalSigns, __global int *trialNormalSigns,
     __global REALTYPE* testGrid, __global REALTYPE* trialGrid,
     __global uint* testConnectivity, __global uint* trialConnectivity,
     __global uint* testLocal2Global, __global uint* trialLocal2Global,
@@ -114,6 +115,9 @@ __kernel void evaluate_dense_helmholtz_hypersingular_novec(
 
   getNormalAndIntegrationElement(testJac, &testNormal, &testIntElem);
   getNormalAndIntegrationElement(trialJac, &trialNormal, &trialIntElem);
+
+  updateNormals(testIndex, testNormalSigns, &testNormal);
+  updateNormals(trialIndex, trialNormalSigns, &trialNormal);
 
   testInv[0][0] = dot(testJac[1], testJac[1]);
   testInv[1][1] = dot(testJac[0], testJac[0]);

@@ -210,13 +210,11 @@ def _color_grid(grid, support):
     of the same color do not share any edges The coloring
     algorithm is a simple greedy algorithm.
     """
-    number_of_elements = grid.number_of_elements
-    colors = -_np.ones(number_of_elements)
+    support_elements = _np.flatnonzero(support)
+    number_of_elements = len(support_elements)
+    colors = number_of_elements * [-1]
 
-    for element in grid.entity_iterator(0):
-        element_index = element.index
-        if not support[element_index]:
-            continue
+    for index, element_index in enumerate(support_elements):
         neighbors = []
         for local_index in range(3):
             edge_neighbors = grid.edge_neighbors[
@@ -232,7 +230,7 @@ def _color_grid(grid, support):
                     neighbors.append(other)
         if neighbors is None:
             # No neighbors, can have color 0
-            colors[element.index] = 0
+            colors[index] = 0
         else:
             neighbor_colors = [colors[index] for index in neighbors]
             colors[element_index] = next(

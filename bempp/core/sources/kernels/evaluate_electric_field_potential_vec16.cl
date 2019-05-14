@@ -4,7 +4,10 @@
 #include "kernels.h"
 
 __kernel void evaluate_electric_field_potential_vec16(
-    __global REALTYPE *grid, __global REALTYPE *evalPoints,
+    __global REALTYPE *grid, 
+    __global uint* indices,
+    __global int* normalSigns,
+    __global REALTYPE *evalPoints,
     __global REALTYPE *coefficients, __constant REALTYPE *quadPoints,
     __constant REALTYPE *quadWeights, __global REALTYPE *globalResult) {
   size_t gid[2];
@@ -18,11 +21,24 @@ __kernel void evaluate_electric_field_potential_vec16(
 
 
   size_t elementIndex[16] = {
-      16 * gid[1] + 0,  16 * gid[1] + 1,  16 * gid[1] + 2,  16 * gid[1] + 3,
-      16 * gid[1] + 4,  16 * gid[1] + 5,  16 * gid[1] + 6,  16 * gid[1] + 7,
-      16 * gid[1] + 8,  16 * gid[1] + 9,  16 * gid[1] + 10, 16 * gid[1] + 11,
-      16 * gid[1] + 12, 16 * gid[1] + 13, 16 * gid[1] + 14, 16 * gid[1] + 15};
-
+      indices[16 * gid[1] + 0],  
+      indices[16 * gid[1] + 1],  
+      indices[16 * gid[1] + 2],  
+      indices[16 * gid[1] + 3],  
+      indices[16 * gid[1] + 4],  
+      indices[16 * gid[1] + 5],  
+      indices[16 * gid[1] + 6],  
+      indices[16 * gid[1] + 7],  
+      indices[16 * gid[1] + 8],  
+      indices[16 * gid[1] + 9],  
+      indices[16 * gid[1] + 10],  
+      indices[16 * gid[1] + 11],  
+      indices[16 * gid[1] + 12],  
+      indices[16 * gid[1] + 13],  
+      indices[16 * gid[1] + 14],  
+      indices[16 * gid[1] + 15]};
+      
+      
   REALTYPE16 surfaceGlobalPoint[3];
 
   REALTYPE basisValue[3][2];
@@ -165,6 +181,8 @@ __kernel void evaluate_electric_field_potential_vec16(
   getCornersVec16(grid, elementIndex, corners);
   getJacobianVec16(corners, jacobian);
   getNormalAndIntegrationElementVec16(jacobian, normal, &intElem);
+
+  updateNormalsVec16(elementIndex, normalSigns, normal);
 
   computeEdgeLengthVec16(corners, edgeLengths);
 

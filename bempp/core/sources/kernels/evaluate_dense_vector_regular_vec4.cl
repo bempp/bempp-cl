@@ -5,6 +5,7 @@
 
 __kernel __attribute__((vec_type_hint(REALTYPE4))) void evaluate_dense_regular(
     __global uint* testIndices, __global uint* trialIndices,
+    __global int *testNormalSigns, __global int *trialNormalSigns,
     __global REALTYPE* testGrid, __global REALTYPE* trialGrid,
     __global uint* testConnectivity, __global uint* trialConnectivity,
     __constant REALTYPE* quadPoints,
@@ -99,6 +100,9 @@ __kernel __attribute__((vec_type_hint(REALTYPE4))) void evaluate_dense_regular(
 
     getNormalAndIntegrationElement(testJac, &testNormal, &testIntElem);
     getNormalAndIntegrationElementVec4(trialJac, trialNormal, &trialIntElem);
+
+    updateNormals(testIndex, testNormalSigns, &testNormal);
+    updateNormalsVec4(trialIndex, trialNormalSigns, trialNormal);
 
     for (testQuadIndex = 0; testQuadIndex < NUMBER_OF_QUAD_POINTS;
             ++testQuadIndex) {

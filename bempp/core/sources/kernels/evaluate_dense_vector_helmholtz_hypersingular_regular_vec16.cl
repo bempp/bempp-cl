@@ -5,6 +5,7 @@
 
 __kernel __attribute__((vec_type_hint(REALTYPE16))) void evaluate_dense_regular(
     __global uint* testIndices, __global uint* trialIndices,
+    __global int *testNormalSigns, __global int *trialNormalSigns,
     __global REALTYPE* testGrid, __global REALTYPE* trialGrid,
     __global uint* testConnectivity, __global uint* trialConnectivity,
     __constant REALTYPE* quadPoints,
@@ -145,6 +146,8 @@ __kernel __attribute__((vec_type_hint(REALTYPE16))) void evaluate_dense_regular(
 
     getNormalAndIntegrationElement(testJac, &testNormal, &testIntElem);
     getNormalAndIntegrationElementVec16(trialJac, trialNormal, &trialIntElem);
+    updateNormals(testIndex, testNormalSigns, &testNormal);
+    updateNormalsVec16(trialIndex, trialNormalSigns, trialNormal);
 
     testInv[0][0] = dot(testJac[1], testJac[1]);
     testInv[1][1] = dot(testJac[0], testJac[0]);

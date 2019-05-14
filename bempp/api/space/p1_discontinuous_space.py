@@ -33,7 +33,7 @@ class P1DiscontinuousFunctionSpace(_FunctionSpace):
         local_multipliers[support] = 1
 
         map_to_localised_space = identity(
-            number_of_support_elements, dtype="float64", format="csr"
+            3 * number_of_support_elements, dtype="float64", format="csr"
         )
 
 

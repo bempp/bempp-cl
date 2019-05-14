@@ -187,11 +187,10 @@ def _color_grid(grid, support):
     number_of_elements = len(support_elements)
     colors = number_of_elements * [-1]
 
-    for element in grid.entity_iterator(0):
-        element_index = element.index
-        if not support[element.index]: continue
-        neighbor_colors = [colors[e.index] for e in element.neighbors if support[e.index]]
-        colors[element.index] = next(
+    for index, element_index in enumerate(support_elements):
+        if not support[element_index]: continue
+        neighbor_colors = [colors[index] for e in grid.element_neighbors[element_index] if support[element_index]]
+        colors[index] = next(
             color for color in range(number_of_elements) if color not in neighbor_colors
         )
     return _np.array(colors, dtype="uint32")

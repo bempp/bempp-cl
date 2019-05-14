@@ -4,7 +4,10 @@
 #include "kernels.h"
 
 __kernel void evaluate_electric_field_potential_vec4(
-    __global REALTYPE *grid, __global REALTYPE *evalPoints,
+    __global REALTYPE *grid, 
+    __global uint* indices,
+    __global int* normalSigns,
+    __global REALTYPE *evalPoints,
     __global REALTYPE *coefficients, __constant REALTYPE *quadPoints,
     __constant REALTYPE *quadWeights, __global REALTYPE *globalResult) {
   size_t gid[2];
@@ -16,8 +19,11 @@ __kernel void evaluate_electric_field_potential_vec4(
   size_t groupId = get_group_id(1);
   size_t numGroups = get_num_groups(1);
 
-  size_t elementIndex[4] = {4 * gid[1] + 0, 4 * gid[1] + 1, 4 * gid[1] + 2,
-                            4 * gid[1] + 3};
+  size_t elementIndex[4] = {
+      indices[4 * gid[1] + 0],
+      indices[4 * gid[1] + 1],
+      indices[4 * gid[1] + 2],
+      indices[4 * gid[1] + 3]};
 
   REALTYPE4 surfaceGlobalPoint[3];
 
@@ -108,6 +114,8 @@ __kernel void evaluate_electric_field_potential_vec4(
   getCornersVec4(grid, elementIndex, corners);
   getJacobianVec4(corners, jacobian);
   getNormalAndIntegrationElementVec4(jacobian, normal, &intElem);
+
+  updateNormalsVec4(elementIndex, normalSigns, normal);
 
   computeEdgeLengthVec4(corners, edgeLengths);
 

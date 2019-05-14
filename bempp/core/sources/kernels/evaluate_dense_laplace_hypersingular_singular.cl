@@ -4,7 +4,9 @@
 #include "kernels.h"
 
 __kernel void evaluate_dense_laplace_hypersingular_singular(
-    __global REALTYPE *grid, __global REALTYPE *testPoints,
+    __global REALTYPE *grid, 
+    __global int *testNormalSigns, __global int *trialNormalSigns,
+    __global REALTYPE *testPoints,
     __global REALTYPE *trialPoints, __global REALTYPE *quadWeights,
     __global uint *testIndices, __global uint *trialIndices,
     __global uint *testOffsets, __global uint *trialOffsets,
@@ -79,6 +81,9 @@ __kernel void evaluate_dense_laplace_hypersingular_singular(
 
   getNormalAndIntegrationElement(testJac, &testNormal, &testIntElem);
   getNormalAndIntegrationElement(trialJac, &trialNormal, &trialIntElem);
+
+  updateNormals(testIndex, testNormalSigns, &testNormal);
+  updateNormals(trialIndex, trialNormalSigns, &trialNormal);
 
   testInv[0][0] = dot(testJac[1], testJac[1]);
   testInv[1][1] = dot(testJac[0], testJac[0]);

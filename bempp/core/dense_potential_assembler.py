@@ -42,10 +42,10 @@ class DensePotentialAssembler(object):
         else:
             self._precision = precision
 
-        if operator_descriptor.compute_kernel == 'default_dense':
-            self._compute_kernel = 'evaluate_scalar_potential'
-        elif operator_descriptor.compute_kernel == 'maxwell_electric_field':
-            self._compute_kernel = 'evaluate_electric_field_potential'
+        if operator_descriptor.compute_kernel == "default_dense":
+            self._compute_kernel = "evaluate_scalar_potential"
+        elif operator_descriptor.compute_kernel == "maxwell_electric_field":
+            self._compute_kernel = "evaluate_electric_field_potential"
         else:
             raise ValueError("Unknown compute kernel for potential.")
 
@@ -92,7 +92,7 @@ class DensePotentialAssembler(object):
 
         localised_space = self.space.localised_space
         grid = localised_space.grid
-        localised_coefficients = self.space.map_to_localised_space.dot(coefficients)
+        localised_coefficients = self.space.map_to_full_grid.dot(coefficients)
 
         order = self.parameters.quadrature.regular
         dtype = _cl_helpers.get_type(self.precision).real
@@ -150,6 +150,18 @@ class DensePotentialAssembler(object):
             order="F",
         )
 
+        normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
+            localised_space.normal_multipliers,
+            self.device_interface,
+            dtype=_np.int32,
+            access_mode="read_only",
+        )
+
+        indices = localised_space.support_elements.astype("uint32")
+        indices_buffer = _cl_helpers.DeviceBuffer.from_array(
+            indices, self.device_interface, dtype=_np.uint32, access_mode="read_only"
+        )
+
         grid_buffer = grid.push_to_device(self.device_interface, self.precision).buffer
 
         workgroup_size = 128
@@ -160,7 +172,7 @@ class DensePotentialAssembler(object):
         options["NUMBER_OF_QUAD_POINTS"] = len(quad_weights)
 
         main_size, remainder_size = kernel_helpers.closest_multiple_to_number(
-            grid.number_of_elements, workgroup_size
+            localised_space.number_of_support_elements, workgroup_size
         )
 
         result_buffer = _cl_helpers.DeviceBuffer(
@@ -182,7 +194,7 @@ class DensePotentialAssembler(object):
             sum_buffer = _cl_helpers.DeviceBuffer(
                 (
                     self.kernel_dimension * npoints,
-                    grid.number_of_elements // workgroup_size,
+                    localised_space.number_of_support_elements // workgroup_size,
                 ),
                 result_type,
                 self.device_interface.context,
@@ -211,6 +223,8 @@ class DensePotentialAssembler(object):
                 (npoints, main_size // vec_length),
                 (1, workgroup_size // vec_length),
                 grid_buffer,
+                indices_buffer,
+                normal_signs_buffer,
                 points_buffer,
                 coefficients_buffer,
                 quad_points_buffer,
@@ -226,10 +240,11 @@ class DensePotentialAssembler(object):
                 (1,),
                 sum_buffer,
                 result_buffer,
-                _np.uint32(grid.number_of_elements // workgroup_size),
+                _np.uint32(localised_space.number_of_support_elements // workgroup_size),
             )
 
             event.wait()
+
 
         if remainder_size > 0:
 
@@ -247,6 +262,8 @@ class DensePotentialAssembler(object):
                 (npoints, remainder_size),
                 (1, remainder_size),
                 grid_buffer,
+                indices_buffer,
+                normal_signs_buffer,
                 points_buffer,
                 coefficients_buffer,
                 quad_points_buffer,

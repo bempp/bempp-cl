@@ -90,6 +90,7 @@ class _FunctionSpace(_abc.ABC):
         """Initialisation of base class."""
 
         from .shapesets import Shapeset
+        from scipy.sparse import coo_matrix
 
         self._grid = space_data.grid
         self._codomain_dimension = space_data.codomain_dimension
@@ -117,6 +118,21 @@ class _FunctionSpace(_abc.ABC):
         self._inverse_mass_matrix = None
 
         self._map_to_localised_space = space_data.map_to_localised_space
+
+        nshape_fun = self.number_of_shape_functions
+        self._map_to_full_grid = coo_matrix(
+            (
+                self._local_multipliers[self._support].ravel(),
+                (
+                    nshape_fun * _np.repeat(self._support_elements, nshape_fun)
+                    + _np.tile(_np.arange(nshape_fun), self._number_of_support_elements),
+                    self._local2global_map[self._support].ravel(),
+                ),
+            ),
+            shape=(nshape_fun * self._grid.number_of_elements, self._global_dof_count),
+            dtype="float64",
+        ).tocsr()
+
         self._compute_elements_by_color()
 
     @property
@@ -216,6 +232,12 @@ class _FunctionSpace(_abc.ABC):
         """Return a sparse matrix that maps dofs to localised space."""
 
         return self._map_to_localised_space
+
+    @property
+    def map_to_full_grid(self):
+        """Return a sparse matrix that maps dofs to localised space on full grid."""
+
+        return self._map_to_full_grid
 
     def get_elements_by_color(self):
         """

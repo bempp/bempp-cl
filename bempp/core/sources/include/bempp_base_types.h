@@ -67,4 +67,7 @@ typedef struct Geometry
 /* Print out a complex variable for debugging. */
 #define PRINT_COMPLEX(A, INFO) printf(INFO" %e %e\n", A[0], A[1])
 
+/* Print out a real variable for debugging. */
+#define PRINT_REAL(A, INFO) printf(INFO" %e \n", A)
+
 #endif

@@ -185,6 +185,8 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
         trial_grid = self.domain.localised_space.grid
         test_grid = self.dual_to_range.localised_space.grid
 
+        trial_nshape_fun = self.domain.number_of_shape_functions
+
         domain_support_size = self.domain.localised_space.number_of_support_elements
         dual_to_range_support_size = self.dual_to_range.localised_space.number_of_support_elements
 
@@ -238,7 +240,7 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
         ).buffer
 
         input_buffer = _cl_helpers.DeviceBuffer(
-            shape[1],
+            trial_grid.number_of_elements * trial_nshape_fun
             result_type,
             device_interface.context,
             access_mode="read_only",
@@ -298,7 +300,7 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
         from bempp.core import kernel_helpers
         from bempp.api import log
 
-        mat_trial = self.domain.map_to_localised_space
+        mat_trial = self.domain.map_to_full_grid
         mat_test = self.dual_to_range.map_to_localised_space
 
         with self._input_buffer.host_array(self._device_interface, "write") as array:
