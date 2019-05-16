@@ -105,17 +105,6 @@ class Snc0FunctionSpace(_FunctionSpace):
                 identifier, support, normal_mult, self.numba_evaluate,
                 None)
 
-        map_to_localised_space = coo_matrix(
-            (
-                local_multipliers[support].ravel(),
-                (_np.arange(3 * support_size), local2global_map[support].ravel()),
-            ),
-            shape=(3 * support_size, global_dof_count),
-            dtype="float64",
-        ).tocsr()
-
-        color_map = _color_grid(grid, support)
-
         space_data = _SpaceData(
             grid,
             codomain_dimension,
@@ -127,8 +116,6 @@ class Snc0FunctionSpace(_FunctionSpace):
             identifier,
             support,
             localised_space,
-            color_map,
-            map_to_localised_space,
             normal_mult
         )
 
@@ -200,42 +187,3 @@ def _numba_evaluate(
 
     return result
 
-
-def _color_grid(grid, support):
-    """
-    Find and return a coloring of the grid.
-
-    The coloring is defined so that two elements are neighbours
-    if they share a common edge. This ensures that all elements
-    of the same color do not share any edges The coloring
-    algorithm is a simple greedy algorithm.
-    """
-    support_elements = _np.flatnonzero(support)
-    number_of_elements = len(support_elements)
-    colors = number_of_elements * [-1]
-
-    for index, element_index in enumerate(support_elements):
-        neighbors = []
-        for local_index in range(3):
-            edge_neighbors = grid.edge_neighbors[
-                grid.element_edges[local_index, element_index]
-            ]
-            if len(edge_neighbors) > 1:
-                other = (
-                    edge_neighbors[1]
-                    if edge_neighbors[0] == element_index
-                    else edge_neighbors[0]
-                )
-                if support[other]:
-                    neighbors.append(other)
-        if neighbors is None:
-            # No neighbors, can have color 0
-            colors[index] = 0
-        else:
-            neighbor_colors = [colors[index] for index in neighbors]
-            colors[element_index] = next(
-                color
-                for color in range(number_of_elements)
-                if color not in neighbor_colors
-            )
-    return colors[support].astype("uint32").copy()

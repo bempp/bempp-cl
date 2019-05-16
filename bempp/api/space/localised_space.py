@@ -35,12 +35,6 @@ class LocalisedFunctionSpace(_FunctionSpace):
 
         localised_space = self
 
-        map_to_localised_space = identity(
-            local_size * support_size, dtype="float64", format="csr"
-        )
-
-        color_map = _np.zeros(support_size, dtype="uint32")
-
         localised_space_data = _SpaceData(
                 grid,
                 codomain_dimension,
@@ -52,8 +46,6 @@ class LocalisedFunctionSpace(_FunctionSpace):
                 identifier + "_localised",
                 support,
                 self,
-                color_map,
-                map_to_localised_space,
                 normal_multipliers)
 
 

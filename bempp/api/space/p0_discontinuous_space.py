@@ -40,12 +40,6 @@ class P0DiscontinuousFunctionSpace(_FunctionSpace):
 
         localised_space = self
 
-        color_map = _np.zeros(support_size, dtype="uint32")
-
-        map_to_localised_space = identity(
-            support_size, dtype="float64", format="csr"
-        )
-
         space_data = _SpaceData(
             grid,
             codomain_dimension,
@@ -57,8 +51,6 @@ class P0DiscontinuousFunctionSpace(_FunctionSpace):
             identifier,
             support,
             localised_space,
-            color_map,
-            map_to_localised_space,
             normal_multipliers
         )
 

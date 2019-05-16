@@ -90,17 +90,6 @@ class P1ContinuousFunctionSpace(_FunctionSpace):
             None,
         )
 
-        color_map = _color_grid(grid, support)
-
-        map_to_localised_space = coo_matrix(
-            (
-                local_multipliers[support_final].ravel(),
-                (_np.arange(3 * support_size), local2global_final[support_final].ravel()),
-            ),
-            shape=(3 * support_size, global_dof_count),
-            dtype="float64",
-        ).tocsr()
-
         space_data = _SpaceData(
             grid,
             codomain_dimension,
@@ -112,8 +101,6 @@ class P1ContinuousFunctionSpace(_FunctionSpace):
             identifier,
             support,
             localised_space,
-            color_map,
-            map_to_localised_space,
             normal_multipliers
         )
 
@@ -173,24 +160,3 @@ def _numba_surface_gradient(
         )
     return result
 
-
-def _color_grid(grid, support):
-    """
-    Find and return a coloring of the grid.
-
-    The coloring is defined so that two elements are neighbours
-    if they share a common vertex. This ensures that all elements
-    of the same color do not share any vertices. The coloring
-    algorithm is a simple greedy algorithm.
-    """
-    support_elements = _np.flatnonzero(support)
-    number_of_elements = len(support_elements)
-    colors = number_of_elements * [-1]
-
-    for index, element_index in enumerate(support_elements):
-        if not support[element_index]: continue
-        neighbor_colors = [colors[index] for e in grid.element_neighbors[element_index] if support[element_index]]
-        colors[index] = next(
-            color for color in range(number_of_elements) if color not in neighbor_colors
-        )
-    return _np.array(colors, dtype="uint32")

@@ -240,7 +240,7 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
         ).buffer
 
         input_buffer = _cl_helpers.DeviceBuffer(
-            trial_grid.number_of_elements * trial_nshape_fun
+            trial_nshape_fun * trial_grid.number_of_elements,
             result_type,
             device_interface.context,
             access_mode="read_only",

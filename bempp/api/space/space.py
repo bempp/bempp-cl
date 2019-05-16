@@ -76,8 +76,6 @@ _SpaceData = _namedtuple(
         "identifier",
         "support",
         "localised_space",
-        "color_map",
-        "map_to_localised_space",
         "normal_multipliers",
     ],
 )
@@ -102,7 +100,7 @@ class _FunctionSpace(_abc.ABC):
         self._identifier = space_data.identifier
         self._support = space_data.support
         self._localised_space = space_data.localised_space
-        self._color_map = space_data.color_map
+        self._color_map = None
         self._global2local_map = self._invert_local2global_map(
             self._local2global_map,
             self._grid.number_of_elements,
@@ -117,15 +115,26 @@ class _FunctionSpace(_abc.ABC):
         self._mass_matrix = None
         self._inverse_mass_matrix = None
 
-        self._map_to_localised_space = space_data.map_to_localised_space
-
         nshape_fun = self.number_of_shape_functions
+
+        self._map_to_localised_space = coo_matrix(
+            (
+                self._local_multipliers[self._support].ravel(),
+                (_np.arange(nshape_fun * self._number_of_support_elements), self._local2global_map[self._support].ravel()),
+            ),
+            shape=(nshape_fun * self._number_of_support_elements, self.global_dof_count),
+            dtype="float64",
+        ).tocsr()
+
+
         self._map_to_full_grid = coo_matrix(
             (
                 self._local_multipliers[self._support].ravel(),
                 (
                     nshape_fun * _np.repeat(self._support_elements, nshape_fun)
-                    + _np.tile(_np.arange(nshape_fun), self._number_of_support_elements),
+                    + _np.tile(
+                        _np.arange(nshape_fun), self._number_of_support_elements
+                    ),
                     self._local2global_map[self._support].ravel(),
                 ),
             ),
@@ -133,7 +142,8 @@ class _FunctionSpace(_abc.ABC):
             dtype="float64",
         ).tocsr()
 
-        self._compute_elements_by_color()
+        self._compute_color_map()
+        self._sort_elements_by_color()
 
     @property
     def grid(self):
@@ -287,6 +297,10 @@ class _FunctionSpace(_abc.ABC):
         """Check if space is compatible with other space."""
         return self == other
 
+    def vertex_on_boundary(self):
+        """Return true if vertex is on boundary of segment."""
+
+
     def _invert_local2global_map(
         self, local2global_map, number_of_elements, global_dof_count
     ):
@@ -300,7 +314,28 @@ class _FunctionSpace(_abc.ABC):
                     global2local_map[dof].append([elem_index, local_index])
         return global2local_map
 
-    def _compute_elements_by_color(self):
+    def _compute_color_map(self):
+        """Compute the color map."""
+
+        def get_neighbors(element_index):
+            """Get all global dof neighbors of an element."""
+            global_dofs = self.local2global[element_index]
+            neighbors = {
+                    elem for global_dof in global_dofs
+                    for elem, _ in self.global2local[global_dof]
+                    if self.support[elem] and elem != element_index}
+            return list(neighbors)
+
+        self._color_map = -_np.ones(self.grid.number_of_elements, dtype=_np.int32)
+        for element_index in self.support_elements:
+            neighbor_colors = self._color_map[get_neighbors(element_index)]
+            self._color_map[element_index] = next(
+                color
+                for color in range(self.number_of_support_elements)
+                if color not in neighbor_colors
+            )
+
+    def _sort_elements_by_color(self):
         """Implement elements by color computation."""
         sorted_indices = _np.empty(self.number_of_support_elements, dtype="uint32")
         ncolors = 1 + max(self.color_map)

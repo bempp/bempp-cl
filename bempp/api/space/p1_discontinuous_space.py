@@ -32,18 +32,11 @@ class P1DiscontinuousFunctionSpace(_FunctionSpace):
 
         local_multipliers[support] = 1
 
-        map_to_localised_space = identity(
-            3 * number_of_support_elements, dtype="float64", format="csr"
-        )
-
-
         codomain_dimension = 1
         order = 1
         identifier = "p1_discontinuous"
 
         localised_space = self
-
-        color_map = _np.zeros(number_of_support_elements, dtype="uint32")
 
         space_data = _SpaceData(
             grid,
@@ -56,8 +49,6 @@ class P1DiscontinuousFunctionSpace(_FunctionSpace):
             identifier,
             support,
             localised_space,
-            color_map,
-            map_to_localised_space,
             normal_multipliers
         )
 
