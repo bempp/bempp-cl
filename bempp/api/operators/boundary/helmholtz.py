@@ -188,7 +188,9 @@ def hypersingular(
 def multitrace_operator(
     grid,
     wavenumber,
+    segments=None,
     parameters=None,
+    swapped_normals=None,
     assembler="multitrace_evaluator",
     device_interface=None,
     precision=None,
@@ -200,7 +202,14 @@ def multitrace_operator(
     if assembler != "multitrace_evaluator":
         raise ValueError("Only multitrace evaluator supported.")
 
-    domain = function_space(grid, "P", 1)
+    domain = function_space(
+        grid,
+        "P",
+        1,
+        segments=segments,
+        include_boundary_dofs=True,
+        swapped_normals=swapped_normals,
+    )
     range_ = domain
     dual_to_range = domain
 
@@ -252,9 +261,7 @@ def multitrace_operator(
 
     _add_wavenumber(options, wavenumber)
 
-    singular_contribution = _np.array(
-        [[-dlp, slp], [hyp, adlp]], dtype=_np.object
-    )
+    singular_contribution = _np.array([[-dlp, slp], [hyp, adlp]], dtype=_np.object)
     return _common.create_multitrace_operator(
         "helmholtz_multitrace",
         [domain, domain],
@@ -268,6 +275,7 @@ def multitrace_operator(
         device_interface,
         precision,
     )
+
 
 def transmission_operator(
     grid,
@@ -387,7 +395,11 @@ def transmission_operator(
     _add_wavenumber(options, wavenumber_int, "WAVENUMBER_INT")
 
     singular_contribution = _np.array(
-        [[-dlp - dlp_int, slp + rho_rel * slp_int], [hyp + 1. / rho_rel * hyp_int, adlp + adlp_int]], dtype=_np.object
+        [
+            [-dlp - dlp_int, slp + rho_rel * slp_int],
+            [hyp + 1.0 / rho_rel * hyp_int, adlp + adlp_int],
+        ],
+        dtype=_np.object,
     )
 
     return _common.create_multitrace_operator(

@@ -508,9 +508,9 @@ __kernel void evaluate_dense_maxwell_multitrace_vector_regular(
                 localCoeffsElectric[j][1] = input[2 * (3 * trialIndex[vecIndex] + j) + 1];
 
                 localCoeffsMagnetic[j][0] =
-                    input[6 * TRIAL0_NUMBER_OF_ELEMENTS + 2 * (3 * trialIndex[vecIndex] + j)];
+                    input[6 * GRID_NUMBER_OF_ELEMENTS + 2 * (3 * trialIndex[vecIndex] + j)];
                 localCoeffsMagnetic[j][1] =
-                    input[6 * TRIAL0_NUMBER_OF_ELEMENTS + 2 * (3 * trialIndex[vecIndex] + j) + 1];
+                    input[6 * GRID_NUMBER_OF_ELEMENTS + 2 * (3 * trialIndex[vecIndex] + j) + 1];
             }
 
             for (i = 0; i < 3; ++i)

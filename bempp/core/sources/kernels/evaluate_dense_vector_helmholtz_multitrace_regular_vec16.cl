@@ -516,10 +516,10 @@ __kernel void evaluate_dense_helmholtz_multitrace_vector_regular(
         localCoeffsDirichlet[j][1] =
             input[2 * (3 * trialIndex[vecIndex] + j) + 1];
 
-        localCoeffsNeumann[j][0] = input[6 * TRIAL0_NUMBER_OF_ELEMENTS +
+        localCoeffsNeumann[j][0] = input[6 * GRID_NUMBER_OF_ELEMENTS +
                                          2 * (3 * trialIndex[vecIndex] + j)];
         localCoeffsNeumann[j][1] =
-            input[6 * TRIAL0_NUMBER_OF_ELEMENTS +
+            input[6 * GRID_NUMBER_OF_ELEMENTS +
                   2 * (3 * trialIndex[vecIndex] + j) + 1];
       }
 

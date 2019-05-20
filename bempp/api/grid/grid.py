@@ -388,10 +388,11 @@ class Grid(object):
 
         self._vertex_neighbors = [None for _ in range(self.number_of_vertices)]
 
+        indptr = self.element_to_vertex_matrix.indptr
+        indices = self.element_to_vertex_matrix.indices
+
         for index in range(self.number_of_vertices):
-            x = _np.zeros(self.number_of_vertices)
-            x[index] = 1
-            self._vertex_neighbors[index] = _np.flatnonzero(x @ self.element_to_vertex_matrix)
+            self._vertex_neighbors[index] = indices[indptr[index]:indptr[index + 1]]
 
     def _normalize_and_assign_input(self, vertices, elements, domain_indices):
         """Convert input into the right form."""
@@ -1081,3 +1082,34 @@ def _get_element_neighbors(element_to_element_matrix):
         neighbors[element_index].remove(element_index)
 
     return neighbors
+
+def grid_from_segments(grid, segments):
+    """Return new grid from segments of existing grid."""
+
+    element_in_new_grid = _np.zeros(grid.number_of_elements, dtype=_np.bool)
+    vertices_in_new_grid = _np.zeros(grid.number_of_vertices, dtype=_np.bool)
+
+    for elem in range(grid.number_of_elements):
+        if grid.domain_indices[elem] in segments:
+            element_in_new_grid[elem] = True
+    new_elements = grid.elements[:, element_in_new_grid]
+    vertex_indices = list(set(new_elements.ravel()))
+    new_vertices = grid.vertices[:, vertex_indices]
+    new_vertex_map = -_np.ones(grid.number_of_vertices, dtype=_np.int)
+    new_vertex_map[vertex_indices] = _np.arange(len(vertex_indices))
+    new_elements = new_vertex_map[new_elements.ravel()].reshape(3, -1)
+
+    return Grid(new_vertices, new_elements)
+
+
+
+
+
+
+
+
+
+
+    
+
+

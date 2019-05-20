@@ -102,14 +102,14 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
                 [
                     [
                         SparseDiscreteBoundaryOperator(
-                            self._domain[0].map_to_localised_space
+                            self._domain[0].map_to_full_grid
                         ),
                         None,
                     ],
                     [
                         None,
                         SparseDiscreteBoundaryOperator(
-                            self._domain[1].map_to_localised_space
+                            self._domain[1].map_to_full_grid
                         ),
                     ],
                 ],
@@ -169,6 +169,8 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
             1
         ].number_of_support_elements
 
+        options["GRID_NUMBER_OF_ELEMENTS"] = localised_domain[0].grid.number_of_elements
+
         options["TEST0_NUMBER_OF_ELEMENTS"] = localised_dual_to_range[
             0
         ].number_of_support_elements
@@ -222,12 +224,8 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
                 remainder_source, device_interface.context, precision
             )
 
-        test_indices = _np.arange(
-            localised_dual_to_range[0].number_of_support_elements, dtype="uint32"
-        )
-        trial_indices = _np.arange(
-            localised_domain[0].number_of_support_elements, dtype="uint32"
-        )
+        test_indices = localised_dual_to_range[0].support_elements.astype("uint32")
+        trial_indices = localised_domain[0].support_elements.astype("uint32")
 
         test_indices_buffer = _cl_helpers.DeviceBuffer.from_array(
             test_indices, device_interface, dtype=_np.uint32, access_mode="read_only"
@@ -258,6 +256,9 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
         )
 
         dtype = _cl_helpers.get_type(precision).real
+
+        trial_nshape_fun0 = self.domain[0].number_of_shape_functions
+        trial_nshape_fun1 = self.domain[1].number_of_shape_functions
 
         if complex_kernel:
             result_type = _cl_helpers.get_type(precision).complex
@@ -302,7 +303,8 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
         ).buffer
 
         input_buffer = _cl_helpers.DeviceBuffer(
-            shape[1],
+            trial_nshape_fun0 * self.domain[0].grid.number_of_elements + 
+            trial_nshape_fun1 * self.domain[1].grid.number_of_elements,
             result_type,
             device_interface.context,
             access_mode="read_only",

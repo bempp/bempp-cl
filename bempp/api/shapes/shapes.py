@@ -178,7 +178,7 @@ def cube(length=1, origin=(0, 0, 0), h=0.1):
 
     return __generate_grid_from_geo_string(cube_geometry)
 
-def multigrid_cube(h=.1):
+def multitrace_cube(h=.1):
     """
     Definitition of a cube with an interface at z=.5.
 
