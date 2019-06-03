@@ -5,80 +5,109 @@
 import numpy as _np
 import numba as _numba
 
-from .space import _FunctionSpace, _SpaceData
-
+from .space import _FunctionSpace, _SpaceData, _process_segments
 
 class Snc0FunctionSpace(_FunctionSpace):
     """A space of RWG functions."""
 
-    def __init__(self, grid):
+    def __init__(self, grid, support_elements=None, segments=None, swapped_normals=None, include_boundary_dofs=False):
         """Initialize with a given grid."""
-        from .rwg0_localised_space import Rwg0LocalisedFunctionSpace
+        from .localised_space import LocalisedFunctionSpace
 
         from scipy.sparse import coo_matrix
 
         shapeset = "rwg0"
         number_of_elements = grid.number_of_elements
 
-        local2global_map = _np.empty((number_of_elements, 3), dtype="uint32")
+        support, normal_mult = _process_segments(
+            grid, support_elements, segments, swapped_normals
+        )
 
-        local_multipliers = _np.empty((number_of_elements, 3), dtype="float64")
 
+        elements_in_support = _np.flatnonzero(support)
+
+
+        local2global_map = _np.zeros((number_of_elements, 3), dtype="uint32")
+        local_multipliers = _np.zeros((number_of_elements, 3), dtype="float64")
         edge_dofs = -_np.ones(grid.number_of_edges, dtype="int32")
 
+        delete_from_support = []
+
         count = 0
-        for element_index in range(number_of_elements):
+        for element_index in elements_in_support:
             dofmap = -_np.ones(3, dtype="int32")
             for local_index in range(3):
                 edge_index = grid.element_edges[local_index, element_index]
                 edge_neighbors = grid.edge_neighbors[edge_index]
-                if len(edge_neighbors) == 1:
-                    # We are at the boundary and the dof should not be used.
+                support_neighbors = [n for n in edge_neighbors if support[n]]
 
-                    # Make sure that the grid is consistent.
-                    # The neighbor of the edge is really the element.
-                    assert edge_neighbors[0] == element_index
-                    local_multipliers[element_index, local_index] = 0
+                if len(support_neighbors) > 2:
+                    raise ValueError("Triple junction detected in space definition. Not allowed.")
+
+                if len(support_neighbors) == 1:
+                    other = -1  # There is no other neighbor
+                else:
+                    other = (
+                        support_neighbors[1]
+                        if element_index == support_neighbors[0]
+                        else support_neighbors[0]
+                    )
+
+                if other == -1:
+                    # We are at the boundary.
+                    if not include_boundary_dofs:
+                        local_multipliers[element_index, local_index] = 0
+                    else:
+                        local_multipliers[element_index, local_index] = 1
+                        dofmap[local_index] = count
+                        count += 1
                 else:
                     # Assign 1 or -1 depending on element index
                     local_multipliers[element_index, local_index] = (
-                        1 if element_index == min(edge_neighbors) else -1
+                        1 if element_index == min(support_neighbors) else -1
                     )
                     if edge_dofs[edge_index] == -1:
                         edge_dofs[edge_index] = count
                         count += 1
                     dofmap[local_index] = edge_dofs[edge_index]
-            # For every zero local multiplier assign an existing global dof
-            # in this element. This does not change the result as zero multipliers
-            # do not contribute. But it allows us not to have to distinguish between
-            # existing and non existing dofs later on.
-            arg_zeros = _np.flatnonzero(local_multipliers[element_index] == 0)
-            first_nonzero = _np.min(
-                _np.flatnonzero(local_multipliers[element_index] != 0)
-            )
-            dofmap[arg_zeros] = dofmap[first_nonzero]
-            local2global_map[element_index, :] = dofmap
+            
+            # Check if no dof was assigned to element. In that case the element
+            # needs to be deleted from the support.
+            if _np.all(dofmap == -1):
+                delete_from_support.append(element_index)
+                local_multipliers[element_index, :] = 0
+                local2global_map[element_index, :] = 0
+            else:
+                # For every zero local multiplier assign an existing global dof
+                # in this element. This does not change the result as zero multipliers
+                # do not contribute. But it allows us not to have to distinguish between
+                # existing and non existing dofs later on.
+                arg_zeros = _np.flatnonzero(local_multipliers[element_index] == 0)
+                first_nonzero = _np.min(
+                    _np.flatnonzero(local_multipliers[element_index] != 0)
+                )
+                dofmap[arg_zeros] = dofmap[first_nonzero]
+                local2global_map[element_index, :] = dofmap
 
         global_dof_count = count
 
-        support = _np.full(number_of_elements, True, dtype=bool)
+        for index in delete_from_support:
+            support[index] = False
+
+
+        support_size = _np.count_nonzero(support)
+
+        if support_size == 0:
+            raise ValueError("The support of the function space is empty.")
 
         codomain_dimension = 3
         order = 0
         identifier = "snc0"
 
-        localised_space = Rwg0LocalisedFunctionSpace(grid)
-
-        map_to_localised_space = coo_matrix(
-            (
-                local_multipliers.ravel(),
-                (_np.arange(3 * number_of_elements), local2global_map.ravel()),
-            ),
-            shape=(3 * number_of_elements, global_dof_count),
-            dtype="float64",
-        ).tocsr()
-
-        color_map = _color_grid(grid)
+        localised_space = LocalisedFunctionSpace(
+                grid, codomain_dimension, order, shapeset, 3,
+                identifier, support, normal_mult, self.numba_evaluate,
+                None)
 
         space_data = _SpaceData(
             grid,
@@ -91,8 +120,7 @@ class Snc0FunctionSpace(_FunctionSpace):
             identifier,
             support,
             localised_space,
-            color_map,
-            map_to_localised_space,
+            normal_mult
         )
 
         super().__init__(space_data)
@@ -115,6 +143,7 @@ class Snc0FunctionSpace(_FunctionSpace):
             local_coordinates,
             self.grid.data,
             self.local_multipliers,
+            self.normal_multipliers,
         )
 
     def surface_gradient(self, element, local_coordinates):
@@ -124,14 +153,14 @@ class Snc0FunctionSpace(_FunctionSpace):
 
 @_numba.njit
 def _numba_evaluate(
-    element_index, shapeset_evaluate, local_coordinates, grid_data, local_multipliers
+    element_index, shapeset_evaluate, local_coordinates, grid_data, local_multipliers, normal_multipliers
 ):
     """Evaluate the basis on an element."""
     reference_values = shapeset_evaluate(local_coordinates)
     npoints = local_coordinates.shape[1]
     result = _np.empty((3, 3, npoints), dtype=_np.float64)
     tmp = _np.empty((3, 3, npoints), dtype=_np.float64)
-    normal = grid_data.normals[element_index]
+    normal = grid_data.normals[element_index] * normal_multipliers[element_index]
 
 
     edge_lengths = _np.empty(3, dtype=_np.float64)
@@ -162,41 +191,3 @@ def _numba_evaluate(
 
     return result
 
-
-def _color_grid(grid):
-    """
-    Find and return a coloring of the grid.
-
-    The coloring is defined so that two elements are neighbours
-    if they share a common edge. This ensures that all elements
-    of the same color do not share any edges The coloring
-    algorithm is a simple greedy algorithm.
-    """
-    number_of_elements = grid.number_of_elements
-    colors = number_of_elements * [-1]
-
-    for element in grid.entity_iterator(0):
-        element_index = element.index
-        neighbors = []
-        for local_index in range(3):
-            edge_neighbors = grid.edge_neighbors[
-                grid.element_edges[local_index, element_index]
-            ]
-            if len(edge_neighbors) > 1:
-                other = (
-                    edge_neighbors[1]
-                    if edge_neighbors[0] == element_index
-                    else edge_neighbors[0]
-                )
-                neighbors.append(other)
-        if neighbors is None:
-            # No neighbors, can have color 0
-            colors[element.index] = 0
-        else:
-            neighbor_colors = [colors[index] for index in neighbors]
-            colors[element_index] = next(
-                color
-                for color in range(number_of_elements)
-                if color not in neighbor_colors
-            )
-    return _np.array(colors, dtype="uint32")

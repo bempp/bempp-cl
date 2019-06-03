@@ -88,8 +88,8 @@ def assemble_dense(
     options["NUMBER_OF_QUAD_POINTS"] = len(quad_weights)
     options["TEST"] = dual_to_range.shapeset.identifier
     options["TRIAL"] = domain.shapeset.identifier
-    options["TRIAL_NUMBER_OF_ELEMENTS"] = domain.grid.number_of_elements
-    options["TEST_NUMBER_OF_ELEMENTS"] = dual_to_range.grid.number_of_elements
+    options["TRIAL_NUMBER_OF_ELEMENTS"] = domain.number_of_support_elements
+    options["TEST_NUMBER_OF_ELEMENTS"] = dual_to_range.number_of_support_elements
 
     options["NUMBER_OF_TEST_SHAPE_FUNCTIONS"] = dual_to_range.number_of_shape_functions
 
@@ -131,12 +131,28 @@ def assemble_dense(
         trial_indices, device_interface, dtype=_np.uint32, access_mode="read_only"
     )
 
+    test_normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
+        dual_to_range.normal_multipliers,
+        device_interface,
+        dtype=_np.int32,
+        access_mode="read_only",
+    )
+    trial_normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
+        domain.normal_multipliers, device_interface, dtype=_np.int32, access_mode="read_only"
+    )
+
     runtime = kernel_helpers.run_chunked_kernel(
         main_kernel,
         remainder_kernel,
         device_interface,
         vec_length,
-        [test_indices_buffer, trial_indices_buffer, *buffers],
+        [
+            test_indices_buffer,
+            trial_indices_buffer,
+            test_normal_signs_buffer,
+            trial_normal_signs_buffer,
+            *buffers,
+        ],
         parameters,
         chunks=(test_color_indexptr, trial_color_indexptr),
     )
@@ -282,116 +298,3 @@ def _prepare_buffers(
     ]
 
     return buffers
-
-
-# def assemble_simple_constant_dense(
-#         domain, dual_to_range, parameters, operator_descriptor):
-#     """
-#     Really assemble the operator.
-
-#     Assembles the complete operator (near-field and far-field)
-#     Returns a dense matrix.
-#     """
-#     from bempp.api.integration.triangle_gauss import rule as regular_rule
-#     from bempp.api import log
-#     from bempp.core.singular_assembler import assemble_singular_part
-#     from bempp.core import kernel_helpers
-#     options = operator_descriptor.options.copy()
-
-#     order = parameters.quadrature.regular
-#     quad_points, quad_weights = regular_rule(order)
-
-#     if 'COMPLEX_KERNEL' in options:
-#         complex_kernel = True
-#     else:
-#         complex_kernel = False
-
-#     buffers = _prepare_buffers_simple_constant_dense(
-#         domain, dual_to_range, quad_points, quad_weights, complex_kernel)
-
-#     options['NUMBER_OF_QUAD_POINTS'] = len(quad_weights)
-
-#     vec_extension, vec_length = \
-#         kernel_helpers.get_vectorization_information()
-
-#     log("Regular kernel vector length: {0}".format(vec_length))
-
-#     main_source = _cl_helpers.kernel_source_from_identifier(
-#         'evaluate_simple_constant_dense_regular' + vec_extension, options
-#     )
-
-#     remainder_source = _cl_helpers.kernel_source_from_identifier(
-#         'evaluate_simple_constant_dense_regular_novec', options
-#     )
-
-#     main_kernel = _cl_helpers.Kernel(main_source)
-#     remainder_kernel = _cl_helpers.Kernel(remainder_source)
-
-#     events = kernel_helpers.run_2d_kernel(
-#         main_kernel, remainder_kernel, vec_length,
-#         buffers, parameters,
-#         (dual_to_range.global_dof_count, domain.global_dof_count),
-#         (0, 0))
-#     _cl_helpers.wait_for_events(events)
-#     runtime = sum([event.runtime() for event in events])
-
-#     log("Regular kernel runtime [ms]: {0}".format(runtime))
-
-
-#     regular_result = buffers[-2].get_host_copy()
-
-
-#     if domain.grid == dual_to_range.grid:
-
-#         singular_rows, singular_cols, singular_values = assemble_singular_part(
-#             domain.localised_space, dual_to_range.localised_space,
-#             parameters, operator_descriptor, 'evaluate_dense'
-#         )
-
-#         regular_result[singular_rows, singular_cols] = singular_values
-
-#     return regular_result
-
-
-# def _prepare_buffers_simple_constant_dense(
-#         domain, dual_to_range, quad_points,
-#         quad_weights, complex_kernel=False):
-#     """Prepare kernel buffers."""
-
-#     trial_grid = domain.grid
-#     test_grid = dual_to_range.grid
-
-#     shape = (dual_to_range.global_dof_count, domain.global_dof_count)
-
-#     dtype = _cl_helpers.default_types().real
-#     device = _cl_helpers.default_device()
-
-#     if complex_kernel:
-#         result_type = _cl_helpers.default_types().complex
-#     else:
-#         result_type = _cl_helpers.default_types().real
-
-
-#     quad_points_buffer = _cl_helpers.DeviceBuffer.from_array(
-#         quad_points, device, dtype=dtype, access_mode='read_only',
-#         order='F'
-#     )
-
-#     quad_weights_buffer = _cl_helpers.DeviceBuffer.from_array(
-#         quad_weights, device, dtype=dtype, access_mode='read_only',
-#         order='F'
-#     )
-
-#     test_grid_buffer = test_grid.push_to_device(device).buffer
-#     trial_grid_buffer = trial_grid.push_to_device(device).buffer
-
-#     result_buffer = _cl_helpers.DeviceBuffer(
-#         shape, result_type, device, access_mode='write_only',
-#         order='C', set_zero=True)
-
-#     buffers = [test_grid_buffer, trial_grid_buffer,
-#                quad_points_buffer, quad_weights_buffer,
-#                result_buffer, _np.uint32(domain.global_dof_count)
-#     ]
-
-#     return buffers

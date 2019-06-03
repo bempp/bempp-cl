@@ -5,6 +5,7 @@
 
 __kernel void evaluate_dense_helmholtz_multitrace_vector_regular(
     __global uint *testIndices, __global uint *trialIndices,
+    __global int *testNormalSigns, __global int *trialNormalSigns,
     __global REALTYPE *testGrid, __global REALTYPE *trialGrid,
     __global uint *testConnectivity, __global uint *trialConnectivity,
     __constant REALTYPE *quadPoints, __constant REALTYPE *quadWeights,
@@ -149,6 +150,8 @@ __kernel void evaluate_dense_helmholtz_multitrace_vector_regular(
 
   getNormalAndIntegrationElement(testJac, &testNormal, &testIntElem);
   getNormalAndIntegrationElementVec8(trialJac, trialNormal, &trialIntElem);
+  updateNormals(testIndex, testNormalSigns, &testNormal);
+  updateNormalsVec8(trialIndex, trialNormalSigns, trialNormal);
 
   testInv[0][0] = dot(testJac[1], testJac[1]);
   testInv[1][1] = dot(testJac[0], testJac[0]);
@@ -505,10 +508,10 @@ __kernel void evaluate_dense_helmholtz_multitrace_vector_regular(
         localCoeffsDirichlet[j][1] =
             input[2 * (3 * trialIndex[vecIndex] + j) + 1];
 
-        localCoeffsNeumann[j][0] = input[6 * TRIAL0_NUMBER_OF_ELEMENTS +
+        localCoeffsNeumann[j][0] = input[6 * GRID_NUMBER_OF_ELEMENTS +
                                          2 * (3 * trialIndex[vecIndex] + j)];
         localCoeffsNeumann[j][1] =
-            input[6 * TRIAL0_NUMBER_OF_ELEMENTS +
+            input[6 * GRID_NUMBER_OF_ELEMENTS +
                   2 * (3 * trialIndex[vecIndex] + j) + 1];
       }
 
@@ -590,16 +593,16 @@ __kernel void evaluate_dense_helmholtz_multitrace_vector_regular(
         localResultNeumann[0][i][0][1] += localResultNeumann[0][i][j][1];
       }
 
-      globalResult[2 * (numGroups * (3 * testIndex + i) + groupId)] +=
+      globalResult[2 * (numGroups * (3 * gid[0] + i) + groupId)] +=
           localResultDirichlet[0][i][0][0];
-      globalResult[2 * (numGroups * (3 * testIndex + i) + groupId) + 1] +=
+      globalResult[2 * (numGroups * (3 * gid[0] + i) + groupId) + 1] +=
           localResultDirichlet[0][i][0][1];
 
       globalResult[6 * TRIAL0_NUMBER_OF_ELEMENTS * numGroups +
-                   2 * (numGroups * (3 * testIndex + i) + groupId)] +=
+                   2 * (numGroups * (3 * gid[0] + i) + groupId)] +=
           localResultNeumann[0][i][0][0];
       globalResult[6 * TRIAL0_NUMBER_OF_ELEMENTS * numGroups +
-                   2 * (numGroups * (3 * testIndex + i) + groupId) + 1] +=
+                   2 * (numGroups * (3 * gid[0] + i) + groupId) + 1] +=
           localResultNeumann[0][i][0][1];
     }
   }

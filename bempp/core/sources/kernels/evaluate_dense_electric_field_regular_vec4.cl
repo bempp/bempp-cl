@@ -6,6 +6,7 @@
 __kernel __attribute__((vec_type_hint(REALTYPE4)))
 void evaluate_dense_electric_field_regular(
     __global uint *testIndices, __global uint *trialIndices,
+    __global int *testNormalSigns, __global int *trialNormalSigns,
     __global REALTYPE *testGrid, __global REALTYPE *trialGrid,
     __global uint *testConnectivity, __global uint *trialConnectivity,
     __global uint *testLocal2Global, __global uint *trialLocal2Global,
@@ -77,6 +78,7 @@ void evaluate_dense_electric_field_regular(
 
   REALTYPE4 shapeIntegral[3][3][2];
 
+
 // Computation of 1i * wavenumber and 1 / (1i * wavenumber)
 #ifdef WAVENUMBER_COMPLEX
   shiftedWavenumber[0] = -WAVENUMBER_COMPLEX;
@@ -123,6 +125,9 @@ void evaluate_dense_electric_field_regular(
 
   computeEdgeLength(testCorners, testEdgeLength);
   computeEdgeLengthVec4(trialCorners, trialEdgeLength);
+
+  updateNormals(testIndex, testNormalSigns, &testNormal);
+  updateNormalsVec4(trialIndex, trialNormalSigns, trialNormal);
 
   for (testQuadIndex = 0; testQuadIndex < NUMBER_OF_QUAD_POINTS;
        ++testQuadIndex) {

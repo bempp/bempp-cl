@@ -15,7 +15,7 @@ singular_order = 6
 parameters.quadrature.near.double_order = regular_order
 parameters.quadrature.near.single_order = regular_order
 parameters.quadrature.medium.double_order = regular_order
-parameters.quadrature.medium.single_order = regular_order 
+parameters.quadrature.medium.single_order = regular_order
 parameters.quadrature.far.double_order = regular_order
 parameters.quadrature.far.single_order = regular_order
 
@@ -38,10 +38,21 @@ def generate_bem_matrix(dual_to_range, domain, fname, operator, wavenumber=None)
     print("Generating " + fname)
 
     if wavenumber is None:
-        mat = operator(domain, domain, dual_to_range, use_projection_spaces=False).weak_form().A
+        mat = (
+            operator(domain, domain, dual_to_range, use_projection_spaces=False)
+            .weak_form()
+            .A
+        )
     else:
-        mat = operator(domain, domain, dual_to_range, wavenumber, use_projection_spaces=False).weak_form().A
+        mat = (
+            operator(
+                domain, domain, dual_to_range, wavenumber, use_projection_spaces=False
+            )
+            .weak_form()
+            .A
+        )
     np.save(fname, mat)
+
 
 def generate_sparse_bem_matrix(dual_to_range, domain, fname, operator):
     """Generate test matrix."""
@@ -49,6 +60,28 @@ def generate_sparse_bem_matrix(dual_to_range, domain, fname, operator):
 
     mat = operator(domain, domain, dual_to_range).weak_form().sparse_operator.todense()
     np.save(fname, mat)
+
+
+def generate_potential(domain, fname, operator, wavenumber=None):
+    """Generate off-surface potential data."""
+
+    npoints = 10
+    rand = np.random.RandomState(0)
+
+    points = 2.5 * np.ones((3, 1), dtype="float64") + rand.rand(3, npoints)
+
+    vec = np.random.rand(domain.global_dof_count)
+    fun = bempp.api.GridFunction(domain, coefficients=vec)
+
+    if wavenumber is None:
+        pot = operator(domain, points)
+    else:
+        pot = operator(domain, points, wavenumber)
+
+    result = pot.evaluate(fun)
+
+    np.savez(fname, result=result, points=points, vec=vec)
+
 
 print("Generating Laplace BEM matrices.")
 
@@ -118,7 +151,7 @@ generate_bem_matrix(
     p0,
     "helmholtz_single_layer_boundary_p0_p0",
     bempp.api.operators.boundary.helmholtz.single_layer,
-    wavenumber
+    wavenumber,
 )
 
 generate_bem_matrix(
@@ -126,7 +159,7 @@ generate_bem_matrix(
     dp1,
     "helmholtz_single_layer_boundary_p0_dp1",
     bempp.api.operators.boundary.helmholtz.single_layer,
-    wavenumber
+    wavenumber,
 )
 
 generate_bem_matrix(
@@ -134,21 +167,21 @@ generate_bem_matrix(
     p0,
     "helmholtz_single_layer_boundary_dp1_p0",
     bempp.api.operators.boundary.helmholtz.single_layer,
-    wavenumber
+    wavenumber,
 )
 generate_bem_matrix(
     dp1,
     dp1,
     "helmholtz_single_layer_boundary_dp1_dp1",
     bempp.api.operators.boundary.helmholtz.single_layer,
-    wavenumber
+    wavenumber,
 )
 generate_bem_matrix(
     p1,
     p1,
     "helmholtz_single_layer_boundary_p1_p1",
     bempp.api.operators.boundary.helmholtz.single_layer,
-    wavenumber
+    wavenumber,
 )
 
 generate_bem_matrix(
@@ -156,7 +189,7 @@ generate_bem_matrix(
     p1,
     "helmholtz_double_layer_boundary",
     bempp.api.operators.boundary.helmholtz.double_layer,
-    wavenumber
+    wavenumber,
 )
 
 generate_bem_matrix(
@@ -164,7 +197,7 @@ generate_bem_matrix(
     p1,
     "helmholtz_adj_double_layer_boundary",
     bempp.api.operators.boundary.helmholtz.adjoint_double_layer,
-    wavenumber
+    wavenumber,
 )
 
 generate_bem_matrix(
@@ -172,7 +205,7 @@ generate_bem_matrix(
     p1,
     "helmholtz_hypersingular_boundary",
     bempp.api.operators.boundary.helmholtz.hypersingular,
-    wavenumber
+    wavenumber,
 )
 
 generate_bem_matrix(
@@ -180,7 +213,7 @@ generate_bem_matrix(
     p1,
     "helmholtz_complex_single_layer_boundary",
     bempp.api.operators.boundary.helmholtz.single_layer,
-    wavenumber_complex
+    wavenumber_complex,
 )
 
 generate_bem_matrix(
@@ -188,14 +221,14 @@ generate_bem_matrix(
     p1,
     "helmholtz_complex_double_layer_boundary",
     bempp.api.operators.boundary.helmholtz.double_layer,
-    wavenumber_complex
+    wavenumber_complex,
 )
 generate_bem_matrix(
     p1,
     p1,
     "helmholtz_complex_adj_double_layer_boundary",
     bempp.api.operators.boundary.helmholtz.adjoint_double_layer,
-    wavenumber_complex
+    wavenumber_complex,
 )
 
 generate_bem_matrix(
@@ -203,7 +236,7 @@ generate_bem_matrix(
     p1,
     "helmholtz_complex_hypersingular_boundary",
     bempp.api.operators.boundary.helmholtz.hypersingular,
-    wavenumber_complex
+    wavenumber_complex,
 )
 
 ##################################
@@ -217,7 +250,7 @@ generate_bem_matrix(
     p1,
     "modified_helmholtz_single_layer_boundary",
     bempp.api.operators.boundary.modified_helmholtz.single_layer,
-    omega
+    omega,
 )
 
 generate_bem_matrix(
@@ -225,14 +258,14 @@ generate_bem_matrix(
     p1,
     "modified_helmholtz_double_layer_boundary",
     bempp.api.operators.boundary.modified_helmholtz.double_layer,
-    omega
+    omega,
 )
 generate_bem_matrix(
     p1,
     p1,
     "modified_helmholtz_adj_double_layer_boundary",
     bempp.api.operators.boundary.modified_helmholtz.adjoint_double_layer,
-    omega
+    omega,
 )
 
 generate_bem_matrix(
@@ -240,7 +273,7 @@ generate_bem_matrix(
     p1,
     "modified_helmholtz_hypersingular_boundary",
     bempp.api.operators.boundary.modified_helmholtz.hypersingular,
-    omega
+    omega,
 )
 
 #####################################
@@ -248,67 +281,118 @@ generate_bem_matrix(
 print("Generate Maxwell BEM matrices.")
 
 generate_bem_matrix(
-        snc,
-        rwg,
-        "maxwell_electric_field_boundary",
-        bempp.api.operators.boundary.maxwell.electric_field,
-        wavenumber
+    snc,
+    rwg,
+    "maxwell_electric_field_boundary",
+    bempp.api.operators.boundary.maxwell.electric_field,
+    wavenumber,
 )
 
 generate_bem_matrix(
-        snc,
-        rwg,
-        "maxwell_magnetic_field_boundary",
-        bempp.api.operators.boundary.maxwell.magnetic_field,
-        wavenumber
+    snc,
+    rwg,
+    "maxwell_magnetic_field_boundary",
+    bempp.api.operators.boundary.maxwell.magnetic_field,
+    wavenumber,
 )
 
 generate_bem_matrix(
-        snc,
-        rwg,
-        "maxwell_electric_field_complex_boundary",
-        bempp.api.operators.boundary.maxwell.electric_field,
-        wavenumber_complex
+    snc,
+    rwg,
+    "maxwell_electric_field_complex_boundary",
+    bempp.api.operators.boundary.maxwell.electric_field,
+    wavenumber_complex,
 )
 
 generate_bem_matrix(
-        snc,
-        rwg,
-        "maxwell_magnetic_field_complex_boundary",
-        bempp.api.operators.boundary.maxwell.magnetic_field,
-        wavenumber_complex
+    snc,
+    rwg,
+    "maxwell_magnetic_field_complex_boundary",
+    bempp.api.operators.boundary.maxwell.magnetic_field,
+    wavenumber_complex,
 )
 
 generate_bem_matrix(
-        snc_structured,
-        rwg_structured,
-        "maxwell_electric_field_structured_boundary",
-        bempp.api.operators.boundary.maxwell.electric_field,
-        wavenumber
+    snc_structured,
+    rwg_structured,
+    "maxwell_electric_field_structured_boundary",
+    bempp.api.operators.boundary.maxwell.electric_field,
+    wavenumber,
 )
 
 generate_sparse_bem_matrix(
-        p0, p0,
-        "sparse_identity_p0_p0",
-        bempp.api.operators.boundary.sparse.identity)
+    p0, p0, "sparse_identity_p0_p0", bempp.api.operators.boundary.sparse.identity
+)
 
 generate_sparse_bem_matrix(
-        p1, p1,
-        "sparse_identity_p1_p1",
-        bempp.api.operators.boundary.sparse.identity)
+    p1, p1, "sparse_identity_p1_p1", bempp.api.operators.boundary.sparse.identity
+)
 
 generate_sparse_bem_matrix(
-        p0, p1,
-        "sparse_identity_p0_p1",
-        bempp.api.operators.boundary.sparse.identity)
+    p0, p1, "sparse_identity_p0_p1", bempp.api.operators.boundary.sparse.identity
+)
 
 generate_sparse_bem_matrix(
-        p1, p0,
-        "sparse_identity_p1_p0",
-        bempp.api.operators.boundary.sparse.identity)
+    p1, p0, "sparse_identity_p1_p0", bempp.api.operators.boundary.sparse.identity
+)
 
 generate_sparse_bem_matrix(
-        snc, rwg,
-        "sparse_identity_snc_rwg",
-        bempp.api.operators.boundary.sparse.identity)
+    snc, rwg, "sparse_identity_snc_rwg", bempp.api.operators.boundary.sparse.identity
+)
+
+
+generate_potential(
+    p0,
+    "laplace_single_layer_potential_p0",
+    bempp.api.operators.potential.laplace.single_layer,
+)
+generate_potential(
+    p1,
+    "laplace_single_layer_potential_p1",
+    bempp.api.operators.potential.laplace.single_layer,
+)
+generate_potential(
+    p1,
+    "laplace_double_layer_potential_p1",
+    bempp.api.operators.potential.laplace.double_layer,
+)
+generate_potential(
+    p1,
+    "helmholtz_single_layer_potential_p1",
+    bempp.api.operators.potential.helmholtz.single_layer,
+    wavenumber,
+)
+generate_potential(
+    p1,
+    "helmholtz_double_layer_potential_p1",
+    bempp.api.operators.potential.helmholtz.double_layer,
+    wavenumber,
+)
+generate_potential(
+    p1,
+    "helmholtz_single_layer_potential_complex_p1",
+    bempp.api.operators.potential.helmholtz.single_layer,
+    wavenumber_complex,
+)
+generate_potential(
+    p1,
+    "helmholtz_double_layer_potential_complex_p1",
+    bempp.api.operators.potential.helmholtz.double_layer,
+    wavenumber_complex,
+)
+
+generate_potential(
+    rwg,
+    "maxwell_electric_field_potential",
+    bempp.api.operators.potential.maxwell.electric_field,
+    wavenumber,
+)
+
+generate_potential(
+    rwg,
+    "maxwell_electric_field_potential_complex",
+    bempp.api.operators.potential.maxwell.electric_field,
+    wavenumber_complex,
+)
+
 

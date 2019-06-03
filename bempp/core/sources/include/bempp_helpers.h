@@ -438,4 +438,50 @@ inline uint elementsAreAdjacent(uint* element1, uint* element2, bool gridsAreDis
             
 }
 
+inline void updateNormals(size_t index, __global int *signs, REALTYPE3 *normal){
+
+    *normal *= signs[index];
+
+}
+
+inline void updateNormalsVec4(size_t index[4], __global int *signs, REALTYPE4 normal[3]){
+
+    REALTYPE4 signFlip = (REALTYPE4)(signs[index[0]], signs[index[1]],
+                                     signs[index[2]], signs[index[3]]);
+
+    normal[0] *= signFlip;
+    normal[1] *= signFlip;
+    normal[2] *= signFlip;
+}
+
+inline void updateNormalsVec8(size_t index[8], __global int *signs, REALTYPE8 normal[3]){
+
+    REALTYPE8 signFlip = (REALTYPE8)(signs[index[0]], signs[index[1]],
+                                     signs[index[2]], signs[index[3]],
+                                     signs[index[4]], signs[index[5]],
+                                     signs[index[6]], signs[index[7]]);
+
+
+    normal[0] *= signFlip;
+    normal[1] *= signFlip;
+    normal[2] *= signFlip;
+}
+
+inline void updateNormalsVec16(size_t index[16], __global int *signs, REALTYPE16 normal[3]){
+
+    REALTYPE16 signFlip = (REALTYPE16)(signs[index[0]], signs[index[1]],
+                                      signs[index[2]], signs[index[3]],
+                                      signs[index[4]], signs[index[5]],
+                                      signs[index[6]], signs[index[7]],
+                                      signs[index[8]], signs[index[9]],
+                                      signs[index[10]], signs[index[11]],
+                                      signs[index[12]], signs[index[13]],
+                                      signs[index[14]], signs[index[15]]);
+
+
+
+    normal[0] *= signFlip;
+    normal[1] *= signFlip;
+    normal[2] *= signFlip;
+}
 #endif

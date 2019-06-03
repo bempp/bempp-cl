@@ -4,6 +4,8 @@
 #include "kernels.h"
 
 __kernel void evaluate_scalar_potential_novec(__global REALTYPE *grid,
+                                              __global uint* indices,
+                                              __global int* normalSigns,
                                               __global REALTYPE *evalPoints,
                                               __global REALTYPE *coefficients,
                                               __constant REALTYPE* quadPoints,
@@ -13,6 +15,8 @@ __kernel void evaluate_scalar_potential_novec(__global REALTYPE *grid,
 
   gid[0] = get_global_id(0);
   gid[1] = get_global_id(1);
+
+  size_t elementIndex = indices[gid[1]];
 
   size_t lid = get_local_id(1);
   size_t groupId = get_group_id(1);
@@ -57,21 +61,23 @@ __kernel void evaluate_scalar_potential_novec(__global REALTYPE *grid,
   REALTYPE myCoefficients[NUMBER_OF_SHAPE_FUNCTIONS];
   for (int index = 0; index < NUMBER_OF_SHAPE_FUNCTIONS; ++index)
     myCoefficients[index] =
-        coefficients[NUMBER_OF_SHAPE_FUNCTIONS * gid[1] + index];
+        coefficients[NUMBER_OF_SHAPE_FUNCTIONS * elementIndex + index];
 #else
   REALTYPE tempResult[2];
   REALTYPE myCoefficients[NUMBER_OF_SHAPE_FUNCTIONS][2];
   for (int index = 0; index < NUMBER_OF_SHAPE_FUNCTIONS; ++index) {
     myCoefficients[index][0] =
-        coefficients[2 * (NUMBER_OF_SHAPE_FUNCTIONS * gid[1] + index)];
+        coefficients[2 * (NUMBER_OF_SHAPE_FUNCTIONS * elementIndex + index)];
     myCoefficients[index][1] =
-        coefficients[2 * (NUMBER_OF_SHAPE_FUNCTIONS * gid[1] + index) + 1];
+        coefficients[2 * (NUMBER_OF_SHAPE_FUNCTIONS * elementIndex + index) + 1];
   }
 #endif
 
-  getCorners(grid, gid[1], corners);
+  getCorners(grid, elementIndex, corners);
   getJacobian(corners, jacobian);
   getNormalAndIntegrationElement(jacobian, &normal, &intElement);
+
+  updateNormals(elementIndex, normalSigns, &normal);
 
   for (quadIndex = 0; quadIndex < NUMBER_OF_QUAD_POINTS; ++quadIndex) {
     point = (REALTYPE2)(quadPoints[2 * quadIndex], quadPoints[2 * quadIndex + 1]);
@@ -126,6 +132,8 @@ __kernel void evaluate_scalar_potential_novec(__global REALTYPE *grid,
     for (index = 1; index < WORKGROUP_SIZE; ++index)
       localResult[0] += localResult[index];
     globalResult[gid[0] * numGroups + groupId] += localResult[0];
+
+
   }
 
 #else

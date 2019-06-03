@@ -104,7 +104,8 @@ def assemble_sparse(
         remainder_source, device_interface.context, precision
     )
 
-    number_of_elements = dual_to_range.grid.number_of_elements
+    elements = _np.flatnonzero(domain.support * dual_to_range.support).astype("uint32")
+    number_of_elements = len(elements)
 
     kernel_helpers.run_chunked_kernel(
         main_kernel,
@@ -121,18 +122,17 @@ def assemble_sparse(
     irange = _np.arange(number_of_test_shape_functions)
     jrange = _np.arange(number_of_trial_shape_functions)
 
-    element_range = _np.arange(number_of_elements)
     i_ind = _np.tile(
         _np.repeat(irange, number_of_trial_shape_functions), number_of_elements
     ) + _np.repeat(
-        element_range * number_of_test_shape_functions,
+        elements * number_of_test_shape_functions,
         number_of_test_shape_functions * number_of_trial_shape_functions,
     )
 
     j_ind = _np.tile(
         _np.tile(jrange, number_of_test_shape_functions), number_of_elements
     ) + _np.repeat(
-        element_range * number_of_trial_shape_functions,
+        elements * number_of_trial_shape_functions,
         number_of_test_shape_functions * number_of_trial_shape_functions,
     )
 
@@ -158,7 +158,14 @@ def _prepare_buffers(
 
     grid_buffer = grid.push_to_device(device_interface, precision).buffer
 
-    result_buffer_size = grid.number_of_elements * (
+    elements = _np.flatnonzero(domain.support * dual_to_range.support).astype("uint32")
+
+    elements_buffer = _cl_helpers.DeviceBuffer.from_array(
+            elements, device_interface, dtype=_np.uint32, access_mode='read_only')
+
+    number_of_elements = len(elements)
+
+    result_buffer_size = number_of_elements * (
         domain.number_of_shape_functions * dual_to_range.number_of_shape_functions
     )
 
@@ -170,8 +177,23 @@ def _prepare_buffers(
         order="C",
     )
 
+    test_normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
+        dual_to_range.normal_multipliers,
+        device_interface,
+        dtype=_np.int32,
+        access_mode="read_only",
+    )
+    trial_normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
+        domain.normal_multipliers, device_interface, dtype=_np.int32, access_mode="read_only"
+    )
+
+
+
     buffers = [
         grid_buffer,
+        elements_buffer,
+        test_normal_signs_buffer,
+        trial_normal_signs_buffer,
         quad_points_buffer,
         quad_weights_buffer,
         result_buffer,

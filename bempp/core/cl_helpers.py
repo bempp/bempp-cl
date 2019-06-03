@@ -170,7 +170,8 @@ class Kernel(object):
         self._kernel_source = kernel_source
         self._context = context
         self._precision = precision
-        self._implementation = self._build(context)
+        self._prg = self._build(context)
+        self._kernel_name = self._prg.kernel_names
 
     def _build(self, context):
         """Build the OpenCL kernel instance."""
@@ -185,12 +186,12 @@ class Kernel(object):
             options=options
         )
 
-        return prg.all_kernels()[0]
+        return prg
 
     @property
     def implementation(self):
         """Return the compiled CL Kernel."""
-        return self._implementation
+        return getattr(self._prg, self._kernel_name)
 
     @property
     def kernel_source(self):

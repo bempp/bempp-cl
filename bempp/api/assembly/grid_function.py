@@ -209,9 +209,10 @@ class GridFunction(object):
             _project_function(
                 fun,
                 dual_space.grid.data,
-                dual_space.support,
+                dual_space.support_elements,
                 dual_space.local2global,
                 dual_space.local_multipliers,
+                dual_space.normal_multipliers,
                 dual_space.numba_evaluate,
                 dual_space.shapeset.evaluate,
                 points,
@@ -342,6 +343,14 @@ class GridFunction(object):
 
         return self._projections
 
+    def map_to_space(self, space):
+        """Return an L^2 projection on another space."""
+        from bempp.api.operators.boundary.sparse import identity
+
+        ident = identity(self.space, self.space, space).weak_form()
+
+        return GridFunction(
+                space, projections=ident @ self.coefficients)
 
     def plot(self, mode="element", transformation="real"):
         """
@@ -515,9 +524,10 @@ class GridFunction(object):
 def _project_function(
     fun,
     grid_data,
-    support,
+    support_elements,
     local2global,
     local_multipliers,
+    normal_multipliers,
     evaluate_on_element,
     shapeset_evaluate,
     points,
@@ -534,12 +544,10 @@ def _project_function(
     fun_result = _np.empty(codomain_dimension, dtype=projections.dtype)
     point = _np.empty(3, dtype=_np.float64)
 
-    for index in range(number_of_elements):
-        if not support[index]:
-            continue
+    for index in support_elements:
 
         element_vals = evaluate_on_element(
-            index, shapeset_evaluate, points, grid_data, local_multipliers
+            index, shapeset_evaluate, points, grid_data, local_multipliers, normal_multipliers
         )
 
         for j in range(3):

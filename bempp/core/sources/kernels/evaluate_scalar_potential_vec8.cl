@@ -5,6 +5,8 @@
 
 __kernel __attribute__((vec_type_hint(REALTYPE8))) void
 evaluate_scalar_potential_novec(__global REALTYPE *grid,
+                                __global uint* indices,
+                                __global int* normalSigns,
                                 __global REALTYPE *evalPoints,
                                 __global REALTYPE *coefficients,
                                 __constant REALTYPE* quadPoints,
@@ -19,9 +21,16 @@ evaluate_scalar_potential_novec(__global REALTYPE *grid,
   size_t groupId = get_group_id(1);
   size_t numGroups = get_num_groups(1);
 
-  size_t elementIndex[8] = {8 * gid[1] + 0, 8 * gid[1] + 1, 8 * gid[1] + 2,
-                            8 * gid[1] + 3, 8 * gid[1] + 4, 8 * gid[1] + 5,
-                            8 * gid[1] + 6, 8 * gid[1] + 7};
+  size_t elementIndex[8] = {
+      indices[8 * gid[1] + 0], 
+      indices[8 * gid[1] + 1], 
+      indices[8 * gid[1] + 2], 
+      indices[8 * gid[1] + 3], 
+      indices[8 * gid[1] + 4], 
+      indices[8 * gid[1] + 5], 
+      indices[8 * gid[1] + 6], 
+      indices[8 * gid[1] + 7]};
+      
 
   REALTYPE3 evalGlobalPoint;
   REALTYPE8 surfaceGlobalPoint[3];
@@ -107,6 +116,7 @@ evaluate_scalar_potential_novec(__global REALTYPE *grid,
   getCornersVec8(grid, elementIndex, corners);
   getJacobianVec8(corners, jacobian);
   getNormalAndIntegrationElementVec8(jacobian, normal, &intElement);
+  updateNormalsVec8(elementIndex, normalSigns, normal);
 
   for (quadIndex = 0; quadIndex < NUMBER_OF_QUAD_POINTS; ++quadIndex) {
     point = (REALTYPE2)(quadPoints[2 * quadIndex], quadPoints[2 * quadIndex + 1]);

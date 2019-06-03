@@ -79,7 +79,9 @@ def magnetic_field(
 def multitrace_operator(
     grid,
     wavenumber,
+    segments=None,
     parameters=None,
+    swapped_normals=None,
     assembler="multitrace_evaluator",
     device_interface=None,
     precision=None,
@@ -91,9 +93,23 @@ def multitrace_operator(
     if assembler != "multitrace_evaluator":
         raise ValueError("Only multitrace evaluator supported.")
 
-    domain = function_space(grid, "RWG", 0)
+    domain = function_space(
+        grid,
+        "RWG",
+        0,
+        segments=segments,
+        swapped_normals=swapped_normals,
+        include_boundary_dofs=True,
+    )
     range_ = domain
-    dual_to_range = function_space(grid, "SNC", 0)
+    dual_to_range = function_space(
+        grid,
+        "SNC",
+        0,
+        segments=segments,
+        swapped_normals=swapped_normals,
+        include_boundary_dofs=True,
+    )
     magnetic = magnetic_field(
         domain,
         range_,
@@ -142,7 +158,9 @@ def transmission_operator(
     wavenumber,
     eps_rel,
     mu_rel,
+    segments=None,
     parameters=None,
+    swapped_normals=None,
     assembler="multitrace_evaluator",
     device_interface=None,
     precision=None,
@@ -154,9 +172,23 @@ def transmission_operator(
     if assembler != "multitrace_evaluator":
         raise ValueError("Only multitrace evaluator supported.")
 
-    domain = function_space(grid, "RWG", 0)
+    domain = function_space(
+        grid,
+        "RWG",
+        0,
+        segments=segments,
+        swapped_normals=swapped_normals,
+        include_boundary_dofs=True,
+    )
     range_ = domain
-    dual_to_range = function_space(grid, "SNC", 0)
+    dual_to_range = function_space(
+        grid,
+        "SNC",
+        0,
+        segments=segments,
+        swapped_normals=swapped_normals,
+        include_boundary_dofs=True,
+    )
 
     sqrt_eps_rel = _np.sqrt(eps_rel)
     sqrt_mu_rel = _np.sqrt(mu_rel)

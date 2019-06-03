@@ -5,6 +5,7 @@
 
 __kernel __attribute__((vec_type_hint(REALTYPE4))) void evaluate_dense_regular(
     __global uint* testIndices, __global uint* trialIndices,
+    __global int *testNormalSigns, __global int *trialNormalSigns,
     __global REALTYPE* testGrid, __global REALTYPE* trialGrid,
     __global uint* testConnectivity, __global uint* trialConnectivity,
     __constant REALTYPE* quadPoints,
@@ -134,6 +135,8 @@ __kernel __attribute__((vec_type_hint(REALTYPE4))) void evaluate_dense_regular(
 
     getNormalAndIntegrationElement(testJac, &testNormal, &testIntElem);
     getNormalAndIntegrationElementVec4(trialJac, trialNormal, &trialIntElem);
+    updateNormals(testIndex, testNormalSigns, &testNormal);
+    updateNormalsVec4(trialIndex, trialNormalSigns, trialNormal);
 
     testInv[0][0] = dot(testJac[1], testJac[1]);
     testInv[1][1] = dot(testJac[0], testJac[0]);
@@ -367,7 +370,7 @@ __kernel __attribute__((vec_type_hint(REALTYPE4))) void evaluate_dense_regular(
         {
             for (j = 1; j < NUMBER_OF_TRIAL_SHAPE_FUNCTIONS; ++j)
                 localResult[0][i][0] += localResult[0][i][j];
-            globalResult[numGroups * (NUMBER_OF_TEST_SHAPE_FUNCTIONS * testIndex + i) + groupId] += localResult[0][i][0];
+            globalResult[numGroups * (NUMBER_OF_TEST_SHAPE_FUNCTIONS * gid[0] + i) + groupId] += localResult[0][i][0];
         }
 #else
         {
@@ -375,8 +378,8 @@ __kernel __attribute__((vec_type_hint(REALTYPE4))) void evaluate_dense_regular(
                 localResult[0][i][0][0] += localResult[0][i][j][0];
                 localResult[0][i][0][1] += localResult[0][i][j][1];
             }
-            globalResult[2 * (numGroups * (NUMBER_OF_TEST_SHAPE_FUNCTIONS * testIndex + i) + groupId)] += localResult[0][i][0][0];
-            globalResult[2 * (numGroups * (NUMBER_OF_TEST_SHAPE_FUNCTIONS * testIndex + i) + groupId) + 1] += localResult[0][i][0][1];
+            globalResult[2 * (numGroups * (NUMBER_OF_TEST_SHAPE_FUNCTIONS * gid[0] + i) + groupId)] += localResult[0][i][0][0];
+            globalResult[2 * (numGroups * (NUMBER_OF_TEST_SHAPE_FUNCTIONS * gid[0] + i) + groupId) + 1] += localResult[0][i][0][1];
         }
 
 #endif

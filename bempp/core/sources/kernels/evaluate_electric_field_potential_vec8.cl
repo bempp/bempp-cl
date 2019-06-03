@@ -4,7 +4,10 @@
 #include "kernels.h"
 
 __kernel void evaluate_electric_field_potential_vec8(
-    __global REALTYPE *grid, __global REALTYPE *evalPoints,
+    __global REALTYPE *grid, 
+    __global uint* indices,
+    __global int* normalSigns,
+    __global REALTYPE *evalPoints,
     __global REALTYPE *coefficients, __constant REALTYPE *quadPoints,
     __constant REALTYPE *quadWeights, __global REALTYPE *globalResult) {
   size_t gid[2];
@@ -16,10 +19,17 @@ __kernel void evaluate_electric_field_potential_vec8(
   size_t groupId = get_group_id(1);
   size_t numGroups = get_num_groups(1);
 
-  size_t elementIndex[8] = {8 * gid[1] + 0, 8 * gid[1] + 1, 8 * gid[1] + 2,
-                            8 * gid[1] + 3, 8 * gid[1] + 4, 8 * gid[1] + 5,
-                            8 * gid[1] + 6, 8 * gid[1] + 7};
-
+  size_t elementIndex[8] = {
+      indices[8 * gid[1] + 0], 
+      indices[8 * gid[1] + 1], 
+      indices[8 * gid[1] + 2], 
+      indices[8 * gid[1] + 3], 
+      indices[8 * gid[1] + 4], 
+      indices[8 * gid[1] + 5], 
+      indices[8 * gid[1] + 6], 
+      indices[8 * gid[1] + 7]}; 
+      
+      
   REALTYPE8 surfaceGlobalPoint[3];
 
   REALTYPE basisValue[3][2];
@@ -130,6 +140,7 @@ __kernel void evaluate_electric_field_potential_vec8(
   getCornersVec8(grid, elementIndex, corners);
   getJacobianVec8(corners, jacobian);
   getNormalAndIntegrationElementVec8(jacobian, normal, &intElem);
+  updateNormalsVec8(elementIndex, normalSigns, normal);
 
   computeEdgeLengthVec8(corners, edgeLengths);
 

@@ -6,37 +6,59 @@ from collections import namedtuple as _namedtuple
 import numpy as _np
 
 
-def function_space(grid, kind, degree):
+def function_space(
+    grid,
+    kind,
+    degree,
+    support_elements=None,
+    segments=None,
+    swapped_normals=None,
+    **kwargs
+):
     """Initialize a function space."""
+
+    if _np.count_nonzero([support_elements, segments]) > 1:
+        raise ValueError(
+            "Only one of 'support_elements' and 'segments' must be nonzero."
+        )
 
     if kind == "DP":
         if degree == 0:
             from .p0_discontinuous_space import P0DiscontinuousFunctionSpace
 
-            return P0DiscontinuousFunctionSpace(grid)
+            return P0DiscontinuousFunctionSpace(
+                grid, support_elements, segments, swapped_normals
+            )
         if degree == 1:
             from .p1_discontinuous_space import P1DiscontinuousFunctionSpace
 
-            return P1DiscontinuousFunctionSpace(grid)
+            return P1DiscontinuousFunctionSpace(
+                grid, support_elements, segments, swapped_normals
+            )
 
     if kind == "P":
         if degree == 1:
             from .p1_continuous_space import P1ContinuousFunctionSpace
 
-            return P1ContinuousFunctionSpace(grid)
+            return P1ContinuousFunctionSpace(
+                grid, support_elements, segments, swapped_normals, **kwargs
+            )
 
     if kind == "RWG":
         if degree == 0:
             from .rwg0_space import Rwg0FunctionSpace
 
-            return Rwg0FunctionSpace(grid)
+            return Rwg0FunctionSpace(
+                grid, support_elements, segments, swapped_normals, **kwargs
+            )
 
     if kind == "SNC":
         if degree == 0:
             from .snc0_space import Snc0FunctionSpace
 
-            return Snc0FunctionSpace(grid)
-
+            return Snc0FunctionSpace(
+                grid, support_elements, segments, swapped_normals, **kwargs
+            )
 
     raise ValueError("Requested space not implemented.")
 
@@ -54,8 +76,7 @@ _SpaceData = _namedtuple(
         "identifier",
         "support",
         "localised_space",
-        "color_map",
-        "map_to_localised_space",
+        "normal_multipliers",
     ],
 )
 
@@ -67,6 +88,7 @@ class _FunctionSpace(_abc.ABC):
         """Initialisation of base class."""
 
         from .shapesets import Shapeset
+        from scipy.sparse import coo_matrix
 
         self._grid = space_data.grid
         self._codomain_dimension = space_data.codomain_dimension
@@ -78,18 +100,50 @@ class _FunctionSpace(_abc.ABC):
         self._identifier = space_data.identifier
         self._support = space_data.support
         self._localised_space = space_data.localised_space
-        self._color_map = space_data.color_map
+        self._color_map = None
         self._global2local_map = self._invert_local2global_map(
             self._local2global_map,
             self._grid.number_of_elements,
             self._global_dof_count,
         )
 
+        self._normal_multipliers = space_data.normal_multipliers
+
+        self._number_of_support_elements = _np.count_nonzero(self._support)
+        self._support_elements = _np.flatnonzero(self._support).astype("uint32")
+
         self._mass_matrix = None
         self._inverse_mass_matrix = None
 
-        self._map_to_localised_space = space_data.map_to_localised_space
-        self._compute_elements_by_color()
+        nshape_fun = self.number_of_shape_functions
+
+        self._map_to_localised_space = coo_matrix(
+            (
+                self._local_multipliers[self._support].ravel(),
+                (_np.arange(nshape_fun * self._number_of_support_elements), self._local2global_map[self._support].ravel()),
+            ),
+            shape=(nshape_fun * self._number_of_support_elements, self.global_dof_count),
+            dtype="float64",
+        ).tocsr()
+
+
+        self._map_to_full_grid = coo_matrix(
+            (
+                self._local_multipliers[self._support].ravel(),
+                (
+                    nshape_fun * _np.repeat(self._support_elements, nshape_fun)
+                    + _np.tile(
+                        _np.arange(nshape_fun), self._number_of_support_elements
+                    ),
+                    self._local2global_map[self._support].ravel(),
+                ),
+            ),
+            shape=(nshape_fun * self._grid.number_of_elements, self._global_dof_count),
+            dtype="float64",
+        ).tocsr()
+
+        self._compute_color_map()
+        self._sort_elements_by_color()
 
     @property
     def grid(self):
@@ -122,6 +176,11 @@ class _FunctionSpace(_abc.ABC):
         return self._local_multipliers
 
     @property
+    def normal_multipliers(self):
+        """Return the normal multipliers for each grid element."""
+        return self._normal_multipliers
+
+    @property
     def global2local(self):
         """Return global to local map."""
         return self._global2local_map
@@ -130,6 +189,16 @@ class _FunctionSpace(_abc.ABC):
     def number_of_shape_functions(self):
         """Return the number of shape functions on each element."""
         return self._shapeset.number_of_shape_functions
+
+    @property
+    def number_of_support_elements(self):
+        """The number of elements that form the support."""
+        return self._number_of_support_elements
+
+    @property
+    def support_elements(self):
+        """Return the list of elements on which space is supported."""
+        return self._support_elements
 
     @property
     def identifier(self):
@@ -174,6 +243,12 @@ class _FunctionSpace(_abc.ABC):
 
         return self._map_to_localised_space
 
+    @property
+    def map_to_full_grid(self):
+        """Return a sparse matrix that maps dofs to localised space on full grid."""
+
+        return self._map_to_full_grid
+
     def get_elements_by_color(self):
         """
         Returns color sorted elements and their index positions.
@@ -200,6 +275,7 @@ class _FunctionSpace(_abc.ABC):
 
         if self._mass_matrix is None:
             from bempp.api.operators.boundary.sparse import identity
+
             self._mass_matrix = identity(self, self, self).weak_form()
 
         return self._mass_matrix
@@ -207,17 +283,23 @@ class _FunctionSpace(_abc.ABC):
     def inverse_mass_matrix(self):
         """Return the inverse mass matrix for this space."""
 
-        from bempp.api.assembly.discrete_boundary_operator import \
-            InverseSparseDiscreteBoundaryOperator
+        from bempp.api.assembly.discrete_boundary_operator import (
+            InverseSparseDiscreteBoundaryOperator,
+        )
 
         if self._inverse_mass_matrix is None:
             self._inverse_mass_matrix = InverseSparseDiscreteBoundaryOperator(
-                self.mass_matrix())
+                self.mass_matrix()
+            )
         return self._inverse_mass_matrix
 
     def is_compatible(self, other):
         """Check if space is compatible with other space."""
         return self == other
+
+    def vertex_on_boundary(self):
+        """Return true if vertex is on boundary of segment."""
+
 
     def _invert_local2global_map(
         self, local2global_map, number_of_elements, global_dof_count
@@ -232,9 +314,30 @@ class _FunctionSpace(_abc.ABC):
                     global2local_map[dof].append([elem_index, local_index])
         return global2local_map
 
-    def _compute_elements_by_color(self):
+    def _compute_color_map(self):
+        """Compute the color map."""
+
+        def get_neighbors(element_index):
+            """Get all global dof neighbors of an element."""
+            global_dofs = self.local2global[element_index]
+            neighbors = {
+                    elem for global_dof in global_dofs
+                    for elem, _ in self.global2local[global_dof]
+                    if self.support[elem] and elem != element_index}
+            return list(neighbors)
+
+        self._color_map = -_np.ones(self.grid.number_of_elements, dtype=_np.int32)
+        for element_index in self.support_elements:
+            neighbor_colors = self._color_map[get_neighbors(element_index)]
+            self._color_map[element_index] = next(
+                color
+                for color in range(self.number_of_support_elements)
+                if color not in neighbor_colors
+            )
+
+    def _sort_elements_by_color(self):
         """Implement elements by color computation."""
-        sorted_indices = _np.empty(self.grid.number_of_elements, dtype="uint32")
+        sorted_indices = _np.empty(self.number_of_support_elements, dtype="uint32")
         ncolors = 1 + max(self.color_map)
         indexptr = _np.zeros(1 + ncolors, dtype="uint32")
 
@@ -250,3 +353,36 @@ class _FunctionSpace(_abc.ABC):
     def __eq__(self, other):
         """Check equality of spaces."""
         return self.grid == other.grid and self.identifier == other.identifier
+
+def _process_segments(grid, support_elements, segments, swapped_normals):
+    """Pocess information from support_elements and segments vars."""
+
+    if _np.count_nonzero([support_elements, segments]) > 1:
+        raise ValueError(
+            "Only one of 'support_elements' and 'segments' must be nonzero."
+        )
+
+    if swapped_normals is None:
+        swapped_normals = {}
+
+    number_of_elements = grid.number_of_elements
+    normal_multipliers = _np.zeros(number_of_elements, dtype=_np.int32)
+
+    for element_index in range(number_of_elements):
+        if grid.domain_indices[element_index] in swapped_normals:
+            normal_multipliers[element_index] = -1
+        else:
+            normal_multipliers[element_index] = 1
+
+    if support_elements is not None:
+        support = _np.full(number_of_elements, False, dtype=bool)
+        support[support_elements] = True
+    elif segments is not None:
+        support = _np.full(number_of_elements, False, dtype=bool)
+        for element_index in range(number_of_elements):
+            if grid.domain_indices[element_index] in segments:
+                support[element_index] = True
+    else:
+        support = _np.full(number_of_elements, True, dtype=bool)
+
+    return support, normal_multipliers

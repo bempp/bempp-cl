@@ -5,6 +5,7 @@
 
 __kernel void evaluate_dense_vector_laplace_hypersingular_regular(
     __global uint* testIndices, __global uint* trialIndices,
+    __global int *testNormalSigns, __global int *trialNormalSigns,
     __global REALTYPE* testGrid, __global REALTYPE* trialGrid,
     __global uint* testConnectivity, __global uint* trialConnectivity,
     __constant REALTYPE* quadPoints,
@@ -79,6 +80,8 @@ __kernel void evaluate_dense_vector_laplace_hypersingular_regular(
 
     getNormalAndIntegrationElement(testJac, &testNormal, &testIntElem);
     getNormalAndIntegrationElement(trialJac, &trialNormal, &trialIntElem);
+    updateNormals(testIndex, testNormalSigns, &testNormal);
+    updateNormals(trialIndex, trialNormalSigns, &trialNormal);
 
     testInv[0][0] = dot(testJac[1], testJac[1]);
     testInv[1][1] = dot(testJac[0], testJac[0]);
@@ -160,7 +163,7 @@ __kernel void evaluate_dense_vector_laplace_hypersingular_regular(
         {
             for (j = 1; j < NUMBER_OF_TRIAL_SHAPE_FUNCTIONS; ++j)
                 localResult[0][i][0] += localResult[0][i][j];
-            globalResult[numGroups * (NUMBER_OF_TEST_SHAPE_FUNCTIONS * testIndex + i) + groupId] += localResult[0][i][0];
+            globalResult[numGroups * (NUMBER_OF_TEST_SHAPE_FUNCTIONS * gid[0] + i) + groupId] += localResult[0][i][0];
         }
     }
 

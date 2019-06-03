@@ -26,6 +26,7 @@ class Grid(object):
         self._vertex_on_boundary = None
         self._edge_on_boundary = None
         self._edge_neighbors = None
+        self._vertex_neighbors = None
 
         self._volumes = None
         self._normals = None
@@ -37,6 +38,9 @@ class Grid(object):
 
         self._device_interfaces = {}
 
+        self._element_to_vertex_matrix = None
+        self._element_to_element_matrix = None
+
         self._normalize_and_assign_input(vertices, elements, domain_indices)
         self._enumerate_edges()
 
@@ -46,6 +50,7 @@ class Grid(object):
         self._compute_boundary_information()
 
         self._compute_edge_neighbors()
+        self._compute_vertex_neighbors()
 
         self._grid_data = GridData(
             self._vertices,
@@ -86,6 +91,21 @@ class Grid(object):
         element 0 is identical to vertex v12 in element e1.
         """
         return self._edge_adjacency
+
+    @property
+    def element_to_vertex_matrix(self):
+        """Return the matrix mapping vertices to elements."""
+        return self._element_to_vertex_matrix
+
+    @property
+    def element_to_element_matrix(self):
+        """
+        Return element to element matrix.
+
+        If entry (i,j) has the value n > 0, element i
+        and element j are connected via n vertices.
+        """
+        return self._element_to_element_matrix
 
     @property
     def element_neighbors(self):
@@ -243,6 +263,12 @@ class Grid(object):
         """Return Numba container with all relevant grid data."""
         return self._grid_data
 
+    @property
+    def vertex_neighbors(self):
+        """Return for each vertex the list of neighboring elements."""
+        return self._vertex_neighbors
+
+
     def entity_count(self, codim):
         """Return the number of entities of given codimension."""
 
@@ -357,6 +383,17 @@ class Grid(object):
         self.device_interfaces[(device_interface.context, precision)] = interface
         return interface
 
+    def _compute_vertex_neighbors(self):
+        """Return all elements adjacent to a given vertex."""
+
+        self._vertex_neighbors = [None for _ in range(self.number_of_vertices)]
+
+        indptr = self.element_to_vertex_matrix.indptr
+        indices = self.element_to_vertex_matrix.indices
+
+        for index in range(self.number_of_vertices):
+            self._vertex_neighbors[index] = indices[indptr[index]:indptr[index + 1]]
+
     def _normalize_and_assign_input(self, vertices, elements, domain_indices):
         """Convert input into the right form."""
         from bempp.api.utils.helpers import align_array
@@ -425,9 +462,14 @@ class Grid(object):
         vertex with element i.
 
         """
+        self._element_to_vertex_matrix = get_element_to_vertex_matrix(
+                self._vertices, self._elements)
+
         elem_to_elem_matrix = get_element_to_element_matrix(
             self._vertices, self._elements
         )
+
+        self._element_to_element_matrix = elem_to_elem_matrix
 
         elements1, elements2, nvertices = _get_element_to_element_vertex_count(
             elem_to_elem_matrix
@@ -791,7 +833,7 @@ class Edge(object):
         return EdgeGeometry(grid.vertices[:, grid.edges[:, self.index]])
 
 
-def get_vertex_to_element_matrix(vertices, elements):
+def get_element_to_vertex_matrix(vertices, elements):
     """Return the sparse matrix mapping vertices to elements."""
     from scipy.sparse import csr_matrix
 
@@ -816,8 +858,8 @@ def get_element_to_element_matrix(vertices, elements):
     and element j are connected via n vertices.
 
     """
-    vertex_to_element = get_vertex_to_element_matrix(vertices, elements)
-    return vertex_to_element.T.dot(vertex_to_element)
+    element_to_vertex = get_element_to_vertex_matrix(vertices, elements)
+    return element_to_vertex.T.dot(element_to_vertex)
 
 
 @_numba.njit(cache=True, locals={"index": _numba.types.int32})
@@ -1040,3 +1082,35 @@ def _get_element_neighbors(element_to_element_matrix):
         neighbors[element_index].remove(element_index)
 
     return neighbors
+
+def grid_from_segments(grid, segments):
+    """Return new grid from segments of existing grid."""
+
+    element_in_new_grid = _np.zeros(grid.number_of_elements, dtype=_np.bool)
+    vertices_in_new_grid = _np.zeros(grid.number_of_vertices, dtype=_np.bool)
+
+    for elem in range(grid.number_of_elements):
+        if grid.domain_indices[elem] in segments:
+            element_in_new_grid[elem] = True
+    new_elements = grid.elements[:, element_in_new_grid]
+    new_domain_indices = grid.domain_indices[element_in_new_grid]
+    vertex_indices = list(set(new_elements.ravel()))
+    new_vertices = grid.vertices[:, vertex_indices]
+    new_vertex_map = -_np.ones(grid.number_of_vertices, dtype=_np.int)
+    new_vertex_map[vertex_indices] = _np.arange(len(vertex_indices))
+    new_elements = new_vertex_map[new_elements.ravel()].reshape(3, -1)
+
+    return Grid(new_vertices, new_elements, new_domain_indices)
+
+
+
+
+
+
+
+
+
+
+    
+
+

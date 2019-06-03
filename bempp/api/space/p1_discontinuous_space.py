@@ -5,32 +5,32 @@
 import numpy as _np
 import numba as _numba
 
-from bempp.api.space.space import _FunctionSpace, _SpaceData
+from bempp.api.space.space import (_FunctionSpace, _SpaceData,
+        _process_segments)
 
 
 class P1DiscontinuousFunctionSpace(_FunctionSpace):
     """A space of discontinuous piecewise linear functions."""
 
-    def __init__(self, grid):
+    def __init__(self, grid, support_elements=None, segments=None, swapped_normals=None):
         """Initialize with a given grid."""
         from scipy.sparse import identity
 
         shapeset = "p1_discontinuous"
 
-        number_of_elements = grid.number_of_elements
-        global_dof_count = 3 * number_of_elements
+        support, normal_multipliers = _process_segments(grid, support_elements, segments, swapped_normals)
+        elements_in_support = _np.flatnonzero(support)
 
-        local2global_map = _np.array(
-            [
-                [3 * index, 3 * index + 1, 3 * index + 2]
-                for index in range(number_of_elements)
-            ],
-            dtype="uint32",
-        )
+        number_of_support_elements = len(elements_in_support)
+        global_dof_count = 3 * number_of_support_elements
 
-        local_multipliers = _np.ones((number_of_elements, 3), dtype="float64")
+        local2global = _np.zeros((grid.number_of_elements, 3), dtype='uint32')
+        local_multipliers = _np.zeros((grid.number_of_elements, 3), dtype='uint32')
 
-        support = _np.full(grid.number_of_elements, True, dtype=bool)
+        local2global[support] = _np.arange(3 * number_of_support_elements).reshape(
+                number_of_support_elements, 3)
+
+        local_multipliers[support] = 1
 
         codomain_dimension = 1
         order = 1
@@ -38,25 +38,18 @@ class P1DiscontinuousFunctionSpace(_FunctionSpace):
 
         localised_space = self
 
-        color_map = _np.zeros(number_of_elements, dtype="uint32")
-
-        map_to_localised_space = identity(
-            3 * grid.number_of_elements, dtype="float64", format="csr"
-        )
-
         space_data = _SpaceData(
             grid,
             codomain_dimension,
             global_dof_count,
             order,
             shapeset,
-            local2global_map,
+            local2global,
             local_multipliers,
             identifier,
             support,
             localised_space,
-            color_map,
-            map_to_localised_space,
+            normal_multipliers
         )
 
         super().__init__(space_data)
@@ -79,6 +72,7 @@ class P1DiscontinuousFunctionSpace(_FunctionSpace):
             local_coordinates,
             self.grid.data,
             self.local_multipliers,
+            normal_multipliers
         )
 
     def surface_gradient(self, element, local_coordinates):
@@ -89,12 +83,13 @@ class P1DiscontinuousFunctionSpace(_FunctionSpace):
             local_coordinates,
             self.grid.data,
             self.local_multipliers,
+            normal_multipliers
         )
 
 
 @_numba.njit
 def _numba_evaluate(
-    element_index, shapeset_evaluate, local_coordinates, grid_data, local_multipliers
+    element_index, shapeset_evaluate, local_coordinates, grid_data, local_multipliers, normal_multipliers
 ):
     """Evaluate the basis on an element."""
     return shapeset_evaluate(local_coordinates)
@@ -102,7 +97,7 @@ def _numba_evaluate(
 
 @_numba.njit
 def _numba_surface_gradient(
-    element_index, shapeset_gradient, local_coordinates, grid_data, local_multipliers
+    element_index, shapeset_gradient, local_coordinates, grid_data, local_multipliers, normal_multipliers
 ):
     """Evaluate the surface gradient."""
     reference_values = shapeset_gradient(local_coordinates)

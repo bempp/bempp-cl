@@ -102,14 +102,14 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
                 [
                     [
                         SparseDiscreteBoundaryOperator(
-                            self._domain[0].map_to_localised_space
+                            self._domain[0].map_to_full_grid
                         ),
                         None,
                     ],
                     [
                         None,
                         SparseDiscreteBoundaryOperator(
-                            self._domain[1].map_to_localised_space
+                            self._domain[1].map_to_full_grid
                         ),
                     ],
                 ],
@@ -164,18 +164,20 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
         options["NUMBER_OF_QUAD_POINTS"] = len(quad_weights)
         options["TRIAL0_NUMBER_OF_ELEMENTS"] = localised_domain[
             0
-        ].grid.number_of_elements
+        ].number_of_support_elements
         options["TRIAL1_NUMBER_OF_ELEMENTS"] = localised_domain[
             1
-        ].grid.number_of_elements
+        ].number_of_support_elements
+
+        options["GRID_NUMBER_OF_ELEMENTS"] = localised_domain[0].grid.number_of_elements
 
         options["TEST0_NUMBER_OF_ELEMENTS"] = localised_dual_to_range[
             0
-        ].grid.number_of_elements
+        ].number_of_support_elements
 
         options["TEST1_NUMBER_OF_ELEMENTS"] = localised_dual_to_range[
             1
-        ].grid.number_of_elements
+        ].number_of_support_elements
 
         self._vec_extension, self._vec_length = kernel_helpers.get_vectorization_information(
             device_interface, precision
@@ -192,7 +194,7 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
         )
 
         self._main_size, self._remainder_size = kernel_helpers.closest_multiple_to_number(
-            self.domain[0].grid.number_of_elements, self._workgroup_size
+            self.domain[0].number_of_support_elements, self._workgroup_size
         )
 
         options["WORKGROUP_SIZE"] = self._workgroup_size
@@ -222,12 +224,8 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
                 remainder_source, device_interface.context, precision
             )
 
-        test_indices = _np.arange(
-            localised_dual_to_range[0].grid.number_of_elements, dtype="uint32"
-        )
-        trial_indices = _np.arange(
-            localised_domain[0].grid.number_of_elements, dtype="uint32"
-        )
+        test_indices = localised_dual_to_range[0].support_elements.astype("uint32")
+        trial_indices = localised_domain[0].support_elements.astype("uint32")
 
         test_indices_buffer = _cl_helpers.DeviceBuffer.from_array(
             test_indices, device_interface, dtype=_np.uint32, access_mode="read_only"
@@ -258,6 +256,9 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
         )
 
         dtype = _cl_helpers.get_type(precision).real
+
+        trial_nshape_fun0 = self.domain[0].number_of_shape_functions
+        trial_nshape_fun1 = self.domain[1].number_of_shape_functions
 
         if complex_kernel:
             result_type = _cl_helpers.get_type(precision).complex
@@ -302,7 +303,8 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
         ).buffer
 
         input_buffer = _cl_helpers.DeviceBuffer(
-            shape[1],
+            trial_nshape_fun0 * self.domain[0].grid.number_of_elements + 
+            trial_nshape_fun1 * self.domain[1].grid.number_of_elements,
             result_type,
             device_interface.context,
             access_mode="read_only",
@@ -310,7 +312,7 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
         )
 
         sum_buffer = _cl_helpers.DeviceBuffer(
-            (shape[0], trial_grid.number_of_elements // self._workgroup_size),
+            (shape[0], self.domain[0].number_of_support_elements // self._workgroup_size),
             result_type,
             device_interface.context,
             access_mode="read_write",
@@ -325,7 +327,19 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
             order="C",
         )
 
+        test_normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
+            self.dual_to_range[0].localised_space.normal_multipliers,
+            device_interface,
+            dtype=_np.int32,
+            access_mode="read_only",
+        )
+        trial_normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
+            self.domain[0].localised_space.normal_multipliers, device_interface, dtype=_np.int32, access_mode="read_only"
+        )
+
         buffers = [
+            test_normal_signs_buffer,
+            trial_normal_signs_buffer,
             test_grid_buffer,
             trial_grid_buffer,
             test_connectivity,
@@ -361,7 +375,7 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
             event = self._main_kernel.run(
                 self._device_interface,
                 (
-                    self.dual_to_range[0].grid.number_of_elements,
+                    self.dual_to_range[0].number_of_support_elements,
                     self._main_size // self._vec_length,
                 ),
                 (1, self._workgroup_size // self._vec_length),
@@ -382,7 +396,7 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
                 self._sum_buffer,
                 self._result_buffer,
                 _np.uint32(
-                    self.domain[0].grid.number_of_elements // self._workgroup_size
+                    self.domain[0].number_of_support_elements // self._workgroup_size
                 ),
             )
 
@@ -395,7 +409,7 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
 
             event = self._remainder_kernel.run(
                 self._device_interface,
-                (self.dual_to_range[0].grid.number_of_elements, self._remainder_size),
+                (self.dual_to_range[0].number_of_support_elements, self._remainder_size),
                 (1, self._remainder_size),
                 *self._buffers,
                 self._result_buffer,

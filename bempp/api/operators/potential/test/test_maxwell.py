@@ -6,42 +6,69 @@
 import numpy as _np
 import pytest
 
-pytestmark = pytest.mark.usefixtures("default_parameters", "helpers", "small_sphere")
+pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
+
+WAVENUMBER = 2.5
+WAVENUMBER_COMPLEX = 2.5 + 1j
 
 
-def test_maxwell_electric_field_rwg(
+def test_maxwell_electric_field_potential_complex(
     default_parameters, helpers, device_interface, precision
 ):
-    """Test Maxwell efield potential with RWG basis."""
+    """Test Maxwell efield potential with complex wavenumber."""
     from bempp.api import function_space
-    from bempp.api.operators.potential.maxwell import electric_field
     from bempp.api import GridFunction
+    from bempp.api.operators.potential.maxwell import electric_field
 
-    default_parameters.quadrature.regular = 8
-
-    grid = helpers.load_grid("sphere_h_01")
+    grid = helpers.load_grid("sphere")
     space = function_space(grid, "RWG", 0)
 
-    npoints = 100
-    theta = _np.linspace(0, 2 * _np.pi, npoints)
-    points = _np.vstack(
-        [_np.cos(theta), _np.sin(theta), 3 * _np.ones(npoints, dtype="float64")]
-    )
+    data = helpers.load_npz_data("maxwell_electric_field_potential_complex")
 
-    data = helpers.load_npz_data("maxwell_electric_field_potential")
-
-    coefficients = data["arr_0"]
-    expected = data["arr_1"]
+    coefficients = data["vec"]
+    points = data["points"]
+    expected = data["result"]
 
     fun = GridFunction(space, coefficients=coefficients)
 
     actual = electric_field(
         space,
         points,
-        2.5,
+        WAVENUMBER_COMPLEX,
         parameters=default_parameters,
-        device_interface=device_interface,
         precision=precision,
+        device_interface=device_interface,
     ).evaluate(fun)
 
-    _np.testing.assert_allclose(actual, expected, rtol=5E-3)
+    _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
+
+
+def test_maxwell_electric_field_potential_rwg(
+    default_parameters, helpers, device_interface, precision
+):
+    """Test Maxwell efield potential."""
+    from bempp.api import function_space
+    from bempp.api import GridFunction
+    from bempp.api.operators.potential.maxwell import electric_field
+
+    grid = helpers.load_grid("sphere")
+    space = function_space(grid, "RWG", 0)
+
+    data = helpers.load_npz_data("maxwell_electric_field_potential")
+
+    coefficients = data["vec"]
+    points = data["points"]
+    expected = data["result"]
+
+    fun = GridFunction(space, coefficients=coefficients)
+
+    actual = electric_field(
+        space,
+        points,
+        WAVENUMBER,
+        parameters=default_parameters,
+        precision=precision,
+        device_interface=device_interface,
+    ).evaluate(fun)
+
+    _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))

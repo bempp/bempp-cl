@@ -221,6 +221,7 @@ def test_laplace_hypersingular(
     ).assemble()
 
     expected = helpers.load_npy_data("laplace_hypersingular_boundary")
+
     _np.testing.assert_allclose(
         discrete_op.A, expected, rtol=helpers.default_tolerance(precision)
     )

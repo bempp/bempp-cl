@@ -3,13 +3,16 @@
 #include "bempp_spaces.h"
 
 __kernel void evaluate(__global REALTYPE *grid,
+                       __global uint *indices,
+                       __global int *testNormalSigns, __global int *trialNormalSigns,
                        __constant REALTYPE* quadPoints,
                        __constant REALTYPE *quadWeights,
                        __global REALTYPE *globalResult, int nelements) {
   /* Variable declarations */
 
   // globalId(0) is always zero
-  size_t elementIndex = get_global_id(1);
+  size_t gid = get_global_id(1);
+  size_t elementIndex = indices[gid];
 
   size_t quadIndex;
   size_t globalIndex;
@@ -38,6 +41,8 @@ __kernel void evaluate(__global REALTYPE *grid,
   getNormalAndIntegrationElement(jacobian, &normal, &intElem);
   computeEdgeLength(corners, edgeLength);
 
+  updateNormals(elementIndex, testNormalSigns, &normal);
+
   for (quadIndex = 0; quadIndex < NUMBER_OF_QUAD_POINTS; ++quadIndex) {
     point = (REALTYPE2)(quadPoints[2 * quadIndex], quadPoints[2 * quadIndex + 1]);
     globalPoint = getGlobalPoint(corners, &point);
@@ -53,7 +58,7 @@ __kernel void evaluate(__global REALTYPE *grid,
     }
   }
 
-  globalIndex = 9 * elementIndex;
+  globalIndex = 9 * gid; 
 
   for (i = 0; i < 3; ++i)
     for (j = 0; j < 3; ++j)
