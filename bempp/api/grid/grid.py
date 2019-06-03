@@ -1093,13 +1093,14 @@ def grid_from_segments(grid, segments):
         if grid.domain_indices[elem] in segments:
             element_in_new_grid[elem] = True
     new_elements = grid.elements[:, element_in_new_grid]
+    new_domain_indices = grid.domain_indices[element_in_new_grid]
     vertex_indices = list(set(new_elements.ravel()))
     new_vertices = grid.vertices[:, vertex_indices]
     new_vertex_map = -_np.ones(grid.number_of_vertices, dtype=_np.int)
     new_vertex_map[vertex_indices] = _np.arange(len(vertex_indices))
     new_elements = new_vertex_map[new_elements.ravel()].reshape(3, -1)
 
-    return Grid(new_vertices, new_elements)
+    return Grid(new_vertices, new_elements, new_domain_indices)
 
 
 

@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 
-@pytest.mark.usefixtures("two_element_grid")
+@pytest.mark.usefixtures("two_element_grid", "helpers")
 @pytest.fixture
 def two_element_geometries(two_element_grid):
     """Return geometries of two element grid."""
@@ -41,10 +41,13 @@ def test_as_array(two_element_grid):
     np.testing.assert_allclose(expected, actual)
 
 
-def test_edge_adjacency(small_sphere):
+def test_edge_adjacency():
     """Check edge connectivity information for a small sphere."""
     # pylint: disable=too-many-locals
+    import bempp.api
     from bempp.api.grid.grid import get_element_to_element_matrix
+
+    small_sphere = bempp.api.shapes.regular_sphere(3)
 
     edge_adjacency = small_sphere.edge_adjacency
 
@@ -72,10 +75,13 @@ def test_edge_adjacency(small_sphere):
         np.testing.assert_equal(test_global_vertex_indices, trial_global_vertex_indices)
 
 
-def test_vertex_adjacency(small_sphere):
+def test_vertex_adjacency():
     """Check vertex connectivity information for a small sphere."""
     # pylint: disable=too-many-locals
+    import bempp.api
     from bempp.api.grid.grid import get_element_to_element_matrix
+
+    small_sphere = bempp.api.shapes.regular_sphere(3)
 
     vertex_adjacency = small_sphere.vertex_adjacency
 

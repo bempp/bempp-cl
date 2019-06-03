@@ -282,7 +282,9 @@ def transmission_operator(
     wavenumber,
     rho_rel,
     refractive_index,
+    segments=None,
     parameters=None,
+    swapped_normals=None,
     assembler="multitrace_evaluator",
     device_interface=None,
     precision=None,
@@ -296,7 +298,7 @@ def transmission_operator(
 
     wavenumber_int = wavenumber * refractive_index
 
-    domain = function_space(grid, "P", 1)
+    domain = function_space(grid, "P", 1, segments=segments, swapped_normals=swapped_normals, include_boundary_dofs=True)
     range_ = domain
     dual_to_range = domain
 

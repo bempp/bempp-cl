@@ -46,18 +46,19 @@ class Rwg0FunctionSpace(_FunctionSpace):
             for local_index in range(3):
                 edge_index = grid.element_edges[local_index, element_index]
                 edge_neighbors = grid.edge_neighbors[edge_index]
+                support_neighbors = [n for n in edge_neighbors if support[n]]
 
-                if len(edge_neighbors) == 1:
+                if len(support_neighbors) > 2:
+                    raise ValueError("Triple junction detected in space definition. Not allowed.")
+
+                if len(support_neighbors) == 1:
                     other = -1  # There is no other neighbor
                 else:
                     other = (
-                        edge_neighbors[1]
-                        if element_index == edge_neighbors[0]
-                        else edge_neighbors[0]
+                        support_neighbors[1]
+                        if element_index == support_neighbors[0]
+                        else support_neighbors[0]
                     )
-                    if not support[other]:
-                        # Neighbor element not in the support
-                        other = -1
 
                 if other == -1:
                     # We are at the boundary.
@@ -70,7 +71,7 @@ class Rwg0FunctionSpace(_FunctionSpace):
                 else:
                     # Assign 1 or -1 depending on element index
                     local_multipliers[element_index, local_index] = (
-                        1 if element_index == min(edge_neighbors) else -1
+                        1 if element_index == min(support_neighbors) else -1
                     )
                     if edge_dofs[edge_index] == -1:
                         edge_dofs[edge_index] = count

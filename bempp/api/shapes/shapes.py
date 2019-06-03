@@ -185,10 +185,10 @@ def multitrace_cube(h=.1):
     The normal direction at the interface shows into the
     positive z-direction and has the domain index
     and has the domain index 11. The lower half of the cube 
-    is given through the segments [1, 12, 13, 7, 5, 11]. The
+    is given through the segments [1, 2, 3, 4, 5, 6]. The
     top half of the cube is defined by the segments
-    [4, 3, 10, 8, 11, 12]. For the upper half the normal
-    direction of segment 11 shows in the interior of the domain.
+    [6, 7, 8, 9, 10, 11]. For the upper half the normal
+    direction of segment 6 shows in the interior of the domain.
     """
     stub = """
     Point(1) = {0, 0.0, 0, cl};
@@ -239,22 +239,23 @@ def multitrace_cube(h=.1):
     Plane Surface(10) = {10};
     Line Loop(11) = {16, 13, 14, 15};
     Plane Surface(11) = {11};
-    Physical Surface(1) = {6};
-    Physical Surface(3) = {4};
-    Physical Surface(4) = {7};
-    Physical Surface(5) = {1};
-    Physical Surface(7) = {9};
-    Physical Surface(8) = {10};
-    Physical Surface(10) = {3};
-    Physical Surface(11) = {11};
     Line Loop(12) = {1, -9, -5, 10};
     Plane Surface(12) = {12};
     Line Loop(13) = {-3, 17, -13, -22};
     Plane Surface(13) = {13};
     Line Loop(14) = {-11, 18, -14, -17};
     Plane Surface(14) = {14};
-    Physical Surface(12) = {13};
-    Physical Surface(13) = {14};
+    Physical Surface(1) = {6};
+    Physical Surface(2) = {13};
+    Physical Surface(3) = {14};
+    Physical Surface(4) = {9};
+    Physical Surface(5) = {1};
+    Physical Surface(6) = {11};
+    Physical Surface(7) = {3};
+    Physical Surface(8) = {10};
+    Physical Surface(9) = {7};
+    Physical Surface(10) = {4};
+    Physical Surface(11) = {12};
     """
     geometry = ("cl = " + str(h) + ";\n" + stub)
     return __generate_grid_from_geo_string(geometry)

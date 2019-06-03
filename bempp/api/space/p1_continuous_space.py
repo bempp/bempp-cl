@@ -54,7 +54,7 @@ class P1ContinuousFunctionSpace(_FunctionSpace):
         local2global_final = _np.zeros((number_of_elements, 3), dtype='uint32')
         local_multipliers = _np.zeros((number_of_elements, 3), dtype='float64')
 
-        dofs = -_np.ones(grid.number_of_elements)
+        dofs = -_np.ones(grid.number_of_vertices)
         used_dofs = _np.flatnonzero(vertex_is_dof)
         global_dof_count = len(used_dofs)
         dofs[used_dofs] = _np.arange(global_dof_count)
