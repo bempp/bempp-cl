@@ -46,6 +46,8 @@ class DensePotentialAssembler(object):
             self._compute_kernel = "evaluate_scalar_potential"
         elif operator_descriptor.compute_kernel == "maxwell_electric_field":
             self._compute_kernel = "evaluate_electric_field_potential"
+        elif operator_descriptor.compute_kernel == "maxwell_magnetic_field":
+            self._compute_kernel = "evaluate_magnetic_field_potential"
         else:
             raise ValueError("Unknown compute kernel for potential.")
 

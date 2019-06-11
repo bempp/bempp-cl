@@ -808,6 +808,8 @@ inline void helmholtz_gradient_novec(const REALTYPE3 testGlobalPoint,
                                            const REALTYPE3 trialNormal,
                                            REALTYPE result[3][2])
 {
+    // Compute the derivative with respect to the test point.
+    // Corresponding minus sign multiplied into the product variable.
     REALTYPE3 diff = trialGlobalPoint - testGlobalPoint;
     REALTYPE dist = length(diff);
 

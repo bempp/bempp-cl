@@ -82,6 +82,27 @@ def generate_potential(domain, fname, operator, wavenumber=None):
 
     np.savez(fname, result=result, points=points, vec=vec)
 
+def generate_far_field(domain, fname, operator, wavenumber=None):
+    """Generate far-field data."""
+
+    npoints = 10
+    rand = np.random.RandomState(0)
+
+    points = 2.5 * np.ones((3, 1), dtype="float64") + rand.rand(3, npoints)
+    points /= np.linalg.norm(points, axis=0)
+
+    vec = np.random.rand(domain.global_dof_count)
+    fun = bempp.api.GridFunction(domain, coefficients=vec)
+
+    if wavenumber is None:
+        pot = operator(domain, points)
+    else:
+        pot = operator(domain, points, wavenumber)
+
+    result = pot.evaluate(fun)
+
+    np.savez(fname, result=result, points=points, vec=vec)
+
 
 print("Generating Laplace BEM matrices.")
 
@@ -356,6 +377,7 @@ generate_potential(
     "laplace_double_layer_potential_p1",
     bempp.api.operators.potential.laplace.double_layer,
 )
+
 generate_potential(
     p1,
     "helmholtz_single_layer_potential_p1",
@@ -395,4 +417,72 @@ generate_potential(
     wavenumber_complex,
 )
 
+generate_potential(
+    rwg,
+    "maxwell_magnetic_field_potential",
+    bempp.api.operators.potential.maxwell.magnetic_field,
+    wavenumber,
+)
 
+generate_potential(
+    rwg,
+    "maxwell_magnetic_field_potential_complex",
+    bempp.api.operators.potential.maxwell.magnetic_field,
+    wavenumber_complex,
+)
+
+
+
+generate_far_field(
+    p1,
+    "helmholtz_single_layer_far_field_p1",
+    bempp.api.operators.far_field.helmholtz.single_layer,
+    wavenumber,
+)
+
+generate_potential(
+    p1,
+    "helmholtz_double_layer_far_field_p1",
+    bempp.api.operators.far_field.helmholtz.double_layer,
+    wavenumber,
+)
+generate_potential(
+    p1,
+    "helmholtz_single_layer_far_field_complex_p1",
+    bempp.api.operators.far_field.helmholtz.single_layer,
+    wavenumber_complex,
+)
+generate_potential(
+    p1,
+    "helmholtz_double_layer_far_field_complex_p1",
+    bempp.api.operators.far_field.helmholtz.double_layer,
+    wavenumber_complex,
+)
+
+generate_potential(
+    rwg,
+    "maxwell_electric_far_field",
+    bempp.api.operators.far_field.maxwell.electric_field,
+    wavenumber,
+)
+
+generate_potential(
+    rwg,
+    "maxwell_electric_far_field_complex",
+    bempp.api.operators.far_field.maxwell.electric_field,
+    wavenumber_complex,
+)
+
+generate_potential(
+    rwg,
+    "maxwell_magnetic_far_field",
+    bempp.api.operators.far_field.maxwell.magnetic_field,
+    wavenumber,
+)
+
+generate_potential(
+    rwg,
+    "maxwell_magnetic_far_field_complex",
+    bempp.api.operators.far_field.maxwell.magnetic_field,
+    wavenumber_complex,
+)
