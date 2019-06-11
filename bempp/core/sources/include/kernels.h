@@ -964,7 +964,121 @@ inline void helmholtz_gradient_vec16(const REALTYPE3 testGlobalPoint,
     result[2][1] = product[1] * diff[2];
 
 }
+inline void helmholtz_single_layer_far_field_novec(const REALTYPE3 testGlobalPoint, 
+                                           const REALTYPE3 trialGlobalPoint, 
+                                           const REALTYPE3 testNormal,
+                                           const REALTYPE3 trialNormal,
+                                           REALTYPE result[2])
+{
+    REALTYPE prod = dot(testGlobalPoint, trialGlobalPoint);
+    result[0] = M_INV_4PI * cos(-WAVENUMBER_REAL * prod);
+    result[1] = M_INV_4PI * sin(-WAVENUMBER_REAL * prod);
 
+}
+
+inline void helmholtz_single_layer_far_field_vec4(const REALTYPE3 testGlobalPoint, 
+                                         const REALTYPE4 trialGlobalPoint[3], 
+                                         const REALTYPE3 testNormal,
+                                         const REALTYPE4 trialNormal[3],
+                                         REALTYPE4* result)
+{
+
+    REALTYPE4 prod = testGlobalPoint.x * trialGlobalPoint[0] + 
+        testGlobalPoint.y * trialGlobalPoint[1] + testGlobalPoint.z * trialGlobalPoint[2];
+    result[0] = M_INV_4PI * cos(-WAVENUMBER_REAL * prod);
+    result[1] = M_INV_4PI * sin(-WAVENUMBER_REAL * prod);
+}
+
+inline void helmholtz_single_layer_far_field_vec8(const REALTYPE3 testGlobalPoint, 
+                                         const REALTYPE8 trialGlobalPoint[3], 
+                                         const REALTYPE3 testNormal,
+                                         const REALTYPE8 trialNormal[3],
+                                         REALTYPE8* result)
+{
+
+    REALTYPE8 prod = testGlobalPoint.x * trialGlobalPoint[0] + 
+        testGlobalPoint.y * trialGlobalPoint[1] + testGlobalPoint.z * trialGlobalPoint[2];
+    result[0] = M_INV_4PI * cos(-WAVENUMBER_REAL * prod);
+    result[1] = M_INV_4PI * sin(-WAVENUMBER_REAL * prod);
+}
+inline void helmholtz_single_layer_far_field_vec16(const REALTYPE3 testGlobalPoint, 
+                                         const REALTYPE16 trialGlobalPoint[3], 
+                                         const REALTYPE3 testNormal,
+                                         const REALTYPE16 trialNormal[3],
+                                         REALTYPE16* result)
+{
+
+    REALTYPE16 prod = testGlobalPoint.x * trialGlobalPoint[0] + 
+        testGlobalPoint.y * trialGlobalPoint[1] + testGlobalPoint.z * trialGlobalPoint[2];
+    result[0] = M_INV_4PI * cos(-WAVENUMBER_REAL * prod);
+    result[1] = M_INV_4PI * sin(-WAVENUMBER_REAL * prod);
+}
+
+inline void helmholtz_double_layer_far_field_novec(const REALTYPE3 testGlobalPoint, 
+                                           const REALTYPE3 trialGlobalPoint, 
+                                           const REALTYPE3 testNormal,
+                                           const REALTYPE3 trialNormal,
+                                           REALTYPE result[2])
+{
+    REALTYPE prod = dot(testGlobalPoint, trialGlobalPoint);
+    REALTYPE factor = -WAVENUMBER_REAL * dot(testGlobalPoint, trialNormal);
+    
+
+    result[0] = -factor * M_INV_4PI * sin(-WAVENUMBER_REAL * prod);
+    result[1] = factor * M_INV_4PI * cos(-WAVENUMBER_REAL * prod);
+
+}
+
+inline void helmholtz_double_layer_far_field_vec4(const REALTYPE3 testGlobalPoint, 
+                                           const REALTYPE4 trialGlobalPoint[3], 
+                                           const REALTYPE3 testNormal,
+                                           const REALTYPE4 trialNormal[3],
+                                           REALTYPE4 result[2])
+{
+    REALTYPE4 prod = testGlobalPoint.x * trialGlobalPoint[0] + 
+        testGlobalPoint.y * trialGlobalPoint[1] + testGlobalPoint.z * trialGlobalPoint[2];
+
+    REALTYPE4 factor = -WAVENUMBER_REAL * (testGlobalPoint.x * trialNormal[0] +
+        testGlobalPoint.y * trialNormal[1] + testGlobalPoint.z * trialNormal[2]);
+    
+    result[0] = -factor * M_INV_4PI * sin(-WAVENUMBER_REAL * prod);
+    result[1] = factor * M_INV_4PI * cos(-WAVENUMBER_REAL * prod);
+
+}
+
+inline void helmholtz_double_layer_far_field_vec8(const REALTYPE3 testGlobalPoint, 
+                                           const REALTYPE8 trialGlobalPoint[3], 
+                                           const REALTYPE3 testNormal,
+                                           const REALTYPE8 trialNormal[3],
+                                           REALTYPE8 result[2])
+{
+    REALTYPE8 prod = testGlobalPoint.x * trialGlobalPoint[0] + 
+        testGlobalPoint.y * trialGlobalPoint[1] + testGlobalPoint.z * trialGlobalPoint[2];
+
+    REALTYPE8 factor = -WAVENUMBER_REAL * (testGlobalPoint.x * trialNormal[0] +
+        testGlobalPoint.y * trialNormal[1] + testGlobalPoint.z * trialNormal[2]);
+    
+    result[0] = -factor * M_INV_4PI * sin(-WAVENUMBER_REAL * prod);
+    result[1] = factor * M_INV_4PI * cos(-WAVENUMBER_REAL * prod);
+
+}
+
+inline void helmholtz_double_layer_far_field_vec16(const REALTYPE3 testGlobalPoint, 
+                                           const REALTYPE16 trialGlobalPoint[3], 
+                                           const REALTYPE3 testNormal,
+                                           const REALTYPE16 trialNormal[3],
+                                           REALTYPE16 result[2])
+{
+    REALTYPE16 prod = testGlobalPoint.x * trialGlobalPoint[0] + 
+        testGlobalPoint.y * trialGlobalPoint[1] + testGlobalPoint.z * trialGlobalPoint[2];
+
+    REALTYPE16 factor = -WAVENUMBER_REAL * (testGlobalPoint.x * trialNormal[0] +
+        testGlobalPoint.y * trialNormal[1] + testGlobalPoint.z * trialNormal[2]);
+    
+    result[0] = -factor * M_INV_4PI * sin(-WAVENUMBER_REAL * prod);
+    result[1] = factor * M_INV_4PI * cos(-WAVENUMBER_REAL * prod);
+
+}
 
 #endif
 
