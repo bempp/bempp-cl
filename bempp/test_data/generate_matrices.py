@@ -440,47 +440,47 @@ generate_far_field(
     wavenumber,
 )
 
-generate_potential(
+generate_far_field(
     p1,
     "helmholtz_double_layer_far_field_p1",
     bempp.api.operators.far_field.helmholtz.double_layer,
     wavenumber,
 )
-generate_potential(
+generate_far_field(
     p1,
     "helmholtz_single_layer_far_field_complex_p1",
     bempp.api.operators.far_field.helmholtz.single_layer,
     wavenumber_complex,
 )
-generate_potential(
+generate_far_field(
     p1,
     "helmholtz_double_layer_far_field_complex_p1",
     bempp.api.operators.far_field.helmholtz.double_layer,
     wavenumber_complex,
 )
 
-generate_potential(
+generate_far_field(
     rwg,
     "maxwell_electric_far_field",
     bempp.api.operators.far_field.maxwell.electric_field,
     wavenumber,
 )
 
-generate_potential(
+generate_far_field(
     rwg,
     "maxwell_electric_far_field_complex",
     bempp.api.operators.far_field.maxwell.electric_field,
     wavenumber_complex,
 )
 
-generate_potential(
+generate_far_field(
     rwg,
     "maxwell_magnetic_far_field",
     bempp.api.operators.far_field.maxwell.magnetic_field,
     wavenumber,
 )
 
-generate_potential(
+generate_far_field(
     rwg,
     "maxwell_magnetic_far_field_complex",
     bempp.api.operators.far_field.maxwell.magnetic_field,
