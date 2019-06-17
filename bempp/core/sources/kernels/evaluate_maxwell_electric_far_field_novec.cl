@@ -53,7 +53,7 @@ __kernel void evaluate_electric_far_field_novec(
 
 #ifndef COMPLEX_COEFFICIENTS
   for (i = 0; i < 3; ++i) {
-    myCoefficients[i][0] = coefficients[3 * gid[1] + i];
+    myCoefficients[i][0] = coefficients[3 * elementIndex + i];
     myCoefficients[i][1] = M_ZERO;
   }
 #else

@@ -3,7 +3,7 @@
 #include "bempp_spaces.h"
 #include "kernels.h"
 
-__kernel void evaluate_magnetic_field_potential_novec(
+__kernel void evaluate_magnetic_far_field_novec(
     __global REALTYPE *grid, 
     __global uint* indices,
     __global int* normalSigns,
@@ -29,21 +29,22 @@ __kernel void evaluate_magnetic_field_potential_novec(
   REALTYPE3 corners[3];
   REALTYPE3 jacobian[2];
   REALTYPE3 normal;
-
-  REALTYPE factor1[2];
+  REALTYPE inner;
+  REALTYPE crossProd[3][3];
 
   REALTYPE2 point;
 
   REALTYPE intElem;
 
   size_t quadIndex;
-  size_t i, j, k;
+  size_t i, j;
 
   REALTYPE shapeIntegral[3][3][2];
+  REALTYPE kernelValue[2];
 
   __local REALTYPE localResult[WORKGROUP_SIZE][3][2];
-  REALTYPE gradKernelValue[3][2];
   REALTYPE myCoefficients[NUMBER_OF_SHAPE_FUNCTIONS][2];
+  REALTYPE factor1[2];
   REALTYPE edgeLengths[3];
 
   REALTYPE3 evalGlobalPoint =
@@ -73,6 +74,7 @@ __kernel void evaluate_magnetic_field_potential_novec(
   getNormalAndIntegrationElement(jacobian, &normal, &intElem);
 
   updateNormals(elementIndex, normalSigns, &normal);
+
   computeEdgeLength(corners, edgeLengths);
 
   for (quadIndex = 0; quadIndex < NUMBER_OF_QUAD_POINTS; ++quadIndex) {
@@ -82,15 +84,24 @@ __kernel void evaluate_magnetic_field_potential_novec(
     BASIS(SHAPESET, evaluate)(&point, &basisValue[0][0]);
     getPiolaTransform(intElem, jacobian, basisValue, elementValue);
 
-    KERNEL(novec)(evalGlobalPoint, surfaceGlobalPoint, normal, normal, gradKernelValue); 
+    inner = evalGlobalPoint.x * surfaceGlobalPoint.x + evalGlobalPoint.y * surfaceGlobalPoint.y + 
+        evalGlobalPoint.z * surfaceGlobalPoint.z;
 
+    kernelValue[0] = M_INV_4PI * cos(-WAVENUMBER_REAL * inner); 
+    kernelValue[1] = M_INV_4PI * sin(-WAVENUMBER_REAL * inner);
+
+    for (i = 0; i < 3; ++i){
+        crossProd[i][0] = evalGlobalPoint.y * elementValue[i].z - evalGlobalPoint.z * elementValue[i].y;
+        crossProd[i][1] = evalGlobalPoint.z * elementValue[i].x - evalGlobalPoint.x * elementValue[i].z;
+        crossProd[i][2] = evalGlobalPoint.x * elementValue[i].y - evalGlobalPoint.y * elementValue[i].x;
+    }
 
     for (i = 0; i < 3; ++i)
-        for (k = 0; k < 2; ++k){
-        shapeIntegral[i][0][k] += (gradKernelValue[1][k] * elementValue[i].z - gradKernelValue[2][k] * elementValue[i].y)  * quadWeights[quadIndex];
-        shapeIntegral[i][1][k] += (gradKernelValue[2][k] * elementValue[i].x - gradKernelValue[0][k] * elementValue[i].z)  * quadWeights[quadIndex];
-        shapeIntegral[i][2][k] += (gradKernelValue[0][k] * elementValue[i].y - gradKernelValue[1][k] * elementValue[i].x)  * quadWeights[quadIndex];
-        }
+        for (j = 0; j < 3; ++j)
+      {
+        shapeIntegral[i][j][0] += -kernelValue[1] * WAVENUMBER_REAL * crossProd[i][j] * quadWeights[quadIndex];
+        shapeIntegral[i][j][1] += kernelValue[0] * WAVENUMBER_REAL * crossProd[i][j] * quadWeights[quadIndex];
+      }
   }
 
   for (j = 0; j < 3; ++j) {

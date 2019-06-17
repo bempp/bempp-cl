@@ -71,37 +71,119 @@ def test_helmholtz_double_layer_potential_p1(
 
     _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
 
-# def test_helmholtz_single_layer_potential_p1_complex_coeffs(
-    # default_parameters, helpers, device_interface, precision
-# ):
-    # """Test Helmholtz slp potential with p1 basis and complex coeffs."""
-    # from bempp.api import function_space
-    # from bempp.api import GridFunction
-    # from bempp.api.operators.potential.helmholtz import single_layer
+def test_helmholtz_far_field_segments(
+        default_parameters, helpers, device_interface, precision):
+    """Test Helmholtz far field on segments."""
+    import bempp.api
+    from bempp.api import function_space
+    from bempp.api import GridFunction
+    from bempp.api.operators.far_field.helmholtz import single_layer
+    from bempp.api.operators.far_field.helmholtz import double_layer
+    from bempp.api.grid.grid import grid_from_segments
 
-    # grid = helpers.load_grid("sphere")
-    # space = function_space(grid, "P", 1)
+    grid = bempp.api.shapes.multitrace_cube()
 
-    # data = helpers.load_npz_data("helmholtz_single_layer_potential_p1")
+    seglists = [[1, 2, 3, 4, 5, 6], [6, 7, 8, 9, 10, 11]]
+    swapped_normal_lists = [{}, {6}]
 
-    # points = data["points"]
-    # coefficients = _np.random.rand(space.global_dof_count) + 1j * _np.random.rand(space.global_dof_count)
+    rand = _np.random.RandomState(0)
+    points = rand.randn(3, 10)
+    points /= _np.linalg.norm(points, axis=0)
 
-    # fun = GridFunction(space, coefficients=coefficients)
-    # fun_real = GridFunction(space, coefficients=_np.real(coefficients))
-    # fun_complex = GridFunction(space, coefficients=_np.imag(coefficients))
+    for op in [single_layer, double_layer]:
+        for seglist, swapped_normals in zip(seglists, swapped_normal_lists):
+            new_grid = grid_from_segments(grid, seglist)
 
-    # op = single_layer(
-        # space,
-        # points,
-        # WAVENUMBER,
-        # parameters=default_parameters,
-        # precision=precision,
-        # device_interface=device_interface,
-    # )
+            coeffs = rand.rand(new_grid.number_of_vertices)
+            
+            space1 = function_space(grid, "P", 1, segments=seglist, swapped_normals=swapped_normals,
+                include_boundary_dofs=True)
+            space2 = function_space(new_grid, "P", 1, swapped_normals=swapped_normals)
 
-    # expected = op.evaluate(fun_real) + 1j * op.evaluate(fun_complex)
-    # actual = op.evaluate(fun)
+            fun1 = bempp.api.GridFunction(space1, coefficients=coeffs)
+            fun2 = bempp.api.GridFunction(space2, coefficients=coeffs)
 
-    # _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
+            actual = op(space1, points, 2.5) * fun1
+            expected = op(space2, points, 2.5) * fun2
 
+            _np.testing.assert_allclose(
+                actual, expected, rtol=helpers.default_tolerance(precision)
+            )
+
+def test_helmholtz_far_field_complex_coeffs(
+        default_parameters, helpers, device_interface, precision):
+    """Test Helmholtz far field ops with complex coefficients."""
+    import bempp.api
+    from bempp.api import function_space
+    from bempp.api import GridFunction
+    from bempp.api.operators.far_field.helmholtz import single_layer
+    from bempp.api.operators.far_field.helmholtz import double_layer
+    from bempp.api.grid.grid import grid_from_segments
+
+    grid = bempp.api.shapes.regular_sphere(3)
+
+    space = bempp.api.function_space(grid, "P", 1)
+
+    random = _np.random.RandomState(0)
+
+    points = random.randn(3, 10)
+    points /= _np.linalg.norm(points, axis=0)
+
+    coeffs_real = random.rand(grid.number_of_vertices)
+    coeffs_imag = random.rand(grid.number_of_vertices)
+    coeffs = coeffs_real + 1j * coeffs_imag
+
+    fun_real = bempp.api.GridFunction(space, coefficients=coeffs_real)
+    fun_imag = bempp.api.GridFunction(space, coefficients=coeffs_imag)
+    fun = bempp.api.GridFunction(space, coefficients=coeffs)
+
+    for op in [single_layer, double_layer]:
+        far_field_op = op(space, points, WAVENUMBER)
+        actual_real = far_field_op * fun_real
+        actual_imag = far_field_op * fun_imag
+        actual = actual_real + 1j * actual_imag
+        expected = far_field_op * fun
+        _np.testing.assert_allclose(
+            actual, expected, rtol=helpers.default_tolerance(precision)
+        )
+
+
+    
+def test_helmholtz_far_field_segments_complex_coeffs(
+        default_parameters, helpers, device_interface, precision):
+    """Test Maxwell potentials on segments with complex coeffs."""
+    import bempp.api
+    from bempp.api import function_space
+    from bempp.api import GridFunction
+    from bempp.api.operators.far_field.helmholtz import single_layer
+    from bempp.api.operators.far_field.helmholtz import double_layer
+    from bempp.api.grid.grid import grid_from_segments
+
+    grid = bempp.api.shapes.multitrace_cube()
+
+    seglists = [[1, 2, 3, 4, 5, 6], [6, 7, 8, 9, 10, 11]]
+    swapped_normal_lists = [{}, {6}]
+
+    rand = _np.random.RandomState(0)
+    points = rand.randn(3, 10)
+    points /= _np.linalg.norm(points, axis=0)
+
+    for op in [single_layer, double_layer]:
+        for seglist, swapped_normals in zip(seglists, swapped_normal_lists):
+            new_grid = grid_from_segments(grid, seglist)
+
+            coeffs = rand.rand(new_grid.number_of_vertices) + 1j * rand.rand(new_grid.number_of_vertices)
+            
+            space1 = function_space(grid, "P", 1, segments=seglist, swapped_normals=swapped_normals,
+                include_boundary_dofs=True)
+            space2 = function_space(new_grid, "P", 1, swapped_normals=swapped_normals)
+
+            fun1 = bempp.api.GridFunction(space1, coefficients=coeffs)
+            fun2 = bempp.api.GridFunction(space2, coefficients=coeffs)
+
+            actual = op(space1, points, 2.5) * fun1
+            expected = op(space2, points, 2.5) * fun2
+
+            _np.testing.assert_allclose(
+                actual, expected, rtol=helpers.default_tolerance(precision)
+            )

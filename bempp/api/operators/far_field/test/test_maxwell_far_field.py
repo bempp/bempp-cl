@@ -41,67 +41,151 @@ def test_maxwell_electric_far_field(
 
     _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
 
-# def test_helmholtz_double_layer_potential_p1(
-    # default_parameters, helpers, device_interface, precision
-# ):
-    # """Test Helmholtz dlp far field with p1 basis."""
-    # from bempp.api import function_space
-    # from bempp.api import GridFunction
-    # from bempp.api.operators.far_field.helmholtz import double_layer
+def test_maxwell_magnetic_far_field(
+    default_parameters, helpers, device_interface, precision
+):
+    """Test Maxwell magnetic far field."""
+    from bempp.api import function_space
+    from bempp.api import GridFunction
+    from bempp.api.operators.far_field.maxwell import magnetic_field
 
-    # grid = helpers.load_grid("sphere")
-    # space = function_space(grid, "P", 1)
+    grid = helpers.load_grid("sphere")
+    space = function_space(grid, "RWG", 0)
 
-    # data = helpers.load_npz_data("helmholtz_double_layer_far_field_p1")
+    data = helpers.load_npz_data("maxwell_magnetic_far_field")
 
-    # coefficients = data["vec"]
-    # points = data["points"]
-    # expected = data["result"]
+    coefficients = data["vec"]
+    points = data["points"]
+    expected = data["result"]
 
-    # fun = GridFunction(space, coefficients=coefficients)
+    fun = GridFunction(space, coefficients=coefficients)
 
-    # actual = double_layer(
-        # space,
-        # points,
-        # WAVENUMBER,
-        # parameters=default_parameters,
-        # precision=precision,
-        # device_interface=device_interface,
-    # ).evaluate(fun)
+    actual = magnetic_field(
+        space,
+        points,
+        WAVENUMBER,
+        parameters=default_parameters,
+        precision=precision,
+        device_interface=device_interface,
+    ).evaluate(fun)
 
-    # _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
+    _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
 
-# def test_helmholtz_single_layer_potential_p1_complex_coeffs(
-    # default_parameters, helpers, device_interface, precision
-# ):
-    # """Test Helmholtz slp potential with p1 basis and complex coeffs."""
-    # from bempp.api import function_space
-    # from bempp.api import GridFunction
-    # from bempp.api.operators.potential.helmholtz import single_layer
+def test_maxwell_far_field_segments(
+        default_parameters, helpers, device_interface, precision):
+    """Test Maxwell far field on segments."""
+    import bempp.api
+    from bempp.api import function_space
+    from bempp.api import GridFunction
+    from bempp.api.operators.far_field.maxwell import electric_field
+    from bempp.api.operators.far_field.maxwell import magnetic_field
+    from bempp.api.grid.grid import grid_from_segments
 
-    # grid = helpers.load_grid("sphere")
-    # space = function_space(grid, "P", 1)
+    grid = bempp.api.shapes.multitrace_cube()
 
-    # data = helpers.load_npz_data("helmholtz_single_layer_potential_p1")
+    seglists = [[1, 2, 3, 4, 5, 6], [6, 7, 8, 9, 10, 11]]
+    swapped_normal_lists = [{}, {6}]
 
-    # points = data["points"]
-    # coefficients = _np.random.rand(space.global_dof_count) + 1j * _np.random.rand(space.global_dof_count)
+    rand = _np.random.RandomState(0)
+    points = rand.randn(3, 10)
+    points /= _np.linalg.norm(points, axis=0)
 
-    # fun = GridFunction(space, coefficients=coefficients)
-    # fun_real = GridFunction(space, coefficients=_np.real(coefficients))
-    # fun_complex = GridFunction(space, coefficients=_np.imag(coefficients))
+    for op in [electric_field, magnetic_field]:
+        for seglist, swapped_normals in zip(seglists, swapped_normal_lists):
+            new_grid = grid_from_segments(grid, seglist)
 
-    # op = single_layer(
-        # space,
-        # points,
-        # WAVENUMBER,
-        # parameters=default_parameters,
-        # precision=precision,
-        # device_interface=device_interface,
-    # )
+            coeffs = rand.rand(new_grid.number_of_edges)
+            
+            space1 = function_space(grid, "RWG", 0, segments=seglist, swapped_normals=swapped_normals,
+                include_boundary_dofs=True)
+            space2 = function_space(new_grid, "RWG", 0, swapped_normals=swapped_normals)
 
-    # expected = op.evaluate(fun_real) + 1j * op.evaluate(fun_complex)
-    # actual = op.evaluate(fun)
+            fun1 = bempp.api.GridFunction(space1, coefficients=coeffs)
+            fun2 = bempp.api.GridFunction(space2, coefficients=coeffs)
 
-    # _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
+            actual = op(space1, points, 2.5) * fun1
+            expected = op(space2, points, 2.5) * fun2
 
+            _np.testing.assert_allclose(
+                actual, expected, rtol=helpers.default_tolerance(precision)
+            )
+
+def test_maxwell_far_field_complex_coeffs(
+        default_parameters, helpers, device_interface, precision):
+    """Test Maxwell far field ops with complex coefficients."""
+    import bempp.api
+    from bempp.api import function_space
+    from bempp.api import GridFunction
+    from bempp.api.operators.far_field.maxwell import electric_field
+    from bempp.api.operators.far_field.maxwell import magnetic_field
+    from bempp.api.grid.grid import grid_from_segments
+
+    grid = bempp.api.shapes.regular_sphere(3)
+
+    space = bempp.api.function_space(grid, "RWG", 0)
+
+    random = _np.random.RandomState(0)
+
+    points = random.randn(3, 10)
+    points /= _np.linalg.norm(points, axis=0)
+
+    coeffs_real = random.rand(grid.number_of_edges)
+    coeffs_imag = random.rand(grid.number_of_edges)
+    coeffs = coeffs_real + 1j * coeffs_imag
+
+    fun_real = bempp.api.GridFunction(space, coefficients=coeffs_real)
+    fun_imag = bempp.api.GridFunction(space, coefficients=coeffs_imag)
+    fun = bempp.api.GridFunction(space, coefficients=coeffs)
+
+    for op in [electric_field, magnetic_field]:
+        far_field_op = op(space, points, WAVENUMBER)
+        actual_real = far_field_op * fun_real
+        actual_imag = far_field_op * fun_imag
+        actual = actual_real + 1j * actual_imag
+        expected = far_field_op * fun
+        _np.testing.assert_allclose(
+            actual, expected, rtol=helpers.default_tolerance(precision)
+        )
+
+
+    
+
+def test_maxwell_far_field_segments_complex_coeffs(
+        default_parameters, helpers, device_interface, precision):
+    """Test Maxwell potentials on segments with complex coeffs."""
+    import bempp.api
+    from bempp.api import function_space
+    from bempp.api import GridFunction
+    from bempp.api.operators.far_field.maxwell import electric_field
+    from bempp.api.operators.far_field.maxwell import magnetic_field
+    from bempp.api.grid.grid import grid_from_segments
+
+    grid = bempp.api.shapes.multitrace_cube()
+
+    seglists = [[1, 2, 3, 4, 5, 6], [6, 7, 8, 9, 10, 11]]
+    swapped_normal_lists = [{}, {6}]
+
+    rand = _np.random.RandomState(0)
+
+    points = rand.randn(3, 10)
+    points /= _np.linalg.norm(points, axis=0)
+
+    for op in [electric_field, magnetic_field]:
+        for seglist, swapped_normals in zip(seglists, swapped_normal_lists):
+            new_grid = grid_from_segments(grid, seglist)
+
+            coeffs = rand.rand(new_grid.number_of_edges) + 1j * rand.rand(new_grid.number_of_edges)
+            
+            space1 = function_space(grid, "RWG", 0, segments=seglist, swapped_normals=swapped_normals,
+                include_boundary_dofs=True)
+            space2 = function_space(new_grid, "RWG", 0, swapped_normals=swapped_normals)
+
+            fun1 = bempp.api.GridFunction(space1, coefficients=coeffs)
+            fun2 = bempp.api.GridFunction(space2, coefficients=coeffs)
+
+            actual = op(space1, points, 2.5) * fun1
+            expected = op(space2, points, 2.5) * fun2
+
+            _np.testing.assert_allclose(
+                actual, expected, rtol=helpers.default_tolerance(precision)
+            )
