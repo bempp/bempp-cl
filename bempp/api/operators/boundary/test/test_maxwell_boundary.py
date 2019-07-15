@@ -33,7 +33,7 @@ def test_maxwell_electric_field_sphere(
         device_interface=device_interface,
         precision=precision,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     if precision == "single":
         rtol = 1e-5
@@ -68,7 +68,7 @@ def test_maxwell_electric_field_complex_sphere(
         device_interface=device_interface,
         precision=precision,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     if precision == "single":
         rtol = 1e-5
@@ -103,7 +103,7 @@ def test_maxwell_electric_field_screen(
         device_interface=device_interface,
         precision=precision,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     if precision == "single":
         rtol = 1e-5
@@ -138,7 +138,7 @@ def test_maxwell_magnetic_field_sphere(
         device_interface=device_interface,
         precision=precision,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     if precision == "single":
         rtol = 1e-5
@@ -173,7 +173,7 @@ def test_maxwell_magnetic_field_complex_sphere(
         device_interface=device_interface,
         precision=precision,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     if precision == "single":
         rtol = 1e-5
@@ -208,7 +208,7 @@ def test_maxwell_electric_field_sphere_evaluator(
         device_interface=device_interface,
         precision=precision,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     mat = electric_field(
         space1,
@@ -219,7 +219,7 @@ def test_maxwell_electric_field_sphere_evaluator(
         device_interface=device_interface,
         precision=precision,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     x = _np.random.RandomState(0).randn(space1.global_dof_count)
 
@@ -256,7 +256,7 @@ def test_maxwell_magnetic_field_sphere_evaluator(
         device_interface=device_interface,
         precision=precision,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     mat = magnetic_field(
         space1,
@@ -267,7 +267,7 @@ def test_maxwell_magnetic_field_sphere_evaluator(
         device_interface=device_interface,
         precision=precision,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     x = _np.random.RandomState(0).randn(space1.global_dof_count)
 
@@ -304,7 +304,7 @@ def test_maxwell_electric_field_complex_sphere_evaluator(
         device_interface=device_interface,
         precision=precision,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     mat = electric_field(
         space1,
@@ -315,7 +315,7 @@ def test_maxwell_electric_field_complex_sphere_evaluator(
         device_interface=device_interface,
         precision=precision,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     x = _np.random.RandomState(0).randn(space1.global_dof_count)
 
@@ -352,7 +352,7 @@ def test_maxwell_magnetic_field_complex_sphere_evaluator(
         device_interface=device_interface,
         precision=precision,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     mat = magnetic_field(
         space1,
@@ -363,7 +363,7 @@ def test_maxwell_magnetic_field_complex_sphere_evaluator(
         device_interface=device_interface,
         precision=precision,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     x = _np.random.RandomState(0).randn(space1.global_dof_count)
 

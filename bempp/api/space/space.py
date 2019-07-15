@@ -120,12 +120,17 @@ class _FunctionSpace(_abc.ABC):
         self._map_to_localised_space = coo_matrix(
             (
                 self._local_multipliers[self._support].ravel(),
-                (_np.arange(nshape_fun * self._number_of_support_elements), self._local2global_map[self._support].ravel()),
+                (
+                    _np.arange(nshape_fun * self._number_of_support_elements),
+                    self._local2global_map[self._support].ravel(),
+                ),
             ),
-            shape=(nshape_fun * self._number_of_support_elements, self.global_dof_count),
+            shape=(
+                nshape_fun * self._number_of_support_elements,
+                self.global_dof_count,
+            ),
             dtype="float64",
         ).tocsr()
-
 
         self._map_to_full_grid = coo_matrix(
             (
@@ -300,7 +305,6 @@ class _FunctionSpace(_abc.ABC):
     def vertex_on_boundary(self):
         """Return true if vertex is on boundary of segment."""
 
-
     def _invert_local2global_map(
         self, local2global_map, number_of_elements, global_dof_count
     ):
@@ -321,9 +325,11 @@ class _FunctionSpace(_abc.ABC):
             """Get all global dof neighbors of an element."""
             global_dofs = self.local2global[element_index]
             neighbors = {
-                    elem for global_dof in global_dofs
-                    for elem, _ in self.global2local[global_dof]
-                    if self.support[elem] and elem != element_index}
+                elem
+                for global_dof in global_dofs
+                for elem, _ in self.global2local[global_dof]
+                if self.support[elem] and elem != element_index
+            }
             return list(neighbors)
 
         self._color_map = -_np.ones(self.grid.number_of_elements, dtype=_np.int32)
@@ -352,7 +358,14 @@ class _FunctionSpace(_abc.ABC):
 
     def __eq__(self, other):
         """Check equality of spaces."""
-        return self.grid == other.grid and self.identifier == other.identifier
+        return (
+            self.grid == other.grid
+            and self.identifier == other.identifier
+            and _np.all(self.support_elements == other.support_elements)
+            and _np.all(self.local2global == other.local2global)
+            and _np.all(self.local_multipliers == other.local_multipliers)
+        )
+
 
 def _process_segments(grid, support_elements, segments, swapped_normals):
     """Pocess information from support_elements and segments vars."""

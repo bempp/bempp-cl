@@ -35,29 +35,16 @@ class BoundaryOperator(object):
         """Return the parameters associated with the operator."""
         return self._parameters
 
-    def assemble(self, *args, **kwargs):
-        """Assemble the operator."""
-        raise NotImplementedError
+    def weak_form(self):
+        """Return the weak form (assemble if necessary)."""
 
-    def weak_form(self, *args, **kwargs):
-        """Return cached weak form (assemble if necessary). """
         if not self._cached:
-            self._cached = self.assemble(*args, **kwargs)
+            self._cached = self._assemble()
 
         return self._cached
 
-    def strong_form(self, recompute=False):
-        """Return a discrete operator  that maps into the range space.
-
-        Parameters
-        ----------
-        recompute : bool
-            Usually the strong form is cached. If this parameter is set to
-            `true` the strong form is recomputed.
-        """
-        if recompute is True:
-            self._range_map = None
-
+    def strong_form(self):
+        """Return a discrete operator  that maps into the range space."""
         if self._range_map is None:
 
             # This is the most frequent case and we cache the mass
@@ -75,7 +62,7 @@ class BoundaryOperator(object):
                         self.range,
                         self.range, self.dual_to_range).weak_form())
 
-        return self._range_map * self.weak_form(recompute)
+        return self._range_map * self.weak_form()
 
 
     def __mul__(self, other):
@@ -97,6 +84,11 @@ class BoundaryOperator(object):
                                 dual_space=self.dual_to_range)
         else:
             return NotImplemented
+
+    def __matmul__(self, other):
+        """Matrix multiplication notation."""
+
+        return self.__mul__(other)
 
     def __rmul__(self, other):
 
@@ -141,9 +133,9 @@ class BoundaryOperatorWithAssembler(BoundaryOperator):
         """Operator descriptor."""
         return self._operator_descriptor
 
-    def assemble(self, *args, **kwargs):
+    def _assemble(self):
         """Assemble the operator."""
-        return self.assembler.assemble(self.descriptor, *args, **kwargs)
+        return self.assembler.assemble(self.descriptor)
 
 
 class _SumBoundaryOperator(BoundaryOperator):
@@ -162,9 +154,9 @@ class _SumBoundaryOperator(BoundaryOperator):
         self._op1 = op1
         self._op2 = op2
 
-    def assemble(self, *args, **kwargs):
+    def _assemble(self):
         """Implement the weak form."""
-        return self._op1.weak_form(*args, **kwargs) + self._op2.weak_form(*args, **kwargs)
+        return self._op1.weak_form() + self._op2.weak_form()
 
 
 class _ScaledBoundaryOperator(BoundaryOperator):
@@ -179,9 +171,9 @@ class _ScaledBoundaryOperator(BoundaryOperator):
         self._op = op
         self._alpha = alpha
 
-    def assemble(self, *args, **kwargs):
+    def _assemble(self):
         """Implement the weak form."""
-        return self._op.weak_form(*args, **kwargs) * self._alpha
+        return self._op.weak_form() * self._alpha
 
 
 class _ProductBoundaryOperator(BoundaryOperator):
@@ -200,7 +192,7 @@ class _ProductBoundaryOperator(BoundaryOperator):
         self._op1 = op1
         self._op2 = op2
 
-    def assemble(self):
+    def _assemble(self):
         """Implement the weak form."""
         return self._op1.weak_form() * self._op2.strong_form()
 
@@ -222,7 +214,7 @@ class ZeroBoundaryOperator(BoundaryOperator):
         super(ZeroBoundaryOperator, self).__init__(
             domain, range_, dual_to_range)
 
-    def assemble(self, *args, **kwargs):
+    def _assemble(self):
 
         from bempp.api.assembly.discrete_boundary_operator \
             import ZeroDiscreteBoundaryOperator

@@ -30,7 +30,7 @@ def test_modified_helmholtz_single_layer(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     # Bempp 3 assembles modified Helmholtz as complex type, so cast to real.
     expected = _np.real(helpers.load_npy_data("modified_helmholtz_single_layer_boundary"))
@@ -59,7 +59,7 @@ def test_modified_helmholtz_double_layer_p1_cont(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     expected = _np.real(helpers.load_npy_data("modified_helmholtz_double_layer_boundary"))
     _np.testing.assert_allclose(
@@ -87,7 +87,7 @@ def test_modified_helmholtz_adjoint_double_layer(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     expected = _np.real(helpers.load_npy_data("modified_helmholtz_adj_double_layer_boundary"))
     _np.testing.assert_allclose(
@@ -115,7 +115,7 @@ def test_modified_helmholtz_hypersingular(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     expected = _np.real(helpers.load_npy_data("modified_helmholtz_hypersingular_boundary"))
     _np.testing.assert_allclose(
@@ -143,7 +143,7 @@ def test_modified_helmholtz_single_layer_evaluator(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     mat = single_layer(
         space,
@@ -154,7 +154,7 @@ def test_modified_helmholtz_single_layer_evaluator(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     x = _np.random.RandomState(0).randn(space.global_dof_count)
 
@@ -188,7 +188,7 @@ def test_modified_helmholtz_double_layer_evaluator(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     mat = double_layer(
         space,
@@ -199,7 +199,7 @@ def test_modified_helmholtz_double_layer_evaluator(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     x = _np.random.RandomState(0).randn(space.global_dof_count)
 
@@ -234,7 +234,7 @@ def test_modified_helmholtz_adj_double_layer_evaluator(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     mat = adjoint_double_layer(
         space,
@@ -245,7 +245,7 @@ def test_modified_helmholtz_adj_double_layer_evaluator(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     x = _np.random.RandomState(0).randn(space.global_dof_count)
 
@@ -279,7 +279,7 @@ def test_modified_helmholtz_hypersingular_evaluator(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     mat = hypersingular(
         space,
@@ -290,7 +290,7 @@ def test_modified_helmholtz_hypersingular_evaluator(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     x = _np.random.RandomState(0).randn(space.global_dof_count)
 

@@ -7,139 +7,17 @@ from scipy.sparse.linalg.interface import LinearOperator as _LinearOperator
 # pylint: disable=W0221
 
 
-class DiscreteBoundaryOperator(_LinearOperator):
-    """Base class for discrete boundary operators."""
-
-    def __new__(cls, *args, **kwargs):
-        """Overwrite new operator."""
-        # Overwriting new because LinearOperator calls __init__
-        # unnecessarily in its __new__ method causing doubly
-        # called constructors (to be fixed in 0.18)
-        return object.__new__(cls)
-
-    def __init__(self, dtype, shape):
-        """Constructor for discrete boundary operator."""
-        import scipy
-
-        if scipy.__version__ < "0.16.0":
-            super(DiscreteBoundaryOperator, self).__init__(
-                shape,
-                self._matvec,
-                rmatvec=self._rmatvec,
-                matmat=self._matmat,
-                dtype=dtype,
-            )
-        else:
-            super(DiscreteBoundaryOperator, self).__init__(dtype, shape)
-
-    def __add__(self, other):
-        """Add two discrete boundary operators."""
-        if isinstance(other, DiscreteBoundaryOperator):
-            return DiscreteBoundaryOperatorSum(self, other)
-        else:
-            return super(DiscreteBoundaryOperator, self).__add__(other)
-
-    def __mul__(self, other):
-        """Multiply operator with something else."""
-        return self.dot(other)
-
-    def dot(self, other):
-        """Multiply operator with something else."""
-        if isinstance(other, DiscreteBoundaryOperator):
-            return DiscreteBoundaryOperatorProduct(self, other)
-        elif isinstance(other, _LinearOperator):
-            return super(DiscreteBoundaryOperator, self).dot(other)
-        elif _np.isscalar(other):
-            return ScaledDiscreteBoundaryOperator(self, other)
-        else:
-            x_in = _np.asarray(other)
-            if x_in.ndim == 1 or (x_in.ndim == 2 and x_in.shape[1] == 1):
-                return self._matvec(x_in)
-            elif x_in.ndim == 2:
-                return self._matmat(x_in)
-            else:
-                raise ValueError("Expect a 1d or 2d array or matrix.")
-
-    def __rmul__(self, other):
-        """Right multiplication."""
-        if _np.isscalar(other):
-            return self * other
-        else:
-            raise ValueError(
-                "Cannot multiply operand of type "
-                + "{0} from the left.".format(type(other))
-            )
-
-    def __call__(self, other):
-        """Apply operator."""
-        return self.dot(other)
-
-    def __matmul__(self, other):
-        """Product with matrix."""
-        if _np.isscalar(other):
-            raise ValueError("Scalar operands not allowed. Use '*' instead.")
-
-        return self.dot(other)
-
-    def __neg__(self):
-        """Negate operator."""
-        return -1 * self
-
-    def __sub__(self, other):
-        """Subtract operator from something else."""
-        return self.__add__(-other)
-
-    def _adjoint(self):
-        """Implement the adjoint."""
-        raise NotImplementedError()
-
-    def _transpose(self):
-        """Implement the transpose."""
-        raise NotImplementedError()
-
-    import scipy
-
-    if scipy.__version__ < "0.16.0":
-
-        def adjoint(self):
-            """Return the adoint."""
-            return self._adjoint()
-
-        def transpose(self):
-            """Return the transpose."""
-            return self._transpose()
-
-        H = property(adjoint)
-        T = property(transpose)
-
-    def elementary_operators(self):
-        """Return the elementary operators that form this operator."""
-        raise NotImplementedError()
-
-    @property
-    def memory(self):
-        """Return an estimate of the memory size in kb"""
-        ops = self.elementary_operators()
-        # pylint: disable=protected-access
-        return sum([operator._memory for operator in ops])
-
-
-class GenericDiscreteBoundaryOperator(DiscreteBoundaryOperator):
+class GenericDiscreteBoundaryOperator(_LinearOperator):
     """Discrete boundary operator that implements a matvec routine."""
 
     def __init__(self, evaluator):
         """Constructor for discrete boundary operator."""
 
-        super(GenericDiscreteBoundaryOperator, self).__init__(
+        super().__init__(
             evaluator.dtype, evaluator.shape
         )
         self._evaluator = evaluator
         self._is_complex = self.dtype == "complex128" or self.dtype == "complex64"
-
-    @property
-    def memory(self):
-        """Return an estimate of the memory size in kb"""
-        return 0.0
 
     def _matvec(self, x):
         if self._is_complex:
@@ -152,134 +30,7 @@ class GenericDiscreteBoundaryOperator(DiscreteBoundaryOperator):
             return self._evaluator.matvec(x)
 
 
-class DiscreteBoundaryOperatorSum(DiscreteBoundaryOperator):
-    """Sum of two discrete boundary operators."""
-
-    def __init__(self, op1, op2):
-        """Construct the sum of two discrete boundary operators."""
-        if not isinstance(op1, DiscreteBoundaryOperator) or not isinstance(
-            op2, DiscreteBoundaryOperator
-        ):
-            raise ValueError("Both operators must be discrete boundary operators.")
-
-        if op1.shape != op2.shape:
-            raise ValueError("Shape mismatch: {0} != {1}.".format(op1.shape, op2.shape))
-
-        self._op1 = op1
-        self._op2 = op2
-
-        super(DiscreteBoundaryOperatorSum, self).__init__(
-            _np.find_common_type([op1.dtype, op2.dtype], []), op1.shape
-        )
-
-    def _matvec(self, x):
-        return self._op1.matvec(x) + self._op2.matvec(x)
-
-    def _matmat(self, x):
-        return self._op1.matmat(x) + self._op2.matmat(x)
-
-    def _rmatvec(self, x):
-        return self._op1.rmatvec(x) + self._op2.rmatvec(x)
-
-    def _adjoint(self):
-        return self._op1.adjoint() + self._op2.adjoint()
-
-    def _transpose(self):
-        return self._op1.transpose() + self._op2.transpose()
-
-    def elementary_operators(self):
-        """Return the elementary operators that make up this operator."""
-
-        return self._op1.elementary_operators() | self._op2.elementary_operators()
-
-
-class DiscreteBoundaryOperatorProduct(DiscreteBoundaryOperator):
-    """Product of two discrete operators."""
-
-    def __init__(self, op1, op2):
-        """Construct the product of two discrete operators."""
-
-        if not isinstance(op1, DiscreteBoundaryOperator) or not isinstance(
-            op2, DiscreteBoundaryOperator
-        ):
-            raise ValueError("Both operators must be discrete boundary operators.")
-
-        if op1.shape[1] != op2.shape[0]:
-            raise ValueError(
-                "Shapes {0} and {1}".format(op1.shape, op2.shape)
-                + " not compatible for matrix product."
-            )
-
-        self._op1 = op1
-        self._op2 = op2
-
-        super(DiscreteBoundaryOperatorProduct, self).__init__(
-            _np.find_common_type([op1.dtype, op2.dtype], []),
-            (op1.shape[0], op2.shape[1]),
-        )
-
-    def _matvec(self, x):
-
-        return self._op1.matvec(self._op2.matvec(x))
-
-    def _matmat(self, x):
-
-        return self._op1.matmat(self._op2.matmat(x))
-
-    def _rmatvec(self, x):
-        return self._op2.rmatvec(self._op1.rmatvec(x))
-
-    def _adjoint(self):
-
-        return self._op2.adjoint() * self._op1.adjoint()
-
-    def _transpose(self):
-
-        return self._op2.transpose() * self._op1.transpose()
-
-    def elementary_operators(self):
-        """Return the elementary operators that make up this operator."""
-
-        return self._op1.elementary_operators() | self._op2.elementary_operators()
-
-
-class ScaledDiscreteBoundaryOperator(DiscreteBoundaryOperator):
-    """Scaled discrete boundary operator."""
-
-    def __init__(self, op, alpha):
-        """Construct a scaled discrete boundary operator."""
-
-        if not isinstance(op, DiscreteBoundaryOperator):
-            raise ValueError("Both operators must be discrete boundary operators.")
-
-        self._op = op
-        self._alpha = alpha
-
-        super(ScaledDiscreteBoundaryOperator, self).__init__(
-            _np.find_common_type([op.dtype, _np.array([alpha]).dtype], []), op.shape
-        )
-
-    def _matvec(self, x):
-        return self._alpha * self._op.matvec(x)
-
-    def _matmat(self, x):
-        return self._alpha * self._op.matmat(x)
-
-    def _rmatvec(self, x):
-        return self._alpha * self._op.rmatvec(x)
-
-    def _adjoint(self):
-        return self._alpha * self._op.adjoint()
-
-    def _transpose(self):
-        return self._alpha * self._op.transpose()
-
-    def elementary_operators(self):
-        """Return the elementary operators that make up this operator."""
-        return self._op.elementary_operators()
-
-
-class DenseDiscreteBoundaryOperator(DiscreteBoundaryOperator):
+class DenseDiscreteBoundaryOperator(_LinearOperator):
     """
     Main class for the discrete form of dense nonlocal operators.
 
@@ -292,9 +43,9 @@ class DenseDiscreteBoundaryOperator(DiscreteBoundaryOperator):
     def __init__(self, impl):
         """Constructor. Should not be called by the user."""
         self._impl = impl
-        super(DenseDiscreteBoundaryOperator, self).__init__(impl.dtype, impl.shape)
+        super().__init__(impl.dtype, impl.shape)
 
-    def _matvec(self, x):
+    def _matmat(self, x):
 
         if _np.iscomplexobj(x) and not _np.iscomplexobj(self.A):
             return self.A.dot(_np.real(x).astype(self.dtype)) + \
@@ -305,7 +56,7 @@ class DenseDiscreteBoundaryOperator(DiscreteBoundaryOperator):
         if isinstance(other, DenseDiscreteBoundaryOperator):
             return DenseDiscreteBoundaryOperator(self.A + other.A)
         else:
-            return super(DenseDiscreteBoundaryOperator, self).__add__(other)
+            return super().__add__(other)
 
     def __neg__(self):
         return DenseDiscreteBoundaryOperator(-self.A)
@@ -327,7 +78,7 @@ class DenseDiscreteBoundaryOperator(DiscreteBoundaryOperator):
                     return DenseDiscreteBoundaryOperator(self.A * _np.dtype('float32').type(other))
             else:
                 return DenseDiscreteBoundaryOperator(self.A * other)
-        return super(DenseDiscreteBoundaryOperator, self).dot(other)
+        return super().dot(other)
 
     def __rmul__(self, other):
         if _np.isscalar(other):
@@ -349,16 +100,8 @@ class DenseDiscreteBoundaryOperator(DiscreteBoundaryOperator):
         """Return the underlying array."""
         return self._impl
 
-    @property
-    def _memory(self):
-        return self.A.nbytes / 1024.0
 
-    def elementary_operators(self):
-        """Return the elementary operators that make up this operator."""
-        return {self}
-
-
-class SparseDiscreteBoundaryOperator(DiscreteBoundaryOperator):
+class SparseDiscreteBoundaryOperator(_LinearOperator):
     """
     Main class for the discrete form of sparse operators.
 
@@ -372,26 +115,16 @@ class SparseDiscreteBoundaryOperator(DiscreteBoundaryOperator):
         """Constructor. Should not e called by the user."""
         super(SparseDiscreteBoundaryOperator, self).__init__(impl.dtype, impl.shape)
         self._impl = impl
-        self._adjoint_impl = None
 
-    def _matvec(self, vec):
+    def _matmat(self, vec):
         """Multiply the operator with a numpy vector or matrix x."""
         if self.dtype == "float64" and _np.iscomplexobj(vec):
             return self.A * _np.real(vec) + 1j * (self.A * _np.imag(vec))
         return self.A * vec
 
-    def _matmat(self, mat):
-        """Multiply operator with the dense numpy matrix mat."""
-        return self._matvec(mat)
-
     def _transpose(self):
         """Return the transpose of the discrete operator."""
         return SparseDiscreteBoundaryOperator(self.A.transpose())
-
-    def _rmatvec(self, x):
-        if self._adjoint_impl is None:
-            self._adjoint_impl = self.A.adjoint()
-        return self._adjoint_impl * x
 
     def _adjoint(self):
         """Return the adjoint of the discrete operator."""
@@ -401,7 +134,7 @@ class SparseDiscreteBoundaryOperator(DiscreteBoundaryOperator):
         if isinstance(other, SparseDiscreteBoundaryOperator):
             return SparseDiscreteBoundaryOperator(self.A + other.A)
         else:
-            return super(SparseDiscreteBoundaryOperator, self).__add__(other)
+            return super().__add__(other)
 
     def __neg__(self):
         return SparseDiscreteBoundaryOperator(-self.A)
@@ -410,15 +143,13 @@ class SparseDiscreteBoundaryOperator(DiscreteBoundaryOperator):
         if isinstance(other, SparseDiscreteBoundaryOperator):
             return SparseDiscreteBoundaryOperator(self.A * other.A)
         else:
-            return self.dot(other)
+            return super().__mul__(other)
 
     def dot(self, other):
-        if isinstance(other, SparseDiscreteBoundaryOperator):
-            return SparseDiscreteBoundaryOperator(self.A * other.A)
         if _np.isscalar(other):
             return SparseDiscreteBoundaryOperator(self.A * other)
-
-        return super(SparseDiscreteBoundaryOperator, self).dot(other)
+        else:
+            return super().dot(other)
 
     def __rmul__(self, other):
         if _np.isscalar(other):
@@ -431,17 +162,8 @@ class SparseDiscreteBoundaryOperator(DiscreteBoundaryOperator):
         """Return the underlying Scipy sparse matrix."""
         return self._impl
 
-    @property
-    def _memory(self):
-        mat = self.A
-        return (mat.data.nbytes + mat.indices.nbytes + mat.indptr.nbytes) // 1024
 
-    def elementary_operators(self):
-        """Return the elementary operators that make up this operator."""
-        return {self}
-
-
-class InverseSparseDiscreteBoundaryOperator(DiscreteBoundaryOperator):
+class InverseSparseDiscreteBoundaryOperator(_LinearOperator):
     """
     Apply the (pseudo-)inverse of a sparse operator.
 
@@ -464,36 +186,18 @@ class InverseSparseDiscreteBoundaryOperator(DiscreteBoundaryOperator):
     def __init__(self, operator):
 
         self._solver = _Solver(operator)
-        self._adjoint_op = None
         self._operator = operator
-        super(InverseSparseDiscreteBoundaryOperator, self).__init__(
+        super().__init__(
             self._solver.dtype, self._solver.shape
         )
 
-    def _matvec(self, vec):
+    def _matmat(self, vec):
         """Implemententation of matvec."""
 
         return self._solver.solve(vec)
 
-    def _rmatvec(self, vec):
-        """Implemententation of rmatvec."""
-        # pylint: disable=protected-access
-        if self._adjoint_op is None:
-            self._adjoint_op = self.adjoint()
-        return self._adjoint_op * vec
 
-    def _transpose(self):
-        return InverseSparseDiscreteBoundaryOperator(self._operator.transpose())
-
-    def _adjoint(self):
-        return InverseSparseDiscreteBoundaryOperator(self._operator.adjoint())
-
-    def elementary_operators(self):
-        """Return the elementary operators that make up this operator."""
-        return self._operator.elementary_operators()
-
-
-class ZeroDiscreteBoundaryOperator(DiscreteBoundaryOperator):
+class ZeroDiscreteBoundaryOperator(_LinearOperator):
     """A discrete operator that represents a zero operator.
 
     This class derives from
@@ -515,30 +219,11 @@ class ZeroDiscreteBoundaryOperator(DiscreteBoundaryOperator):
             _np.dtype("float64"), (rows, columns)
         )
 
-    def _matvec(self, x):
-        if x.ndim > 1:
+    def _matmat(self, x):
             return _np.zeros((self.shape[0], x.shape[1]), dtype="float64")
-        else:
-            return _np.zeros(self.shape[0], dtype="float64")
-
-    def _rmatvec(self, x):
-        if x.ndim > 1:
-            return _np.zeros((x.shape[0], self.shape[1]), dtype="float64")
-        else:
-            return _np.zeros(self.shape[1], dtype="float64")
-
-    def _adjoint(self):
-        raise NotImplementedError()
-
-    def _transpose(self):
-        raise NotImplementedError()
-
-    def elementary_operators(self):
-        """Return the elementary operators that make up this operator."""
-        return {}
 
 
-class DiscreteRankOneOperator(DiscreteBoundaryOperator):
+class DiscreteRankOneOperator(_LinearOperator):
     """Creates a discrete rank one operator.
 
     This class represents a rank one operator given
@@ -566,7 +251,7 @@ class DiscreteRankOneOperator(DiscreteBoundaryOperator):
         self._column = column.ravel()
 
         shape = (len(self._column), len(self._row))
-        super(DiscreteRankOneOperator, self).__init__(dtype, shape)
+        super().__init__(dtype, shape)
 
     def _matvec(self, x):
         if x.ndim > 1:
@@ -583,10 +268,6 @@ class DiscreteRankOneOperator(DiscreteBoundaryOperator):
 
     def _adjoint(self):
         return DiscreteRankOneOperator(self._row.conjugate(), self._column.conjugate())
-
-    def elementary_operators(self):
-        """Return the elementary operators that make up this operator."""
-        return {}
 
 
 def as_matrix(operator):

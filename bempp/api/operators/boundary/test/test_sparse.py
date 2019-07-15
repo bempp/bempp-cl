@@ -31,7 +31,7 @@ def test_sparse_identity_p0_p0(
             device_interface=device_interface,
             precision=precision,
         )
-        .assemble()
+        .weak_form()
         .A.todense()
     )
 
@@ -61,7 +61,7 @@ def test_sparse_identity_p0_p1(
             device_interface=device_interface,
             precision=precision,
         )
-        .assemble()
+        .weak_form()
         .A.todense()
     )
 
@@ -91,7 +91,7 @@ def test_sparse_identity_p1_p0(
             device_interface=device_interface,
             precision=precision,
         )
-        .assemble()
+        .weak_form()
         .A.todense()
     )
 
@@ -120,7 +120,7 @@ def test_sparse_identity_p1_p1(
             device_interface=device_interface,
             precision=precision,
         )
-        .assemble()
+        .weak_form()
         .A.todense()
     )
 
@@ -149,7 +149,7 @@ def test_sparse_identity_snc_rwg(
             device_interface=device_interface,
             precision=precision,
         )
-        .assemble()
+        .weak_form()
         .A.todense()
     )
 

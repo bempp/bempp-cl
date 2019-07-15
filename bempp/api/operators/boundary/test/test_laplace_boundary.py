@@ -28,7 +28,7 @@ def test_laplace_single_layer_p0(
         parameters=default_parameters,
         device_interface=device_interface,
         precision=precision,
-    ).assemble()
+    ).weak_form()
 
     expected = helpers.load_npy_data("laplace_single_layer_boundary_p0_p0")
     _np.testing.assert_allclose(
@@ -54,7 +54,7 @@ def test_laplace_single_layer_p1_disc(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     expected = helpers.load_npy_data("laplace_single_layer_boundary_dp1_dp1")
     _np.testing.assert_allclose(
@@ -82,7 +82,7 @@ def test_laplace_single_layer_p1_p0(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     expected = helpers.load_npy_data("laplace_single_layer_boundary_dp1_p0")
     _np.testing.assert_allclose(
@@ -110,7 +110,7 @@ def test_laplace_single_layer_p0_p1(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     expected = helpers.load_npy_data("laplace_single_layer_boundary_p0_dp1")
     _np.testing.assert_allclose(
@@ -137,7 +137,7 @@ def test_laplace_single_layer_p1_cont(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     expected = helpers.load_npy_data("laplace_single_layer_boundary_p1_p1")
     _np.testing.assert_allclose(
@@ -164,7 +164,7 @@ def test_laplace_double_layer_p1_cont(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     expected = helpers.load_npy_data("laplace_double_layer_boundary")
     _np.testing.assert_allclose(
@@ -191,7 +191,7 @@ def test_laplace_adjoint_double_layer_p1_cont(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     expected = helpers.load_npy_data("laplace_adj_double_layer_boundary")
     _np.testing.assert_allclose(
@@ -218,7 +218,7 @@ def test_laplace_hypersingular(
         precision=precision,
         device_interface=device_interface,
         parameters=default_parameters,
-    ).assemble()
+    ).weak_form()
 
     expected = helpers.load_npy_data("laplace_hypersingular_boundary")
 
@@ -247,7 +247,7 @@ def test_laplace_single_layer_evaluator_p0_p0(
         parameters=default_parameters,
         device_interface=device_interface,
         precision=precision,
-    ).assemble()
+    ).weak_form()
 
     mat = single_layer(
         space1,
@@ -257,7 +257,7 @@ def test_laplace_single_layer_evaluator_p0_p0(
         parameters=default_parameters,
         device_interface=device_interface,
         precision=precision,
-    ).assemble()
+    ).weak_form()
 
     x = _np.random.RandomState(0).randn(space1.global_dof_count)
 
@@ -292,7 +292,7 @@ def test_laplace_single_layer_evaluator_p0_dp1(
         parameters=default_parameters,
         device_interface=device_interface,
         precision=precision,
-    ).assemble()
+    ).weak_form()
 
     mat = single_layer(
         space1,
@@ -302,7 +302,7 @@ def test_laplace_single_layer_evaluator_p0_dp1(
         parameters=default_parameters,
         device_interface=device_interface,
         precision=precision,
-    ).assemble()
+    ).weak_form()
 
     x = _np.random.RandomState(0).randn(space1.global_dof_count)
 
@@ -337,7 +337,7 @@ def test_laplace_single_layer_evaluator_p0_p1(
         parameters=default_parameters,
         device_interface=device_interface,
         precision=precision,
-    ).assemble()
+    ).weak_form()
 
     mat = single_layer(
         space1,
@@ -347,7 +347,7 @@ def test_laplace_single_layer_evaluator_p0_p1(
         parameters=default_parameters,
         device_interface=device_interface,
         precision=precision,
-    ).assemble()
+    ).weak_form()
 
     x = _np.random.RandomState(0).randn(space1.global_dof_count)
 
@@ -382,7 +382,7 @@ def test_laplace_single_layer_evaluator_complex(
         parameters=default_parameters,
         device_interface=device_interface,
         precision=precision,
-    ).assemble()
+    ).weak_form()
 
     mat = single_layer(
         space1,
@@ -392,7 +392,7 @@ def test_laplace_single_layer_evaluator_complex(
         parameters=default_parameters,
         device_interface=device_interface,
         precision=precision,
-    ).assemble()
+    ).weak_form()
 
     x = _np.random.RandomState(0).randn(
         space1.global_dof_count
@@ -429,7 +429,7 @@ def test_laplace_double_layer_evaluator(
         parameters=default_parameters,
         device_interface=device_interface,
         precision=precision,
-    ).assemble()
+    ).weak_form()
 
     mat = double_layer(
         space1,
@@ -439,7 +439,7 @@ def test_laplace_double_layer_evaluator(
         parameters=default_parameters,
         device_interface=device_interface,
         precision=precision,
-    ).assemble()
+    ).weak_form()
 
     x = _np.random.RandomState(0).randn(space1.global_dof_count)
 
@@ -467,7 +467,7 @@ def test_laplace_adjoint_double_layer_evaluator(
         parameters=default_parameters,
         device_interface=device_interface,
         precision=precision,
-    ).assemble()
+    ).weak_form()
 
     mat = adjoint_double_layer(
         space1,
@@ -477,7 +477,7 @@ def test_laplace_adjoint_double_layer_evaluator(
         parameters=default_parameters,
         device_interface=device_interface,
         precision=precision,
-    ).assemble()
+    ).weak_form()
 
     x = _np.random.RandomState(0).randn(space1.global_dof_count)
 
@@ -505,7 +505,7 @@ def test_laplace_hypersingular_evaluator(
         parameters=default_parameters,
         device_interface=device_interface,
         precision=precision,
-    ).assemble()
+    ).weak_form()
 
     mat = hypersingular(
         space1,
@@ -515,7 +515,7 @@ def test_laplace_hypersingular_evaluator(
         parameters=default_parameters,
         device_interface=device_interface,
         precision=precision,
-    ).assemble()
+    ).weak_form()
 
     x = _np.random.RandomState(0).randn(space1.global_dof_count)
 
