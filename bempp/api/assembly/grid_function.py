@@ -562,7 +562,7 @@ def _project_function(
             point = global_points[:, j]
             fun(
                 point,
-                grid_data.normals[index],
+                grid_data.normals[index] * normal_multipliers[index],
                 grid_data.domain_indices[index],
                 fun_result,
             )

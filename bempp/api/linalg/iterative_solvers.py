@@ -234,8 +234,8 @@ def _gmres_block_op_imp(
     import bempp.api
     import time
     from bempp.api.assembly.blocked_operator import (
-        coefficients_of_grid_function_list,
-        projections_of_grid_function_list,
+        coefficients_from_grid_functions_list,
+        projections_from_grid_functions_list,
         grid_function_list_from_coefficients,
     )
 
