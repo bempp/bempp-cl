@@ -173,6 +173,19 @@ class GridFunction(object):
 
         if dual_space is None:
             dual_space = space
+        else:
+            # Check that dual space is defined
+            # over the same grid with same normal
+            # directions
+            if (
+                not space.grid == dual_space.grid
+                or not space.support_elements == dual_space.support_elements
+                or not space.normal_multipliers == dual_space.normal_multipliers
+            ):
+                raise ValueError(
+                    "Space and dual space must be defined on the "
+                    + "same elements with same normal directions."
+                )
 
         self._dual_space = dual_space
 
@@ -186,11 +199,11 @@ class GridFunction(object):
 
         if coefficients is not None:
             self._coefficients = coefficients
-            self._representation = 'primal'
+            self._representation = "primal"
 
         if projections is not None:
             self._projections = projections
-            self._representation = 'dual'
+            self._representation = "dual"
 
         if fun is not None:
             from bempp.api.integration.triangle_gauss import rule
@@ -221,7 +234,7 @@ class GridFunction(object):
                 self._projections,
             )
 
-            self._representation = 'dual'
+            self._representation = "dual"
 
     @property
     def space(self):
@@ -257,7 +270,6 @@ class GridFunction(object):
         """
         return self._representation
 
-
     @property
     def coefficients(self):
         """Return coefficient vector."""
@@ -273,7 +285,7 @@ class GridFunction(object):
                 .A
             )
             self._coefficients = spsolve(mat, self._projections)
-            self._representation = 'primal'
+            self._representation = "primal"
 
         return self._coefficients
 
@@ -282,29 +294,38 @@ class GridFunction(object):
         """Return a new grid function consisting of the real part of this function."""
         import numpy as np
         import bempp.api
-        if self.representation == 'primal':
+
+        if self.representation == "primal":
             return bempp.api.GridFunction(
-                space=self.space, dual_space=self.dual_space,
-                coefficients=np.real(self.coefficients))
+                space=self.space,
+                dual_space=self.dual_space,
+                coefficients=np.real(self.coefficients),
+            )
         else:
             return bempp.api.GridFunction(
-                space=self.space, dual_space=self.dual_space,
-                projections=np.real(self.projections()))
+                space=self.space,
+                dual_space=self.dual_space,
+                projections=np.real(self.projections()),
+            )
 
     @property
     def imag(self):
         """Return a new grid function consisting of the imaginary part of this function."""
         import numpy as np
         import bempp.api
-        if self.representation == 'primal':
+
+        if self.representation == "primal":
             return bempp.api.GridFunction(
-                space=self.space, dual_space=self.dual_space,
-                coefficients=np.imag(self.coefficients))
+                space=self.space,
+                dual_space=self.dual_space,
+                coefficients=np.imag(self.coefficients),
+            )
         else:
             return bempp.api.GridFunction(
-                space=self.space, dual_space=self.dual_space,
-                projections=np.imag(self.projections()))
-
+                space=self.space,
+                dual_space=self.dual_space,
+                projections=np.imag(self.projections()),
+            )
 
     @property
     def component_count(self):
@@ -332,12 +353,12 @@ class GridFunction(object):
         if dual_space is None:
             dual_space = self.dual_space
 
-        if (dual_space == self._dual_space and
-                self._projections is not None):
+        if dual_space == self._dual_space and self._projections is not None:
             return self._projections
 
         ident = bempp.api.operators.boundary.sparse.identity(
-            self.space, self.space, dual_space).weak_form()
+            self.space, self.space, dual_space
+        ).weak_form()
         self._dual_space = dual_space
         self._projections = ident * self.coefficients
 
@@ -349,8 +370,7 @@ class GridFunction(object):
 
         ident = identity(self.space, self.space, space).weak_form()
 
-        return GridFunction(
-                space, projections=ident @ self.coefficients)
+        return GridFunction(space, projections=ident @ self.coefficients)
 
     def plot(self, mode="element", transformation="real"):
         """
@@ -416,7 +436,7 @@ class GridFunction(object):
         )
 
         # Sum up the areas of all elements adjacent to the vertices
-        vertex_areas = _np.zeros(grid.number_of_elements, dtype='float64')
+        vertex_areas = _np.zeros(grid.number_of_elements, dtype="float64")
 
         for element in grid.entity_iterator(0):
             local_values = self.evaluate(element, local_coordinates)
@@ -426,7 +446,6 @@ class GridFunction(object):
                 vertex_areas[index] += element_area
                 values[:, index] += local_values[:, i] * element_area
         return values / vertex_areas
-
 
     def l2_norm(self):
         """L^2 norm of the function"""
@@ -444,29 +463,35 @@ class GridFunction(object):
         if self.space != other.space:
             raise ValueError("Spaces are not identical.")
 
-        if self.representation == 'dual' and other.representation == 'dual':
+        if self.representation == "dual" and other.representation == "dual":
             if self.dual_space == other.dual_space:
                 return GridFunction(
                     self.space,
                     projections=self.projections() + other.projections(),
-                    dual_space=self.dual_space)
+                    dual_space=self.dual_space,
+                )
 
-        return GridFunction(self.space,
-                            coefficients=self.coefficients + other.coefficients)
+        return GridFunction(
+            self.space, coefficients=self.coefficients + other.coefficients
+        )
 
     def __mul__(self, alpha):
         import numpy as np
 
         if np.isscalar(alpha):
-            if self.representation == 'dual':
-                return GridFunction(self.space,
-                                    projections=alpha * self._projections,
-                                    dual_space=self.dual_space,
-                                    parameters=self.parameters)
+            if self.representation == "dual":
+                return GridFunction(
+                    self.space,
+                    projections=alpha * self._projections,
+                    dual_space=self.dual_space,
+                    parameters=self.parameters,
+                )
             else:
-                return GridFunction(self.space,
-                                    coefficients=alpha * self.coefficients,
-                                    parameters=self.parameters)
+                return GridFunction(
+                    self.space,
+                    coefficients=alpha * self.coefficients,
+                    parameters=self.parameters,
+                )
         else:
             return NotImplemented
 
@@ -479,7 +504,7 @@ class GridFunction(object):
             return NotImplemented
 
     def __div__(self, alpha):
-        return self * (1. / alpha)
+        return self * (1.0 / alpha)
 
     def __truediv__(self, alpha):
         return self.__div__(alpha)
@@ -497,6 +522,7 @@ class GridFunction(object):
     def from_random(cls, space):
         """Create a random grid function normalized to unit norm. """
         from numpy.random import randn
+
         ndofs = space.global_dof_count
         fun = cls(space, coefficients=randn(ndofs))
         return fun / fun.l2_norm()
@@ -505,6 +531,7 @@ class GridFunction(object):
     def from_ones(cls, space):
         """Create a grid function with all coefficients set to one. """
         from numpy import ones
+
         ndofs = space.global_dof_count
 
         return cls(space, coefficients=ones(ndofs))
@@ -513,10 +540,10 @@ class GridFunction(object):
     def from_zeros(cls, space):
         """Create a grid function with all coefficients set to one. """
         from numpy import zeros
+
         ndofs = space.global_dof_count
 
         return cls(space, coefficients=zeros(ndofs))
-
 
 
 # Must be used in jit mode as fun might just be a Python callable and not numba compiled.
@@ -547,7 +574,12 @@ def _project_function(
     for index in support_elements:
 
         element_vals = evaluate_on_element(
-            index, shapeset_evaluate, points, grid_data, local_multipliers, normal_multipliers
+            index,
+            shapeset_evaluate,
+            points,
+            grid_data,
+            local_multipliers,
+            normal_multipliers,
         )
 
         for j in range(3):

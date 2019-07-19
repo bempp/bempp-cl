@@ -27,6 +27,7 @@ class Grid(object):
         self._edge_on_boundary = None
         self._edge_neighbors = None
         self._vertex_neighbors = None
+        self._barycentric_grid = None
 
         self._volumes = None
         self._normals = None
@@ -62,7 +63,7 @@ class Grid(object):
             self._diameters,
             self._integration_elements,
             self._centroids,
-            self._domain_indices
+            self._domain_indices,
         )
 
     @property
@@ -268,6 +269,12 @@ class Grid(object):
         """Return for each vertex the list of neighboring elements."""
         return self._vertex_neighbors
 
+    @property
+    def barycentric_refinement(self):
+        """Return the barycentric refinement of this grid."""
+        if self._barycentric_grid is None:
+            self._barycentric_grid = barycentric_refinement(self)
+        return self._barycentric_grid
 
     def entity_count(self, codim):
         """Return the number of entities of given codimension."""
@@ -392,7 +399,7 @@ class Grid(object):
         indices = self.element_to_vertex_matrix.indices
 
         for index in range(self.number_of_vertices):
-            self._vertex_neighbors[index] = indices[indptr[index]:indptr[index + 1]]
+            self._vertex_neighbors[index] = indices[indptr[index] : indptr[index + 1]]
 
     def _normalize_and_assign_input(self, vertices, elements, domain_indices):
         """Convert input into the right form."""
@@ -463,7 +470,8 @@ class Grid(object):
 
         """
         self._element_to_vertex_matrix = get_element_to_vertex_matrix(
-                self._vertices, self._elements)
+            self._vertices, self._elements
+        )
 
         elem_to_elem_matrix = get_element_to_element_matrix(
             self._vertices, self._elements
@@ -611,7 +619,7 @@ class Grid(object):
         ("diameters", _numba.float64[:]),
         ("integration_elements", _numba.float64[:]),
         ("centroids", _numba.float64[:, :]),
-        ("domain_indices", _numba.uint32[:])
+        ("domain_indices", _numba.uint32[:]),
     ]
 )
 class GridData(object):
@@ -628,7 +636,7 @@ class GridData(object):
         diameters,
         integration_elements,
         centroids,
-        domain_indices
+        domain_indices,
     ):
 
         self.vertices = vertices
@@ -1083,6 +1091,7 @@ def _get_element_neighbors(element_to_element_matrix):
 
     return neighbors
 
+
 def grid_from_segments(grid, segments):
     """Return new grid from segments of existing grid."""
 
@@ -1102,15 +1111,85 @@ def grid_from_segments(grid, segments):
 
     return Grid(new_vertices, new_elements, new_domain_indices)
 
+@_numba.njit
+def _create_barycentric_connectivity_array(
+    vertices, elements, element_edges, edges, number_of_edges
+):
+    """Return the vertices and elements of refined barycentric grid."""
+    number_of_vertices = vertices.shape[1]
+    number_of_elements = elements.shape[1]
+    new_number_of_vertices = number_of_vertices + number_of_elements + number_of_edges
+    new_vertices = _np.empty((3, new_number_of_vertices), dtype=_np.float64)
+    new_elements = _np.empty((3, 6 * number_of_elements), dtype=_np.float64)
+
+    edge_to_vertex = -_np.ones(number_of_edges)
+
+    new_vertices[:, :number_of_vertices] = vertices
+
+    local_vertex_ids = _np.empty(3, dtype=_np.uint32)
+
+    for index in range(number_of_elements):
+        # Create barycentric mid-point
+        new_vertices[:, number_of_vertices] = (
+            1.0 / 3 * _np.sum(vertices[:, elements[:, index]], axis=1)
+        )
+        midpoint_index = number_of_vertices
+        number_of_vertices += 1
+        for local_index in range(3):
+            edge_index = element_edges[local_index, index]
+            if edge_to_vertex[edge_index] > -1:
+                # Vertex already created
+                local_vertex_ids[local_index] = edge_to_vertex[edge_index]
+            else:
+                # Vertex needs to be created
+                new_vertices[:, number_of_vertices] = 0.5 * _np.sum(
+                    vertices[:, edges[:, edge_index]], axis=1
+                )
+                local_vertex_ids[local_index] = number_of_vertices
+                edge_to_vertex[edge_index] = number_of_vertices
+                number_of_vertices += 1
+            # Have created all necessary vertices. Now create the elements.
+            # New barycentric elements are created in anti-clockwise order
+            # starting with the triangle at the first vertex of the triangle
+            # and sharing a segment with the edge 0. The second triangle is
+            # along the same edge, but adjacent to vertex 1, and so on.
+
+        new_elements[0, 6 * index + 0] = elements[0, index]
+        new_elements[1, 6 * index + 0] = local_vertex_ids[0]
+        new_elements[2, 6 * index + 0] = midpoint_index
+
+        new_elements[0, 6 * index + 1] = elements[1, index]
+        new_elements[1, 6 * index + 1] = midpoint_index
+        new_elements[2, 6 * index + 1] = local_vertex_ids[0]
+
+        new_elements[0, 6 * index + 2] = elements[1, index]
+        new_elements[1, 6 * index + 2] = local_vertex_ids[2]
+        new_elements[2, 6 * index + 2] = midpoint_index
+
+        new_elements[0, 6 * index + 3] = elements[2, index]
+        new_elements[1, 6 * index + 3] = midpoint_index
+        new_elements[2, 6 * index + 3] = local_vertex_ids[2]
+
+        new_elements[0, 6 * index + 4] = elements[2, index]
+        new_elements[1, 6 * index + 4] = local_vertex_ids[1]
+        new_elements[2, 6 * index + 4] = midpoint_index
+
+        new_elements[0, 6 * index + 5] = elements[0, index]
+        new_elements[1, 6 * index + 5] = midpoint_index
+        new_elements[2, 6 * index + 5] = local_vertex_ids[1]
+
+    return new_vertices, new_elements
 
 
+def barycentric_refinement(grid):
+    """Return the barycentric refinement of a given grid."""
 
+    new_vertices, new_elements = _create_barycentric_connectivity_array(
+        grid.vertices,
+        grid.elements,
+        grid.element_edges,
+        grid.edges,
+        grid.number_of_edges,
+    )
 
-
-
-
-
-
-    
-
-
+    return Grid(new_vertices, new_elements, _np.repeat(grid.domain_indices, 6))
