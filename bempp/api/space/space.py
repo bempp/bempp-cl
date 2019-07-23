@@ -68,7 +68,6 @@ _SpaceData = _namedtuple(
     [
         "grid",
         "codomain_dimension",
-        "global_dof_count",
         "order",
         "shapeset",
         "local2global_map",
@@ -77,6 +76,7 @@ _SpaceData = _namedtuple(
         "support",
         "localised_space",
         "normal_multipliers",
+        "dof_transformation",
     ],
 )
 
@@ -89,10 +89,10 @@ class _FunctionSpace(_abc.ABC):
 
         from .shapesets import Shapeset
         from scipy.sparse import coo_matrix
+        from scipy.sparse import identity
 
         self._grid = space_data.grid
         self._codomain_dimension = space_data.codomain_dimension
-        self._global_dof_count = space_data.global_dof_count
         self._order = space_data.order
         self._shapeset = Shapeset(space_data.shapeset)
         self._local2global_map = space_data.local2global_map
@@ -101,10 +101,11 @@ class _FunctionSpace(_abc.ABC):
         self._support = space_data.support
         self._localised_space = space_data.localised_space
         self._color_map = None
+        self._dof_transformation = space_data.dof_transformation
         self._global2local_map = self._invert_local2global_map(
             self._local2global_map,
             self._grid.number_of_elements,
-            self._global_dof_count,
+            self.dof_transformation.shape[0]
         )
 
         self._normal_multipliers = space_data.normal_multipliers
@@ -143,9 +144,10 @@ class _FunctionSpace(_abc.ABC):
                     self._local2global_map[self._support].ravel(),
                 ),
             ),
-            shape=(nshape_fun * self._grid.number_of_elements, self._global_dof_count),
+            shape=(nshape_fun * self._grid.number_of_elements, self.dof_transformation.shape[0]),
             dtype="float64",
         ).tocsr()
+
 
         self._compute_color_map()
         self._sort_elements_by_color()
@@ -163,7 +165,7 @@ class _FunctionSpace(_abc.ABC):
     @property
     def global_dof_count(self):
         """Return the global dof count."""
-        return self._global_dof_count
+        return self._dof_transformation.shape[1]
 
     @property
     def order(self):
@@ -254,6 +256,13 @@ class _FunctionSpace(_abc.ABC):
 
         return self._map_to_full_grid
 
+    @property
+    def dof_transformation(self):
+        """
+        Transformation from global dofs to space dofs.
+        """
+        return self._dof_transformation
+
     def get_elements_by_color(self):
         """
         Returns color sorted elements and their index positions.
@@ -315,7 +324,11 @@ class _FunctionSpace(_abc.ABC):
         for elem_index in range(number_of_elements):
             for local_index, dof in enumerate(local2global_map[elem_index]):
                 if self.local_multipliers[elem_index, local_index] != 0:
-                    global2local_map[dof].append([elem_index, local_index])
+                    global2local_map[dof].append((elem_index, local_index))
+
+        for index, elem in enumerate(global2local_map):
+            global2local_map[index] = tuple(elem)
+
         return global2local_map
 
     def _compute_color_map(self):
@@ -370,7 +383,7 @@ class _FunctionSpace(_abc.ABC):
 def _process_segments(grid, support_elements, segments, swapped_normals):
     """Pocess information from support_elements and segments vars."""
 
-    if _np.count_nonzero([support_elements, segments]) > 1:
+    if support_elements is not None and segments is not None:
         raise ValueError(
             "Only one of 'support_elements' and 'segments' must be nonzero."
         )

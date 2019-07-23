@@ -179,8 +179,8 @@ class GridFunction(object):
             # directions
             if (
                 not space.grid == dual_space.grid
-                or not space.support_elements == dual_space.support_elements
-                or not space.normal_multipliers == dual_space.normal_multipliers
+                or not _np.all(space.support_elements == dual_space.support_elements)
+                or not _np.all(space.normal_multipliers == dual_space.normal_multipliers)
             ):
                 raise ValueError(
                     "Space and dual space must be defined on the "

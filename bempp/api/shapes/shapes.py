@@ -260,3 +260,17 @@ def multitrace_cube(h=.1):
     geometry = ("cl = " + str(h) + ";\n" + stub)
     return __generate_grid_from_geo_string(geometry)
 
+def reference_triangle():
+    """Return a grid consisting of only the reference triangle."""
+    from bempp.api.grid.grid import Grid
+
+    vertices = _np.array([
+        [0, 0, 0],
+        [1, 0, 0],
+        [0, 1, 0]
+        ]).T
+    
+    elements = _np.array([[0, 1, 2]]).T
+
+    return Grid(vertices, elements) 
+

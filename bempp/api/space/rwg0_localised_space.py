@@ -1,24 +1,34 @@
-"""Definition of a piecewise constant function space."""
+"""Definition of the lowest order RWG space."""
 
 # pylint: disable=unused-argument
 
 import numpy as _np
 import numba as _numba
 
-from bempp.api.space.space import (_FunctionSpace, _SpaceData,
-        _process_segments)
+from .space import _FunctionSpace, _SpaceData, _process_segments
 
 
-class P1DiscontinuousFunctionSpace(_FunctionSpace):
-    """A space of discontinuous piecewise linear functions."""
+class Rwg0LocalisedFunctionSpace(_FunctionSpace):
+    """A space of RWG functions."""
 
-    def __init__(self, grid, support_elements=None, segments=None, swapped_normals=None):
+    def __init__(
+        self,
+        grid,
+        support_elements=None,
+        segments=None,
+        swapped_normals=None,
+    ):
         """Initialize with a given grid."""
+        from .localised_space import LocalisedFunctionSpace
+
+        from scipy.sparse import coo_matrix
         from scipy.sparse import identity
 
-        shapeset = "p1_discontinuous"
+        shapeset = "rwg0"
 
-        support, normal_multipliers = _process_segments(grid, support_elements, segments, swapped_normals)
+        support, normal_mult = _process_segments(
+            grid, support_elements, segments, swapped_normals
+        )
         elements_in_support = _np.flatnonzero(support)
 
         number_of_support_elements = len(elements_in_support)
@@ -31,10 +41,10 @@ class P1DiscontinuousFunctionSpace(_FunctionSpace):
                 number_of_support_elements, 3)
 
         local_multipliers[support] = 1
-
-        codomain_dimension = 1
-        order = 1
-        identifier = "p1_discontinuous"
+        
+        codomain_dimension = 3
+        order = 0
+        identifier = "rwg0-localised"
 
         localised_space = self
 
@@ -48,7 +58,7 @@ class P1DiscontinuousFunctionSpace(_FunctionSpace):
             identifier,
             support,
             localised_space,
-            normal_multipliers,
+            normal_mult,
             identity(global_dof_count, dtype='float64')
         )
 
@@ -62,7 +72,7 @@ class P1DiscontinuousFunctionSpace(_FunctionSpace):
     @property
     def numba_surface_gradient(self):
         """Return numba method that evaluates the surface gradient."""
-        return _numba_surface_gradient
+        raise NotImplementedError
 
     def evaluate(self, element, local_coordinates):
         """Evaluate the basis on an element."""
@@ -72,19 +82,12 @@ class P1DiscontinuousFunctionSpace(_FunctionSpace):
             local_coordinates,
             self.grid.data,
             self.local_multipliers,
-            normal_multipliers
+            self.normal_multipliers
         )
 
     def surface_gradient(self, element, local_coordinates):
         """Return the surface gradient."""
-        return _numba_surface_gradient(
-            element.index,
-            self.shapeset.gradient,
-            local_coordinates,
-            self.grid.data,
-            self.local_multipliers,
-            normal_multipliers
-        )
+        raise NotImplementedError
 
 
 @_numba.njit
@@ -92,18 +95,30 @@ def _numba_evaluate(
     element_index, shapeset_evaluate, local_coordinates, grid_data, local_multipliers, normal_multipliers
 ):
     """Evaluate the basis on an element."""
-    return shapeset_evaluate(local_coordinates)
+    reference_values = shapeset_evaluate(local_coordinates)
+    npoints = local_coordinates.shape[1]
+    result = _np.empty((3, 3, npoints), dtype=_np.float64)
 
+    edge_lengths = _np.empty(3, dtype=_np.float64)
+    edge_lengths[0] = _np.linalg.norm(
+        grid_data.vertices[:, grid_data.elements[0, element_index]]
+        - grid_data.vertices[:, grid_data.elements[1, element_index]]
+    )
+    edge_lengths[1] = _np.linalg.norm(
+        grid_data.vertices[:, grid_data.elements[2, element_index]]
+        - grid_data.vertices[:, grid_data.elements[0, element_index]]
+    )
+    edge_lengths[2] = _np.linalg.norm(
+        grid_data.vertices[:, grid_data.elements[1, element_index]]
+        - grid_data.vertices[:, grid_data.elements[2, element_index]]
+    )
 
-@_numba.njit
-def _numba_surface_gradient(
-    element_index, shapeset_gradient, local_coordinates, grid_data, local_multipliers, normal_multipliers
-):
-    """Evaluate the surface gradient."""
-    reference_values = shapeset_gradient(local_coordinates)
-    result = _np.empty((1, 3, 3, local_coordinates.shape[1]), dtype=_np.float64)
     for index in range(3):
-        result[0, :, index, :] = grid_data.jac_inv_trans[element_index].dot(
-            reference_values[0, :, index, :]
+        result[:, index, :] = (
+            local_multipliers[element_index, index]
+            * edge_lengths[index]
+            / grid_data.integration_elements[element_index]
+            * grid_data.jacobians[element_index].dot(reference_values[:, index, :])
         )
     return result
+

@@ -43,7 +43,6 @@ class P0DiscontinuousFunctionSpace(_FunctionSpace):
         space_data = _SpaceData(
             grid,
             codomain_dimension,
-            support_size,
             order,
             shapeset,
             local2global_map,
@@ -51,7 +50,8 @@ class P0DiscontinuousFunctionSpace(_FunctionSpace):
             identifier,
             support,
             localised_space,
-            normal_multipliers
+            normal_multipliers,
+            identity(support_size, dtype='float64')
         )
 
         super().__init__(space_data)

@@ -38,7 +38,6 @@ class LocalisedFunctionSpace(_FunctionSpace):
         localised_space_data = _SpaceData(
                 grid,
                 codomain_dimension,
-                global_dof_count,
                 order,
                 shapeset,
                 local2global_map,
@@ -46,7 +45,9 @@ class LocalisedFunctionSpace(_FunctionSpace):
                 identifier + "_localised",
                 support,
                 self,
-                normal_multipliers)
+                normal_multipliers,
+                identity(global_dof_count, dtype='float64')
+                )
 
 
         self._numba_evaluate = numba_evaluate

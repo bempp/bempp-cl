@@ -21,7 +21,7 @@ class Rwg0FunctionSpace(_FunctionSpace):
     ):
         """Initialize with a given grid."""
         from .localised_space import LocalisedFunctionSpace
-
+        from scipy.sparse import identity
         from scipy.sparse import coo_matrix
 
         shapeset = "rwg0"
@@ -126,7 +126,6 @@ class Rwg0FunctionSpace(_FunctionSpace):
         space_data = _SpaceData(
             grid,
             codomain_dimension,
-            global_dof_count,
             order,
             shapeset,
             local2global_map,
@@ -134,7 +133,8 @@ class Rwg0FunctionSpace(_FunctionSpace):
             identifier,
             support,
             localised_space,
-            normal_mult
+            normal_mult,
+            identity(global_dof_count, dtype='float64')
         )
 
         super().__init__(space_data)

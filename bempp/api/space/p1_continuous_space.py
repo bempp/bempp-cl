@@ -17,6 +17,7 @@ class P1ContinuousFunctionSpace(_FunctionSpace):
         """Initialize with a given grid."""
         from .localised_space import LocalisedFunctionSpace
         from scipy.sparse import coo_matrix
+        from scipy.sparse import identity
 
         shapeset = "p1_discontinuous"
 
@@ -93,7 +94,6 @@ class P1ContinuousFunctionSpace(_FunctionSpace):
         space_data = _SpaceData(
             grid,
             codomain_dimension,
-            global_dof_count,
             order,
             shapeset,
             local2global_final,
@@ -101,7 +101,8 @@ class P1ContinuousFunctionSpace(_FunctionSpace):
             identifier,
             support,
             localised_space,
-            normal_multipliers
+            normal_multipliers,
+            identity(global_dof_count, dtype='float64')
         )
 
         super().__init__(space_data)

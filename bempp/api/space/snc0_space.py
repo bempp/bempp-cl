@@ -15,6 +15,7 @@ class Snc0FunctionSpace(_FunctionSpace):
         from .localised_space import LocalisedFunctionSpace
 
         from scipy.sparse import coo_matrix
+        from scipy.sparse import identity
 
         shapeset = "rwg0"
         number_of_elements = grid.number_of_elements
@@ -112,7 +113,6 @@ class Snc0FunctionSpace(_FunctionSpace):
         space_data = _SpaceData(
             grid,
             codomain_dimension,
-            global_dof_count,
             order,
             shapeset,
             local2global_map,
@@ -120,7 +120,8 @@ class Snc0FunctionSpace(_FunctionSpace):
             identifier,
             support,
             localised_space,
-            normal_mult
+            normal_mult,
+            identity(global_dof_count, dtype='float64')
         )
 
         super().__init__(space_data)
