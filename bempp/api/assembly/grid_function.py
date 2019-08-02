@@ -162,32 +162,37 @@ class GridFunction(object):
 
         """
         from bempp.api.utils.helpers import assign_parameters
+        from bempp.api.space.space import return_compatible_representation
 
         self._space = None
         self._dual_space = None
         self._coefficients = None
+        self._transformed_coefficients = None
         self._projections = None
         self._representation = None
 
-        self._space = space
-
         if dual_space is None:
             dual_space = space
-        else:
-            # Check that dual space is defined
-            # over the same grid with same normal
-            # directions
-            if (
-                not space.grid == dual_space.grid
-                or not _np.all(space.support_elements == dual_space.support_elements)
-                or not _np.all(space.normal_multipliers == dual_space.normal_multipliers)
-            ):
-                raise ValueError(
-                    "Space and dual space must be defined on the "
-                    + "same elements with same normal directions."
-                )
 
-        self._dual_space = dual_space
+        self._space, self._dual_space = space, dual_space
+
+        # Now check that space and dual are defined over same grid
+        # with the same normal directions. If one space is barycentric,
+        # need to take this into account.
+
+        comp_domain, comp_dual = return_compatible_representation(space, dual_space)
+        self._comp_domain = comp_domain
+        self._comp_dual = comp_dual
+
+        if (
+            not comp_domain.grid == comp_dual.grid
+            or not _np.all(comp_domain.support_elements == comp_dual.support_elements)
+            or not _np.all(comp_domain.normal_multipliers == comp_dual.normal_multipliers)
+        ):
+            raise ValueError(
+                "Space and dual space must be defined on the "
+                + "same elements with same normal directions."
+            )
 
         self._parameters = assign_parameters(parameters)
 
@@ -199,6 +204,7 @@ class GridFunction(object):
 
         if coefficients is not None:
             self._coefficients = coefficients
+            self._transformed_coefficients = self.space.dof_transformation @ coefficients
             self._representation = "primal"
 
         if projections is not None:
@@ -221,16 +227,16 @@ class GridFunction(object):
 
             _project_function(
                 fun,
-                dual_space.grid.data,
-                dual_space.support_elements,
-                dual_space.local2global,
-                dual_space.local_multipliers,
-                dual_space.normal_multipliers,
-                dual_space.numba_evaluate,
-                dual_space.shapeset.evaluate,
+                comp_dual.grid.data,
+                comp_dual.support_elements,
+                comp_dual.local2global,
+                comp_dual.local_multipliers,
+                comp_dual.normal_multipliers,
+                comp_dual.numba_evaluate,
+                comp_dual.shapeset.evaluate,
                 points,
                 weights,
-                space.codomain_dimension,
+                comp_domain.codomain_dimension,
                 self._projections,
             )
 
@@ -279,12 +285,13 @@ class GridFunction(object):
 
             mat = (
                 identity(
-                    self.space, self.space, self.dual_space, parameters=self.parameters
+                    self._comp_domain, self._comp_domain, self._comp_dual, parameters=self.parameters
                 )
                 .weak_form()
                 .A
             )
             self._coefficients = spsolve(mat, self._projections)
+            self._transformed_coefficients = self.space.dof_transformation @ self._coefficients
             self._representation = "primal"
 
         return self._coefficients
@@ -364,7 +371,7 @@ class GridFunction(object):
 
         return self._projections
 
-    def map_to_space(self, space):
+    def project_to_space(self, space):
         """Return an L^2 projection on another space."""
         from bempp.api.operators.boundary.sparse import identity
 
@@ -401,11 +408,10 @@ class GridFunction(object):
 
     def evaluate(self, element, local_coordinates):
         """Evaluate grid function on a single element."""
-        coefficients = self.coefficients
         # Get global dof ids and weights
         global_dofs = self.space.local2global[element.index]
         element_values = self.space.evaluate(element, local_coordinates)
-        return _np.tensordot(element_values, coefficients[global_dofs], axes=([1], [0]))
+        return _np.tensordot(element_values, self._transformed_coefficients[global_dofs], axes=([1], [0]))
 
     def evaluate_on_element_centers(self):
         """Evaluate the grid function on all element centers."""
@@ -415,6 +421,7 @@ class GridFunction(object):
         values = _np.zeros(
             (self.component_count, grid.number_of_elements), dtype=self.dtype
         )
+
         for element in grid.entity_iterator(0):
             local_values = self.evaluate(element, local_coordinates)
             values[:, element.index] = local_values.flat
@@ -436,7 +443,7 @@ class GridFunction(object):
         )
 
         # Sum up the areas of all elements adjacent to the vertices
-        vertex_areas = _np.zeros(grid.number_of_elements, dtype="float64")
+        vertex_areas = _np.zeros(grid.number_of_vertices, dtype="float64")
 
         for element in grid.entity_iterator(0):
             local_values = self.evaluate(element, local_coordinates)

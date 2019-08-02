@@ -18,6 +18,7 @@ class Rwg0BarycentricSpace(_Rwg0LocalisedFunctionSpace):
         segments=None,
         swapped_normals=None,
         include_boundary_dofs=False,
+        coarse_space=None
     ):
         """Definition of RWG spaces over barycentric refinements."""
         from bempp.api.space.rwg0_space import Rwg0FunctionSpace
@@ -50,19 +51,19 @@ class Rwg0BarycentricSpace(_Rwg0LocalisedFunctionSpace):
                 l5 = _np.linalg.norm(local_vertices[:, 6] - local_vertices[:, 1])
                 l6 = _np.linalg.norm(local_vertices[:, 6] - local_vertices[:, 0])
                 le1 = _np.linalg.norm(local_vertices[:, 2] - local_vertices[:, 0])
-                le2 = _np.linalg.norm(local_vertices[:, 4] - local_vertices[:, 2])
-                le3 = _np.linalg.norm(local_vertices[:, 4] - local_vertices[:, 0])
+                le2 = _np.linalg.norm(local_vertices[:, 4] - local_vertices[:, 0])
+                le3 = _np.linalg.norm(local_vertices[:, 4] - local_vertices[:, 2])
 
                 outer_edges = [le1, le2, le3]
 
                 dof_mult = _np.array(
                     [
-                        [1, l6, l5],
-                        [l4, 1, l5],
-                        [1, l4, l2],
-                        [l1, 1, l2],
-                        [1, l1, l3],
-                        [l6, 1, l3],
+                        [le1, l6, l5],
+                        [l4, le1, l5],
+                        [le3, l4, l2],
+                        [l1, le3, l2],
+                        [le2, l1, l3],
+                        [l6, le2, l3],
                     ]
                 )
 
@@ -81,9 +82,10 @@ class Rwg0BarycentricSpace(_Rwg0LocalisedFunctionSpace):
                     count += 18
             return coarse_dofs, bary_dofs, values
 
-        coarse_space = Rwg0FunctionSpace(
-            grid, support_elements, segments, swapped_normals
-        )
+        if coarse_space is None:
+            coarse_space = Rwg0FunctionSpace(
+                grid, support_elements, segments, swapped_normals, include_boundary_dofs
+            )
 
         number_of_support_elements = coarse_space.number_of_support_elements
 
@@ -144,5 +146,8 @@ class Rwg0BarycentricSpace(_Rwg0LocalisedFunctionSpace):
             dtype=_np.float64,
         ).tocsr()
 
-        self._dof_transform = transform
-        self._identifier = "b-rwg0"
+        self._dof_transformation = transform @ coarse_space.map_to_localised_space
+        self._identifier = "rwg0"
+        self._requires_dof_transformation = True
+        self._is_barycentric = True
+        self._barycentric_representation = self

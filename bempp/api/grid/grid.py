@@ -15,6 +15,8 @@ class Grid(object):
 
     def __init__(self, vertices, elements, domain_indices=None):
         """Create a grid from a vertices and an elements array."""
+        from uuid import uuid4
+
         self._vertices = None
         self._elements = None
         self._domain_indices = None
@@ -28,6 +30,7 @@ class Grid(object):
         self._edge_neighbors = None
         self._vertex_neighbors = None
         self._barycentric_grid = None
+        self._id = str(uuid4())
 
         self._volumes = None
         self._normals = None
@@ -275,6 +278,11 @@ class Grid(object):
         if self._barycentric_grid is None:
             self._barycentric_grid = barycentric_refinement(self)
         return self._barycentric_grid
+
+    @property
+    def id(self):
+        """Return a unique id for the grid."""
+        return self._id
 
     def entity_count(self, codim):
         """Return the number of entities of given codimension."""

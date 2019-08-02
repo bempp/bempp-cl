@@ -47,6 +47,10 @@ class Rwg0LocalisedFunctionSpace(_FunctionSpace):
         identifier = "rwg0-localised"
 
         localised_space = self
+        requires_dof_transformation = False
+
+        is_barycentric = False
+        barycentric_representation = None
 
         space_data = _SpaceData(
             grid,
@@ -59,7 +63,10 @@ class Rwg0LocalisedFunctionSpace(_FunctionSpace):
             support,
             localised_space,
             normal_mult,
-            identity(global_dof_count, dtype='float64')
+            identity(global_dof_count, dtype='float64'),
+            requires_dof_transformation,
+            is_barycentric,
+            barycentric_representation
         )
 
         super().__init__(space_data)

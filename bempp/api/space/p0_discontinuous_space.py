@@ -39,6 +39,10 @@ class P0DiscontinuousFunctionSpace(_FunctionSpace):
         identifier = "p0_discontinuous"
 
         localised_space = self
+        requires_dof_transformation = False
+
+        is_barycentric = False
+        barycentric_representation = None
 
         space_data = _SpaceData(
             grid,
@@ -51,7 +55,10 @@ class P0DiscontinuousFunctionSpace(_FunctionSpace):
             support,
             localised_space,
             normal_multipliers,
-            identity(support_size, dtype='float64')
+            identity(support_size, dtype='float64'),
+            requires_dof_transformation,
+            is_barycentric,
+            barycentric_representation
         )
 
         super().__init__(space_data)

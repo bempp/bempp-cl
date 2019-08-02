@@ -20,6 +20,7 @@ class Rwg0FunctionSpace(_FunctionSpace):
         include_boundary_dofs=False,
     ):
         """Initialize with a given grid."""
+        from bempp.api.space.maxwell_barycentric import Rwg0BarycentricSpace
         from .localised_space import LocalisedFunctionSpace
         from scipy.sparse import identity
         from scipy.sparse import coo_matrix
@@ -123,6 +124,10 @@ class Rwg0FunctionSpace(_FunctionSpace):
             None,
         )
 
+        requires_dof_transformation = False
+
+        is_barycentric = False
+
         space_data = _SpaceData(
             grid,
             codomain_dimension,
@@ -134,10 +139,20 @@ class Rwg0FunctionSpace(_FunctionSpace):
             support,
             localised_space,
             normal_mult,
-            identity(global_dof_count, dtype='float64')
+            identity(global_dof_count, dtype='float64'),
+            requires_dof_transformation,
+            is_barycentric,
+            None
         )
 
         super().__init__(space_data)
+
+        self._barycentric_representation = Rwg0BarycentricSpace(
+                grid, support_elements=support_elements,
+                segments=segments, swapped_normals=swapped_normals,
+                include_boundary_dofs=include_boundary_dofs,
+                coarse_space=self)
+
 
     @property
     def numba_evaluate(self):

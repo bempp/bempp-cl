@@ -77,6 +77,9 @@ _SpaceData = _namedtuple(
         "localised_space",
         "normal_multipliers",
         "dof_transformation",
+        "requires_dof_transformation",
+        "is_barycentric",
+        "barycentric_representation",
     ],
 )
 
@@ -92,6 +95,8 @@ class _FunctionSpace(_abc.ABC):
         from scipy.sparse import identity
 
         self._grid = space_data.grid
+        self._grid_id = self._grid.id
+        self._id_string = None
         self._codomain_dimension = space_data.codomain_dimension
         self._order = space_data.order
         self._shapeset = Shapeset(space_data.shapeset)
@@ -101,11 +106,14 @@ class _FunctionSpace(_abc.ABC):
         self._support = space_data.support
         self._localised_space = space_data.localised_space
         self._color_map = None
+        self._requires_dof_transformation = space_data.requires_dof_transformation
+        self._is_barycentric = space_data.is_barycentric
+        self._barycentric_representation = space_data.barycentric_representation
         self._dof_transformation = space_data.dof_transformation
         self._global2local_map = self._invert_local2global_map(
             self._local2global_map,
             self._grid.number_of_elements,
-            self.dof_transformation.shape[0]
+            self.dof_transformation.shape[0],
         )
 
         self._normal_multipliers = space_data.normal_multipliers
@@ -144,10 +152,12 @@ class _FunctionSpace(_abc.ABC):
                     self._local2global_map[self._support].ravel(),
                 ),
             ),
-            shape=(nshape_fun * self._grid.number_of_elements, self.dof_transformation.shape[0]),
+            shape=(
+                nshape_fun * self._grid.number_of_elements,
+                self.dof_transformation.shape[0],
+            ),
             dtype="float64",
         ).tocsr()
-
 
         self._compute_color_map()
         self._sort_elements_by_color()
@@ -156,6 +166,11 @@ class _FunctionSpace(_abc.ABC):
     def grid(self):
         """Return the grid."""
         return self._grid
+
+    @property
+    def grid_id(self):
+        """Return id of base grid."""
+        return self._grid_id
 
     @property
     def codomain_dimension(self):
@@ -263,6 +278,29 @@ class _FunctionSpace(_abc.ABC):
         """
         return self._dof_transformation
 
+    @property
+    def requires_dof_transformation(self):
+        """True if the dof transformation matrix is not the identity."""
+        return self._requires_dof_transformation
+
+    @property
+    def barycentric_representation(self):
+        """Return barycentric_representation if it exists."""
+        return self._barycentric_representation
+
+    @property
+    def is_barycentric(self):
+        """Return true if space is defined over barycentric grid."""
+        return self._is_barycentric
+
+    @property
+    def id_string(self):
+        """Return an id string for space comparison."""
+        if self._id_string is None:
+            self._id_string = self._generate_hash()
+
+        return self._id_string
+
     def get_elements_by_color(self):
         """
         Returns color sorted elements and their index positions.
@@ -306,6 +344,24 @@ class _FunctionSpace(_abc.ABC):
                 self.mass_matrix()
             )
         return self._inverse_mass_matrix
+
+    def _generate_hash(self):
+        """Generate a hash for the space object."""
+        from hashlib import md5
+
+        dof_transform_csr = self.dof_transformation.tocsr().sorted_indices()
+
+        md5_gen = md5()
+
+        md5_gen.update(self.local2global.tobytes())
+        md5_gen.update(self.support_elements.tobytes())
+        md5_gen.update(self.normal_multipliers.tobytes())
+        md5_gen.update(self.local_multipliers.tobytes())
+        md5_gen.update(dof_transform_csr.indices)
+        md5_gen.update(dof_transform_csr.indptr)
+        md5_gen.update(dof_transform_csr.data)
+
+        return self.identifier + "_" + self.grid_id + "_" + md5_gen.hexdigest()
 
     def is_compatible(self, other):
         """Check if space is compatible with other space."""
@@ -370,14 +426,8 @@ class _FunctionSpace(_abc.ABC):
         self._sorted_indices, self._indexptr = sorted_indices, indexptr
 
     def __eq__(self, other):
-        """Check equality of spaces."""
-        return (
-            self.grid == other.grid
-            and self.identifier == other.identifier
-            and _np.all(self.support_elements == other.support_elements)
-            and _np.all(self.local2global == other.local2global)
-            and _np.all(self.local_multipliers == other.local_multipliers)
-        )
+        """Check if spaces are compatible."""
+        return check_if_compatible(self, other)
 
 
 def _process_segments(grid, support_elements, segments, swapped_normals):
@@ -412,3 +462,35 @@ def _process_segments(grid, support_elements, segments, swapped_normals):
         support = _np.full(number_of_elements, True, dtype=bool)
 
     return support, normal_multipliers
+
+
+def return_compatible_representation(*args):
+    """Return representation of spaces on same grid."""
+
+    # Check if at least one space is barycentric.
+
+    is_barycentric = any([space.is_barycentric for space in args])
+
+    if not is_barycentric:
+        return args
+    else:
+        # Convert spaces
+        converted = [space.barycentric_representation for space in args]
+        if not all(converted):
+            raise ValueError("Not all spaces have a valid barycentric representation.")
+        return converted
+
+
+def check_if_compatible(space1, space2):
+    """Return true if two spaces are compatible."""
+
+    if id(space1) == id(space2):
+        return True
+
+    try:
+        new_space1, new_space2 = return_compatible_representation(
+                space1, space2)
+        return new_space1.id_string == new_space2.id_string   
+    except:
+        return False
+

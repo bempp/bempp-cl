@@ -21,16 +21,20 @@ class SparseAssembler(_assembler.AssemblerBase):
             SparseDiscreteBoundaryOperator,
         )
         from bempp.api.utils.helpers import promote_to_double_precision
+        from bempp.api.space.space import return_compatible_representation
         from scipy.sparse import coo_matrix
 
-        trial_local2global = self.domain.local2global.ravel()
-        test_local2global = self.dual_to_range.local2global.ravel()
-        trial_multipliers = self.domain.local_multipliers.ravel()
-        test_multipliers = self.dual_to_range.local_multipliers.ravel()
+        domain, dual_to_range = return_compatible_representation(
+                self.domain, self.dual_to_range)
+
+        trial_local2global = domain.local2global.ravel()
+        test_local2global = dual_to_range.local2global.ravel()
+        trial_multipliers = domain.local_multipliers.ravel()
+        test_multipliers = dual_to_range.local_multipliers.ravel()
 
         rows, cols, data = assemble_sparse(
-            self.domain.localised_space,
-            self.dual_to_range.localised_space,
+            domain.localised_space,
+            dual_to_range.localised_space,
             self.parameters,
             operator_descriptor,
             device_interface,
@@ -44,13 +48,18 @@ class SparseAssembler(_assembler.AssemblerBase):
         if self.parameters.assembly.always_promote_to_double:
             new_data = promote_to_double_precision(new_data)
 
-        nrows = self.dual_to_range.global_dof_count
-        ncols = self.domain.global_dof_count
+        nrows = dual_to_range.dof_transformation.shape[0]
+        ncols = domain.dof_transformation.shape[0]
 
-        return SparseDiscreteBoundaryOperator(
-            coo_matrix((new_data, (new_rows, new_cols)), shape=(nrows, ncols)).tocsr()
-        )
+        mat = coo_matrix((new_data, (new_rows, new_cols)), shape=(nrows, ncols)).tocsr()
 
+        if self.domain.requires_dof_transformation:
+            mat = mat @ self.domain.dof_transformation
+
+        if self.dual_to_range.requires_dof_transformation:
+            mat = self.dual_to_range.dof_transformation.T @ mat
+
+        return SparseDiscreteBoundaryOperator(mat)
 
 def assemble_sparse(
     domain, dual_to_range, parameters, operator_descriptor, device_interface, precision

@@ -34,6 +34,10 @@ class LocalisedFunctionSpace(_FunctionSpace):
         global_dof_count = local_size * support_size
 
         localised_space = self
+        requires_dof_transformation = False
+
+        is_barycentric = False
+        barycentric_representation = False
 
         localised_space_data = _SpaceData(
                 grid,
@@ -46,7 +50,10 @@ class LocalisedFunctionSpace(_FunctionSpace):
                 support,
                 self,
                 normal_multipliers,
-                identity(global_dof_count, dtype='float64')
+                identity(global_dof_count, dtype='float64'),
+                requires_dof_transformation,
+                is_barycentric,
+                barycentric_representation
                 )
 
 
