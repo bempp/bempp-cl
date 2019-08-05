@@ -50,20 +50,18 @@ class BoundaryOperator(object):
             # This is the most frequent case and we cache the mass
             # matrix from the space object.
             if self.range == self.dual_to_range:
-                self._range_map = \
-                    self.dual_to_range.inverse_mass_matrix()
+                self._range_map = self.dual_to_range.inverse_mass_matrix()
             else:
-                from bempp.api.assembly.discrete_boundary_operator import \
-                    InverseSparseDiscreteBoundaryOperator
+                from bempp.api.assembly.discrete_boundary_operator import (
+                    InverseSparseDiscreteBoundaryOperator,
+                )
                 from bempp.api.operators.boundary.sparse import identity
 
                 self._range_map = InverseSparseDiscreteBoundaryOperator(
-                    identity(
-                        self.range,
-                        self.range, self.dual_to_range).weak_form())
+                    identity(self.range, self.range, self.dual_to_range).weak_form()
+                )
 
         return self._range_map * self.weak_form()
-
 
     def __mul__(self, other):
         """Return product with a scalar, grid function or other operator."""
@@ -77,11 +75,13 @@ class BoundaryOperator(object):
         elif isinstance(other, GridFunction):
             if not self.domain.is_compatible(other.space):
                 raise ValueError(
-                    "Operator domain space does not match GridFunction space.")
-            return GridFunction(self.range,
-                                projections=self.weak_form() *
-                                other.coefficients,
-                                dual_space=self.dual_to_range)
+                    "Operator domain space does not match GridFunction space."
+                )
+            return GridFunction(
+                self.range,
+                projections=self.weak_form() * other.coefficients,
+                dual_space=self.dual_to_range,
+            )
         else:
             return NotImplemented
 
@@ -143,13 +143,16 @@ class _SumBoundaryOperator(BoundaryOperator):
 
     def __init__(self, op1, op2):
         """Construct the sum of two boundary operators."""
-        if (not op1.domain.is_compatible(op2.domain) or
-                not op1.range.is_compatible(op2.range) or
-                not op1.dual_to_range.is_compatible(op2.dual_to_range)):
+        if (
+            not op1.domain.is_compatible(op2.domain)
+            or not op1.range.is_compatible(op2.range)
+            or not op1.dual_to_range.is_compatible(op2.dual_to_range)
+        ):
             raise ValueError("Spaces not compatible.")
 
         super(_SumBoundaryOperator, self).__init__(
-            op1.domain, op1.range, op1.dual_to_range, None)
+            op1.domain, op1.range, op1.dual_to_range, None
+        )
 
         self._op1 = op1
         self._op2 = op2
@@ -165,8 +168,8 @@ class _ScaledBoundaryOperator(BoundaryOperator):
     def __init__(self, op, alpha):
         """Construct a scaled boundary operator."""
         super(_ScaledBoundaryOperator, self).__init__(
-            op.domain, op.range, op.dual_to_range,
-            op.parameters)
+            op.domain, op.range, op.dual_to_range, op.parameters
+        )
 
         self._op = op
         self._alpha = alpha
@@ -183,11 +186,13 @@ class _ProductBoundaryOperator(BoundaryOperator):
         """Construct a product boundary operator."""
         if not op2.range.is_compatible(op1.domain):
             raise ValueError(
-                "Range space of second operator must be compatible to " +
-                "domain space of first operator.")
+                "Range space of second operator must be compatible to "
+                + "domain space of first operator."
+            )
 
         super(_ProductBoundaryOperator, self).__init__(
-            op2.domain, op1.range, op1.dual_to_range, None)
+            op2.domain, op1.range, op1.dual_to_range, None
+        )
 
         self._op1 = op1
         self._op2 = op2
@@ -195,6 +200,7 @@ class _ProductBoundaryOperator(BoundaryOperator):
     def _assemble(self):
         """Implement the weak form."""
         return self._op1.weak_form() * self._op2.strong_form()
+
 
 class ZeroBoundaryOperator(BoundaryOperator):
     """A boundary operator that represents a zero operator.
@@ -211,29 +217,194 @@ class ZeroBoundaryOperator(BoundaryOperator):
     """
 
     def __init__(self, domain, range_, dual_to_range):
-        super(ZeroBoundaryOperator, self).__init__(
-            domain, range_, dual_to_range)
+        super(ZeroBoundaryOperator, self).__init__(domain, range_, dual_to_range)
 
     def _assemble(self):
 
-        from bempp.api.assembly.discrete_boundary_operator \
-            import ZeroDiscreteBoundaryOperator
+        from bempp.api.assembly.discrete_boundary_operator import (
+            ZeroDiscreteBoundaryOperator,
+        )
 
-        return ZeroDiscreteBoundaryOperator(self.dual_to_range.global_dof_count,
-                                            self.domain.global_dof_count)
+        return ZeroDiscreteBoundaryOperator(
+            self.dual_to_range.global_dof_count, self.domain.global_dof_count
+        )
 
     def __iadd__(self, other):
-        if (self.domain != other.domain or
-                self.range != other.range or
-                self.dual_to_range != other.dual_to_range):
+        if (
+            self.domain != other.domain
+            or self.range != other.range
+            or self.dual_to_range != other.dual_to_range
+        ):
             raise ValueError("Spaces not compatible.")
 
         return other
 
     def __isub__(self, other):
-        if (self.domain != other.domain or
-                self.range != other.range or
-                self.dual_to_range != other.dual_to_range):
+        if (
+            self.domain != other.domain
+            or self.range != other.range
+            or self.dual_to_range != other.dual_to_range
+        ):
             raise ValueError("Spaces not compatible.")
 
         return -other
+
+
+class MultiplicationOperator(BoundaryOperator):
+    """
+    Returns a weak multiplication operator with a grid function.
+
+    Given a grid function g, this operator assembles a sparse
+    matrix that implements weak multiplication with g in a given
+    basis.
+    """
+
+    def __init__(
+        self,
+        grid_function,
+        domain,
+        range_,
+        dual_to_range,
+        parameters=None,
+        mode="component",
+    ):
+        """
+        Initialize the multiplication operator.
+
+        This class initializes a multiplication operator mult from a given
+        grid function g, such that the result h = mult @ f for a given
+        grid function f is the result of projecting g * f onto the 
+        space `dual_to_range`.
+
+        The number of components of the shapesets of grid_function.space,
+        domain and dual_to_range must be compatible. For example, grid_function
+        could be scalar, and space and dual_to_range vectorial with 3 components.
+
+
+        Parameters
+        ----------
+        grid_function : GridFunction object
+            The grid function object from which the multiplication operator is
+            built. It needs to allow representation in primal (coordinate) form.
+        domain : Space object
+            The domain space of the operator.
+        range_ : Space object
+            The range space of the operator
+        dual_to_range : Space object
+            The dual space on which the result of the multiplication is projected.
+        parameters : Parameters object
+            The parameters associated with this operator.
+        mode : string
+            Either 'component' or 'inner'. If mode is 'component' (default) then
+            the multiplication is componentwise at each quadrature point. Hence,
+            if the shapesets of grid_function.space and domain.space both have
+            dimension 3, then the result of the multiplication is also of dimension
+            3, and the dual_to_range space needs to be compatible to it. If mode
+            is 'inner', then inner product is taken of the values of grid_function
+            at the quadrature point and the basis functions in space at the
+            quadrature points.
+
+        """
+        from bempp.api.utils.helpers import assign_parameters
+
+        self._mode = mode
+        self._grid_fun = grid_function
+
+        # Check compatibility
+
+        dim = grid_function.component_count
+        dual_dim = dual_to_range.codomain_dimension
+        dimensions_compatible = False
+        if mode == "component":
+            dimensions_compatible = dim == domain.codomain_dimension and dim == dual_dim
+        elif mode == "inner":
+            dimensions_compatible = dim == domain.codomain_dimension and dual_dim == 1
+        else:
+            raise ValueError("Unknown value for 'mode'. Allowed: 'component', 'inner'")
+        if not dimensions_compatible:
+            raise ValueError("Incompatible codomain dimensions.")
+
+        super().__init__(domain, range_, dual_to_range, assign_parameters(parameters))
+
+    def _assemble(self):
+        """Assemble the operator."""
+        from bempp.api.space.space import return_compatible_representation
+        from bempp.api.assembly.discrete_boundary_operator import (
+            SparseDiscreteBoundaryOperator,
+        )
+        from bempp.api.integration.triangle_gauss import rule
+        from scipy.sparse import coo_matrix
+
+        import numpy as _np
+
+        points, weights = rule(self._parameters.quadrature.regular)
+        npoints = len(weights)
+
+        comp_trial, comp_test, comp_fun = return_compatible_representation(
+            self.domain, self.dual_to_range, self._grid_fun.space
+        )
+
+        grid = comp_trial.grid
+
+        if self._mode == "component":
+            op = _np.multiply
+        elif self._mode == "inner":
+            op = lambda x, y: _np.sum(
+                x * y.reshape[:, _np.newaxis, :], axis=0, keepdims=True
+            )
+
+        elements = (
+            set(comp_test.support_elements)
+            .intersection(set(comp_trial.support_elements))
+            .intersection(set(comp_fun.support_elements))
+        )
+
+        elements = _np.flatnonzero(
+            comp_trial.support * comp_test.support * comp_fun.support
+        )
+
+        number_of_elements = len(elements)
+        nshape_trial = comp_trial.shapeset.number_of_shape_functions
+        nshape_test = comp_test.shapeset.number_of_shape_functions
+        nshape = nshape_trial * nshape_test
+
+        data = _np.zeros(number_of_elements * nshape_trial * nshape_test)
+
+        for index, elem_index in enumerate(elements):
+            scale_vals = (
+                self._grid_fun.evaluate(elem_index, points)
+                * weights
+                * grid.integration_elements[index]
+            )
+            domain_vals = comp_trial.evaluate(elem_index, points)
+            trial_vals = op(domain_vals, scale_vals)
+            test_vals = _np.conj(comp_test.evaluate(elem_index, points))
+            res = _np.tensordot(test_vals, trial_vals, axes=([0, 2], [0, 2]))
+            data[nshape * index : nshape * (1 + index)] = res.ravel()
+
+        irange = _np.arange(nshape_test)
+        jrange = _np.arange(nshape_trial)
+
+        rows = _np.tile(
+            _np.repeat(irange, nshape_trial), number_of_elements
+        ) + _np.repeat(elements * nshape_test, nshape)
+
+        cols = _np.tile(_np.tile(jrange, nshape_test), number_of_elements) + _np.repeat(
+            elements * nshape_trial, nshape
+        )
+
+        new_rows = comp_test.local2global.ravel()[rows]
+        new_cols = comp_trial.local2global.ravel()[cols]
+
+        nrows = comp_test.dof_transformation.shape[0]
+        ncols = comp_trial.dof_transformation.shape[0]
+
+        mat = coo_matrix((data, (new_rows, new_cols)), shape=(nrows, ncols)).tocsr()
+
+        if comp_trial.requires_dof_transformation:
+            mat = mat @ self.domain.dof_transformation
+
+        if comp_test.requires_dof_transformation:
+            mat = self.dual_to_range.dof_transformation.T @ mat
+
+        return SparseDiscreteBoundaryOperator(mat)

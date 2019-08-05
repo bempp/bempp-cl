@@ -75,25 +75,4 @@ class LocalisedFunctionSpace(_FunctionSpace):
         else:
             raise NotImplementedError
 
-    def evaluate(self, element, local_coordinates):
-        """Evaluate the basis on an element."""
-        return self._numba_evaluate(
-            element.index,
-            self.shapeset.evaluate,
-            local_coordinates,
-            self.grid.data,
-            self.local_multipliers,
-            self.normal_multipliers,
-        )
-
-    def surface_gradient(self, element, local_coordinates):
-        """Return the surface gradient."""
-        return self._numba_surface_gradient(
-                element.index,
-                self.shapeset.evaluate,
-                local_coordinates,
-                self.grid.data,
-                self.local_multipliers,
-                self.normal_multipliers)
-
 

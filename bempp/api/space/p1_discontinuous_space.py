@@ -71,28 +71,6 @@ class P1DiscontinuousFunctionSpace(_FunctionSpace):
         """Return numba method that evaluates the surface gradient."""
         return _numba_surface_gradient
 
-    def evaluate(self, element, local_coordinates):
-        """Evaluate the basis on an element."""
-        return _numba_evaluate(
-            element.index,
-            self.shapeset.evaluate,
-            local_coordinates,
-            self.grid.data,
-            self.local_multipliers,
-            normal_multipliers
-        )
-
-    def surface_gradient(self, element, local_coordinates):
-        """Return the surface gradient."""
-        return _numba_surface_gradient(
-            element.index,
-            self.shapeset.gradient,
-            local_coordinates,
-            self.grid.data,
-            self.local_multipliers,
-            normal_multipliers
-        )
-
 
 @_numba.njit
 def _numba_evaluate(

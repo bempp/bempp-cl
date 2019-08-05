@@ -1208,3 +1208,46 @@ def barycentric_refinement(grid):
     )
 
     return Grid(new_vertices, new_elements, _np.repeat(grid.domain_indices, 6))
+
+
+def union(grids, domain_indices=None):
+    """
+    Return the union of a given list of grids.
+
+    Parameters
+    ----------
+    grids: list
+        A list of grid objects.
+    domain_indices : list
+        Attach a list of domain indices to the new
+        grid such that grid[j] received the domain
+        index domain_indices[j]
+
+    This method returns a new grid object, which is
+    the union of the input grid objects.
+
+    """
+    from bempp.api.grid.grid import Grid
+    vertex_offset = 0
+    element_offset = 0
+
+    vertex_count = sum([grid.number_of_vertices for grid in grids])
+    element_count = sum([grid.number_of_elements for grid in grids])
+
+    vertices = _np.empty((3, vertex_count), dtype='float64')
+    elements = _np.empty((3, element_count), dtype='uint32')
+    all_domain_indices = _np.empty(element_count, dtype='uint32')
+
+
+    if domain_indices is None:
+        domain_indices = range(len(grids))
+
+    for index, grid in enumerate(grids):
+        nelements = grid.number_of_elements
+        nvertices = grid.number_of_vertices
+        vertices[:, vertex_offset : vertex_offset + nvertices] = grid.vertices
+        elements[:, element_offset : element_offset + nelements] = grid.elements + vertex_offset
+        all_domain_indices[element_offset : element_offset + nelements] = domain_indices[index]
+        vertex_offset += nvertices
+        element_offset += nelements
+    return Grid(vertices, elements, all_domain_indices)

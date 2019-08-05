@@ -24,7 +24,4 @@ def test_rwg_barycentric_on_reference_triangle():
     fun_bary = bempp.api.GridFunction(space_bary, coefficients=coeffs)
     fun_bary.l2_norm()
 
-    pytest.set_trace()
-
-
 

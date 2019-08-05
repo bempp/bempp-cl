@@ -167,7 +167,7 @@ class GridFunction(object):
         self._space = None
         self._dual_space = None
         self._coefficients = None
-        self._transformed_coefficients = None
+        self._grid_coefficients = None
         self._projections = None
         self._representation = None
 
@@ -204,7 +204,6 @@ class GridFunction(object):
 
         if coefficients is not None:
             self._coefficients = coefficients
-            self._transformed_coefficients = self.space.dof_transformation @ coefficients
             self._representation = "primal"
 
         if projections is not None:
@@ -291,10 +290,18 @@ class GridFunction(object):
                 .A
             )
             self._coefficients = spsolve(mat, self._projections)
-            self._transformed_coefficients = self.space.dof_transformation @ self._coefficients
             self._representation = "primal"
 
         return self._coefficients
+
+    @property
+    def grid_coefficients(self):
+        """Return grid coefficients."""
+
+        if self._grid_coefficients is None:
+            self._grid_coefficients = self.space.dof_transformation @ self.coefficients
+
+        return self._grid_coefficients
 
     @property
     def real(self):
@@ -406,25 +413,24 @@ class GridFunction(object):
 
         visualize(self, mode, transformation)
 
-    def evaluate(self, element, local_coordinates):
+    def evaluate(self, element_index, local_coordinates):
         """Evaluate grid function on a single element."""
         # Get global dof ids and weights
-        global_dofs = self.space.local2global[element.index]
-        element_values = self.space.evaluate(element, local_coordinates)
-        return _np.tensordot(element_values, self._transformed_coefficients[global_dofs], axes=([1], [0]))
+        global_dofs = self.space.local2global[element_index]
+        element_values = self.space.evaluate(element_index, local_coordinates)
+        return _np.tensordot(element_values, self.grid_coefficients[global_dofs], axes=([1], [0]))
 
     def evaluate_on_element_centers(self):
         """Evaluate the grid function on all element centers."""
-        grid = self.space.grid
         local_coordinates = _np.array([[1.0 / 3], [1.0 / 3]])
 
         values = _np.zeros(
             (self.component_count, grid.number_of_elements), dtype=self.dtype
         )
 
-        for element in grid.entity_iterator(0):
-            local_values = self.evaluate(element, local_coordinates)
-            values[:, element.index] = local_values.flat
+        for index in self.space.support_elements:
+            local_values = self.evaluate(index, local_coordinates)
+            values[:, index] = local_values.flat
         return values
 
     def evaluate_on_vertices(self):
@@ -445,11 +451,11 @@ class GridFunction(object):
         # Sum up the areas of all elements adjacent to the vertices
         vertex_areas = _np.zeros(grid.number_of_vertices, dtype="float64")
 
-        for element in grid.entity_iterator(0):
-            local_values = self.evaluate(element, local_coordinates)
+        for element_index in self.space.support_elements:
+            local_values = self.evaluate(element_index, local_coordinates)
             for i in range(3):
-                index = grid.elements[i, element.index]
-                element_area = element.geometry.volume
+                index = grid.elements[i, element_index]
+                element_area = grid.volumes[element_index]
                 vertex_areas[index] += element_area
                 values[:, index] += local_values[:, i] * element_area
         return values / vertex_areas

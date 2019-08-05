@@ -30,6 +30,7 @@ from bempp.api.linalg.direct_solvers import lu, compute_lu_factors
 from bempp.api.linalg.iterative_solvers import gmres, cg
 from bempp.api.assembly.discrete_boundary_operator import as_matrix
 from bempp.api.assembly.boundary_operator import ZeroBoundaryOperator
+from bempp.api.assembly.boundary_operator import MultiplicationOperator
 
 
 CONSOLE_LOGGING_HANDLER = None

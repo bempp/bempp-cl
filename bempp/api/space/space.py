@@ -312,15 +312,27 @@ class _FunctionSpace(_abc.ABC):
         """
         return (self._sorted_indices, self._indexptr)
 
-    @_abc.abstractmethod
-    def evaluate(self, element, local_coordinates):
-        """Evaluate the basis functions on an element."""
-        pass
+    def evaluate(self, element_index, local_coordinates):
+        """Evaluate the basis on an element."""
+        return self.numba_evaluate(
+            element_index,
+            self.shapeset.evaluate,
+            local_coordinates,
+            self.grid.data,
+            self.local_multipliers,
+            self.normal_multipliers
+        )
 
-    @_abc.abstractmethod
-    def surface_gradient(self, element, local_coordinates):
+    def surface_gradient(self, element_index, local_coordinates):
         """Return the surface gradient."""
-        pass
+        return self.numba_surface_gradient(
+            element_index,
+            self.shapeset.gradient,
+            local_coordinates,
+            self.grid.data,
+            self.local_multipliers,
+            self.normal_multipliers
+        )
 
     def mass_matrix(self):
         """Return the mass matrix associated with this space."""

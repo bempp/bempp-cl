@@ -81,21 +81,6 @@ class Rwg0LocalisedFunctionSpace(_FunctionSpace):
         """Return numba method that evaluates the surface gradient."""
         raise NotImplementedError
 
-    def evaluate(self, element, local_coordinates):
-        """Evaluate the basis on an element."""
-        return _numba_evaluate(
-            element.index,
-            self.shapeset.evaluate,
-            local_coordinates,
-            self.grid.data,
-            self.local_multipliers,
-            self.normal_multipliers
-        )
-
-    def surface_gradient(self, element, local_coordinates):
-        """Return the surface gradient."""
-        raise NotImplementedError
-
 
 @_numba.njit
 def _numba_evaluate(

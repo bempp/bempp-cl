@@ -380,18 +380,13 @@ class _Solver(object):  # pylint: disable=too-few-public-methods
             "Finished computation of inverse in %.2E seconds." % (end_time - start_time)
         )
 
-    def solve(self, vec):
-        """Solve with right-hand side vec."""
+    def solve(self, rhs):
+        """Solve with right-hand side mat."""
 
-        if self._dtype == "float64" and _np.iscomplexobj(vec):
-            return self.solve(_np.real(vec)) + 1j * self.solve(_np.imag(vec))
+        if self._dtype == "float64" and _np.iscomplexobj(rhs):
+            return self.solve(_np.real(rhs)) + 1j * self.solve(_np.imag(rhs))
 
-        result = self._solve_fun(vec.squeeze())
-
-        if vec.ndim > 1:
-            return result.reshape(self.shape[0], 1)
-        else:
-            return result
+        return self._solve_fun(rhs)
 
     @property
     def shape(self):
