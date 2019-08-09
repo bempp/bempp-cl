@@ -1210,7 +1210,7 @@ def barycentric_refinement(grid):
     return Grid(new_vertices, new_elements, _np.repeat(grid.domain_indices, 6))
 
 
-def union(grids, domain_indices=None):
+def union(grids, domain_indices=None, swapped_normals=None):
     """
     Return the union of a given list of grids.
 
@@ -1222,6 +1222,12 @@ def union(grids, domain_indices=None):
         Attach a list of domain indices to the new
         grid such that grid[j] received the domain
         index domain_indices[j]
+    swapped_normals : list of boolean
+        A list of the form [False, True, ...],
+        that specifies for each grid if the normals
+        should be swapped (True) or not (False). This
+        is helpful if one grid is defined to be inside
+        another grid.
 
     This method returns a new grid object, which is
     the union of the input grid objects.
@@ -1242,11 +1248,18 @@ def union(grids, domain_indices=None):
     if domain_indices is None:
         domain_indices = range(len(grids))
 
+    if swapped_normals is None:
+        swapped_normals = len(grids) * [False] 
+
     for index, grid in enumerate(grids):
         nelements = grid.number_of_elements
         nvertices = grid.number_of_vertices
         vertices[:, vertex_offset : vertex_offset + nvertices] = grid.vertices
-        elements[:, element_offset : element_offset + nelements] = grid.elements + vertex_offset
+        if swapped_normals[index]:
+            current_elements = grid.elements[[0, 2, 1], :]
+        else:
+            current_elements = grid.elements
+        elements[:, element_offset : element_offset + nelements] = current_elements + vertex_offset
         all_domain_indices[element_offset : element_offset + nelements] = domain_indices[index]
         vertex_offset += nvertices
         element_offset += nelements
