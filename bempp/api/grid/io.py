@@ -92,15 +92,15 @@ def export(
         if data_type == "node":
             data = _transform_array(
                 grid_function.evaluate_on_vertices(), transformation
-            )
+            ).T
             if _np.iscomplexobj(data):
                 point_data = {"real": _np.real(data), "imag": _np.imag(data)}
             else:
                 point_data = {"data": data}
-        elif data_type == "node":
+        elif data_type == "element":
             data = _transform_array(
                 grid_function.evaluate_on_element_centers(), transformation
-            )
+            ).T
             if _np.iscomplexobj(data):
                 cell_data["triangle"]["real"] = _np.real(data)
                 cell_data["triangle"]["imag"] = _np.imag(data)

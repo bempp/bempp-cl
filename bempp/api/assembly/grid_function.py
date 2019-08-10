@@ -425,7 +425,7 @@ class GridFunction(object):
         local_coordinates = _np.array([[1.0 / 3], [1.0 / 3]])
 
         values = _np.zeros(
-            (self.component_count, grid.number_of_elements), dtype=self.dtype
+            (self.component_count, self.space.grid.number_of_elements), dtype=self.dtype
         )
 
         for index in self.space.support_elements:
