@@ -9,8 +9,8 @@ import pyopencl as _cl
 from bempp.api.utils import DefaultParameters
 
 from bempp.api.utils.helpers import assign_parameters
-from bempp.api.file_interfaces import import_grid
-from bempp.api.file_interfaces import export
+from bempp.api.grid.io import import_grid
+from bempp.api.grid.io import export
 from bempp.api.assembly.grid_function import GridFunction
 from bempp.api.assembly.grid_function import real_callable
 from bempp.api.assembly.grid_function import complex_callable
