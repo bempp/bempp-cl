@@ -75,8 +75,18 @@ def export(
 
     _, extension = os.path.splitext(filename)
 
+    file_format = None
+
     if extension == ".msh":
+        # Ensure that we use Gmsh2 for output
+        # to preserve domain indices.
+        # meshio does not yet support domain
+        # indices for gmsh4.
         gmsh = True
+        if write_binary:
+            file_format = "gmsh2-binary"
+        else:
+            file_format = "gmsh2-ascii"
     else:
         gmsh = False
 
@@ -115,6 +125,11 @@ def export(
 
     if gmsh:
         cell_data["triangle"]["gmsh:physical"] = grid.domain_indices.astype("int32")
+        unique_dom_indices = set(grid.domain_indices)
+        unique_geom_indices = range(1, 1 + len(unique_dom_indices))
+        geom_indices_map = dict(zip(unique_dom_indices, unique_geom_indices))
+        geom_indices = _np.array([geom_indices_map[dom_index] for dom_index in grid.domain_indices], dtype='int32')    
+        cell_data["triangle"]["gmsh:geometrical"] = geom_indices
     else:
         cell_data["triangle"]["domain index"] = grid.domain_indices.astype("int32")
 
@@ -125,6 +140,7 @@ def export(
         point_data=point_data,
         cell_data=cell_data,
         write_binary=write_binary,
+        file_format=file_format,
     )
 
 

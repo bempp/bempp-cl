@@ -386,7 +386,7 @@ class GridFunction(object):
 
         return GridFunction(space, projections=ident @ self.coefficients)
 
-    def plot(self, mode="element", transformation="real"):
+    def plot(self, mode="element", transformation=None):
         """
         Plot the grid function.
         
