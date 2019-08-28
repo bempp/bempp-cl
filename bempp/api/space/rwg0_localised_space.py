@@ -19,6 +19,7 @@ class Rwg0LocalisedFunctionSpace(_FunctionSpace):
         swapped_normals=None,
     ):
         """Initialize with a given grid."""
+        import bempp.api
         from .localised_space import LocalisedFunctionSpace
 
         from scipy.sparse import coo_matrix
@@ -82,7 +83,7 @@ class Rwg0LocalisedFunctionSpace(_FunctionSpace):
         raise NotImplementedError
 
 
-@_numba.njit
+@_numba.njit(cache=True)
 def _numba_evaluate(
     element_index, shapeset_evaluate, local_coordinates, grid_data, local_multipliers, normal_multipliers
 ):

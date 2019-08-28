@@ -4,6 +4,7 @@ import abc as _abc
 from collections import namedtuple as _namedtuple
 
 import numpy as _np
+import numba as _numba
 
 
 def function_space(
@@ -124,6 +125,9 @@ class _FunctionSpace(_abc.ABC):
         self._mass_matrix = None
         self._inverse_mass_matrix = None
 
+        self._sorted_indices = None
+        self._indexptr = None
+
         nshape_fun = self.number_of_shape_functions
 
         self._map_to_localised_space = coo_matrix(
@@ -158,9 +162,6 @@ class _FunctionSpace(_abc.ABC):
             ),
             dtype="float64",
         ).tocsr()
-
-        self._compute_color_map()
-        self._sort_elements_by_color()
 
     @property
     def grid(self):
@@ -257,6 +258,8 @@ class _FunctionSpace(_abc.ABC):
         freedom do not intersect. This is important for the
         efficient summation of global dofs during the assembly.
         """
+        if self._color_map is None:
+            self._compute_color_map()
         return self._color_map
 
     @property
@@ -284,11 +287,6 @@ class _FunctionSpace(_abc.ABC):
         return self._requires_dof_transformation
 
     @property
-    def barycentric_representation(self):
-        """Return barycentric_representation if it exists."""
-        return self._barycentric_representation
-
-    @property
     def is_barycentric(self):
         """Return true if space is defined over barycentric grid."""
         return self._is_barycentric
@@ -301,6 +299,16 @@ class _FunctionSpace(_abc.ABC):
 
         return self._id_string
 
+    def barycentric_representation(self):
+        """Return barycentric_representation if it exists."""
+        import collections
+
+        # Lazy evaluation. By default only a function object is created.
+        # On first call this is executed to produce the space.
+        if isinstance(self._barycentric_representation, collections.abc.Callable):
+            self._barycentric_representation = self._barycentric_representation()
+        return self._barycentric_representation
+
     def get_elements_by_color(self):
         """
         Returns color sorted elements and their index positions.
@@ -310,6 +318,8 @@ class _FunctionSpace(_abc.ABC):
         sorted_indices[indexptr[i]:indexptr[i+1]].
 
         """
+        if self._sorted_indices is None:
+            self._sort_elements_by_color()
         return (self._sorted_indices, self._indexptr)
 
     def evaluate(self, element_index, local_coordinates):
@@ -320,7 +330,7 @@ class _FunctionSpace(_abc.ABC):
             local_coordinates,
             self.grid.data,
             self.local_multipliers,
-            self.normal_multipliers
+            self.normal_multipliers,
         )
 
     def surface_gradient(self, element_index, local_coordinates):
@@ -331,7 +341,7 @@ class _FunctionSpace(_abc.ABC):
             local_coordinates,
             self.grid.data,
             self.local_multipliers,
-            self.normal_multipliers
+            self.normal_multipliers,
         )
 
     def mass_matrix(self):
@@ -402,20 +412,16 @@ class _FunctionSpace(_abc.ABC):
     def _compute_color_map(self):
         """Compute the color map."""
 
-        def get_neighbors(element_index):
-            """Get all global dof neighbors of an element."""
-            global_dofs = self.local2global[element_index]
-            neighbors = {
-                elem
-                for global_dof in global_dofs
-                for elem, _ in self.global2local[global_dof]
-                if self.support[elem] and elem != element_index
-            }
-            return list(neighbors)
-
         self._color_map = -_np.ones(self.grid.number_of_elements, dtype=_np.int32)
         for element_index in self.support_elements:
-            neighbor_colors = self._color_map[get_neighbors(element_index)]
+            neighbors = {element_index}
+            global_dofs = self.local2global[element_index]
+            for dof in global_dofs:
+                for elem, _ in self.global2local[dof]:
+                    neighbors.add(elem)
+            neighbors.remove(element_index)
+
+            neighbor_colors = self._color_map[list(neighbors)]
             self._color_map[element_index] = next(
                 color
                 for color in range(self.number_of_support_elements)
@@ -487,7 +493,7 @@ def return_compatible_representation(*args):
         return args
     else:
         # Convert spaces
-        converted = [space.barycentric_representation for space in args]
+        converted = [space.barycentric_representation() for space in args]
         if not all(converted):
             raise ValueError("Not all spaces have a valid barycentric representation.")
         return converted
@@ -500,9 +506,7 @@ def check_if_compatible(space1, space2):
         return True
 
     try:
-        new_space1, new_space2 = return_compatible_representation(
-                space1, space2)
-        return new_space1.id_string == new_space2.id_string   
+        new_space1, new_space2 = return_compatible_representation(space1, space2)
+        return new_space1.id_string == new_space2.id_string
     except:
         return False
-

@@ -607,13 +607,14 @@ class Grid(object):
 
     def _compute_edge_neighbors(self):
         """Get the neighbors of each edge."""
-        self._edge_neighbors = [[] for _ in range(self.number_of_edges)]
+        edge_neighbors = [[] for _ in range(self.number_of_edges)]
 
         for element_index in range(self.number_of_elements):
             for local_index in range(3):
-                self._edge_neighbors[
+                edge_neighbors[
                     self.element_edges[local_index, element_index]
                 ].append(element_index)
+        self._edge_neighbors = [tuple(elem) for elem in edge_neighbors]
 
 
 @_numba.jitclass(

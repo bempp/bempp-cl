@@ -44,19 +44,19 @@ class Shapeset(object):
         return self._dimension
 
 
-@_numba.njit(_numba.float64[:, :, :](_numba.float64[:, :]))
+@_numba.njit(_numba.float64[:, :, :](_numba.float64[:, :]), cache=True)
 def _p0_shapeset_evaluate(local_coordinates):
     """Evaluate P0 shapeset."""
     return _np.ones((1, 1, local_coordinates.shape[1]), dtype=_np.float64)
 
 
-@_numba.njit(_numba.float64[:, :, :, :](_numba.float64[:, :]))
+@_numba.njit(_numba.float64[:, :, :, :](_numba.float64[:, :]), cache=True)
 def _p0_shapeset_gradient(local_coordinates):
     """Evaluate P0 gradient."""
     return _np.zeros((1, 2, 1, local_coordinates.shape[1]), dtype=_np.float64)
 
 
-@_numba.njit(_numba.float64[:, :, :](_numba.float64[:, :]))
+@_numba.njit(_numba.float64[:, :, :](_numba.float64[:, :]), cache=True)
 def _p1_disc_shapeset_evaluate(local_coordinates):
     """Evaluate P1 discontinuous shapeset."""
     return _np.expand_dims(
@@ -71,7 +71,7 @@ def _p1_disc_shapeset_evaluate(local_coordinates):
     )
 
 
-@_numba.njit(_numba.float64[:, :, :, :](_numba.float64[:, :]))
+@_numba.njit(_numba.float64[:, :, :, :](_numba.float64[:, :]), cache=True)
 def _p1_disc_shapeset_gradient(local_coordinates):
     """Evaluate P1 discontinuous shapeset gradient."""
     grad = _np.zeros((1, 2, 3, local_coordinates.shape[1]), dtype=_np.float64)
@@ -92,7 +92,7 @@ def _p1_disc_shapeset_gradient(local_coordinates):
     return grad
 
 
-@_numba.njit(_numba.float64[:, :, :](_numba.float64[:, :]))
+@_numba.njit(_numba.float64[:, :, :](_numba.float64[:, :]), cache=True)
 def _rwg0_shapeset_evaluate(local_coordinates):
     """Evaluate RWG 0 shapeset."""
     vals = _np.zeros((2, 3, local_coordinates.shape[1]), dtype=_np.float64)
@@ -105,7 +105,7 @@ def _rwg0_shapeset_evaluate(local_coordinates):
     return vals
 
 
-@_numba.njit(_numba.float64[:, :, :, :](_numba.float64[:, :]))
+@_numba.njit(_numba.float64[:, :, :, :](_numba.float64[:, :]), cache=True)
 def _rwg0_shapeset_gradient(local_coordinates):
     """Evaluate RWG 0 shapeset gradient."""
     npoints = local_coordinates.shape[1]

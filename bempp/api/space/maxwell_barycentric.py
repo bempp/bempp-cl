@@ -21,66 +21,12 @@ class Rwg0BarycentricSpace(_Rwg0LocalisedFunctionSpace):
         coarse_space=None
     ):
         """Definition of RWG spaces over barycentric refinements."""
+        import bempp.api
         from bempp.api.space.rwg0_space import Rwg0FunctionSpace
         from bempp.api.space.rwg0_localised_space import Rwg0LocalisedFunctionSpace
         from numba.typed import List
         from scipy.sparse import coo_matrix
 
-        @_numba.njit
-        def generate_map(grid_data, support_elements, local_coords, coeffs):
-            """Actually generate the sparse matrix data."""
-
-            number_of_elements = len(support_elements)
-
-            coarse_dofs = _np.empty(3 * 18 * number_of_elements, dtype=_np.uint32)
-            bary_dofs = _np.empty(3 * 18 * number_of_elements, dtype=_np.uint32)
-            values = _np.empty(3 * 18 * number_of_elements, dtype=_np.float64)
-
-            # Iterate through the global dofs and fill up the
-            # corresponding coefficients.
-
-            count = 0
-
-            for index, elem_index in enumerate(support_elements):
-                # Compute all the local vertices
-                local_vertices = grid_data.local2global(elem_index, local_coords)
-                l1 = _np.linalg.norm(local_vertices[:, 6] - local_vertices[:, 4])
-                l2 = _np.linalg.norm(local_vertices[:, 6] - local_vertices[:, 3])
-                l3 = _np.linalg.norm(local_vertices[:, 6] - local_vertices[:, 5])
-                l4 = _np.linalg.norm(local_vertices[:, 6] - local_vertices[:, 2])
-                l5 = _np.linalg.norm(local_vertices[:, 6] - local_vertices[:, 1])
-                l6 = _np.linalg.norm(local_vertices[:, 6] - local_vertices[:, 0])
-                le1 = _np.linalg.norm(local_vertices[:, 2] - local_vertices[:, 0])
-                le2 = _np.linalg.norm(local_vertices[:, 4] - local_vertices[:, 0])
-                le3 = _np.linalg.norm(local_vertices[:, 4] - local_vertices[:, 2])
-
-                outer_edges = [le1, le2, le3]
-
-                dof_mult = _np.array(
-                    [
-                        [le1, l6, l5],
-                        [l4, le1, l5],
-                        [le3, l4, l2],
-                        [l1, le3, l2],
-                        [le2, l1, l3],
-                        [l6, le2, l3],
-                    ]
-                )
-
-                # Assign the dofs for the six barycentric elements
-
-                bary_elements = _np.arange(6) + 6 * index
-                for local_dof in range(3):
-                    coarse_dof = 3 * index + local_dof
-                    bary_coeffs = coeffs[local_dof]
-                    dof_coeffs = bary_coeffs * outer_edges[local_dof] / dof_mult
-                    coarse_dofs[count : count + 18] = coarse_dof
-                    bary_dofs[count : count + 18] = _np.arange(
-                        3 * bary_elements[0], 3 * bary_elements[0] + 18
-                    )
-                    values[count : count + 18] = dof_coeffs.ravel()
-                    count += 18
-            return coarse_dofs, bary_dofs, values
 
         if coarse_space is None:
             coarse_space = Rwg0FunctionSpace(
@@ -136,7 +82,7 @@ class Rwg0BarycentricSpace(_Rwg0LocalisedFunctionSpace):
             ),
         )
 
-        coarse_dofs, bary_dofs, values = generate_map(
+        coarse_dofs, bary_dofs, values = generate_rwg0_map(
             grid.data, coarse_space.support_elements, local_coords, coeffs
         )
 
@@ -150,4 +96,61 @@ class Rwg0BarycentricSpace(_Rwg0LocalisedFunctionSpace):
         self._identifier = "rwg0"
         self._requires_dof_transformation = True
         self._is_barycentric = True
-        self._barycentric_representation = self
+        self._barycentric_representation = lambda: self
+
+
+@_numba.njit(cache=True)
+def generate_rwg0_map(grid_data, support_elements, local_coords, coeffs):
+    """Actually generate the sparse matrix data."""
+
+    number_of_elements = len(support_elements)
+
+    coarse_dofs = _np.empty(3 * 18 * number_of_elements, dtype=_np.uint32)
+    bary_dofs = _np.empty(3 * 18 * number_of_elements, dtype=_np.uint32)
+    values = _np.empty(3 * 18 * number_of_elements, dtype=_np.float64)
+
+    # Iterate through the global dofs and fill up the
+    # corresponding coefficients.
+
+    count = 0
+
+    for index, elem_index in enumerate(support_elements):
+        # Compute all the local vertices
+        local_vertices = grid_data.local2global(elem_index, local_coords)
+        l1 = _np.linalg.norm(local_vertices[:, 6] - local_vertices[:, 4])
+        l2 = _np.linalg.norm(local_vertices[:, 6] - local_vertices[:, 3])
+        l3 = _np.linalg.norm(local_vertices[:, 6] - local_vertices[:, 5])
+        l4 = _np.linalg.norm(local_vertices[:, 6] - local_vertices[:, 2])
+        l5 = _np.linalg.norm(local_vertices[:, 6] - local_vertices[:, 1])
+        l6 = _np.linalg.norm(local_vertices[:, 6] - local_vertices[:, 0])
+        le1 = _np.linalg.norm(local_vertices[:, 2] - local_vertices[:, 0])
+        le2 = _np.linalg.norm(local_vertices[:, 4] - local_vertices[:, 0])
+        le3 = _np.linalg.norm(local_vertices[:, 4] - local_vertices[:, 2])
+
+        outer_edges = [le1, le2, le3]
+
+        dof_mult = _np.array(
+            [
+                [le1, l6, l5],
+                [l4, le1, l5],
+                [le3, l4, l2],
+                [l1, le3, l2],
+                [le2, l1, l3],
+                [l6, le2, l3],
+            ]
+        )
+
+        # Assign the dofs for the six barycentric elements
+
+        bary_elements = _np.arange(6) + 6 * index
+        for local_dof in range(3):
+            coarse_dof = 3 * index + local_dof
+            bary_coeffs = coeffs[local_dof]
+            dof_coeffs = bary_coeffs * outer_edges[local_dof] / dof_mult
+            coarse_dofs[count : count + 18] = coarse_dof
+            bary_dofs[count : count + 18] = _np.arange(
+                3 * bary_elements[0], 3 * bary_elements[0] + 18
+            )
+            values[count : count + 18] = dof_coeffs.ravel()
+            count += 18
+    return coarse_dofs, bary_dofs, values

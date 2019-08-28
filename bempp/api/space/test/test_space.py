@@ -155,7 +155,7 @@ def test_rwg_open_segment():
             ):
                 # Element is on the boundary
                 for index, edge_index in enumerate(grid.element_edges[:, elem_index]):
-                    neighbors = grid.edge_neighbors[edge_index]
+                    neighbors = list(grid.edge_neighbors[edge_index])
                     if _np.any(space.support[neighbors] == False):
                         # Edge is on the boundary
                         if space.local_multipliers[elem_index, index] != 0:
@@ -225,7 +225,7 @@ def test_snc_open_segment():
             ):
                 # Element is on the boundary
                 for index, edge_index in enumerate(grid.element_edges[:, elem_index]):
-                    neighbors = grid.edge_neighbors[edge_index]
+                    neighbors = list(grid.edge_neighbors[edge_index])
                     if _np.any(space.support[neighbors] == False):
                         # Edge is on the boundary
                         if space.local_multipliers[elem_index, index] != 0:

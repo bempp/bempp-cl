@@ -24,6 +24,7 @@ class Rwg0FunctionSpace(_FunctionSpace):
         from .localised_space import LocalisedFunctionSpace
         from scipy.sparse import identity
         from scipy.sparse import coo_matrix
+        import bempp.api
 
         shapeset = "rwg0"
         number_of_elements = grid.number_of_elements
@@ -32,75 +33,23 @@ class Rwg0FunctionSpace(_FunctionSpace):
             grid, support_elements, segments, swapped_normals
         )
 
-        elements_in_support = _np.flatnonzero(support)
-
-        local2global_map = _np.zeros((number_of_elements, 3), dtype="uint32")
-        local_multipliers = _np.zeros((number_of_elements, 3), dtype="float64")
-        edge_dofs = -_np.ones(grid.number_of_edges, dtype="int32")
-
-
-        delete_from_support = []
-
+        edge_neighbors = [pair for sublist in grid.edge_neighbors for pair in sublist]
+        edge_neighbors_ptr = _np.empty(grid.number_of_edges + 1, dtype=_np.int32)
         count = 0
-        for element_index in elements_in_support:
-            dofmap = -_np.ones(3, dtype="int32")
-            for local_index in range(3):
-                edge_index = grid.element_edges[local_index, element_index]
-                edge_neighbors = grid.edge_neighbors[edge_index]
-                support_neighbors = [n for n in edge_neighbors if support[n]]
+        for index, sublist in enumerate(grid.edge_neighbors):
+            edge_neighbors_ptr[index] = count
+            count += len(sublist)
+        edge_neighbors_ptr[-1] = count
 
-                if len(support_neighbors) > 2:
-                    raise ValueError("Triple junction detected in space definition. Not allowed.")
-
-                if len(support_neighbors) == 1:
-                    other = -1  # There is no other neighbor
-                else:
-                    other = (
-                        support_neighbors[1]
-                        if element_index == support_neighbors[0]
-                        else support_neighbors[0]
-                    )
-
-                if other == -1:
-                    # We are at the boundary.
-                    if not include_boundary_dofs:
-                        local_multipliers[element_index, local_index] = 0
-                    else:
-                        local_multipliers[element_index, local_index] = 1
-                        dofmap[local_index] = count
-                        count += 1
-                else:
-                    # Assign 1 or -1 depending on element index
-                    local_multipliers[element_index, local_index] = (
-                        1 if element_index == min(support_neighbors) else -1
-                    )
-                    if edge_dofs[edge_index] == -1:
-                        edge_dofs[edge_index] = count
-                        count += 1
-                    dofmap[local_index] = edge_dofs[edge_index]
-
-            # Check if no dof was assigned to element. In that case the element
-            # needs to be deleted from the support.
-            if _np.all(dofmap == -1):
-                delete_from_support.append(element_index)
-                local_multipliers[element_index, :] = 0
-                local2global_map[element_index, :] = 0
-            else:
-                # For every zero local multiplier assign an existing global dof
-                # in this element. This does not change the result as zero multipliers
-                # do not contribute. But it allows us not to have to distinguish between
-                # existing and non existing dofs later on.
-                arg_zeros = _np.flatnonzero(local_multipliers[element_index] == 0)
-                first_nonzero = _np.min(
-                    _np.flatnonzero(local_multipliers[element_index] != 0)
-                )
-                dofmap[arg_zeros] = dofmap[first_nonzero]
-                local2global_map[element_index, :] = dofmap
-
-        global_dof_count = count
-
-        for index in delete_from_support:
-            support[index] = False
+        global_dof_count, support, local2global_map, local_multipliers = _compute_space_data(
+            support,
+            edge_neighbors,
+            edge_neighbors_ptr,
+            grid.element_edges,
+            grid.number_of_elements,
+            grid.number_of_edges,
+            include_boundary_dofs,
+        )
 
         support_size = _np.count_nonzero(support)
 
@@ -139,20 +88,22 @@ class Rwg0FunctionSpace(_FunctionSpace):
             support,
             localised_space,
             normal_mult,
-            identity(global_dof_count, dtype='float64'),
+            identity(global_dof_count, dtype="float64"),
             requires_dof_transformation,
             is_barycentric,
-            None
+            None,
         )
 
         super().__init__(space_data)
 
-        self._barycentric_representation = Rwg0BarycentricSpace(
-                grid, support_elements=support_elements,
-                segments=segments, swapped_normals=swapped_normals,
-                include_boundary_dofs=include_boundary_dofs,
-                coarse_space=self)
-
+        self._barycentric_representation = lambda: Rwg0BarycentricSpace(
+            grid,
+            support_elements=support_elements,
+            segments=segments,
+            swapped_normals=swapped_normals,
+            include_boundary_dofs=include_boundary_dofs,
+            coarse_space=self,
+        )
 
     @property
     def numba_evaluate(self):
@@ -165,9 +116,104 @@ class Rwg0FunctionSpace(_FunctionSpace):
         raise NotImplementedError
 
 
-@_numba.njit
+@_numba.njit(cache=True)
+def _compute_space_data(
+    support,
+    edge_neighbors,
+    edge_neighbors_ptr,
+    element_edges,
+    number_of_elements,
+    number_of_edges,
+    include_boundary_dofs,
+):
+    """Compute the local2global map for the space."""
+
+    local2global_map = _np.zeros((number_of_elements, 3), dtype=_np.uint32)
+    local_multipliers = _np.zeros((number_of_elements, 3), dtype=_np.float64)
+    edge_dofs = -_np.ones(number_of_edges, dtype=_np.int32)
+
+    support_elements = _np.flatnonzero(support)
+
+    delete_from_support = []
+
+    count = 0
+    for element_index in support_elements:
+        dofmap = -_np.ones(3, dtype=_np.int32)
+        for local_index in range(3):
+            edge_index = element_edges[local_index, element_index]
+            current_neighbors = edge_neighbors[
+                edge_neighbors_ptr[edge_index] : edge_neighbors_ptr[1 + edge_index]
+            ]
+            support_neighbors = [n for n in current_neighbors if support[n]]
+
+            if len(support_neighbors) == 1:
+                other = -1  # There is no other neighbor
+            else:
+                other = (
+                    support_neighbors[1]
+                    if element_index == support_neighbors[0]
+                    else support_neighbors[0]
+                )
+
+            if other == -1:
+                # We are at the boundary.
+                if not include_boundary_dofs:
+                    local_multipliers[element_index, local_index] = 0
+                else:
+                    local_multipliers[element_index, local_index] = 1
+                    dofmap[local_index] = count
+                    count += 1
+            else:
+                # Assign 1 or -1 depending on element index
+                local_multipliers[element_index, local_index] = (
+                    1 if element_index == min(support_neighbors) else -1
+                )
+                if edge_dofs[edge_index] == -1:
+                    edge_dofs[edge_index] = count
+                    count += 1
+                dofmap[local_index] = edge_dofs[edge_index]
+
+        # Check if no dof was assigned to element. In that case the element
+        # needs to be deleted from the support.
+        all_not_assigned = True
+        for dof in dofmap:
+            if dof != -1:
+                all_not_assigned = False
+
+        if all_not_assigned:
+            delete_from_support.append(element_index)
+            local_multipliers[element_index, :] = 0
+            local2global_map[element_index, :] = 0
+        else:
+            # For every zero local multiplier assign an existing global dof
+            # in this element. This does not change the result as zero multipliers
+            # do not contribute. But it allows us not to have to distinguish between
+            # existing and non existing dofs later on.
+            first_nonzero = 0
+            for local_index in range(3):
+                if local_multipliers[element_index, local_index] != 0:
+                    first_nonzero = local_index
+                    break
+
+            for local_index in range(3):
+                if local_multipliers[element_index, local_index] == 0:
+                    dofmap[local_index] = first_nonzero
+            local2global_map[element_index, :] = dofmap
+
+    for elem in delete_from_support:
+        support[elem] = False
+
+    return count, support, local2global_map, local_multipliers
+
+
+@_numba.njit(cache=True)
 def _numba_evaluate(
-    element_index, shapeset_evaluate, local_coordinates, grid_data, local_multipliers, normal_multipliers
+    element_index,
+    shapeset_evaluate,
+    local_coordinates,
+    grid_data,
+    local_multipliers,
+    normal_multipliers,
 ):
     """Evaluate the basis on an element."""
     reference_values = shapeset_evaluate(local_coordinates)
@@ -196,4 +242,3 @@ def _numba_evaluate(
             * grid_data.jacobians[element_index].dot(reference_values[:, index, :])
         )
     return result
-
