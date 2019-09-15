@@ -59,6 +59,8 @@ class Grid(object):
         self._grid_data = GridData(
             self._vertices,
             self._elements,
+            self._edges,
+            self._element_edges,
             self._volumes,
             self._normals,
             self._jacobians,
@@ -611,9 +613,9 @@ class Grid(object):
 
         for element_index in range(self.number_of_elements):
             for local_index in range(3):
-                edge_neighbors[
-                    self.element_edges[local_index, element_index]
-                ].append(element_index)
+                edge_neighbors[self.element_edges[local_index, element_index]].append(
+                    element_index
+                )
         self._edge_neighbors = [tuple(elem) for elem in edge_neighbors]
 
 
@@ -621,6 +623,8 @@ class Grid(object):
     [
         ("vertices", _numba.float64[:, :]),
         ("elements", _numba.uint32[:, :]),
+        ("edges", _numba.uint32[:, :]),
+        ("element_edges", _numba.uint32[:, :]),
         ("volumes", _numba.float64[:]),
         ("normals", _numba.float64[:, :]),
         ("jacobians", _numba.float64[:, :, :]),
@@ -638,6 +642,8 @@ class GridData(object):
         self,
         vertices,
         elements,
+        edges,
+        element_edges,
         volumes,
         normals,
         jacobians,
@@ -650,6 +656,8 @@ class GridData(object):
 
         self.vertices = vertices
         self.elements = elements
+        self.edges = edges
+        self.element_edges = element_edges
         self.volumes = volumes
         self.normals = normals
         self.jacobians = jacobians
@@ -664,8 +672,9 @@ class GridData(object):
         Map local to global coordinates.
         """
         return _np.expand_dims(
-                self.vertices[:, self.elements[0, elem_index]], 1
-                ) + self.jacobians[elem_index].dot(local_coords)
+            self.vertices[:, self.elements[0, elem_index]], 1
+        ) + self.jacobians[elem_index].dot(local_coords)
+
 
 class ElementGeometry(object):
     """Provides geometry information for an element."""
@@ -1127,6 +1136,7 @@ def grid_from_segments(grid, segments):
 
     return Grid(new_vertices, new_elements, new_domain_indices)
 
+
 @_numba.njit
 def _create_barycentric_connectivity_array(
     vertices, elements, element_edges, edges, number_of_edges
@@ -1235,22 +1245,22 @@ def union(grids, domain_indices=None, swapped_normals=None):
 
     """
     from bempp.api.grid.grid import Grid
+
     vertex_offset = 0
     element_offset = 0
 
     vertex_count = sum([grid.number_of_vertices for grid in grids])
     element_count = sum([grid.number_of_elements for grid in grids])
 
-    vertices = _np.empty((3, vertex_count), dtype='float64')
-    elements = _np.empty((3, element_count), dtype='uint32')
-    all_domain_indices = _np.empty(element_count, dtype='uint32')
-
+    vertices = _np.empty((3, vertex_count), dtype="float64")
+    elements = _np.empty((3, element_count), dtype="uint32")
+    all_domain_indices = _np.empty(element_count, dtype="uint32")
 
     if domain_indices is None:
         domain_indices = range(len(grids))
 
     if swapped_normals is None:
-        swapped_normals = len(grids) * [False] 
+        swapped_normals = len(grids) * [False]
 
     for index, grid in enumerate(grids):
         nelements = grid.number_of_elements
@@ -1260,8 +1270,108 @@ def union(grids, domain_indices=None, swapped_normals=None):
             current_elements = grid.elements[[0, 2, 1], :]
         else:
             current_elements = grid.elements
-        elements[:, element_offset : element_offset + nelements] = current_elements + vertex_offset
-        all_domain_indices[element_offset : element_offset + nelements] = domain_indices[index]
+        elements[:, element_offset : element_offset + nelements] = (
+            current_elements + vertex_offset
+        )
+        all_domain_indices[
+            element_offset : element_offset + nelements
+        ] = domain_indices[index]
         vertex_offset += nvertices
         element_offset += nelements
     return Grid(vertices, elements, all_domain_indices)
+
+
+def enumerate_vertex_adjacent_elements(grid, support_elements):
+    """
+    Enumerate in anti-clockwise order all elements adjacent to all vertices in support.
+    
+    Returns a list [neighbors_0, neighbors_1, ...], where neighbors_i is a list
+    [(elem_index, local_ind1, local_ind2), ...] of tuples, where elem_index is an
+    element in the support that as connected with vertex i. local_ind1 and local_ind2 are
+    the local indices of the two edges that are adjacent to vertex i. They are sorted in
+    anti-clockwise order with respect to the natural normal directions of the elements.
+    Moreover, all tuples represent elements in anti-clockwise order.
+
+    """
+    import pprofile
+
+    prof = pprofile.Profile()
+
+    vertex_edges = [[] for _ in range(grid.vertices.shape[1])]
+
+    for element_index in support_elements:
+        for local_index, edge_index in enumerate(grid.element_edges[:, element_index]):
+            for ind in range(2):
+                vertex_edges[grid.edges[ind, edge_index]].append(
+                    (element_index, local_index)
+                )
+
+    # Now sort each list so that edges appear in anti-clockwise order according
+    # to neighboring edges.
+
+    def sort_neighbors(grid_data, neighbors):
+        """Implement the sorting of a neighbors list."""
+        # Swap the edges in each element so
+        # that they have edges in anti-clockwise order
+        locally_sorted_neighbors = []
+        count = 0
+        while neighbors:
+            # Take first element in list
+            elem1 = neighbors.pop()
+            for index, elem2 in enumerate(neighbors):
+                # Find index of next list element associated
+                # with the same grid element
+                if elem2[0] == elem1[0]:
+                    neighbors.pop(index)
+                    break
+            # Check if the two edges in the found element entries
+            # are in clockwise or anti-clockwise order.
+            # Resort accordingly
+            if elem1[1] == (1 + elem2[1]) % 3:
+                locally_sorted_neighbors.append((elem1[0], elem2[1], elem1[1]))
+            else:
+                locally_sorted_neighbors.append((elem1[0], elem1[1], elem2[1]))
+
+        # locally sorted neighbors now has triplets (elem_index, local_ind1, local_ind2) of
+        # one element index and two associated edge indices that are anti-clockwise sorted.
+        sorted_neighbors = []
+        sorted_neighbors.append(locally_sorted_neighbors.pop())
+        while locally_sorted_neighbors:
+            found = False
+            for index, elem in enumerate(locally_sorted_neighbors):
+                # Check if element is successor of last element in sorted list
+                last = sorted_neighbors[-1]
+                first = sorted_neighbors[0]
+                if (
+                    grid_data.element_edges[elem[1], elem[0]]
+                    == grid_data.element_edges[last[2], last[0]]
+                ):
+                    locally_sorted_neighbors.pop(index)
+                    found = True
+                    sorted_neighbors.append(elem)
+                    break
+                if (
+                    grid_data.element_edges[elem[2], elem[0]]
+                    == grid_data.element_edges[first[1], first[0]]
+                ):
+                    locally_sorted_neighbors.pop(index)
+                    found = True
+                    sorted_neighbors.insert(0, elem)
+                    break
+            if not found:
+                raise Exception(
+                    "Two elements seem to be connected only by a vertex, not by an edge."
+                )
+
+        return sorted_neighbors
+
+    for vertex_index, neighbors in enumerate(vertex_edges):
+        # First sort by element
+        if not neighbors:
+            # Continue if empty
+            continue
+        vertex_edges[vertex_index] = sort_neighbors(
+            grid.data, neighbors
+        )
+
+    return vertex_edges
