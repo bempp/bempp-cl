@@ -4,10 +4,11 @@ import collections as _collections
 import numpy as _np
 
 from bempp.api.assembly import assembler as _assembler
-from bempp.api.integration import duffy as _duffy
+from bempp.api.integration import duffy_galerkin as _duffy_galerkin
+from bempp.api.integration import duffy_collocation as _duffy_collocation
 
-WORKGROUP_SIZE = 16
-
+WORKGROUP_SIZE_COLLOCATION = 4
+WORKGROUP_SIZE_GALERKIN = 16
 
 class SingularAssembler(_assembler.AssemblerBase):
     """Assembler for the singular part of boundary integral operators."""
@@ -93,9 +94,12 @@ def assemble_singular_part(
     if domain.grid != dual_to_range.grid:
         raise ValueError("domain and dual_to_range must live on the same grid.")
 
+    use_collocation = parameters.assembly.discretization_type == 'collocation'
+
+    WORKGROUP_SIZE = WORKGROUP_SIZE_COLLOCATION if use_collocation else WORKGROUP_SIZE_GALERKIN
+
     options = operator_descriptor.options.copy()
     options["WORKGROUP_SIZE"] = WORKGROUP_SIZE
-
     options["TEST"] = dual_to_range.shapeset.identifier
     options["TRIAL"] = domain.shapeset.identifier
 
@@ -114,15 +118,25 @@ def assemble_singular_part(
     order = parameters.quadrature.singular
     grid = domain.grid
 
+    if use_collocation:
+        source_name += '_collocation'
+
     kernel_source = cl_helpers.kernel_source_from_identifier(
         source_name + "_singular", options
     )
 
     kernel = cl_helpers.Kernel(kernel_source, device_interface.context, precision)
 
-    rule = _SingularQuadratureRuleInterface(
-        grid, order, dual_to_range.support, domain.support, parameters
-    )
+    if use_collocation:
+        rule = _SingularQuadratureRuleInterfaceCollocation(
+            grid, order, dual_to_range.support, domain.support, parameters
+        )
+
+    else:
+
+        rule = _SingularQuadratureRuleInterfaceGalerkin(
+            grid, order, dual_to_range.support, domain.support, parameters
+        )
 
     number_of_singular_indices = rule.index_count["all"]
 
@@ -154,13 +168,33 @@ def assemble_singular_part(
         domain.normal_multipliers, device_interface, dtype=_np.int32, access_mode="read_only"
     )
 
-    all_buffers = [
-        grid_buffer,
-        test_normal_signs_buffer,
-        trial_normal_signs_buffer,
-        *quadrature_buffers,
-        result_buffer,
-    ]
+    if use_collocation:
+        collocation_points = cl_helpers.DeviceBuffer.from_array(
+                dual_to_range.collocation_points,
+                device_interface,
+                dtype=cl_helpers.get_type(precision).real,
+                access_mode="read_only",
+                order="F"
+        )
+
+        all_buffers = [
+            grid_buffer,
+            test_normal_signs_buffer,
+            trial_normal_signs_buffer,
+            collocation_points,
+            *quadrature_buffers,
+            result_buffer,
+        ]
+
+    else:
+
+        all_buffers = [
+            grid_buffer,
+            test_normal_signs_buffer,
+            trial_normal_signs_buffer,
+            *quadrature_buffers,
+            result_buffer,
+        ]
 
     event = kernel.run(
         device_interface,
@@ -205,8 +239,15 @@ _SingularityRuleDeviceBuffers = _collections.namedtuple(
     + " weights_offsets number_of_local_quad_points",
 )
 
+_SingularityRuleDeviceBuffersCollocation = _collections.namedtuple(
+    "SingularityRuleDeviceBuffersCollocation",
+    "trial_points weights test_indices trial_indices"
+    + " trial_offsets"
+    + " weights_offsets number_of_local_quad_points",
+)
 
-class _SingularQuadratureRuleInterface(object):
+
+class _SingularQuadratureRuleInterfaceGalerkin(object):
     """Interface for a singular quadrature rule."""
 
     def __init__(self, grid, order, test_support, trial_support, parameters):
@@ -219,15 +260,15 @@ class _SingularQuadratureRuleInterface(object):
         self._trial_indices = None
 
         self._coincident_rule = _SingularQuadratureRule(
-            *_duffy.rule(order, "coincident")
+            *_duffy_galerkin.rule(order, "coincident")
         )
 
         self._edge_adjacent_rule = _SingularQuadratureRule(
-            *_duffy.rule(order, "edge_adjacent")
+            *_duffy_galerkin.rule(order, "edge_adjacent")
         )
 
         self._vertex_adjacent_rule = _SingularQuadratureRule(
-            *_duffy.rule(order, "vertex_adjacent")
+            *_duffy_galerkin.rule(order, "vertex_adjacent")
         )
 
         # Iterate through the singular pairs and only add those that are
@@ -326,7 +367,7 @@ class _SingularQuadratureRuleInterface(object):
 
     def number_of_points(self, adjacency):
         """Return the number of quadrature points for given adjacency."""
-        return _duffy.number_of_quadrature_points(self.order, adjacency)
+        return _duffy_galerkin.number_of_quadrature_points(self.order, adjacency)
 
     def push_to_device(self, device_interface, precision, workgroup_size):
         """Push quadrature rule to a given device."""
@@ -403,12 +444,12 @@ class _SingularQuadratureRuleInterface(object):
         """
         return _np.hstack(
             [
-                _duffy.remap_points_shared_edge(quad_points, 0, 1),
-                _duffy.remap_points_shared_edge(quad_points, 1, 0),
-                _duffy.remap_points_shared_edge(quad_points, 1, 2),
-                _duffy.remap_points_shared_edge(quad_points, 2, 1),
-                _duffy.remap_points_shared_edge(quad_points, 0, 2),
-                _duffy.remap_points_shared_edge(quad_points, 2, 0),
+                _duffy_galerkin.remap_points_shared_edge(quad_points, 0, 1),
+                _duffy_galerkin.remap_points_shared_edge(quad_points, 1, 0),
+                _duffy_galerkin.remap_points_shared_edge(quad_points, 1, 2),
+                _duffy_galerkin.remap_points_shared_edge(quad_points, 2, 1),
+                _duffy_galerkin.remap_points_shared_edge(quad_points, 0, 2),
+                _duffy_galerkin.remap_points_shared_edge(quad_points, 2, 0),
             ]
         )
 
@@ -426,9 +467,9 @@ class _SingularQuadratureRuleInterface(object):
         """
         return _np.hstack(
             [
-                _duffy.remap_points_shared_vertex(quad_points, 0),
-                _duffy.remap_points_shared_vertex(quad_points, 1),
-                _duffy.remap_points_shared_vertex(quad_points, 2),
+                _duffy_galerkin.remap_points_shared_vertex(quad_points, 0),
+                _duffy_galerkin.remap_points_shared_vertex(quad_points, 1),
+                _duffy_galerkin.remap_points_shared_vertex(quad_points, 2),
             ]
         )
 
@@ -589,3 +630,172 @@ class _SingularQuadratureRuleInterface(object):
         ) + self.number_of_points("edge_adjacent")
 
         return test_offsets, trial_offsets, weights_offsets
+
+
+
+class _SingularQuadratureRuleInterfaceCollocation(object):
+    """Interface for a singular quadrature rule."""
+
+    def __init__(self, grid, order, test_support, trial_support, parameters):
+        """Initialize singular quadrature rule."""
+
+        self._grid = grid
+        self._order = order
+        self._parameters = parameters
+        self._test_indices = None
+        self._trial_indices = None
+
+        self._coincident_rule = _duffy_collocation.singular_collocation_rule_piecewise_const(order)
+
+        # Iterate through the singular pairs and only add those that are
+        # in the support of the space.
+
+        self._index_count = {}
+
+        self._coincident_indices = _np.flatnonzero(test_support * trial_support)
+        self._index_count["coincident"] = len(self._coincident_indices)
+
+        # test_support and trial_support are boolean arrays.
+        # * operation corresponds to and op between the arrays.
+
+
+        self._index_count["all"] = (
+            self._index_count["coincident"]
+        )
+
+    @property
+    def order(self):
+        """Return the order."""
+        return self._order
+
+    @property
+    def parameters(self):
+        """Return parameters."""
+        return self._parameters
+
+    @property
+    def coincident_rule(self):
+        """Return coincident rule."""
+        return self._coincident_rule
+
+    @property
+    def grid(self):
+        """Return the grid."""
+        return self._grid
+
+    @property
+    def number_of_elements(self):
+        """Return the number of elements of the underlying grid."""
+        return self.grid.number_of_elements
+
+    @property
+    def index_count(self):
+        """Return the index count."""
+        return self._index_count
+
+    @property
+    def test_indices(self):
+        """Return the test indicies of all singular contributions."""
+        return self._test_indices
+
+    @property
+    def trial_indices(self):
+        """Return the trial indicies of all singular contributions."""
+        return self._trial_indices
+
+    def number_of_points(self, adjacency):
+        """Return the number of quadrature points for given adjacency."""
+        return self._coincident_rule[0].shape[1]
+
+    def push_to_device(self, device_interface, precision, workgroup_size):
+        """Push quadrature rule to a given device."""
+        from bempp.core.cl_helpers import DeviceBuffer
+        from bempp.core.cl_helpers import get_type
+
+        types = get_type(precision)
+
+        test_indices, trial_indices = self._vectorize_indices()
+        trial_points = self._vectorize_points()
+        weights = self._vectorize_weights()
+        trial_offsets, weights_offsets = self._vectorize_offsets()
+
+        number_of_local_quad_points = self._vectorized_local_number_of_integration_points(
+            workgroup_size
+        )
+
+        self._test_indices = test_indices
+        self._trial_indices = trial_indices
+
+        arrays = [
+            trial_points,
+            weights,
+            test_indices,
+            trial_indices,
+            trial_offsets,
+            weights_offsets,
+            number_of_local_quad_points,
+        ]
+
+        dtypes = [
+            types.real,
+            types.real,
+            "uint32",
+            "uint32",
+            "uint32",
+            "uint32",
+            "uint32",
+        ]
+
+        buffers = [
+            DeviceBuffer.from_array(
+                array,
+                device_interface,
+                dtype=dtype,
+                access_mode="read_write",
+                order="F",
+            )
+            for array, dtype in zip(arrays, dtypes)
+        ]
+
+        device_buffers = _SingularityRuleDeviceBuffersCollocation(*buffers)
+
+        return device_buffers
+
+
+    def _vectorize_indices(self):
+        """Return vector of test and trial indices for sing. integration."""
+        test_indices = _np.empty(self.index_count["all"], dtype="uint32")
+        trial_indices = _np.empty(self.index_count["all"], dtype="uint32")
+
+        for array in [test_indices, trial_indices]:
+            array[: ] = self._coincident_indices
+
+        return test_indices, trial_indices
+
+    def _vectorized_local_number_of_integration_points(self, workgroup_size):
+        """Compute an array of local numbers of integration points."""
+        number_of_local_quad_points = _np.empty(self.index_count["all"], dtype="uint32")
+
+        number_of_local_quad_points[: self.index_count["coincident"]] = (
+            self.number_of_points("coincident") // workgroup_size
+        )
+
+        return number_of_local_quad_points
+
+    def _vectorize_points(self):
+        """Return an array of all quadrature points for all different rules."""
+
+        return self._coincident_rule[0]
+
+    def _vectorize_weights(self):
+        """Vectorize the quadrature weights."""
+        return self._coincident_rule[1]
+
+    def _vectorize_offsets(self):
+        """Vectorize the offsets."""
+
+        trial_offsets = _np.zeros(self.index_count['all'], dtype='uint32')
+        weights_offsets = _np.zeros(self.index_count['all'], dtype='uint32') 
+
+
+        return trial_offsets, weights_offsets

@@ -73,6 +73,12 @@ class P0DiscontinuousFunctionSpace(_FunctionSpace):
         """Return numba method that evaluates the surface gradient."""
         return _numba_surface_gradient
 
+    @property
+    def collocation_points(self):
+        """Return collocation points."""
+        return _np.array([[1./3], [1./3]])
+
+
     def evaluate(self, element_index, local_coordinates):
         """Evaluate the basis on an element."""
         return _numba_evaluate(

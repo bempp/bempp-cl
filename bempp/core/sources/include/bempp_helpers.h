@@ -438,6 +438,12 @@ inline uint elementsAreAdjacent(uint* element1, uint* element2, bool gridsAreDis
             
 }
 
+inline uint elementsAreAdjacentCollocation(uint* element1, uint* element2, bool gridsAreDisjoint )
+{
+    return  !gridsAreDisjoint && 
+            (element1[0] == element2[0] && element1[1] == element2[1] && element1[2] == element2[2]);             
+}
+
 inline void updateNormals(size_t index, __global int *signs, REALTYPE3 *normal){
 
     *normal *= signs[index];

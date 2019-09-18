@@ -43,6 +43,7 @@ class _Assembly(object):
     def __init__(self):
         self.dense = _DenseAssembly()
         self.always_promote_to_double = False
+        self.discretization_type = 'collocation'
 
 
 class _Fmm(object):

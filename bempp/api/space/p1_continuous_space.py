@@ -125,6 +125,10 @@ class P1ContinuousFunctionSpace(_FunctionSpace):
         """Return numba method that evaluates the surface gradient."""
         return _numba_surface_gradient
 
+    @property
+    def collocation_points(self):
+        """Return collocation points."""
+        return _np.array([[0., 1., 0.], [0., 0., 1.]])
 
 @_numba.njit
 def _numba_evaluate(

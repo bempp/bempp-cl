@@ -75,6 +75,8 @@ def assemble_dense(
     else:
         complex_kernel = False
 
+    use_collocation = parameters.assembly.discretization_type == 'collocation'
+
     buffers = _prepare_buffers(
         domain,
         dual_to_range,
@@ -83,6 +85,7 @@ def assemble_dense(
         complex_kernel,
         device_interface,
         precision,
+        use_collocation,
     )
 
     options["NUMBER_OF_QUAD_POINTS"] = len(quad_weights)
@@ -95,6 +98,11 @@ def assemble_dense(
 
     options["NUMBER_OF_TRIAL_SHAPE_FUNCTIONS"] = domain.number_of_shape_functions
 
+    if use_collocation:
+        collocation_string = '_collocation'
+    else:
+        collocation_string = ''
+
     vec_extension, vec_length = kernel_helpers.get_vectorization_information(
         device_interface, precision
     )
@@ -105,12 +113,13 @@ def assemble_dense(
         )
     )
 
+
     main_source = _cl_helpers.kernel_source_from_identifier(
-        source_name + "_regular" + vec_extension, options
+        source_name + collocation_string + "_regular" + vec_extension, options
     )
 
     remainder_source = _cl_helpers.kernel_source_from_identifier(
-        source_name + "_regular_novec", options
+        source_name + collocation_string + "_regular_novec", options
     )
 
     main_kernel = _cl_helpers.Kernel(main_source, device_interface.context, precision)
@@ -197,6 +206,7 @@ def _prepare_buffers(
     complex_kernel,
     device_interface,
     precision,
+    use_collocation,
 ):
     """Prepare kernel buffers."""
 
@@ -268,6 +278,14 @@ def _prepare_buffers(
         order="C",
     )
 
+    collocation_points = _cl_helpers.DeviceBuffer.from_array(
+            dual_to_range.collocation_points,
+            device_interface,
+            dtype=dtype,
+            access_mode="read_only",
+            order="F"
+    )
+
     test_grid_buffer = test_grid.push_to_device(device_interface, precision).buffer
     trial_grid_buffer = trial_grid.push_to_device(device_interface, precision).buffer
 
@@ -280,21 +298,43 @@ def _prepare_buffers(
     )
     result_buffer.set_zero(device_interface)
 
-    buffers = [
-        test_grid_buffer,
-        trial_grid_buffer,
-        test_connectivity,
-        trial_connectivity,
-        test_local2global,
-        trial_local2global,
-        test_multipliers,
-        trial_multipliers,
-        quad_points_buffer,
-        quad_weights_buffer,
-        result_buffer,
-        _np.int32(dual_to_range.global_dof_count),
-        _np.int32(domain.global_dof_count),
-        _np.uint8(domain.grid != dual_to_range.grid),
-    ]
+    if use_collocation:
+
+        buffers = [
+            test_grid_buffer,
+            trial_grid_buffer,
+            test_connectivity,
+            trial_connectivity,
+            test_local2global,
+            trial_local2global,
+            test_multipliers,
+            trial_multipliers,
+            quad_points_buffer,
+            quad_weights_buffer,
+            collocation_points,
+            result_buffer,
+            _np.int32(dual_to_range.global_dof_count),
+            _np.int32(domain.global_dof_count),
+            _np.uint8(domain.grid != dual_to_range.grid),
+        ]
+
+    else:
+
+        buffers = [
+            test_grid_buffer,
+            trial_grid_buffer,
+            test_connectivity,
+            trial_connectivity,
+            test_local2global,
+            trial_local2global,
+            test_multipliers,
+            trial_multipliers,
+            quad_points_buffer,
+            quad_weights_buffer,
+            result_buffer,
+            _np.int32(dual_to_range.global_dof_count),
+            _np.int32(domain.global_dof_count),
+            _np.uint8(domain.grid != dual_to_range.grid),
+        ]
 
     return buffers

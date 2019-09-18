@@ -1,5 +1,5 @@
 """
-Duffy transformation rules for singular integration.
+Duffy transformation rules for singular integration for Galerkin integrals.
 """
 import numpy as _np
 
