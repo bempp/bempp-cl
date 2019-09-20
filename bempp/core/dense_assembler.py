@@ -278,13 +278,15 @@ def _prepare_buffers(
         order="C",
     )
 
-    collocation_points = _cl_helpers.DeviceBuffer.from_array(
-            dual_to_range.collocation_points,
-            device_interface,
-            dtype=dtype,
-            access_mode="read_only",
-            order="F"
-    )
+    if use_collocation:
+
+        collocation_points = _cl_helpers.DeviceBuffer.from_array(
+                dual_to_range.collocation_points,
+                device_interface,
+                dtype=dtype,
+                access_mode="read_only",
+                order="F"
+        )
 
     test_grid_buffer = test_grid.push_to_device(device_interface, precision).buffer
     trial_grid_buffer = trial_grid.push_to_device(device_interface, precision).buffer

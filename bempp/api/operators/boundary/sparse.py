@@ -11,13 +11,15 @@ def identity(
     precision=None,
 ):
 
-    if domain.identifier == "rwg0" and dual_to_range.identifier == 'snc0':
+    if domain.identifier == "rwg0" and dual_to_range.identifier == "snc0":
         return _snc0_rwg0_identity(
-                domain, range_, dual_to_range, parameters, device_interface, precision)
+            domain, range_, dual_to_range, parameters, device_interface, precision
+        )
 
-    if domain.identifier == "rwg0" and dual_to_range.identifier == 'rwg0':
+    if domain.identifier == "rwg0" and dual_to_range.identifier == "rwg0":
         return _rwg0_rwg0_identity(
-                domain, range_, dual_to_range, parameters, device_interface, precision)
+            domain, range_, dual_to_range, parameters, device_interface, precision
+        )
 
     if not (domain.codomain_dimension == 1 and dual_to_range.codomain_dimension == 1):
         raise ValueError("domain and codomain must be scalar spaces.")
@@ -65,13 +67,14 @@ def _snc0_rwg0_identity(
         precision,
     )
 
+
 def _rwg0_rwg0_identity(
-        domain,
-        range_,
-        dual_to_range,
-        parameters=None,
-        device_interface=None,
-        precision=None,
+    domain,
+    range_,
+    dual_to_range,
+    parameters=None,
+    device_interface=None,
+    precision=None,
 ):
     """Assemble the RWG/RWG identiy operator."""
 
@@ -93,7 +96,10 @@ def _rwg0_rwg0_identity(
         precision,
     )
 
-def multitrace_identity(multitrace_operator, parameters=None, device_interface=None, precision=None):
+
+def multitrace_identity(
+    multitrace_operator, parameters=None, device_interface=None, precision=None
+):
     """
     Create a multitrace identity operator.
 
@@ -120,5 +126,37 @@ def multitrace_identity(multitrace_operator, parameters=None, device_interface=N
     blocked_operator[1, 1] = identity(domain1, range1, dual_to_range1)
 
     return blocked_operator
-    
+
+
+def sigma_identity(
+    domain,
+    range_,
+    dual_to_range,
+    parameters=None,
+    device_interface=None,
+    precision=None,
+):
+    """
+    Evaluate the sigma identity operator. 
+
+    For Galerkin methods this operator is equivalent to .5 * identity. For
+    collocation methods the value may differ from .5 on piecewise smooth
+    domains.
+    """
+    from bempp.api.utils.helpers import assign_parameters
+
+    parameters = assign_parameters(parameters)
+
+    if parameters.assembly.discretization_type == "galerkin":
+        return 0.5 * identity(
+            domain,
+            range_,
+            dual_to_range,
+            parameters=parameters,
+            device_interface=device_interface,
+            precision=precision,
+        )
+    elif parameters.assembly.discretization_type == 'collocation':
+        raise ValueError('Not yet implemented.')
+
 
