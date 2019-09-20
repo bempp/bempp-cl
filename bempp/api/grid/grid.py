@@ -895,7 +895,7 @@ def get_element_to_element_matrix(vertices, elements):
     return element_to_vertex.T.dot(element_to_vertex)
 
 
-@_numba.njit(cache=True, locals={"index": _numba.types.int32})
+@_numba.njit(locals={"index": _numba.types.int32})
 def _compare_array_to_value(array, val):
     """
     Return i such that array[i] == val.
@@ -909,7 +909,6 @@ def _compare_array_to_value(array, val):
 
 
 @_numba.njit(
-    cache=True,
     locals={
         "index1": _numba.types.int32,
         "index2": _numba.types.int32,
@@ -932,7 +931,7 @@ def _find_first_common_array_index_pair_from_position(array1, array2, start=0):
     raise ValueError("Could not find a common index pair.")
 
 
-@_numba.njit(cache=True, locals={"offset": _numba.types.int32})
+@_numba.njit(locals={"offset": _numba.types.int32})
 def _find_two_common_array_index_pairs(array1, array2):
     """
     Return two index pairs (i, j) such that array1[i] = array2[j]
@@ -949,7 +948,7 @@ def _find_two_common_array_index_pairs(array1, array2):
     return index_pairs
 
 
-@_numba.njit(cache=True)
+@_numba.njit()
 def _get_shared_vertex_information_for_two_elements(elements, elem0, elem1):
     """
     Return tuple (i, j)
@@ -962,7 +961,7 @@ def _get_shared_vertex_information_for_two_elements(elements, elem0, elem1):
     return (i, j)
 
 
-@_numba.njit(cache=True)
+@_numba.njit()
 def _get_shared_edge_information_for_two_elements(elements, elem0, elem1):
     """
     Return 2x2 array of int32 indices
@@ -986,7 +985,7 @@ def _get_shared_edge_information_for_two_elements(elements, elem0, elem1):
     return index_pairs
 
 
-@_numba.njit(cache=True)
+@_numba.njit()
 def _find_vertex_adjacency(elements, test_indices, trial_indices):
     """
     Return for element pairs the vertex adjacency.
@@ -1015,7 +1014,7 @@ def _find_vertex_adjacency(elements, test_indices, trial_indices):
     return adjacency
 
 
-@_numba.njit(cache=True)
+@_numba.njit()
 def _find_edge_adjacency(elements, elem0_indices, elem1_indices):
     """
     Return for element pairs the edge adjacency
@@ -1078,7 +1077,7 @@ def _element_filter(elements1, elements2, nvertices, filter_type):
     return (elements1[filtered_indices], elements2[filtered_indices])
 
 
-@_numba.njit(cache=True)
+@_numba.njit()
 def _sort_values(val1, val2):
     """Return a tuple with the input values sorted."""
     if val1 > val2:
@@ -1086,7 +1085,7 @@ def _sort_values(val1, val2):
     return val1, val2
 
 
-@_numba.njit(cache=True)
+@_numba.njit()
 def _vertices_from_edge_index(element, local_index):
     """
     Returns the vertices associated with an edge.

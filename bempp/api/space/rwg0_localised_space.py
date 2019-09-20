@@ -83,7 +83,7 @@ class Rwg0LocalisedFunctionSpace(_FunctionSpace):
         raise NotImplementedError
 
 
-@_numba.njit(cache=True)
+@_numba.njit()
 def _numba_evaluate(
     element_index, shapeset_evaluate, local_coordinates, grid_data, local_multipliers, normal_multipliers
 ):

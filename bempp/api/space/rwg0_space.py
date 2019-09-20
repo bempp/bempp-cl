@@ -116,7 +116,7 @@ class Rwg0FunctionSpace(_FunctionSpace):
         raise NotImplementedError
 
 
-@_numba.njit(cache=True)
+@_numba.njit()
 def _compute_space_data(
     support,
     edge_neighbors,
@@ -206,7 +206,7 @@ def _compute_space_data(
     return count, support, local2global_map, local_multipliers
 
 
-@_numba.njit(cache=True)
+@_numba.njit()
 def _numba_evaluate(
     element_index,
     shapeset_evaluate,
