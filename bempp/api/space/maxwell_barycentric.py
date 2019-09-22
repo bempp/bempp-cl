@@ -6,6 +6,9 @@ import numpy as _np
 from .rwg0_localised_space import (
     Rwg0LocalisedFunctionSpace as _Rwg0LocalisedFunctionSpace,
 )
+from .snc0_localised_space import (
+   Snc0LocalisedFunctionSpace as _Snc0LocalisedFunctionSpace,
+)
 
 
 class Rwg0BarycentricSpace(_Rwg0LocalisedFunctionSpace):
@@ -97,6 +100,96 @@ class Rwg0BarycentricSpace(_Rwg0LocalisedFunctionSpace):
         self._is_barycentric = True
         self._barycentric_representation = lambda: self
 
+class Snc0BarycentricSpace(_Snc0LocalisedFunctionSpace):
+    """SNC space on barycentric grid."""
+
+    def __init__(
+        self,
+        grid,
+        support_elements=None,
+        segments=None,
+        swapped_normals=None,
+        include_boundary_dofs=False,
+        coarse_space=None,
+    ):
+        """Definition of SNC spaces over barycentric refinements."""
+        import bempp.api
+        from bempp.api.space.snc0_space import Snc0FunctionSpace
+        from bempp.api.space.snc0_localised_space import Snc0LocalisedFunctionSpace
+        from numba.typed import List
+        from scipy.sparse import coo_matrix
+
+        if coarse_space is None:
+            coarse_space = Snc0FunctionSpace(
+                grid, support_elements, segments, swapped_normals, include_boundary_dofs
+            )
+
+        number_of_support_elements = coarse_space.number_of_support_elements
+
+        bary_support_elements = 6 * _np.repeat(
+            coarse_space.support_elements, 6
+        ) + _np.tile(_np.arange(6), number_of_support_elements)
+
+        super().__init__(
+            grid.barycentric_refinement,
+            support_elements=bary_support_elements,
+            swapped_normals=swapped_normals,
+        )
+
+        local_coords = _np.array(
+            [[0, 0], [0.5, 0], [1, 0], [0.5, 0.5], [0, 1], [0, 0.5], [1.0 / 3, 1.0 / 3]]
+        ).T
+
+        coeffs = (
+            _np.array(
+                [
+                    [1, -1.0 / 3, 0],
+                    [-1.0 / 3, 1, 0],
+                    [0, 1.0 / 3, -1.0 / 6],
+                    [0, 0, 1.0 / 6],
+                    [0, 0, 1.0 / 6],
+                    [1.0 / 3, 0, -1.0 / 6],
+                ]
+            ),
+            _np.array(
+                [
+                    [0, 1.0 / 3, -1.0 / 6],
+                    [0, 0, 1.0 / 6],
+                    [0, 0, 1.0 / 6],
+                    [1.0 / 3, 0, -1.0 / 6],
+                    [1, -1.0 / 3, 0],
+                    [-1.0 / 3, 1, 0],
+                ]
+            ),
+            _np.array(
+                [
+                    [0, 0, 1.0 / 6],
+                    [1.0 / 3, 0, -1.0 / 6],
+                    [1, -1.0 / 3, 0],
+                    [-1.0 / 3, 1, 0],
+                    [0, 1.0 / 3, -1.0 / 6],
+                    [0, 0, 1.0 / 6],
+                ]
+            ),
+        )
+
+        # SNC and RWG maps are identical
+
+        coarse_dofs, bary_dofs, values = generate_rwg0_map(
+            grid.data, coarse_space.support_elements, local_coords, coeffs
+        )
+
+        transform = coo_matrix(
+            (values, (bary_dofs, coarse_dofs)),
+            shape=(super().global_dof_count, 3 * number_of_support_elements),
+            dtype=_np.float64,
+        ).tocsr()
+
+        self._dof_transformation = transform @ coarse_space.map_to_localised_space
+        self._identifier = "snc0"
+        self._requires_dof_transformation = True
+        self._is_barycentric = True
+        self._barycentric_representation = lambda: self
 
 class BCSpace(_Rwg0LocalisedFunctionSpace):
     """RWG space on barycentric grid."""
@@ -172,7 +265,7 @@ class BCSpace(_Rwg0LocalisedFunctionSpace):
         ).tocsr()
 
         self._dof_transformation = transform
-        self._identifier = "bc"
+        self._identifier = "rwg0"
         self._requires_dof_transformation = True
         self._is_barycentric = True
         self._barycentric_representation = lambda: self

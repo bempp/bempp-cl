@@ -28,7 +28,10 @@ p0 = bempp.api.function_space(grid, "DP", 0)
 dp1 = bempp.api.function_space(grid, "DP", 1)
 p1 = bempp.api.function_space(grid, "P", 1)
 rwg = bempp.api.function_space(grid, "RWG", 0)
+brwg = bempp.api.function_space(grid, "B-RWG", 0)
 snc = bempp.api.function_space(grid, "SNC", 0)
+bsnc = bempp.api.function_space(grid, "B-SNC", 0)
+bc = bempp.api.function_space(grid, "BC", 0)
 rwg_structured = bempp.api.function_space(grid_structured, "RWG", 0)
 snc_structured = bempp.api.function_space(grid_structured, "SNC", 0)
 
@@ -361,6 +364,9 @@ generate_sparse_bem_matrix(
     snc, rwg, "sparse_identity_snc_rwg", bempp.api.operators.boundary.sparse.identity
 )
 
+generate_sparse_bem_matrix(
+    bsnc, bc, "sparse_identity_snc_bc", bempp.api.operators.boundary.sparse.identity
+)
 
 generate_potential(
     p0,

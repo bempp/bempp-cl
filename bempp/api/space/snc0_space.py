@@ -13,6 +13,7 @@ class Snc0FunctionSpace(_FunctionSpace):
     def __init__(self, grid, support_elements=None, segments=None, swapped_normals=None, include_boundary_dofs=False):
         """Initialize with a given grid."""
         from .localised_space import LocalisedFunctionSpace
+        from .maxwell_barycentric import Snc0BarycentricSpace
 
         from scipy.sparse import coo_matrix
         from scipy.sparse import identity
@@ -80,6 +81,15 @@ class Snc0FunctionSpace(_FunctionSpace):
         )
 
         super().__init__(space_data)
+
+        self._barycentric_representation = lambda: Snc0BarycentricSpace(
+            grid,
+            support_elements=support_elements,
+            segments=segments,
+            swapped_normals=swapped_normals,
+            include_boundary_dofs=include_boundary_dofs,
+            coarse_space=self,
+        )
 
     @property
     def numba_evaluate(self):

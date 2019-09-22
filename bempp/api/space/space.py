@@ -61,6 +61,14 @@ def function_space(
                 grid, support_elements, segments, swapped_normals, **kwargs
             )
 
+    if kind == "BC":
+        if degree == 0:
+            from .maxwell_barycentric import BCSpace
+
+            return BCSpace(
+                grid, support_elements, segments, swapped_normals, **kwargs
+            )
+
     raise ValueError("Requested space not implemented.")
 
 

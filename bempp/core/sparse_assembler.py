@@ -53,11 +53,11 @@ class SparseAssembler(_assembler.AssemblerBase):
 
         mat = coo_matrix((new_data, (new_rows, new_cols)), shape=(nrows, ncols)).tocsr()
 
-        if self.domain.requires_dof_transformation:
-            mat = mat @ self.domain.dof_transformation
+        if domain.requires_dof_transformation:
+            mat = mat @ domain.dof_transformation
 
-        if self.dual_to_range.requires_dof_transformation:
-            mat = self.dual_to_range.dof_transformation.T @ mat
+        if dual_to_range.requires_dof_transformation:
+            mat = dual_to_range.dof_transformation.T @ mat
 
         return SparseDiscreteBoundaryOperator(mat)
 

@@ -16,8 +16,18 @@ def identity(
             domain, range_, dual_to_range, parameters, device_interface, precision
         )
 
+    if domain.identifier == "snc0" and dual_to_range.identifier == "rwg0":
+        return _rwg0_snc0_identity(
+            domain, range_, dual_to_range, parameters, device_interface, precision
+        )
+
     if domain.identifier == "rwg0" and dual_to_range.identifier == "rwg0":
         return _rwg0_rwg0_identity(
+            domain, range_, dual_to_range, parameters, device_interface, precision
+        )
+
+    if domain.identifier == "snc0" and dual_to_range.identifier == "snc0":
+        return _snc0_snc0_identity(
             domain, range_, dual_to_range, parameters, device_interface, precision
         )
 
@@ -67,6 +77,34 @@ def _snc0_rwg0_identity(
         precision,
     )
 
+def _rwg0_snc0_identity(
+    domain,
+    range_,
+    dual_to_range,
+    parameters=None,
+    device_interface=None,
+    precision=None,
+):
+    """Assemble the SNC/RWG identiy operator."""
+
+    if not (domain.identifier == "snc0" and dual_to_range.identifier == "rwg0"):
+        raise ValueError(
+            "Operator only defined for domain = 'snc' and 'dual_to_range = 'rwg"
+        )
+
+    return _common.create_operator(
+        "rwg0_snc0_identity",
+        domain,
+        range_,
+        dual_to_range,
+        parameters,
+        "sparse",
+        {},
+        "default_sparse",
+        device_interface,
+        precision,
+    )
+
 
 def _rwg0_rwg0_identity(
     domain,
@@ -85,6 +123,34 @@ def _rwg0_rwg0_identity(
 
     return _common.create_operator(
         "rwg0_rwg0_identity",
+        domain,
+        range_,
+        dual_to_range,
+        parameters,
+        "sparse",
+        {},
+        "default_sparse",
+        device_interface,
+        precision,
+    )
+
+def _snc0_snc0_identity(
+    domain,
+    range_,
+    dual_to_range,
+    parameters=None,
+    device_interface=None,
+    precision=None,
+):
+    """Assemble the RWG/RWG identiy operator."""
+
+    if not (domain.identifier == "snc0" and dual_to_range.identifier == "snc0"):
+        raise ValueError(
+            "Operator only defined for domain = 'rwg0' and 'dual_to_range = 'rwg0"
+        )
+
+    return _common.create_operator(
+        "snc0_snc0_identity",
         domain,
         range_,
         dual_to_range,
