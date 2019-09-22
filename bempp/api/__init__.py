@@ -32,6 +32,15 @@ from bempp.api.assembly.discrete_boundary_operator import as_matrix
 from bempp.api.assembly.boundary_operator import ZeroBoundaryOperator
 from bempp.api.assembly.boundary_operator import MultiplicationOperator
 
+# Disable Numba warnings
+
+
+from numba.errors import NumbaDeprecationWarning, NumbaPendingDeprecationWarning
+import warnings
+
+warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
+warnings.simplefilter('ignore', category=NumbaPendingDeprecationWarning)
+
 
 CONSOLE_LOGGING_HANDLER = None
 DEFAULT_LOGGING_FORMAT = "%(name)s:%(levelname)s: %(message)s"
