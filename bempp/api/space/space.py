@@ -17,6 +17,7 @@ def function_space(
     **kwargs
 ):
     """Initialize a function space."""
+    from . import scalar_spaces
 
     if _np.count_nonzero([support_elements, segments]) > 1:
         raise ValueError(
@@ -25,23 +26,17 @@ def function_space(
 
     if kind == "DP":
         if degree == 0:
-            from .p0_discontinuous_space import P0DiscontinuousFunctionSpace
-
-            return P0DiscontinuousFunctionSpace(
+            return scalar_spaces.p0_discontinuous_function_space(
                 grid, support_elements, segments, swapped_normals
             )
         if degree == 1:
-            from .p1_discontinuous_space import P1DiscontinuousFunctionSpace
-
-            return P1DiscontinuousFunctionSpace(
+            return scalar_spaces.p1_discontinuous_function_space(
                 grid, support_elements, segments, swapped_normals
             )
 
     if kind == "P":
         if degree == 1:
-            from .p1_continuous_space import P1ContinuousFunctionSpace
-
-            return P1ContinuousFunctionSpace(
+            return scalar_spaces.p1_continuous_function_space(
                 grid, support_elements, segments, swapped_normals, **kwargs
             )
 
@@ -72,71 +67,258 @@ def function_space(
     raise ValueError("Requested space not implemented.")
 
 
-_SpaceData = _namedtuple(
-    "SpaceData",  # pylint: disable=C0103
-    [
-        "grid",
-        "codomain_dimension",
-        "order",
-        "shapeset",
-        "local2global_map",
-        "local_multipliers",
-        "identifier",
-        "support",
-        "localised_space",
-        "normal_multipliers",
-        "dof_transformation",
-        "requires_dof_transformation",
-        "is_barycentric",
-        "barycentric_representation",
-    ],
-)
+class SpaceBuilder(object):
+    """
+    This object configures and builds a space object.
+
+    """
+    def __init__(self, grid):
+        """Set all parameters to None."""
+        self._grid = grid
+
+        self._codomain_dimension = None
+        self._order = None
+        self._shapeset = None
+        self._local2global_map = None
+        self._local_multipliers = None
+        self._identifier = None
+        self._support = None
+        self._normal_multipliers = None
+        self._localised_space = None
+        self._barycentric_representation = None
+        self._numba_evaluator = None
+        self._numba_surface_gradient = None
+        self._dof_transformation = None
+        self._collocation_points = None
+
+        self._is_barycentric = False
+        self._space = None
+        self._requires_dof_transformation = False
+
+    def set_codomain_dimension(self, codomain_dimension):
+        """Set the codomain dimension."""
+        self._codomain_dimension = codomain_dimension
+        return self
+
+    def set_support(self, support):
+        """Set the support."""
+        self._support = support
+        return self
+
+    def set_normal_multipliers(self, normal_multipliers):
+        """Set normal multipliers."""
+        self._normal_multipliers = normal_multipliers
+        return self
+
+    def set_order(self, order):
+        """Set the order of the space."""
+        self._order = order
+        return self
+
+    def set_shapeset(self, shapeset):
+        """Set the shapeset string."""
+        self._shapeset = shapeset
+        return self
+
+    def set_local2global(self, local2global):
+        """Set the local2global map."""
+        self._local2global_map = local2global
+        return self
+
+    def set_global2local(self, global2local):
+        """Set the global2local map."""
+        self._global2local_map = global2local
+        return self
+
+    def set_local_multipliers(self, local_multipliers):
+        """Set the local multipliers."""
+        self._local_multipliers = local_multipliers
+        return self
+
+    def set_identifier(self, identifier):
+        """Set the identifier."""
+        self._identifier = identifier
+        return self
+
+    def set_localised_space(self, localised_space):
+        """Define custom localised space."""
+        self._localised_space = localised_space
+        return self
+
+    def set_dof_transformation(self, dof_transformation):
+        """Set the dof transformation."""
+        self._dof_transformation = dof_transformation
+        self._requires_dof_transformation = True
+
+        return self
+
+    def set_is_barycentric(is_barycentric):
+        """Call to define space as barycentric."""
+        self._is_barycentric = is_barycentric
+        return self
+
+    def set_numba_evaluator(self, basis_evaluator):
+        """Hand over Numba method that evaluates the basis."""
+        self._basis_evaluator = basis_evaluator
+        return self
+
+    def set_numba_surface_gradient(self, surface_gradient):
+        """Hand over Numba method that evaluates surface gradient."""
+        self._numba_surface_gradient = surface_gradient
+        return self
+
+    def set_collocation_points(self, collocation_points):
+        """Define the collocation points."""
+        self._collocation_points = collocation_points
+        return self
+
+    def build(self):
+        """Build a space object."""
+        from scipy.sparse import identity
+
+        if self._space is not None:
+            return self._space
+
+        # Check if enough information was provided.
+        if self._codomain_dimension is None:
+            raise ValueError("Codomain dimension not defined.""")
+
+        if self._order is None:
+            raise ValueError("order not defined.")
+
+        if self._shapeset is None:
+            raise ValueError("shapeset not defined.")
+
+        if self._local2global_map is None:
+            raise ValueError("local2global map not defined.")
+
+        if self._global2local_map is None:
+            raise ValueError("global2local map not defined.")
+
+        if self._local_multipliers is None:
+            raise ValueError("Local multipliers not defined.")
+
+        if self._identifier is None:
+            raise ValueError("identifier not defined.")
+
+        if self._support is None:
+            self._support = _np.ones(self._grid.number_of_elements, dtype=_np.bool)
+
+        if self._normal_multipliers is None:
+            self._normal_multipliers = _np.ones(self._grid.number_of_elemnets, dtype=_np.int32)
+
+        if self._dof_transformation is None:
+            ndofs = 1 + _np.max(self._local2global_map)
+            self._dof_transformation = identity(ndofs, dtype=_np.float64)
+
+        if self._is_barycentric:
+            self._barycentric_representation = self
+
+        if self._numba_evaluator is None:
+            self._numba_evaluator = _numba_evaluate
 
 
-class _FunctionSpace(_abc.ABC):
-    """Base class for function spaces."""
+        self._space = FunctionSpace(
+                self._grid,
+                self._codomain_dimension,
+                self._order,
+                self._shapeset,
+                self._local2global_map,
+                self._global2local_map,
+                self._local_multipliers,
+                self._identifier,
+                self._support,
+                self._normal_multipliers,
+                self._requires_dof_transformation,
+                self._is_barycentric,
+                self._barycentric_representation,
+                self._dof_transformation,
+                self._numba_evaluator,
+                self._numba_surface_gradient,
+                self._collocation_points,
+                )
 
-    def __init__(self, space_data):
-        """Initialisation of base class."""
+        return self._space
+
+
+class FunctionSpace(object):
+    """
+    Main class for function spaces.
+
+    This class is not meant to be initialized on its
+    own. Rather there are functions for each type
+    of space that configure this object through a
+    builder pattern.
+
+    """
+
+    def __init__(self,
+            grid,
+            codomain_dimension,
+            order,
+            shapeset,
+            local2global_map,
+            global2local_map,
+            local_multipliers,
+            identifier,
+            support,
+            normal_multipliers,
+            requires_dof_transformation,
+            is_barycentric,
+            barycentric_representation,
+            dof_transformation,
+            numba_evaluator,
+            numba_surface_gradient,
+            collocation_points,
+            ):
+        """Initialize the space."""
 
         from .shapesets import Shapeset
         from scipy.sparse import coo_matrix
         from scipy.sparse import identity
 
-        self._grid = space_data.grid
+        self._grid = grid
         self._grid_id = self._grid.id
-        self._id_string = None
-        self._codomain_dimension = space_data.codomain_dimension
-        self._order = space_data.order
-        self._shapeset = Shapeset(space_data.shapeset)
-        self._local2global_map = space_data.local2global_map
-        self._local_multipliers = space_data.local_multipliers
-        self._identifier = space_data.identifier
-        self._support = space_data.support
-        self._localised_space = space_data.localised_space
-        self._color_map = None
-        self._requires_dof_transformation = space_data.requires_dof_transformation
-        self._is_barycentric = space_data.is_barycentric
-        self._barycentric_representation = space_data.barycentric_representation
-        self._dof_transformation = space_data.dof_transformation
-        self._global2local_map = self._invert_local2global_map(
-            self._local2global_map,
-            self._grid.number_of_elements,
-            self.dof_transformation.shape[0],
-        )
-
-        self._normal_multipliers = space_data.normal_multipliers
-
+        self._codomain_dimension = codomain_dimension
+        self._order = order
+        self._shapeset = Shapeset(shapeset)
+        self._local2global_map = local2global_map
+        self._global2local_map = global2local_map
+        self._local_multipliers = local_multipliers
+        self._identifier = identifier
+        self._support = support
+        self._localised_space = localised_space
+        self._requires_dof_transformation = requires_dof_transformation
+        self._is_barycentric = is_barycentric
+        self._barycentric_representation = barycentric_representation
+        self._dof_transformation = dof_transformation
+        self._numba_evaluate = numba_evaluator
+        self._numba_surface_gradient = numba_surface_gradient
+        self._normal_multipliers = normal_multipliers
         self._number_of_support_elements = _np.count_nonzero(self._support)
         self._support_elements = _np.flatnonzero(self._support).astype("uint32")
+        self._collocation_points = collocation_points
 
+
+        self._id_string = None
+        self._color_map = None
         self._mass_matrix = None
         self._inverse_mass_matrix = None
-
         self._sorted_indices = None
         self._indexptr = None
 
+        # Number of dofs for the space defined over the grid
+        # This is different from the global_dof_count, which
+        # takes the dof transformation matrix into account.
+
+        number_of_grid_dofs = 1 + _np.max(self._local2global_map)
+        self._grid_dof_count = number_of_grid_dofs
+
+        # Number of shape functions 
         nshape_fun = self.number_of_shape_functions
+
+
+        # Generate map to localised space
 
         self._map_to_localised_space = coo_matrix(
             (
@@ -153,6 +335,11 @@ class _FunctionSpace(_abc.ABC):
             dtype="float64",
         ).tocsr()
 
+        # Generate map to full grid
+        # This works like the map to the localised grid.
+        # But if the space is defined over a subgrid it
+        # maps to the localised space on the full grid.
+
         self._map_to_full_grid = coo_matrix(
             (
                 self._local_multipliers[self._support].ravel(),
@@ -166,10 +353,25 @@ class _FunctionSpace(_abc.ABC):
             ),
             shape=(
                 nshape_fun * self._grid.number_of_elements,
-                self.dof_transformation.shape[0],
+                number_of_grid_dofs,
             ),
             dtype="float64",
         ).tocsr()
+
+        # Create localised space.
+
+        # First check if space is already a localised space.
+        # For this we need that all multipliers are 1 and all global
+        # dofs are each only associated with one local dof.
+
+        is_localised = _np.all(self._local_multipliers[self._support] == 1) and \
+                 _np.all([len(local_dofs) for local_dofs in self._global2local_map]) == 1
+
+        if is_localised:
+            self._localised_space = self
+        else:
+            # Create a new localised space
+            self._localised_space = localised_space(self)
 
     @property
     def grid(self):
@@ -307,6 +509,23 @@ class _FunctionSpace(_abc.ABC):
 
         return self._id_string
 
+    @property
+    def numba_evaluate(self):
+        """Return the basis evaluator."""
+        return self._numba_evaluate
+
+    @property
+    def numba_surface_gradient(self):
+        """Return the surface gradient evaluator."""
+        if self._numba_surface_gradient is None:
+            raise ValueError("No surface gradient define for this space.")
+        return self._numba_surface_gradient
+
+    @property
+    def collocation_points(self):
+        """Return collocation points."""
+        return self._collocation_points
+
     def barycentric_representation(self):
         """Return barycentric_representation if it exists."""
         import collections
@@ -397,25 +616,6 @@ class _FunctionSpace(_abc.ABC):
         """Check if space is compatible with other space."""
         return self == other
 
-    def vertex_on_boundary(self):
-        """Return true if vertex is on boundary of segment."""
-
-    def _invert_local2global_map(
-        self, local2global_map, number_of_elements, global_dof_count
-    ):
-        """Obtain the global to local dof map from the local to global map."""
-
-        global2local_map = [[] for _ in range(global_dof_count)]
-
-        for elem_index in range(number_of_elements):
-            for local_index, dof in enumerate(local2global_map[elem_index]):
-                if self.local_multipliers[elem_index, local_index] != 0:
-                    global2local_map[dof].append((elem_index, local_index))
-
-        for index, elem in enumerate(global2local_map):
-            global2local_map[index] = tuple(elem)
-
-        return global2local_map
 
     def _compute_color_map(self):
         """Compute the color map."""
@@ -455,6 +655,34 @@ class _FunctionSpace(_abc.ABC):
         """Check if spaces are compatible."""
         return check_if_compatible(self, other)
 
+def return_compatible_representation(*args):
+    """Return representation of spaces on same grid."""
+
+    # Check if at least one space is barycentric.
+
+    is_barycentric = any([space.is_barycentric for space in args])
+
+    if not is_barycentric:
+        return args
+    else:
+        # Convert spaces
+        converted = [space.barycentric_representation() for space in args]
+        if not all(converted):
+            raise ValueError("Not all spaces have a valid barycentric representation.")
+        return converted
+
+
+def check_if_compatible(space1, space2):
+    """Return true if two spaces are compatible."""
+
+    if id(space1) == id(space2):
+        return True
+
+    try:
+        new_space1, new_space2 = return_compatible_representation(space1, space2)
+        return new_space1.id_string == new_space2.id_string
+    except:
+        return False
 
 def _process_segments(grid, support_elements, segments, swapped_normals):
     """Pocess information from support_elements and segments vars."""
@@ -489,32 +717,61 @@ def _process_segments(grid, support_elements, segments, swapped_normals):
 
     return support, normal_multipliers
 
+def invert_local2global(local2global_map, local_multipliers):
+    """Obtain the global to local dof map from the local to global map."""
 
-def return_compatible_representation(*args):
-    """Return representation of spaces on same grid."""
+    global_dof_count = 1 + _np.max(local2global_map)
+    number_of_elements = len(local2global_map)
 
-    # Check if at least one space is barycentric.
+    global2local_map = [[] for _ in range(global_dof_count)]
 
-    is_barycentric = any([space.is_barycentric for space in args])
+    for elem_index in range(number_of_elements):
+        for local_index, dof in enumerate(local2global_map[elem_index]):
+            if local_multipliers[elem_index, local_index] != 0:
+                global2local_map[dof].append((elem_index, local_index))
 
-    if not is_barycentric:
-        return args
-    else:
-        # Convert spaces
-        converted = [space.barycentric_representation() for space in args]
-        if not all(converted):
-            raise ValueError("Not all spaces have a valid barycentric representation.")
-        return converted
+    for index, elem in enumerate(global2local_map):
+        global2local_map[index] = tuple(elem)
 
+    return global2local_map
 
-def check_if_compatible(space1, space2):
-    """Return true if two spaces are compatible."""
+def localised_space(space):
+    """Given a space object. Return the associated localised space."""
 
-    if id(space1) == id(space2):
-        return True
+    number_of_elements = space.grid.number_of_elements
+    support_size = space.number_of_support_elements
+    local_size = space.number_of_shape_functions
 
-    try:
-        new_space1, new_space2 = return_compatible_representation(space1, space2)
-        return new_space1.id_string == new_space2.id_string
-    except:
-        return False
+    local2global_map = _np.zeros((number_of_elements, local_size), dtype="uint32")
+    local2global_map[space.support] = _np.arange(
+            local_size * support_size, dtype="uint32").reshape(
+                    (support_size, local_size)
+    )
+
+    local_multipliers = _np.zeros((number_of_elements, local_size), dtype="float64")
+    local_multipliers[support] = 1
+
+    global2local = invert_local2global(local2global, local_multipliers)
+
+    global_dof_count = local_size * support_size
+
+    return SpaceBuilder(space.grid).set_codomain_dimension(space.codomain_dimension) \
+            .set_support(space.support) \
+            .set_normal_multipliers(space.normal_multipliers) \
+            .set_order(space.order) \
+            .set_shapeset(space.shapeset) \
+            .set_identifier(space.identifier + "_localised") \
+            .set_local2global(local2global_map) \
+            .set_global2local(global2local) \
+            .set_local_multipliers(local_multipliers) \
+            .set_numba_evaluator(space.numba_evaluator) \
+            .set_numba_surface_gradient(space.numba_surface_gradient) \
+            .set_is_barycentric(space.is_barycentric) \
+            .build()
+
+@_numba.njit
+def _numba_evaluate(
+    element_index, shapeset_evaluate, local_coordinates, grid_data, local_multipliers, normal_multipliers
+):
+    """Evaluate the basis on an element."""
+    return shapeset_evaluate(local_coordinates)

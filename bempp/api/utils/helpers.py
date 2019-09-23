@@ -48,3 +48,26 @@ def promote_to_double_precision(array):
     if array.dtype == "complex64":
         return array.astype("complex128", copy=False)
     return array
+
+def serialise_list_of_lists(array):
+    """
+    Serialises a list of lists (or other iterable).
+
+    Returns a tuple (new_array, index_ptr), such
+    that array[j] = new_array[index_ptr[j] : index_ptr[j + 1]]
+
+    """
+
+    new_list = []
+    index_ptr = [0]
+
+    count = 0
+    for sublist in array:
+        new_list.extend(sublist)
+        count += len(sublist)
+        index_ptr.append(count)
+    return new_list, index_ptr
+
+
+
+
