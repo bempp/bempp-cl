@@ -169,7 +169,7 @@ def _compute_p1_dof_map(
     local2global = -_np.ones((number_of_elements, 3), dtype=_np.int32)
 
     vertex_is_dof = _np.zeros(number_of_vertices, dtype=_np.bool_)
-    delete_from_support = []
+    extended_support = []
 
     for element_index in elements_in_support:
         for local_index in range(3):
@@ -185,8 +185,8 @@ def _compute_p1_dof_map(
                 and ensure_global_continuity
                 and include_boundary_dofs
             ):
-                elements_in_support.extend(non_support_neighbors)
                 for en in non_support_neighbors:
+                    extended_support.append(en)
                     other_local_index = find_index(grid_data.elements[:, en], vertex)
                     local2global[en, other_local_index] = vertex
                     # vertex_is_dof was already set to True in previous if.
@@ -208,6 +208,8 @@ def _compute_p1_dof_map(
 
     # Iterate through all support elements and replace vertex indices by
     # dof indices
+
+    elements_in_support.extend(set(extended_support))
 
     for element_index in elements_in_support:
         for local_index in range(3):

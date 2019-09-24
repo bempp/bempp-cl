@@ -55,9 +55,15 @@ def function_space(
 
     if kind == "BC":
         if degree == 0:
-            from .maxwell_barycentric import BCSpace
 
-            return BCSpace(
+            return maxwell_spaces.bc_function_space(
+                grid, support_elements, segments, swapped_normals, **kwargs
+            )
+
+    if kind == "RBC":
+        if degree == 0:
+
+            return maxwell_spaces.rbc_function_space(
                 grid, support_elements, segments, swapped_normals, **kwargs
             )
 
@@ -206,6 +212,8 @@ class SpaceBuilder(object):
         if self._is_localised is None:
             raise ValueError("is_localised property not defined.")
 
+        self._space = FunctionSpace.__new__(FunctionSpace)
+
         if self._support is None:
             self._support = _np.ones(self._grid.number_of_elements, dtype=_np.bool)
 
@@ -220,9 +228,9 @@ class SpaceBuilder(object):
             self._numba_evaluator = _numba_evaluate
 
         if self._barycentric_representation is None and self._is_barycentric:
-            self._barycentric_representation = self
+            self._barycentric_representation = self._space
 
-        self._space = FunctionSpace(
+        self._space.__init__(
                 self._grid,
                 self._codomain_dimension,
                 self._order,
@@ -524,6 +532,11 @@ class FunctionSpace(object):
         return self._numba_surface_gradient
 
     @property
+    def has_surface_gradient(self):
+        """Return True if surface gradient is defined."""
+        return self._numba_surface_gradient is not None
+
+    @property
     def collocation_points(self):
         """Return collocation points."""
         return self._collocation_points
@@ -753,6 +766,8 @@ def make_localised_space(space):
     local_multipliers = _np.zeros((number_of_elements, local_size), dtype="float64")
     local_multipliers[space.support] = 1
 
+    surface_gradient = space.numba_surface_gradient if space.has_surface_gradient else None
+
     global2local_map = invert_local2global(local2global_map, local_multipliers)
 
     global_dof_count = local_size * support_size
@@ -768,7 +783,7 @@ def make_localised_space(space):
             .set_global2local(global2local_map) \
             .set_local_multipliers(local_multipliers) \
             .set_numba_evaluator(space.numba_evaluate) \
-            .set_numba_surface_gradient(space.numba_surface_gradient) \
+            .set_numba_surface_gradient(surface_gradient) \
             .set_is_barycentric(space.is_barycentric) \
             .build()
 
