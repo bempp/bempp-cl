@@ -191,16 +191,14 @@ def multitrace_operator(
     segments=None,
     parameters=None,
     swapped_normals=None,
-    assembler="multitrace_evaluator",
+    assembler="dense_evaluator",
     device_interface=None,
     precision=None,
 ):
     """Assemble the Helmholtz multitrace operator."""
     from bempp.api.space import function_space
     from bempp.api.operators import _add_wavenumber
-
-    if assembler != "multitrace_evaluator":
-        raise ValueError("Only multitrace evaluator supported.")
+    from bempp.api.assembly.blocked_operator import GeneralizedBlockedOperator
 
     domain = function_space(
         grid,
@@ -219,7 +217,7 @@ def multitrace_operator(
         dual_to_range,
         wavenumber,
         parameters,
-        "only_singular_part",
+        assembler,
         device_interface,
         precision,
     )
@@ -230,7 +228,7 @@ def multitrace_operator(
         dual_to_range,
         wavenumber,
         parameters,
-        "only_singular_part",
+        assembler,
         device_interface,
         precision,
     )
@@ -241,7 +239,7 @@ def multitrace_operator(
         dual_to_range,
         wavenumber,
         parameters,
-        "only_singular_part",
+        assembler,
         device_interface,
         precision,
     )
@@ -252,7 +250,7 @@ def multitrace_operator(
         dual_to_range,
         wavenumber,
         parameters,
-        "only_singular_part",
+        assembler,
         device_interface,
         precision,
     )
@@ -261,20 +259,7 @@ def multitrace_operator(
 
     _add_wavenumber(options, wavenumber)
 
-    singular_contribution = _np.array([[-dlp, slp], [hyp, adlp]], dtype=_np.object)
-    return _common.create_multitrace_operator(
-        "helmholtz_multitrace",
-        [domain, domain],
-        [range_, range_],
-        [dual_to_range, dual_to_range],
-        parameters,
-        assembler,
-        options,
-        "helmholtz_multitrace",
-        singular_contribution,
-        device_interface,
-        precision,
-    )
+    return GeneralizedBlockedOperator([[-dlp, slp], [hyp, adlp]])
 
 
 def transmission_operator(
@@ -285,20 +270,26 @@ def transmission_operator(
     segments=None,
     parameters=None,
     swapped_normals=None,
-    assembler="multitrace_evaluator",
+    assembler="dense_evaluator",
     device_interface=None,
     precision=None,
 ):
     """Assemble the Helmholtz transmission operator."""
     from bempp.api.space import function_space
     from bempp.api.operators import _add_wavenumber
+    from bempp.api.assembly.blocked_operator import GeneralizedBlockedOperator
 
-    if assembler != "multitrace_evaluator":
-        raise ValueError("Only multitrace evaluator supported.")
 
     wavenumber_int = wavenumber * refractive_index
 
-    domain = function_space(grid, "P", 1, segments=segments, swapped_normals=swapped_normals, include_boundary_dofs=True)
+    domain = function_space(
+        grid,
+        "P",
+        1,
+        segments=segments,
+        swapped_normals=swapped_normals,
+        include_boundary_dofs=True,
+    )
     range_ = domain
     dual_to_range = domain
 
@@ -308,7 +299,7 @@ def transmission_operator(
         dual_to_range,
         wavenumber,
         parameters,
-        "only_singular_part",
+        assembler,
         device_interface,
         precision,
     )
@@ -319,7 +310,7 @@ def transmission_operator(
         dual_to_range,
         wavenumber_int,
         parameters,
-        "only_singular_part",
+        assembler,
         device_interface,
         precision,
     )
@@ -330,7 +321,7 @@ def transmission_operator(
         dual_to_range,
         wavenumber,
         parameters,
-        "only_singular_part",
+        assembler,
         device_interface,
         precision,
     )
@@ -341,7 +332,7 @@ def transmission_operator(
         dual_to_range,
         wavenumber_int,
         parameters,
-        "only_singular_part",
+        assembler,
         device_interface,
         precision,
     )
@@ -352,7 +343,7 @@ def transmission_operator(
         dual_to_range,
         wavenumber,
         parameters,
-        "only_singular_part",
+        assembler,
         device_interface,
         precision,
     )
@@ -363,7 +354,7 @@ def transmission_operator(
         dual_to_range,
         wavenumber_int,
         parameters,
-        "only_singular_part",
+        assembler,
         device_interface,
         precision,
     )
@@ -374,7 +365,7 @@ def transmission_operator(
         dual_to_range,
         wavenumber,
         parameters,
-        "only_singular_part",
+        assembler,
         device_interface,
         precision,
     )
@@ -385,7 +376,7 @@ def transmission_operator(
         dual_to_range,
         wavenumber_int,
         parameters,
-        "only_singular_part",
+        assembler,
         device_interface,
         precision,
     )
@@ -396,24 +387,9 @@ def transmission_operator(
     _add_wavenumber(options, rho_rel, "RHO_REL")
     _add_wavenumber(options, wavenumber_int, "WAVENUMBER_INT")
 
-    singular_contribution = _np.array(
+    return GeneralizedBlockedOperator(
         [
             [-dlp - dlp_int, slp + rho_rel * slp_int],
             [hyp + 1.0 / rho_rel * hyp_int, adlp + adlp_int],
-        ],
-        dtype=_np.object,
-    )
-
-    return _common.create_multitrace_operator(
-        "helmholtz_transmission",
-        [domain, domain],
-        [range_, range_],
-        [dual_to_range, dual_to_range],
-        parameters,
-        assembler,
-        options,
-        "helmholtz_multitrace",
-        singular_contribution,
-        device_interface,
-        precision,
+        ]
     )

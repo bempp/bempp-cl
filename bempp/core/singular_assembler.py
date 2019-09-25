@@ -27,15 +27,20 @@ class SingularAssembler(_assembler.AssemblerBase):
         )
         from bempp.api.utils.helpers import promote_to_double_precision
         from scipy.sparse import coo_matrix, csr_matrix
+        from bempp.api.space.space import return_compatible_representation
         from .dense_assembly_helpers import choose_source_name
 
-        row_dof_count = self.dual_to_range.global_dof_count
-        col_dof_count = self.domain.global_dof_count
-        
-        row_grid_dofs = self.dual_to_range.grid_dof_count
-        col_grid_dofs = self.domain.grid_dof_count
 
-        if self.domain.grid != self.dual_to_range.grid:
+        domain, dual_to_range = return_compatible_representation(
+                self.domain, self.dual_to_range)
+
+        row_dof_count = dual_to_range.global_dof_count
+        col_dof_count = domain.global_dof_count
+        
+        row_grid_dofs = dual_to_range.grid_dof_count
+        col_grid_dofs = domain.grid_dof_count
+
+        if domain.grid != dual_to_range.grid:
             # There are no singular elements if the grids
             # are different.
             return SparseDiscreteBoundaryOperator(
@@ -44,14 +49,14 @@ class SingularAssembler(_assembler.AssemblerBase):
 
         source_name = choose_source_name(operator_descriptor.compute_kernel)
 
-        trial_local2global = self.domain.local2global.ravel()
-        test_local2global = self.dual_to_range.local2global.ravel()
-        trial_multipliers = self.domain.local_multipliers.ravel()
-        test_multipliers = self.dual_to_range.local_multipliers.ravel()
+        trial_local2global = domain.local2global.ravel()
+        test_local2global = dual_to_range.local2global.ravel()
+        trial_multipliers = domain.local_multipliers.ravel()
+        test_multipliers = dual_to_range.local_multipliers.ravel()
 
         singular_rows, singular_cols, singular_values = assemble_singular_part(
-            self.domain.localised_space,
-            self.dual_to_range.localised_space,
+            domain.localised_space,
+            dual_to_range.localised_space,
             self.parameters,
             operator_descriptor,
             source_name,
@@ -72,10 +77,10 @@ class SingularAssembler(_assembler.AssemblerBase):
 
         mat = coo_matrix((values, (rows, cols)), shape=(row_grid_dofs, col_grid_dofs)).tocsr()
 
-        if self.domain.requires_dof_transformation:
+        if domain.requires_dof_transformation:
             mat = mat @ domain.dof_transformation
 
-        if self.dual_to_range.requires_dof_transformation:
+        if dual_to_range.requires_dof_transformation:
             mat = dual_to_range.dof_transformation.T @ mat
 
         return SparseDiscreteBoundaryOperator(mat)

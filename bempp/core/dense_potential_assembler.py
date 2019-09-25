@@ -48,7 +48,7 @@ class DensePotentialAssembler(object):
             self._compute_kernel = "evaluate_electric_field_potential"
         elif operator_descriptor.compute_kernel == "maxwell_magnetic_field":
             self._compute_kernel = "evaluate_magnetic_field_potential"
-        elif operator_descriptor.compute_kernel == 'helmholtz_scalar_far_field':
+        elif operator_descriptor.compute_kernel == "helmholtz_scalar_far_field":
             self._compute_kernel = "evaluate_helmholtz_far_field"
         elif operator_descriptor.compute_kernel == "maxwell_electric_far_field":
             self._compute_kernel = "evaluate_maxwell_electric_far_field"
@@ -100,7 +100,9 @@ class DensePotentialAssembler(object):
 
         localised_space = self.space.localised_space
         grid = localised_space.grid
-        localised_coefficients = self.space.map_to_full_grid.dot(coefficients)
+        localised_coefficients = self.space.map_to_full_grid.dot(
+            self.space.dof_transformation @ coefficients
+        )
 
         order = self.parameters.quadrature.regular
         dtype = _cl_helpers.get_type(self.precision).real
@@ -248,11 +250,12 @@ class DensePotentialAssembler(object):
                 (1,),
                 sum_buffer,
                 result_buffer,
-                _np.uint32(localised_space.number_of_support_elements // workgroup_size),
+                _np.uint32(
+                    localised_space.number_of_support_elements // workgroup_size
+                ),
             )
 
             event.wait()
-
 
         if remainder_size > 0:
 

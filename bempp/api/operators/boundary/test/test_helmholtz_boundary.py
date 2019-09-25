@@ -752,7 +752,6 @@ def test_helmholtz_multitrace_sphere(
         grid,
         2.5,
         parameters=default_parameters,
-        assembler="multitrace_evaluator",
         device_interface=device_interface,
         precision=precision,
     )
@@ -847,7 +846,6 @@ def test_helmholtz_transmission_sphere(
         rho_rel,
         refractive_index,
         parameters=default_parameters,
-        assembler="multitrace_evaluator",
         device_interface=device_interface,
         precision=precision,
     )
@@ -990,7 +988,6 @@ def test_helmholtz_transmission_complex_sphere(
         rho_rel,
         refractive_index,
         parameters=default_parameters,
-        assembler="multitrace_evaluator",
         device_interface=device_interface,
         precision=precision,
     )

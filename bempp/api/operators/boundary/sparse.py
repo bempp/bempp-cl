@@ -10,24 +10,28 @@ def identity(
     device_interface=None,
     precision=None,
 ):
+    # BC spaces use same code as RWG spaces.
+    # RBC spaces use same code as SNC spaces.
+    maxwell_modifier = {"bc": "rwg0", "rwg0": "rwg0", "rbc": "snc0", "snc0": "snc0"}
 
-    if domain.identifier == "rwg0" and dual_to_range.identifier == "snc0":
-        return _snc0_rwg0_identity(
-            domain, range_, dual_to_range, parameters, device_interface, precision
-        )
+    identity_dispatch = {
+        ("snc0", "rwg0"): _snc0_rwg0_identity,
+        ("rwg0", "snc0"): _rwg0_snc0_identity,
+        ("rwg0", "rwg0"): _rwg0_rwg0_identity,
+        ("snc0", "snc0"): _snc0_snc0_identity,
+    }
 
-    if domain.identifier == "snc0" and dual_to_range.identifier == "rwg0":
-        return _rwg0_snc0_identity(
-            domain, range_, dual_to_range, parameters, device_interface, precision
-        )
+    domain_identifier = domain.identifier
+    dual_to_range_identifier = dual_to_range.identifier
 
-    if domain.identifier == "rwg0" and dual_to_range.identifier == "rwg0":
-        return _rwg0_rwg0_identity(
-            domain, range_, dual_to_range, parameters, device_interface, precision
-        )
+    if domain_identifier in maxwell_modifier.keys():
+        domain_identifier = maxwell_modifier[domain_identifier]
 
-    if domain.identifier == "snc0" and dual_to_range.identifier == "snc0":
-        return _snc0_snc0_identity(
+    if dual_to_range_identifier in maxwell_modifier.keys():
+        dual_to_range_identifier = maxwell_modifier[dual_to_range_identifier]
+
+    if (dual_to_range_identifier, domain_identifier) in identity_dispatch.keys():
+        return identity_dispatch[(dual_to_range_identifier, domain_identifier)](
             domain, range_, dual_to_range, parameters, device_interface, precision
         )
 
@@ -76,6 +80,7 @@ def _snc0_rwg0_identity(
         device_interface,
         precision,
     )
+
 
 def _rwg0_snc0_identity(
     domain,
@@ -133,6 +138,7 @@ def _rwg0_rwg0_identity(
         device_interface,
         precision,
     )
+
 
 def _snc0_snc0_identity(
     domain,
@@ -222,7 +228,5 @@ def sigma_identity(
             device_interface=device_interface,
             precision=precision,
         )
-    elif parameters.assembly.discretization_type == 'collocation':
-        raise ValueError('Not yet implemented.')
-
-
+    elif parameters.assembly.discretization_type == "collocation":
+        raise ValueError("Not yet implemented.")

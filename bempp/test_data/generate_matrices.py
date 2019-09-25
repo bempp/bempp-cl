@@ -3,6 +3,11 @@
 import bempp.api
 import numpy as np
 
+import os.path
+
+# Set to true to regenerate all matrices
+REGENERATE = False
+
 bempp.api.enable_console_logging()
 
 parameters = bempp.api.global_parameters
@@ -32,9 +37,9 @@ brwg = bempp.api.function_space(grid, "B-RWG", 0)
 snc = bempp.api.function_space(grid, "SNC", 0)
 bsnc = bempp.api.function_space(grid, "B-SNC", 0)
 bc = bempp.api.function_space(grid, "BC", 0)
+rbc = bempp.api.function_space(grid, "RBC", 0)
 rwg_structured = bempp.api.function_space(grid_structured, "RWG", 0)
 snc_structured = bempp.api.function_space(grid_structured, "SNC", 0)
-
 
 def generate_bem_matrix(dual_to_range, domain, fname, operator, wavenumber=None):
     """Generate test matrix."""
@@ -54,7 +59,9 @@ def generate_bem_matrix(dual_to_range, domain, fname, operator, wavenumber=None)
             .weak_form()
             .A
         )
-    np.save(fname, mat)
+
+    if REGENERATE or not os.path.exists(fname + '.npy'):
+        np.save(fname, mat)
 
 
 def generate_sparse_bem_matrix(dual_to_range, domain, fname, operator):
@@ -62,7 +69,8 @@ def generate_sparse_bem_matrix(dual_to_range, domain, fname, operator):
     print("Generating " + fname)
 
     mat = operator(domain, domain, dual_to_range).weak_form().sparse_operator.todense()
-    np.save(fname, mat)
+    if REGENERATE or not os.path.exists(fname + '.npy'):
+        np.save(fname, mat)
 
 
 def generate_potential(domain, fname, operator, wavenumber=None):
@@ -83,7 +91,8 @@ def generate_potential(domain, fname, operator, wavenumber=None):
 
     result = pot.evaluate(fun)
 
-    np.savez(fname, result=result, points=points, vec=vec)
+    if REGENERATE or not os.path.exists(fname + '.npz'):
+        np.savez(fname, result=result, points=points, vec=vec)
 
 def generate_far_field(domain, fname, operator, wavenumber=None):
     """Generate far-field data."""
@@ -104,7 +113,8 @@ def generate_far_field(domain, fname, operator, wavenumber=None):
 
     result = pot.evaluate(fun)
 
-    np.savez(fname, result=result, points=points, vec=vec)
+    if REGENERATE or not os.path.exists(fname + '.npz'):
+        np.savez(fname, result=result, points=points, vec=vec)
 
 
 print("Generating Laplace BEM matrices.")
@@ -313,9 +323,17 @@ generate_bem_matrix(
 )
 
 generate_bem_matrix(
-    snc,
+    bsnc,
     bc,
     "maxwell_electric_field_boundary_bc",
+    bempp.api.operators.boundary.maxwell.electric_field,
+    wavenumber,
+)
+
+generate_bem_matrix(
+    rbc,
+    bc,
+    "maxwell_electric_field_boundary_rbc_bc",
     bempp.api.operators.boundary.maxwell.electric_field,
     wavenumber,
 )
@@ -425,6 +443,13 @@ generate_potential(
 )
 
 generate_potential(
+    bc,
+    "maxwell_electric_field_potential_bc",
+    bempp.api.operators.potential.maxwell.electric_field,
+    wavenumber,
+)
+
+generate_potential(
     rwg,
     "maxwell_electric_field_potential_complex",
     bempp.api.operators.potential.maxwell.electric_field,
@@ -500,3 +525,4 @@ generate_far_field(
     bempp.api.operators.far_field.maxwell.magnetic_field,
     wavenumber_complex,
 )
+

@@ -446,7 +446,7 @@ def rbc_function_space(grid, support_elements=None, segments=None, swapped_norma
         .set_order(0)
         .set_is_localised(True)
         .set_is_barycentric(True)
-        .set_shapeset("snc0")
+        .set_shapeset("rwg0")
         .set_identifier("snc0")
         .set_local2global(local2global)
         .set_global2local(global2local)
