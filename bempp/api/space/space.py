@@ -404,6 +404,11 @@ class FunctionSpace(object):
         return self._dof_transformation.shape[1]
 
     @property
+    def grid_dof_count(self):
+        """Return the grid dof count."""
+        return self._grid_dof_count
+
+    @property
     def order(self):
         """Return order of the space."""
         return self._order

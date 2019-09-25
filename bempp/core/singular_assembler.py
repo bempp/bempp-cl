@@ -29,14 +29,17 @@ class SingularAssembler(_assembler.AssemblerBase):
         from scipy.sparse import coo_matrix, csr_matrix
         from .dense_assembly_helpers import choose_source_name
 
-        nrows = self.dual_to_range.global_dof_count
-        ncols = self.domain.global_dof_count
+        row_dof_count = self.dual_to_range.global_dof_count
+        col_dof_count = self.domain.global_dof_count
+        
+        row_grid_dofs = self.dual_to_range.grid_dof_count
+        col_grid_dofs = self.domain.grid_dof_count
 
         if self.domain.grid != self.dual_to_range.grid:
             # There are no singular elements if the grids
             # are different.
             return SparseDiscreteBoundaryOperator(
-                csr_matrix((nrows, ncols), dtype="float64")
+                csr_matrix((row_dof_count, col_dof_count), dtype="float64")
             )
 
         source_name = choose_source_name(operator_descriptor.compute_kernel)
@@ -67,9 +70,15 @@ class SingularAssembler(_assembler.AssemblerBase):
         if self.parameters.assembly.always_promote_to_double:
             values = promote_to_double_precision(values)
 
-        return SparseDiscreteBoundaryOperator(
-            coo_matrix((values, (rows, cols)), shape=(nrows, ncols)).tocsr()
-        )
+        mat = coo_matrix((values, (rows, cols)), shape=(row_grid_dofs, col_grid_dofs)).tocsr()
+
+        if self.domain.requires_dof_transformation:
+            mat = mat @ domain.dof_transformation
+
+        if self.dual_to_range.requires_dof_transformation:
+            mat = dual_to_range.dof_transformation.T @ mat
+
+        return SparseDiscreteBoundaryOperator(mat)
 
 
 def assemble_singular_part(

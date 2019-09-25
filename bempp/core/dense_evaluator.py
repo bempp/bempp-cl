@@ -191,8 +191,8 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
         dual_to_range_support_size = self.dual_to_range.localised_space.number_of_support_elements
 
         shape = (
-            self.dual_to_range.localised_space.global_dof_count,
-            self.domain.localised_space.global_dof_count,
+            self.dual_to_range.localised_space.grid_dof_count,
+            self.domain.localised_space.grid_dof_count,
         )
 
         dtype = _cl_helpers.get_type(precision).real
@@ -300,11 +300,10 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
         from bempp.core import kernel_helpers
         from bempp.api import log
 
-        mat_trial = self.domain.map_to_full_grid
         mat_test = self.dual_to_range.map_to_localised_space
 
         with self._input_buffer.host_array(self._device_interface, "write") as array:
-            array[:] = mat_trial @ x.flat
+            array[:] = self.domain.map_to_full_grid @ (self.domain.dof_transformation @ x.flat)
 
         self._sum_buffer.set_zero(self._device_interface)
 
@@ -328,7 +327,7 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
 
             event = self._sum_kernel.run(
                 self._device_interface,
-                (self.dual_to_range.localised_space.global_dof_count,),
+                (self.dual_to_range.localised_space.grid_dof_count,),
                 (1,),
                 self._sum_buffer,
                 self._result_buffer,
@@ -356,7 +355,7 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
 
         result = self._result_buffer.get_host_copy(self._device_interface)
 
-        result = mat_test.T @ result
+        result = self.dual_to_range.dof_transformation.T @ (self.dual_to_range.map_to_localised_space.T @ result)
 
         if x.ndim > 1:
             return _np.expand_dims(result, 1) + self._singular_contribution @ x

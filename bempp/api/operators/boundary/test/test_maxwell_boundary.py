@@ -45,6 +45,49 @@ def test_maxwell_electric_field_sphere(
     expected = helpers.load_npy_data("maxwell_electric_field_boundary")
     _np.testing.assert_allclose(discrete_op.A, expected, rtol=rtol, atol=atol)
 
+def test_maxwell_electric_field_bc_sphere(
+    default_parameters, helpers, device_interface, precision
+):
+    """Test Maxwell electric field on sphere with BC basis."""
+    from bempp.api import get_precision
+    from bempp.api import function_space
+    from bempp.api.operators.boundary.maxwell import electric_field
+
+    grid = helpers.load_grid("sphere")
+
+    space1 = function_space(grid, "BC", 0)
+    space2 = function_space(grid, "SNC", 0)
+
+    rand = _np.random.RandomState(0)
+
+    vec = rand.rand(space1.global_dof_count)
+
+    discrete_op = electric_field(
+        space1,
+        space1,
+        space2,
+        2.5,
+        assembler="dense_evaluator",
+        device_interface=device_interface,
+        precision=precision,
+        parameters=default_parameters,
+    ).weak_form()
+
+    actual = discrete_op @ vec
+
+    if precision == "single":
+        rtol = 1e-5
+        atol = 1e-6
+    else:
+        rtol = 1e-10
+        atol = 1e-14
+
+    mat = helpers.load_npy_data("maxwell_electric_field_boundary_bc")
+
+    expected = mat @ vec
+
+    _np.testing.assert_allclose(actual, expected, rtol=rtol, atol=atol)
+
 
 def test_maxwell_electric_field_complex_sphere(
     default_parameters, helpers, device_interface, precision

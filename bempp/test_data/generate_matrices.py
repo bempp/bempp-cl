@@ -314,6 +314,14 @@ generate_bem_matrix(
 
 generate_bem_matrix(
     snc,
+    bc,
+    "maxwell_electric_field_boundary_bc",
+    bempp.api.operators.boundary.maxwell.electric_field,
+    wavenumber,
+)
+
+generate_bem_matrix(
+    snc,
     rwg,
     "maxwell_magnetic_field_boundary",
     bempp.api.operators.boundary.maxwell.magnetic_field,
