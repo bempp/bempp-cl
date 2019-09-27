@@ -18,6 +18,7 @@ def function_space(
 ):
     """Initialize a function space."""
     from . import scalar_spaces
+    from . import scalar_dual_spaces
     from . import maxwell_spaces
 
     if _np.count_nonzero([support_elements, segments]) > 1:
@@ -41,6 +42,15 @@ def function_space(
                 grid, support_elements, segments, swapped_normals, **kwargs
             )
 
+    if kind == "DUAL":
+        if degree == 0:
+            return scalar_dual_spaces.dual0_function_space(
+                grid, support_elements, segments, swapped_normals
+            )
+        if degree == 1:
+            raise ValueError("Requested space not implemented yet.")
+
+
     if kind == "RWG":
         if degree == 0:
             return maxwell_spaces.rwg0_function_space(
@@ -55,14 +65,12 @@ def function_space(
 
     if kind == "BC":
         if degree == 0:
-
             return maxwell_spaces.bc_function_space(
                 grid, support_elements, segments, swapped_normals, **kwargs
             )
 
     if kind == "RBC":
         if degree == 0:
-
             return maxwell_spaces.rbc_function_space(
                 grid, support_elements, segments, swapped_normals, **kwargs
             )
