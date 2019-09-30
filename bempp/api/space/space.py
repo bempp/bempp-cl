@@ -226,7 +226,7 @@ class SpaceBuilder(object):
             self._support = _np.ones(self._grid.number_of_elements, dtype=_np.bool)
 
         if self._normal_multipliers is None:
-            self._normal_multipliers = _np.ones(self._grid.number_of_elemnets, dtype=_np.int32)
+            self._normal_multipliers = _np.ones(self._grid.number_of_elements, dtype=_np.int32)
 
         if self._dof_transformation is None:
             ndofs = 1 + _np.max(self._local2global_map)
