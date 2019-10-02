@@ -87,7 +87,6 @@ class ExafmmLaplace(FmmInterface):
 
         exafmm_laplace.configure(expansion_order, ncritical, max_level)
 
-
         with bempp.api.Timer() as t:
             self._setup_tree()
         print(f"Tree: {t.interval}")
@@ -128,7 +127,6 @@ class ExafmmLaplace(FmmInterface):
         from bempp.api.operators.boundary.laplace import single_layer
         from scipy.sparse import coo_matrix
 
-        
         with bempp.api.Timer() as t:
             near_targets, near_sources = self._collect_near_field_indices(
                 self._local_points.shape[1]
@@ -245,12 +243,12 @@ class ExafmmLaplace(FmmInterface):
                 exafmm_node.isrcs,
                 exafmm_node.itrgs,
                 [
-                    node.key if node is not None else None
+                    node.key if node is not None else -1
                     for node in exafmm_node.colleagues
                 ],
                 exafmm_node.is_leaf,
                 exafmm_node.level,
-                exafmm_node.parent.key if exafmm_node.parent is not None else None,
+                exafmm_node.parent.key if exafmm_node.parent is not None else -1,
             )
 
         self._leaf_nodes = [key for (key, node) in self._nodes.items() if node.is_leaf]

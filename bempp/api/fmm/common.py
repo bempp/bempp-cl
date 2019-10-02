@@ -1,6 +1,7 @@
 """Common FMM routines."""
 import abc as _abc
 import numpy as _np
+import numba as _numba
 
 
 class Node(object):
@@ -23,9 +24,9 @@ class Node(object):
         self._identifier = identifier
         self._center = center
         self._radius = radius
-        self._source_ids = source_ids
-        self._target_ids = target_ids
-        self._colleagues = colleagues
+        self._source_ids = _np.array(source_ids, dtype=_np.int64)
+        self._target_ids = _np.array(target_ids, dtype=_np.int64)
+        self._colleagues = _np.array(colleagues, dtype=_np.int64)
         self._is_leaf = is_leaf
         self._parent = parent
         self._level = level
@@ -179,7 +180,9 @@ class FmmInterface(_abc.ABC):
             for elem in associated_elements:
                 # Spaces are scalar, so can use 2nd and 2rd component of eval
                 basis_values[elem] = (
-                    space.evaluate(elem, local_points)[0, :, :] * weights * grid.integration_elements[elem]
+                    space.evaluate(elem, local_points)[0, :, :]
+                    * weights
+                    * grid.integration_elements[elem]
                 )
 
             # Now fill up the matrix elements.
@@ -199,34 +202,78 @@ class FmmInterface(_abc.ABC):
 
     def _collect_near_field_indices(self, number_of_local_points):
         """Collect all indices of near-field points."""
-        source_indices = []
-        target_indices = []
 
-        if self.source_grid == self.target_grid:
-            grid_identical = True
-            grid = self.source_grid
-        else:
-            grid_identical = False
+        # Could also be target grid.
+        # Only used if target and source grid identical
+        elements = self.source_grid.elements
+
+        grid_identical = self.source_grid == self.target_grid
+
+        source_vertex_ids_dict = _numba.typed.Dict.empty(
+            key_type=_numba.types.int64, value_type=_numba.types.int64[:]
+        )
+
+        target_vertex_ids_dict = _numba.typed.Dict.empty(
+            key_type=_numba.types.int64, value_type=_numba.types.int64[:]
+        )
+        target_colleagues_dict = _numba.typed.Dict.empty(
+            key_type=_numba.types.int64, value_type=_numba.types.int64[:]
+        )
 
         for key in self.leaf_node_keys:
-            target = self.nodes[key]
-            if not target.target_ids:
-                continue
-            for colleague in target.colleagues:
-                if colleague is None:
-                    continue
-                source = self.nodes[colleague]
-                if not source.source_ids:
-                    continue
-                for target_vertex in target.target_ids:
-                    target_elem = target_vertex // number_of_local_points
-                    for source_vertex in source.source_ids:
-                        source_elem = source_vertex // number_of_local_points
-                        if not grid_identical or source_elem == target_elem: continue
-                        if not source_elem in grid.element_neighbors[target_elem]:
-                            source_indices.append(source_vertex)
-                            target_indices.append(target_vertex)
-        return target_indices, source_indices
+            target_vertex_ids_dict[key] = self.nodes[key].target_ids
+            source_vertex_ids_dict[key] = self.nodes[key].source_ids
+            target_colleagues_dict[key] = self.nodes[key].colleagues
+
+        return _numba_collect_near_field_indices(
+            number_of_local_points,
+            elements,
+            grid_identical,
+            self.leaf_node_keys,
+            source_vertex_ids_dict,
+            target_vertex_ids_dict,
+            target_colleagues_dict,
+        )
+
+
+# def _numba_collect_near_field_indices(
+# number_of_local_points,
+# elements,
+# grid_identical,
+# leaf_node_keys,
+# source_vertex_ids_dict,
+# target_vertex_ids_dict,
+# target_colleagues_dict,
+# ):
+# source_indices = []
+# target_indices = []
+
+# if self.source_grid == self.target_grid:
+# grid_identical = True
+# grid = self.source_grid
+# else:
+# grid_identical = False
+
+# for key in self.leaf_node_keys:
+# target = self.nodes[key]
+# if len(target.target_ids) == 0:
+# continue
+# for colleague in target.colleagues:
+# if colleague == -1:
+# continue
+# source = self.nodes[colleague]
+# if len(source.source_ids) == 0:
+# continue
+# for target_vertex in target.target_ids:
+# target_elem = target_vertex // number_of_local_points
+# for source_vertex in source.source_ids:
+# source_elem = source_vertex // number_of_local_points
+# if not grid_identical or source_elem == target_elem:
+# continue
+# if not source_elem in grid.element_neighbors[target_elem]:
+# source_indices.append(source_vertex)
+# target_indices.append(target_vertex)
+# return target_indices, source_indices
 
 
 def grid_to_points(grid, support_elements, local_points):
@@ -262,3 +309,61 @@ def grid_to_points(grid, support_elements, local_points):
         )
 
     return points
+
+
+@_numba.njit(cache=True)
+def _check_elements_adjacent(elem1, elem2):
+    """Check if two elements are adjacent."""
+    for e1 in elem1:
+        for e2 in elem2:
+            if e1 == e2:
+                return True
+    return False
+
+
+# @_numba.njit(cache=True, locals={'elements_adjacent': _numba.types.boolean})
+@_numba.njit(cache=True)
+def _numba_collect_near_field_indices(
+    number_of_local_points,
+    elements,
+    grid_identical,
+    leaf_node_keys,
+    source_vertex_ids_dict,
+    target_vertex_ids_dict,
+    target_colleagues_dict,
+):
+    """Collect all indices of near-field points."""
+
+    source_indices = []
+    target_indices = []
+
+    for key in leaf_node_keys:
+        target_vertices = target_vertex_ids_dict[key]
+        if len(target_vertices) == 0:
+            continue
+        for colleague in target_colleagues_dict[key]:
+            if colleague == -1:
+                continue
+            source_vertices = source_vertex_ids_dict[colleague]
+            if len(source_vertices) == 0:
+                continue
+            for target_vertex in target_vertices:
+                previous_source_elem = -1
+                elements_adjacent = False
+                target_elem = target_vertex // number_of_local_points
+                for source_vertex in source_vertices:
+                    source_elem = source_vertex // number_of_local_points
+                    if not grid_identical or source_elem == target_elem:
+                        continue
+                    if source_elem != previous_source_elem:
+                        elements_adjacent = _check_elements_adjacent(
+                            elements[:, target_elem], elements[:, source_elem]
+                        )
+                        previous_source_elem = source_elem
+                    if not elements_adjacent:
+                        source_indices.append(source_vertex)
+                        target_indices.append(target_vertex)
+    return (
+        _np.array(target_indices, dtype=_np.int64),
+        _np.array(source_indices, dtype=_np.int64),
+    )
