@@ -15,6 +15,9 @@ class ExafmmLaplace(FmmInterface):
         self._sources = None
         self._targets = None
 
+        self._source_bodies = None
+        self._target_bodies = None
+
         self._source_transform = None
         self._target_transform = None
 
@@ -24,6 +27,8 @@ class ExafmmLaplace(FmmInterface):
         self._leaf_nodes = []
 
         self._near_field_matrix = None
+
+        self._shape = None
 
     def setup(
         self,
@@ -36,6 +41,7 @@ class ExafmmLaplace(FmmInterface):
         max_level=-1,
     ):
         """Setup the Fmm computation."""
+        import bempp.api
         from bempp.api.integration.triangle_gauss import rule
         import exafmm_laplace
 
@@ -44,6 +50,8 @@ class ExafmmLaplace(FmmInterface):
         self._regular_order = regular_order
         self._singular_order = singular_order
         self._expansion_order = expansion_order
+
+        self._shape = (dual_to_range.global_dof_count, domain.global_dof_count)
 
         self._local_points, self._weights = rule(regular_order)
 
@@ -79,51 +87,86 @@ class ExafmmLaplace(FmmInterface):
 
         exafmm_laplace.configure(expansion_order, ncritical, max_level)
 
-        self._setup_tree()
 
-        self._source_transform = self._map_space_to_points(
-            self._domain, self._local_points, self._weights, "source"
-        )
+        with bempp.api.Timer() as t:
+            self._setup_tree()
+        print(f"Tree: {t.interval}")
 
-        self._target_transform = self._map_space_to_points(
-            self._domain, self._local_points, self._weights, "target"
-        )
+        with bempp.api.Timer() as t:
+            self._source_transform = self._map_space_to_points(
+                self._domain, self._local_points, self._weights, "source"
+            )
 
-        self._compute_near_field_matrix()
+            self._target_transform = self._map_space_to_points(
+                self._domain, self._local_points, self._weights, "target"
+            )
+        print(f"Transforms: {t.interval}")
+
+        with bempp.api.Timer() as t:
+            self._compute_near_field_matrix()
+        print(f"Near field matrix: {t.interval}")
+
+        with bempp.api.Timer() as t:
+            exafmm_laplace.precompute()
+        print(f"Precompute: {t.interval}")
+
+    def create_evaluator(self):
+        """
+        Return a Scipy Linear Operator that evaluates the FMM.
+
+        The returned class should subclass the Scipy LinearOperator class
+        so that it provides a matvec routine that accept a vector of coefficients
+        and returns the result of a matrix vector product.
+        """
+        from scipy.sparse.linalg import LinearOperator
+
+        return LinearOperator(self._shape, matvec=self._evaluate, dtype=_np.float64)
 
     def _compute_near_field_matrix(self):
         """Compute the near-field matrix."""
+        import bempp.api
         from bempp.api.operators.boundary.laplace import single_layer
         from scipy.sparse import coo_matrix
 
-        near_targets, near_sources = self._collect_near_field_indices(
-            self._local_points.shape[1]
-        )
-
-        data = 1.0 / (
-            4
-            * _np.pi
-            * _np.linalg.norm(
-                self.targets[near_targets] - self.sources[near_sources], axis=1
+        
+        with bempp.api.Timer() as t:
+            near_targets, near_sources = self._collect_near_field_indices(
+                self._local_points.shape[1]
             )
-        )
+        print(f"Near field indices. {t.interval}")
+
+        with bempp.api.Timer() as t:
+            data = 1.0 / (
+                4
+                * _np.pi
+                * _np.linalg.norm(
+                    self.targets[near_targets] - self.sources[near_sources], axis=1
+                )
+            )
+        print(f"Near field data: {t.interval}")
 
         interactions = coo_matrix(
             (data, (near_targets, near_sources)),
             shape=(len(self.targets), len(self.sources)),
         ).tocsr()
 
-        singular_interactions = single_layer(
-            self._domain,
-            self._domain,
-            self._dual_to_range,
-            assembler="only_singular_part",
-        ).weak_form().A
-
-        self._near_field_matrix = (
-            self._target_transform.T @ interactions @ self._source_transform
-            + singular_interactions
+        singular_interactions = (
+            single_layer(
+                self._domain,
+                self._domain,
+                self._dual_to_range,
+                assembler="only_singular_part",
+            )
+            .weak_form()
+            .A
         )
+
+        with bempp.api.Timer() as t:
+            self._near_field_matrix = (
+                self._target_transform.T @ interactions @ self._source_transform
+                + singular_interactions
+            )
+        print(f"Near field matmat: {t.interval}")
 
     @property
     def nodes(self):
@@ -183,12 +226,13 @@ class ExafmmLaplace(FmmInterface):
             self._dual_to_range.support_elements,
             self._local_points,
         )
-        source_bodies = init_sources(
+        self._source_bodies = init_sources(
             self._sources, _np.zeros(len(self._sources), dtype=_np.float64)
         )
-        target_bodies = init_targets(self._targets)
-        build_tree(source_bodies, target_bodies)
-        exafmm_nodes = build_list()
+        self._target_bodies = init_targets(self._targets)
+
+        build_tree(self._source_bodies, self._target_bodies)
+        exafmm_nodes = build_list(True)
 
         for exafmm_node in exafmm_nodes:
             self._nodes[exafmm_node.key] = Node(
@@ -210,3 +254,19 @@ class ExafmmLaplace(FmmInterface):
             )
 
         self._leaf_nodes = [key for (key, node) in self._nodes.items() if node.is_leaf]
+
+    def _evaluate_far_field(self, vec):
+        """Evaluate the far-field."""
+        import exafmm_laplace
+
+        transformed_vec = self._source_transform @ vec
+        exafmm_laplace.update(transformed_vec)
+        exafmm_laplace.clear()
+        potentials = exafmm_laplace.evaluate()
+
+        return self._target_transform.T @ potentials
+
+    def _evaluate(self, vec):
+        """Evaluate the FMM."""
+
+        return self._near_field_matrix @ vec + self._evaluate_far_field(vec)

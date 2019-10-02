@@ -139,7 +139,6 @@ class FmmInterface(_abc.ABC):
         """Return target."""
         raise NotImplementedError
 
-    @property
     def create_evaluator(self):
         """
         Return a Scipy Linear Operator that evaluates the FMM.
@@ -180,7 +179,7 @@ class FmmInterface(_abc.ABC):
             for elem in associated_elements:
                 # Spaces are scalar, so can use 2nd and 2rd component of eval
                 basis_values[elem] = (
-                    space.evaluate(elem, local_points)[0, :, :] * weights
+                    space.evaluate(elem, local_points)[0, :, :] * weights * grid.integration_elements[elem]
                 )
 
             # Now fill up the matrix elements.
@@ -191,12 +190,12 @@ class FmmInterface(_abc.ABC):
                 node_dofs.extend(nshape_funs * [vertex])
                 values.extend(basis_values[elem][:, local_point_index])
 
-            transform = coo_matrix(
-                (values, (node_dofs, global_dofs)),
-                shape=(number_of_vertices, local_space.global_dof_count),
-            )
+        transform = coo_matrix(
+            (values, (node_dofs, global_dofs)),
+            shape=(number_of_vertices, local_space.global_dof_count),
+        )
 
-            return transform @ space.map_to_localised_space
+        return transform @ space.map_to_localised_space
 
     def _collect_near_field_indices(self, number_of_local_points):
         """Collect all indices of near-field points."""
