@@ -6,23 +6,39 @@ import numpy as _np
 class Node(object):
     """Definition of an FMM node."""
 
-    def __init__(self, identifier, center, radius, vertex_ids):
+    def __init__(
+        self,
+        identifier,
+        center,
+        radius,
+        source_ids,
+        target_ids,
+        colleagues,
+        is_leaf,
+        level,
+        parent,
+    ):
         """Initialize a node."""
 
         self._identifier = identifier
         self._center = center
         self._radius = radius
-        self._vertex_ids = vertex_ids
+        self._source_ids = source_ids
+        self._target_ids = target_ids
+        self._colleagues = colleagues
+        self._is_leaf = is_leaf
+        self._parent = parent
+        self._level = level
 
     @property
     def center(self):
         """Return center."""
-        return center
+        return self._center
 
     @property
     def radius(self):
         """Return radius."""
-        return radius
+        return self._radius
 
     @property
     def identifier(self):
@@ -30,21 +46,40 @@ class Node(object):
         return self._identifier
 
     @property
-    def vertex_ids(self):
-        """A list of vertex ids associated with the node."""
+    def source_ids(self):
+        """A list of source ids associated with the node."""
+        return self._source_ids
+
+    @property
+    def target_ids(self):
+        """A list of target ids associated with the node."""
+        return self._target_ids
+
+    @property
+    def colleagues(self):
+        """Return the colleagues of the node."""
+        return self._colleagues
+
+    @property
+    def level(self):
+        """Return the level."""
+        return self._level
+
+    @property
+    def is_leaf(self):
+        """Return true if leaf node, otherwise false."""
+        return self._is_leaf
+
+    @property
+    def parent(self):
+        """Return id of parent node."""
+        return self._parent
 
 
 class FmmInterface(_abc.ABC):
     """Interface to an FMM Instance."""
 
-    def setup(
-        domain
-        dual_to_range
-        regular_order,
-        singular_order,
-        *args,
-        **kwargs
-    ):
+    def setup(domain, dual_to_range, regular_order, singular_order, *args, **kwargs):
         """
         Setup the sources.
 
@@ -63,10 +98,46 @@ class FmmInterface(_abc.ABC):
         """
 
     @property
-    def leaf_nodes(self):
+    def leaf_node_keys(self):
         """
-        Return a list of non-empty leaf nodes.
+        Return a list of keys of non-empty leaf nodes.
         """
+        raise NotImplementedError
+
+    @property
+    def nodes(self):
+        """Return a (key, node) dictionary of all nodes."""
+        raise NotImplementedError
+
+    @property
+    def source_transform(self):
+        """Return source transformation matrix."""
+        raise NotImplementedError
+
+    @property
+    def target_transform(self):
+        """Return target transformation matrix."""
+        raise NotImplementedError
+
+    @property
+    def source_grid(self):
+        """Return source grid."""
+        raise NotImplementedError
+
+    @property
+    def target_grid(self):
+        """Return target grid."""
+        raise NotImplementedError
+
+    @property
+    def sources(self):
+        """Return sources."""
+        raise NotImplementedError
+
+    @property
+    def targets(self):
+        """Return target."""
+        raise NotImplementedError
 
     @property
     def create_evaluator(self):
@@ -78,36 +149,47 @@ class FmmInterface(_abc.ABC):
         and returns the result of a matrix vector product.
         """
 
-    def _map_space_to_points(space, nodes, local_points):
+    def _map_space_to_points(self, space, local_points, weights, mode):
         """Return mapper from grid coeffs to point evaluations."""
         from scipy.sparse import coo_matrix
 
         local_space = space.localised_space
+        grid = local_space.grid
         number_of_local_points = local_points.shape[1]
         nshape_funs = space.number_of_shape_functions
-        number_of_vertices = number_of_local_points * space.number_of_support_elements
+        number_of_vertices = number_of_local_points * grid.number_of_elements
 
         global_dofs = []
         node_dofs = []
         values = []
 
-        for node in nodes:
+        if mode == "source":
+            attr = "source_ids"
+        elif mode == "target":
+            attr = "target_ids"
+        else:
+            raise ValueError("'mode' must be one of 'source' or 'target'.")
+
+        for key in self.leaf_node_keys:
+            vertex_ids = getattr(self.nodes[key], attr)
             associated_elements = set(
-                [vertex // number_of_local_points for vertex in node.vertex_ids]
+                [vertex // number_of_local_points for vertex in vertex_ids]
             )
             # Evaluate basis on the elements
             basis_values = {}
             for elem in associated_elements:
                 # Spaces are scalar, so can use 2nd and 2rd component of eval
-                basis_values[elem] = space.evaluate(elem, local_points)[0, :, :]
+                basis_values[elem] = (
+                    space.evaluate(elem, local_points)[0, :, :] * weights
+                )
 
             # Now fill up the matrix elements.
-            for vertex in node.vertex_ids:
+            for vertex in vertex_ids:
                 elem = vertex // number_of_local_points
-                local_point_index = vertex & number_of_local_points
-                global_dofs.extent(space.local2global[:, elem])
-                node_dofs.extent(nshape_funs * [vertex])
-                values.extent(basis_values[elem][:, local_point_index])
+                local_point_index = vertex % number_of_local_points
+                global_dofs.extend(space.local2global[elem, :])
+                node_dofs.extend(nshape_funs * [vertex])
+                values.extend(basis_values[elem][:, local_point_index])
 
             transform = coo_matrix(
                 (values, (node_dofs, global_dofs)),
@@ -115,6 +197,37 @@ class FmmInterface(_abc.ABC):
             )
 
             return transform @ space.map_to_localised_space
+
+    def _collect_near_field_indices(self, number_of_local_points):
+        """Collect all indices of near-field points."""
+        source_indices = []
+        target_indices = []
+
+        if self.source_grid == self.target_grid:
+            grid_identical = True
+            grid = self.source_grid
+        else:
+            grid_identical = False
+
+        for key in self.leaf_node_keys:
+            target = self.nodes[key]
+            if not target.target_ids:
+                continue
+            for colleague in target.colleagues:
+                if colleague is None:
+                    continue
+                source = self.nodes[colleague]
+                if not source.source_ids:
+                    continue
+                for target_vertex in target.target_ids:
+                    target_elem = target_vertex // number_of_local_points
+                    for source_vertex in source.source_ids:
+                        source_elem = source_vertex // number_of_local_points
+                        if not grid_identical or source_elem == target_elem: continue
+                        if not source_elem in grid.element_neighbors[target_elem]:
+                            source_indices.append(source_vertex)
+                            target_indices.append(target_vertex)
+        return target_indices, source_indices
 
 
 def grid_to_points(grid, support_elements, local_points):
@@ -142,7 +255,7 @@ def grid_to_points(grid, support_elements, local_points):
     number_of_elements = len(support_elements)
     number_of_points = local_points.shape[1]
 
-    points = _np.empty((number_of_elements, 3), dtype=_np.float64)
+    points = _np.empty((number_of_points * number_of_elements, 3), dtype=_np.float64)
 
     for index, elem in enumerate(support_elements):
         points[number_of_points * index : number_of_points * (1 + index)] = (
