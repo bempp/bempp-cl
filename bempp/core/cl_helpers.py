@@ -430,6 +430,12 @@ class DeviceBuffer(object):
             result = _np.copy(array)
         return result
 
+    def fill_buffer(self, device_interface, vec):
+        """Fill a buffer with data in vec. """
+
+        with self.host_array(device_interface, "write") as array:
+            array[:] = vec
+
     def _get_mem_flags(self):
         """Return the correct mem flags for PyOpenCL."""
         mem_flags = _cl.mem_flags

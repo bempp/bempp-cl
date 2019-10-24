@@ -143,10 +143,12 @@ class ExafmmLaplace(FmmInterface):
             )
         print(f"Near field data: {t.interval}")
 
-        interactions = coo_matrix(
-            (data, (near_targets, near_sources)),
-            shape=(len(self.targets), len(self.sources)),
-        ).tocsr()
+        with bempp.api.Timer() as t:
+            interactions = coo_matrix(
+                (data, (near_targets, near_sources)),
+                shape=(len(self.targets), len(self.sources)),
+            ).tocsr()
+        print(f"Sparse matrix generation: {t.interval}")
 
         singular_interactions = (
             single_layer(
@@ -202,9 +204,24 @@ class ExafmmLaplace(FmmInterface):
         return self._sources
 
     @property
+    def local_points(self):
+        """Return local points."""
+        return self._local_points
+
+    @property
     def targets(self):
         """Return target."""
         return self._targets
+
+    @property
+    def domain(self):
+        """Return domain space."""
+        return self._domain
+
+    @property
+    def dual_to_range(self):
+        """Return dual_to_Range space."""
+        return self._dual_to_range
 
     def _setup_tree(self):
         """Setup the FMM tree."""
