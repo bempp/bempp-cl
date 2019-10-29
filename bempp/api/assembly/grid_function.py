@@ -7,54 +7,83 @@ import numpy as _np
 from bempp.api.grid.grid import GridData as _GridData
 
 
-def real_callable(*args, jit=True):
-    """JIT Compile a callable for a grid function if jit is true."""
+def real_callable(f):
+    """Wrap function as a real Numba callable."""
 
-    def wrap(f):
-        """Actual wrapper."""
-        if jit:
-            fun = _numba.njit(
-                _numba.void(
-                    _numba.float64[:],
-                    _numba.float64[:],
-                    _numba.uint32,
-                    _numba.float64[:],
-                )
-            )(f)
-        else:
-            fun = f
-        fun.bempp_type = "real"
-        return fun
+    fun = _numba.njit(
+        _numba.void(
+            _numba.float64[:],
+            _numba.float64[:],
+            _numba.uint32,
+            _numba.float64[:],
+        )
+    )(f)
+    fun.bempp_type = 'real'
+    return fun
 
-    if not args:
-        return wrap
-    else:
-        return wrap(args[0])
+def complex_callable(f):
+    """Wrap function as a complex Numba callable."""
+
+    fun = _numba.njit(
+        _numba.void(
+            _numba.float64[:],
+            _numba.float64[:],
+            _numba.uint32,
+            _numba.complex128[:],
+        )
+    )(f)
+    fun.bempp_type = 'complex'
+    return fun
 
 
-def complex_callable(*args, jit=True):
-    """JIT Compile a callable for a grid function if jit is true."""
+# def real_callable(*args, jit=True):
+    # """JIT Compile a callable for a grid function if jit is true."""
 
-    def wrap(f):
-        """Actual wrapper."""
-        if jit:
-            fun = _numba.njit(
-                _numba.void(
-                    _numba.float64[:],
-                    _numba.float64[:],
-                    _numba.uint32,
-                    _numba.complex128[:],
-                )
-            )(f)
-        else:
-            fun = f
-        fun.bempp_type = "complex"
-        return fun
+    # def wrap(f):
+        # """Actual wrapper."""
+        # if jit:
+            # fun = _numba.njit(
+                # _numba.void(
+                    # _numba.float64[:],
+                    # _numba.float64[:],
+                    # _numba.uint32,
+                    # _numba.float64[:],
+                # )
+            # )(f)
+        # else:
+            # fun = f
+        # fun.bempp_type = "real"
+        # return fun
 
-    if not args:
-        return wrap
-    else:
-        return wrap(args[0])
+    # if not args:
+        # return wrap
+    # else:
+        # return wrap(args[0])
+
+
+# def complex_callable(*args, jit=True):
+    # """JIT Compile a callable for a grid function if jit is true."""
+
+    # def wrap(f):
+        # """Actual wrapper."""
+        # if jit:
+            # fun = _numba.njit(
+                # _numba.void(
+                    # _numba.float64[:],
+                    # _numba.float64[:],
+                    # _numba.uint32,
+                    # _numba.complex128[:],
+                # )
+            # )(f)
+        # else:
+            # fun = f
+        # fun.bempp_type = "complex"
+        # return fun
+
+    # if not args:
+        # return wrap
+    # else:
+        # return wrap(args[0])
 
 
 class GridFunction(object):
@@ -560,7 +589,7 @@ class GridFunction(object):
 
 
 # Must be used in jit mode as fun might just be a Python callable and not numba compiled.
-@_numba.jit
+@_numba.njit
 def _project_function(
     fun,
     grid_data,
