@@ -207,11 +207,10 @@ class NearFieldAssembler(object):
             self._device_interface, self._precision
         )
 
-        vec_extension = "_novec"
-
         options = {}
         options['VEC_LENGTH'] = vec_length
         options['WORKGROUP_SIZE'] = _WORKGROUP_SIZE
+        options['MAX_NUM_TARGETS'] = _np.max(_np.diff(self._target_index_ptr))
 
         log(
             "Near field kernel vector length: {0} ({1} precision)".format(
@@ -220,7 +219,7 @@ class NearFieldAssembler(object):
         )
 
         main_source = _cl_helpers.kernel_source_from_identifier(
-            self._kernel_type + "_near_field" + vec_extension, options
+            self._kernel_type + "_near_field", options
         )
 
         self._main_kernel = _cl_helpers.Kernel(
