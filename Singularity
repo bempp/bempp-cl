@@ -21,7 +21,8 @@ From: ubuntu:bionic
     export PATH=/opt/miniconda/bin:$PATH
     conda create --yes -n bempp python=3.7
     conda install -n bempp --yes numpy scipy matplotlib numba pytest jupyter plotly git pip
-    conda install -n bempp -c conda-forge pocl pyopencl fenics
+    conda install -n bempp --yes -c conda-forge pocl pyopencl fenics
+    conda install -n bempp --yes "libblas=*=*mkl"
     /opt/miniconda/envs/bempp/bin/pip install meshio
     /opt/miniconda/envs/bempp/bin/pip install git+git://github.com/bempp/bempp-cl@master
 
