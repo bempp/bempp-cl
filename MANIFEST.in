@@ -1,0 +1,9 @@
+include LICENSE.md
+include README.md
+
+graft bempp
+global-exclude *.py[cod] *.so
+prune **/__pycache__
+prune **/.pytest_cache
+
+
