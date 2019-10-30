@@ -1292,10 +1292,6 @@ def enumerate_vertex_adjacent_elements(grid, support_elements):
     Moreover, all tuples represent elements in anti-clockwise order.
 
     """
-    import pprofile
-
-    prof = pprofile.Profile()
-
     vertex_edges = [[] for _ in range(grid.vertices.shape[1])]
 
     for element_index in support_elements:
