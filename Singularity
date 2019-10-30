@@ -9,52 +9,28 @@ From: ubuntu:bionic
     echo "SETUP"
 
 %environment
-    PYTHONPATH=/home/bempp-cl
+    PATH=/usr/local/bin:/opt/miniconda/envs/bempp/bin:/usr/bin:/usr/sbin:/sbin:/bin
 
 %post
+
     apt-get update
-    apt-get -y dist-upgrade
-    apt-get -y install python3-pip
-    apt-get -y install software-properties-common \
-                       libopenblas-base \
-                       ocl-icd-opencl-dev \
-                       build-essential \
-                       cmake \
-                       git \
-                       pkg-config \
-                       libclang-6.0-dev \
-                       clang-6.0 llvm-6.0 \
-                       make \
-                       ninja-build \
-                       ocl-icd-libopencl1 \
-                       ocl-icd-dev \
-                       ocl-icd-opencl-dev \
-                       libhwloc-dev \
-                       zlib1g \
-                       zlib1g-dev \
-                       clinfo \
-                       dialog \
-                       apt-utils \
-                       gmsh
-    add-apt-repository -y ppa:fenics-packages/fenics
-    apt-get update && apt-get install -y --no-install-recommends fenics && apt-get -y dist-upgrade
+    apt-get -y install software-properties-common wget gmsh git binutils build-essential
 
-    pip3 install pybind11 matplotlib numpy scipy jupyter plotly pytest pyopencl numba meshio
-    ipython3 kernel install
-    jupyter nbextension enable --py widgetsnbextension
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ./miniconda.sh
+    bash ./miniconda.sh -b -p /opt/miniconda
+    export PATH=/opt/miniconda/bin:$PATH
+    conda create --yes -n bempp python=3.7
+    conda install -n bempp --yes numpy scipy matplotlib numba pytest jupyter plotly git pip
+    conda install -n bempp -c conda-forge pocl pyopencl fenics
+    /opt/miniconda/envs/bempp/bin/pip install meshio
+    /opt/miniconda/envs/bempp/bin/pip install git+git://github.com/bempp/bempp-cl@master
 
-    cd /home
-    git clone https://github.com/pocl/pocl.git
-    cd /home/pocl
-    git checkout release_1_4
-    mkdir build && cd build && cmake -G Ninja -DWITH_LLVM_CONFIG=/usr/bin/llvm-config-6.0 -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release ..
-    ninja install
+    ln -s /opt/miniconda/envs/bempp/bin/python /usr/local/bin/python
+    ln -s /opt/miniconda/envs/bempp/bin/ipython /usr/local/bin/ipython
+    ln -s /opt/miniconda/envs/bempp/bin/jupyter /usr/local/bin/jupyter
 
-    cd /home
-    git clone https://github.com/bempp/bempp-cl.git
 
 %runscript
-
     exec "$@"
 
 
