@@ -1,1 +1,1 @@
-"""Interfaces to different assemblers."""
+"""Basic assembly data structures."""

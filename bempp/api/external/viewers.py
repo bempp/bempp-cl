@@ -97,7 +97,7 @@ def visualize_with_jupyter_notebook(obj, mode="element", transformation=None):
         for element in grid.entity_iterator(0):
             index = element.index
             local_values = np.real(
-                transformation(obj.evaluate(element, local_coordinates))
+                transformation(obj.evaluate(index, local_coordinates))
             )
             values[index] = local_values.flatten()
 

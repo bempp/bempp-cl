@@ -578,7 +578,14 @@ class FunctionSpace(object):
         return (self._sorted_indices, self._indexptr)
 
     def evaluate(self, element_index, local_coordinates):
-        """Evaluate the basis on an element."""
+        """
+        Evaluate the basis on an element.
+        
+        Returns an array of the form 
+        (codomain_dimension, number_of_shape_functions, number_of_eval_points)
+        that contains the basis functions evaluated at the given points.
+        
+        """
         return self.numba_evaluate(
             element_index,
             self.shapeset.evaluate,

@@ -45,6 +45,9 @@ evaluate_dense_laplace_hypersingular_regular(
   uint myTestLocal2Global[NUMBER_OF_TEST_SHAPE_FUNCTIONS];
   uint myTrialLocal2Global[4][NUMBER_OF_TRIAL_SHAPE_FUNCTIONS];
 
+  REALTYPE myTestLocalMultipliers[NUMBER_OF_TEST_SHAPE_FUNCTIONS];
+  REALTYPE myTrialLocalMultipliers[4][NUMBER_OF_TRIAL_SHAPE_FUNCTIONS];
+
   REALTYPE3 testJac[2];
   REALTYPE4 trialJac[2][3];
 
@@ -82,6 +85,12 @@ evaluate_dense_laplace_hypersingular_regular(
                   NUMBER_OF_TEST_SHAPE_FUNCTIONS);
   getLocal2GlobalVec4(trialLocal2Global, trialIndex, &myTrialLocal2Global[0][0],
                       NUMBER_OF_TRIAL_SHAPE_FUNCTIONS);
+
+  getLocalMultipliers(testLocalMultipliers, testIndex, myTestLocalMultipliers,
+                      NUMBER_OF_TEST_SHAPE_FUNCTIONS);
+  getLocalMultipliersVec4(trialLocalMultipliers, trialIndex,
+                          &myTrialLocalMultipliers[0][0],
+                          NUMBER_OF_TRIAL_SHAPE_FUNCTIONS);
 
   getJacobian(testCorners, testJac);
   getJacobianVec4(trialCorners, trialJac);
@@ -185,7 +194,8 @@ evaluate_dense_laplace_hypersingular_regular(
           globalRowIndex = myTestLocal2Global[i];
           globalColIndex = myTrialLocal2Global[vecIndex][j];
           globalResult[globalRowIndex * nTrial + globalColIndex] +=
-              ((REALTYPE*)(&basisProduct[i][j]))[vecIndex];
+              ((REALTYPE*)(&basisProduct[i][j]))[vecIndex] *
+              myTestLocalMultipliers[i] * myTrialLocalMultipliers[vecIndex][j];
         }
     }
 }
