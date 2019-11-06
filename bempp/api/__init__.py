@@ -11,6 +11,7 @@ from bempp.api.utils import DefaultParameters
 from bempp.api.utils.helpers import assign_parameters
 from bempp.api.grid.io import import_grid
 from bempp.api.grid.io import export
+from bempp.api.grid.grid import Grid
 from bempp.api.assembly.grid_function import GridFunction
 from bempp.api.assembly.grid_function import real_callable
 from bempp.api.assembly.grid_function import complex_callable
@@ -227,6 +228,6 @@ GMSH_PATH = _gmsh_path()
 VECTORIZATION = "auto"
 DEVICE_PRECISION_CPU = "double"
 DEVICE_PRECISION_GPU = "single"
-PLOT_BACKEND = "gmsh"
+PLOT_BACKEND = "jupyter_notebook"
 
 ALL = -1  # Useful global identifier
