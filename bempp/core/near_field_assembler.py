@@ -2,7 +2,7 @@
 import numpy as _np
 from . import cl_helpers as _cl_helpers
 
-_WORKGROUP_SIZE = 16
+_WORKGROUP_SIZE = 1
 
 
 class NearFieldAssembler(object):
@@ -46,9 +46,22 @@ class NearFieldAssembler(object):
         self._leaf_source_ids = None
         self._leaf_target_ids = None
 
+        self._shape = (len(fmm_interface.targets), len(fmm_interface.sources))
+        self._dtype = _np.float64
+
         self._main_kernel = None
 
         self._setup()
+
+    @property
+    def dtype(self):
+        """Return dtype."""
+        return self._dtype
+
+    @property
+    def shape(self):
+        """Return shape."""
+        return self._shape
 
     def _collect_targets_and_sources(self):
         """Collect arrays for targets and sources."""
@@ -208,9 +221,9 @@ class NearFieldAssembler(object):
         )
 
         options = {}
-        options['VEC_LENGTH'] = vec_length
-        options['WORKGROUP_SIZE'] = _WORKGROUP_SIZE
-        options['MAX_NUM_TARGETS'] = _np.max(_np.diff(self._target_index_ptr))
+        options["VEC_LENGTH"] = 1
+        options["WORKGROUP_SIZE"] = _WORKGROUP_SIZE
+        options["MAX_NUM_TARGETS"] = _np.max(_np.diff(self._target_index_ptr))
 
         log(
             "Near field kernel vector length: {0} ({1} precision)".format(
@@ -226,21 +239,19 @@ class NearFieldAssembler(object):
             main_source, self._device_interface.context, self._precision
         )
 
-    def evaluate(self, vec):
-        """Evaluate the near field for a given in put vector."""
+    def matvec(self, vec):
+        """Evaluate the near field for a given input vector."""
         from bempp.api import log
 
         number_of_target_blocks = len(self._target_index_ptr) - 1
-
         modified_vec = vec[self._leaf_source_ids]
-
         self._input_buffer.fill_buffer(self._device_interface, modified_vec)
-
         self._result_buffer.set_zero(self._device_interface)
 
         event = self._main_kernel.run(
             self._device_interface,
-            (number_of_target_blocks,), (_WORKGROUP_SIZE,),
+            (number_of_target_blocks,),
+            (_WORKGROUP_SIZE,),
             *self._buffers,
             wait_for=None,
             g_times_l=True,
@@ -249,4 +260,10 @@ class NearFieldAssembler(object):
 
         log("Near field runtime [ms]: {0}".format(event.runtime))
 
-        return self._result_buffer
+        return self._result_buffer.get_host_copy(self._device_interface)
+
+    def as_linear_operator(self):
+        """Return as linear operator."""
+        from scipy.sparse.linalg import aslinearoperator
+
+        return aslinearoperator(self)

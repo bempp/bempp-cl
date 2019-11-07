@@ -25,21 +25,21 @@ __kernel void evaluate_near_field(
         __global REALTYPE *result
         )
 {
-   int localId = get_local_id(0);
+   int myId = get_global_id(0);
 
-   int targetIndexStart = targetIndexPtr[localId];
-   int targetIndexEnd = targetIndexPtr[localId + 1];
+   int targetIndexStart = targetIndexPtr[myId];
+   int targetIndexEnd = targetIndexPtr[myId + 1];
    int numberOfTargets = targetIndexEnd - targetIndexStart;
 
-   int sourceIndexStart = sourceIndexPtr[localId];
-   int sourceIndexEnd = sourceIndexPtr[localId + 1];
+   int sourceIndexStart = sourceIndexPtr[myId];
+   int sourceIndexEnd = sourceIndexPtr[myId + 1];
    int numberOfSources = sourceIndexEnd - sourceIndexStart;
 
    int numSourceTiles = numberOfSources / VEC_LENGTH;
 
-   __local REALTYPE myResults[MAX_NUM_TARGETS];
-   __local REALTYPE myTargets[3 * MAX_NUM_TARGETS];
-   __local uint myTargetElements[3 * MAX_NUM_TARGETS];
+   REALTYPE myResults[MAX_NUM_TARGETS];
+   REALTYPE myTargets[3 * MAX_NUM_TARGETS];
+   uint myTargetElements[3 * MAX_NUM_TARGETS];
 
    uint mySourceElements[3 * VEC_LENGTH];
    REALVECTYPE sources[3];
@@ -61,6 +61,7 @@ __kernel void evaluate_near_field(
    }
 
 
+
    for (int sourceTile = 0; sourceTile < numSourceTiles; sourceTile++){
        int myTileStart = sourceIndexStart + VEC_LENGTH * sourceTile;
 #if VEC_LENGTH == 1
@@ -69,6 +70,7 @@ __kernel void evaluate_near_field(
        sources[2] = sourceVertices[3 * myTileStart + 2];
        myInput = input[myTileStart];
 #endif
+
 
        for (int i = 0; i < VEC_LENGTH; ++i)
            for (int j = 0; j < 3; ++j)
@@ -81,14 +83,15 @@ __kernel void evaluate_near_field(
             diff[1] = sources[1] - myTargets[3 * targetVertexIndex + 1];
             diff[2] = sources[2] - myTargets[3 * targetVertexIndex + 2];
 
+
             tmp = M_INV_4PI * rsqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
             // Check if the source and target do not belong to adjacent elements. If yes
 
             for (int index = 0; index < VEC_LENGTH; ++index)
-                if !elementsAreAdjacent(&mySourceElements[3 * (myTileStart + index)],
+                if (elementsAreAdjacent(&mySourceElements[3 * index],
                                                        &myTargetElements[3 * targetVertexIndex],
-                                                       false)
-                    VEC_ELEMENT(myResult, index) = M_ZERO;
+                                                       false))
+                    VEC_ELEMENT(tmp, index) = M_ZERO;
 
             myResult = myInput * tmp;
 
@@ -96,34 +99,15 @@ __kernel void evaluate_near_field(
                 myResults[targetVertexIndex] += VEC_ELEMENT(myResult, index);
 
 
-                                                       
-
        }
-
 
    }
 
+   for (int targetVertexIndex = 0; targetVertexIndex < numberOfTargets; targetVertexIndex += 1){
+       long myTargetId = targetIds[targetIndexStart + targetVertexIndex];
+       result[myTargetId] = myResults[targetVertexIndex];
 
+   }
 
-       myResult = M_ZERO;
-
-       for (int sourceTile = 0; sourceTile < numSourceTiles; sourceTile++){
-            // Load the data
-
-           vecDiff[0] = sources[0] - targetVertices[targetVertexIndex + 0];
-           vecDiff[1] = sources[1] - targetVertices[targetVertexIndex + 1];
-           vecDiff[2] = sources[2] - targetVertices[targetVertexIndex + 2];
-
-           myResult += M_INV_4PI * rsqrt(vecDiff[0] * vecDiff[0] + vecDiff[1] * vecDiff[1] + vecDiff[2] * vecDiff[2]);
-
-       }
-
-       for (int sourceVertexIndex = sourceVertexIndexStart + VEC_LENGTH * numSourceTiles; sourceVertexIndex < sourceVertexIndexEnd; sourceVertexIndex++){
-           diff[0] = sourceVertices[3 * sourceVertexIndex + 0] - targetVertex[0];
-           diff[1] = sourceVertices[3 * sourceVertexIndex + 1] - targetVertex[1];
-           diff[2] = sourceVertices[3 * sourceVertexIndex + 2] - targetVertex[2];
-
-           myResult += M_INV_4PI * rsqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
-       }
 
 }

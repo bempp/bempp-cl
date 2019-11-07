@@ -14,6 +14,7 @@ class ExafmmLaplace(FmmInterface):
         self._singular_order = None
         self._sources = None
         self._targets = None
+        self._interactions = None
 
         self._source_bodies = None
         self._target_bodies = None
@@ -125,30 +126,12 @@ class ExafmmLaplace(FmmInterface):
         """Compute the near-field matrix."""
         import bempp.api
         from bempp.api.operators.boundary.laplace import single_layer
-        from scipy.sparse import coo_matrix
+        from bempp.core.near_field_assembler import NearFieldAssembler
+        from scipy.sparse.linalg import aslinearoperator
 
-        with bempp.api.Timer() as t:
-            near_targets, near_sources = self._collect_near_field_indices(
-                self._local_points.shape[1]
-            )
-        print(f"Near field indices. {t.interval}")
-
-        with bempp.api.Timer() as t:
-            data = 1.0 / (
-                4
-                * _np.pi
-                * _np.linalg.norm(
-                    self.targets[near_targets] - self.sources[near_sources], axis=1
-                )
-            )
-        print(f"Near field data: {t.interval}")
-
-        with bempp.api.Timer() as t:
-            interactions = coo_matrix(
-                (data, (near_targets, near_sources)),
-                shape=(len(self.targets), len(self.sources)),
-            ).tocsr()
-        print(f"Sparse matrix generation: {t.interval}")
+        near_field_op = NearFieldAssembler(
+            self, bempp.api.default_device(), "double"
+        ).as_linear_operator()
 
         singular_interactions = (
             single_layer(
@@ -158,12 +141,15 @@ class ExafmmLaplace(FmmInterface):
                 assembler="only_singular_part",
             )
             .weak_form()
-            .A
         )
+
+        source_op = aslinearoperator(self._source_transform)
+        target_op = aslinearoperator(self._target_transform.T)
+
 
         with bempp.api.Timer() as t:
             self._near_field_matrix = (
-                self._target_transform.T @ interactions @ self._source_transform
+                target_op @ near_field_op @ source_op
                 + singular_interactions
             )
         print(f"Near field matmat: {t.interval}")
