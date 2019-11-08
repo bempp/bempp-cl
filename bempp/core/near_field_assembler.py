@@ -258,7 +258,7 @@ class NearFieldAssembler(object):
         )
         event.wait()
 
-        log("Near field runtime [ms]: {0}".format(event.runtime))
+        log("Near field runtime [ms]: {0}".format(event.runtime()))
 
         return self._result_buffer.get_host_copy(self._device_interface)
 

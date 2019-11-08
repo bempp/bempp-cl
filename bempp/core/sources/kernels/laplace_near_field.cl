@@ -5,7 +5,7 @@
 
 #if VEC_LENGTH == 1
     typedef REALTYPE REALVECTYPE;
-#elif VEC_LENTH == 4
+#elif VEC_LENGTH == 4
     typedef REALTYPE4 REALVECTYPE;
 #elif VEC_LENGTH == 8
     typedef REALTYPE8 REALVECTYPE;
@@ -38,66 +38,104 @@ __kernel void evaluate_near_field(
    int numSourceTiles = numberOfSources / VEC_LENGTH;
 
    REALTYPE myResults[MAX_NUM_TARGETS];
-   REALTYPE myTargets[3 * MAX_NUM_TARGETS];
-   uint myTargetElements[3 * MAX_NUM_TARGETS];
+   uint myTargetElements[3];
 
    uint mySourceElements[3 * VEC_LENGTH];
-   REALVECTYPE sources[3];
+   REALVECTYPE vecSources[3];
+   REALTYPE sources[3];
    REALVECTYPE vecDiff[3];
    REALTYPE diff[3];
    REALTYPE targetVertex[3];
-   REALVECTYPE myResult;
-   REALVECTYPE myInput;
-   REALVECTYPE tmp;
+   REALVECTYPE myVecResult;
+   REALVECTYPE myVecInput;
+   REALVECTYPE vecTmp;
+   REALTYPE myResult;
+   REALTYPE tmp;
 
-   for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++){
+   for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++)
        myResults[targetIndex] = M_ZERO;
-       myTargets[3 * targetIndex + 0] = targetVertices[3 * (targetIndexStart + targetIndex) + 0];
-       myTargets[3 * targetIndex + 1] = targetVertices[3 * (targetIndexStart + targetIndex) + 1];
-       myTargets[3 * targetIndex + 2] = targetVertices[3 * (targetIndexStart + targetIndex) + 2];
-       myTargetElements[3 * targetIndex + 0] = targetElements[3 * (targetIndexStart + targetIndex) + 0];
-       myTargetElements[3 * targetIndex + 1] = targetElements[3 * (targetIndexStart + targetIndex) + 1];
-       myTargetElements[3 * targetIndex + 2] = targetElements[3 * (targetIndexStart + targetIndex) + 2];
-   }
-
-
-
+   
    for (int sourceTile = 0; sourceTile < numSourceTiles; sourceTile++){
        int myTileStart = sourceIndexStart + VEC_LENGTH * sourceTile;
+       
 #if VEC_LENGTH == 1
-       sources[0] = sourceVertices[3 * myTileStart + 0];
-       sources[1] = sourceVertices[3 * myTileStart + 1];
-       sources[2] = sourceVertices[3 * myTileStart + 2];
-       myInput = input[myTileStart];
+       vecSources[0] = sourceVertices[3 * myTileStart + 0];
+       vecSources[1] = sourceVertices[3 * myTileStart + 1];
+       vecSources[2] = sourceVertices[3 * myTileStart + 2];
+       myVecInput = input[myTileStart];
+#elif VEC_LENGTH == 4
+       vecSources[0] = (REALVECTYPE)(sourceVertices[3 * (myTileStart + 0) + 0],
+                                     sourceVertices[3 * (myTileStart + 1) + 0],
+                                     sourceVertices[3 * (myTileStart + 2) + 0],
+                                     sourceVertices[3 * (myTileStart + 3) + 0]);
+       vecSources[1] = (REALVECTYPE)(sourceVertices[3 * (myTileStart + 0) + 1],
+                                     sourceVertices[3 * (myTileStart + 1) + 1],
+                                     sourceVertices[3 * (myTileStart + 2) + 1],
+                                     sourceVertices[3 * (myTileStart + 3) + 1]);
+       vecSources[2] = (REALVECTYPE)(sourceVertices[3 * (myTileStart + 0) + 2],
+                                     sourceVertices[3 * (myTileStart + 1) + 2],
+                                     sourceVertices[3 * (myTileStart + 2) + 2],
+                                     sourceVertices[3 * (myTileStart + 3) + 2]);
+       myVecInput = (REALVECTYPE)(input[myTileStart + 0],
+                                  input[myTileStart + 1],
+                                  input[myTileStart + 2],
+                                  input[myTileStart + 3]);
 #endif
 
-
-       for (int i = 0; i < VEC_LENGTH; ++i)
-           for (int j = 0; j < 3; ++j)
+       for (uint i = 0; i < VEC_LENGTH; ++i)
+           for (uint j = 0; j < 3; ++j)
                mySourceElements[3 * i + j] = sourceElements[3 * (myTileStart + i) + j];
 
 
        for (int targetVertexIndex = 0; targetVertexIndex < numberOfTargets; targetVertexIndex += 1){
-            
-            diff[0] = sources[0] - myTargets[3 * targetVertexIndex + 0];
-            diff[1] = sources[1] - myTargets[3 * targetVertexIndex + 1];
-            diff[2] = sources[2] - myTargets[3 * targetVertexIndex + 2];
+            vecDiff[0] = vecSources[0] - targetVertices[3 * (targetIndexStart + targetVertexIndex) + 0];
+            vecDiff[1] = vecSources[1] - targetVertices[3 * (targetIndexStart + targetVertexIndex) + 1];
+            vecDiff[2] = vecSources[2] - targetVertices[3 * (targetIndexStart + targetVertexIndex) + 2];
 
-
-            tmp = M_INV_4PI * rsqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
+            vecTmp = M_INV_4PI * rsqrt(vecDiff[0] * vecDiff[0] + 
+                    vecDiff[1] * vecDiff[1] + vecDiff[2] * vecDiff[2]);
             // Check if the source and target do not belong to adjacent elements. If yes
 
-            for (int index = 0; index < VEC_LENGTH; ++index)
-                if (elementsAreAdjacent(&mySourceElements[3 * index],
-                                                       &myTargetElements[3 * targetVertexIndex],
-                                                       false))
-                    VEC_ELEMENT(tmp, index) = M_ZERO;
+            myTargetElements[0] = targetElements[3 * (targetIndexStart + targetVertexIndex) + 0];
+            myTargetElements[1] = targetElements[3 * (targetIndexStart + targetVertexIndex) + 1];
+            myTargetElements[2] = targetElements[3 * (targetIndexStart + targetVertexIndex) + 2];
 
-            myResult = myInput * tmp;
+            myVecResult = myVecInput * vecTmp;
 
             for (int index = 0; index < VEC_LENGTH; ++index)
-                myResults[targetVertexIndex] += VEC_ELEMENT(myResult, index);
+                if (!elementsAreAdjacent(&mySourceElements[3 * index], &myTargetElements[0], false))
+                    myResults[targetVertexIndex] += VEC_ELEMENT(myVecResult, index);
+                
+       }
 
+   }
+
+   // Now do the remainder case with non-vector variables.
+
+   for (int mySourceIndex = sourceIndexStart + VEC_LENGTH * numSourceTiles; 
+           mySourceIndex < sourceIndexEnd; mySourceIndex++){
+
+       sources[0] = sourceVertices[3 * mySourceIndex + 0];
+       sources[1] = sourceVertices[3 * mySourceIndex + 1];
+       sources[2] = sourceVertices[3 * mySourceIndex + 2];
+
+       for (int j = 0; j < 3; ++j)
+           mySourceElements[j] = sourceElements[3 * mySourceIndex + j];
+
+
+       for (int targetVertexIndex = 0; targetVertexIndex < numberOfTargets; targetVertexIndex += 1){
+            diff[0] = sources[0] - targetVertices[3 * (targetIndexStart + targetVertexIndex) + 0];
+            diff[1] = sources[1] - targetVertices[3 * (targetIndexStart + targetVertexIndex) + 1];
+            diff[2] = sources[2] - targetVertices[3 * (targetIndexStart + targetVertexIndex) + 2];
+
+            tmp = M_INV_4PI * rsqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
+
+            myTargetElements[0] = targetElements[3 * (targetIndexStart + targetVertexIndex) + 0];
+            myTargetElements[1] = targetElements[3 * (targetIndexStart + targetVertexIndex) + 1];
+            myTargetElements[2] = targetElements[3 * (targetIndexStart + targetVertexIndex) + 2];
+
+            if (!elementsAreAdjacent(&mySourceElements[0], &myTargetElements[0], false)) 
+                myResults[targetVertexIndex] += tmp * input[mySourceIndex];
 
        }
 
