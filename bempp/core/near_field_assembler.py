@@ -221,7 +221,7 @@ class NearFieldAssembler(object):
         )
 
         options = {}
-        options["VEC_LENGTH"] = 1
+        options["VEC_LENGTH"] = vec_length
         options["WORKGROUP_SIZE"] = _WORKGROUP_SIZE
         options["MAX_NUM_TARGETS"] = _np.max(_np.diff(self._target_index_ptr))
 
@@ -260,7 +260,7 @@ class NearFieldAssembler(object):
 
         log("Near field runtime [ms]: {0}".format(event.runtime()))
 
-        return self._result_buffer.get_host_copy(self._device_interface)
+        return self._result_buffer.get_host_copy(self._device_interface).astype('float64')
 
     def as_linear_operator(self):
         """Return as linear operator."""

@@ -130,7 +130,7 @@ class ExafmmLaplace(FmmInterface):
         from scipy.sparse.linalg import aslinearoperator
 
         near_field_op = NearFieldAssembler(
-            self, bempp.api.default_device(), "double"
+            self, bempp.api.default_device(), bempp.api.DEVICE_PRECISION_CPU,
         ).as_linear_operator()
 
         singular_interactions = (
