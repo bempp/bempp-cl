@@ -4,42 +4,16 @@ import numpy as _np
 import numba as _numba
 
 
-class Node(object):
-    """Definition of an FMM node."""
+class LeafNode(object):
+    """Definition of an FMM leaf node."""
 
-    def __init__(
-        self,
-        identifier,
-        center,
-        radius,
-        source_ids,
-        target_ids,
-        colleagues,
-        is_leaf,
-        level,
-        parent,
-    ):
+    def __init__(self, identifier, source_ids, target_ids, colleagues):
         """Initialize a node."""
 
         self._identifier = identifier
-        self._center = center
-        self._radius = radius
         self._source_ids = _np.array(source_ids, dtype=_np.int64)
         self._target_ids = _np.array(target_ids, dtype=_np.int64)
         self._colleagues = _np.array(colleagues, dtype=_np.int64)
-        self._is_leaf = is_leaf
-        self._parent = parent
-        self._level = level
-
-    @property
-    def center(self):
-        """Return center."""
-        return self._center
-
-    @property
-    def radius(self):
-        """Return radius."""
-        return self._radius
 
     @property
     def identifier(self):
@@ -61,198 +35,71 @@ class Node(object):
         """Return the colleagues of the node."""
         return self._colleagues
 
-    @property
-    def level(self):
-        """Return the level."""
-        return self._level
 
-    @property
-    def is_leaf(self):
-        """Return true if leaf node, otherwise false."""
-        return self._is_leaf
+def map_space_to_points(
+    nodes, space, local_points, weights, mode, return_transpose=False
+):
+    """Return mapper from grid coeffs to point evaluations."""
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.linalg import aslinearoperator
 
-    @property
-    def parent(self):
-        """Return id of parent node."""
-        return self._parent
+    local_space = space.localised_space
+    grid = local_space.grid
+    number_of_local_points = local_points.shape[1]
+    nshape_funs = space.number_of_shape_functions
+    number_of_vertices = number_of_local_points * grid.number_of_elements
 
+    global_dofs = []
+    node_dofs = []
+    values = []
 
-class FmmInterface(_abc.ABC):
-    """Interface to an FMM Instance."""
+    if mode == "source":
+        attr = "source_ids"
+    elif mode == "target":
+        attr = "target_ids"
+    else:
+        raise ValueError("'mode' must be one of 'source' or 'target'.")
 
-    def setup(
-        self, domain, dual_to_range, regular_order, singular_order, *args, **kwargs
-    ):
-        """
-        Setup the sources.
-
-        Parameters
-        ----------
-        domain_space : space
-            A Bempp space object that describes the domain space.
-            Only scalar spaces are allowed.
-        dual_to_range_space : space
-            A scalar dual space.
-        regular_order : int
-            The integration order for regular elements.
-        singular_order : int
-            The integratoin order for singular elements.
-        
-        """
-
-    @property
-    def leaf_node_keys(self):
-        """
-        Return a list of keys of non-empty leaf nodes.
-        """
-        raise NotImplementedError
-
-    @property
-    def nodes(self):
-        """Return a (key, node) dictionary of all nodes."""
-        raise NotImplementedError
-
-    @property
-    def source_transform(self):
-        """Return source transformation matrix."""
-        raise NotImplementedError
-
-    @property
-    def target_transform(self):
-        """Return target transformation matrix."""
-        raise NotImplementedError
-
-    @property
-    def source_grid(self):
-        """Return source grid."""
-        raise NotImplementedError
-
-    @property
-    def target_grid(self):
-        """Return target grid."""
-        raise NotImplementedError
-
-    @property
-    def sources(self):
-        """Return sources."""
-        raise NotImplementedError
-
-    @property
-    def targets(self):
-        """Return target."""
-        raise NotImplementedError
-
-    @property
-    def local_points(self):
-        """Return the local points."""
-        raise NotImplementedError
-
-    @property
-    def domain(self):
-        """Return domain space."""
-        raise NotImplementedError
-
-    @property
-    def dual_to_range(self):
-        """Return dual_to_Range space."""
-        raise NotImplementedError
-
-    def create_evaluator(self):
-        """
-        Return a Scipy Linear Operator that evaluates the FMM.
-
-        The returned class should subclass the Scipy LinearOperator class
-        so that it provides a matvec routine that accept a vector of coefficients
-        and returns the result of a matrix vector product.
-        """
-
-    def _map_space_to_points(self, space, local_points, weights, mode):
-        """Return mapper from grid coeffs to point evaluations."""
-        from scipy.sparse import coo_matrix
-
-        local_space = space.localised_space
-        grid = local_space.grid
-        number_of_local_points = local_points.shape[1]
-        nshape_funs = space.number_of_shape_functions
-        number_of_vertices = number_of_local_points * grid.number_of_elements
-
-        global_dofs = []
-        node_dofs = []
-        values = []
-
-        if mode == "source":
-            attr = "source_ids"
-        elif mode == "target":
-            attr = "target_ids"
-        else:
-            raise ValueError("'mode' must be one of 'source' or 'target'.")
-
-        for key in self.leaf_node_keys:
-            vertex_ids = getattr(self.nodes[key], attr)
-            associated_elements = set(
-                [vertex // number_of_local_points for vertex in vertex_ids]
+    for key in nodes:
+        vertex_ids = getattr(nodes[key], attr)
+        associated_elements = set(
+            [vertex // number_of_local_points for vertex in vertex_ids]
+        )
+        # Evaluate basis on the elements
+        basis_values = {}
+        for elem in associated_elements:
+            # Spaces are scalar, so can use 2nd and 2rd component of eval
+            basis_values[elem] = (
+                local_space.evaluate(elem, local_points)[0, :, :]
+                * weights
+                * grid.integration_elements[elem]
             )
-            # Evaluate basis on the elements
-            basis_values = {}
-            for elem in associated_elements:
-                # Spaces are scalar, so can use 2nd and 2rd component of eval
-                basis_values[elem] = (
-                    space.evaluate(elem, local_points)[0, :, :]
-                    * weights
-                    * grid.integration_elements[elem]
-                )
 
-            # Now fill up the matrix elements.
-            for vertex in vertex_ids:
-                elem = vertex // number_of_local_points
-                local_point_index = vertex % number_of_local_points
-                global_dofs.extend(space.local2global[elem, :])
-                node_dofs.extend(nshape_funs * [vertex])
-                values.extend(basis_values[elem][:, local_point_index])
+        # Now fill up the matrix elements.
+        for vertex in vertex_ids:
+            elem = vertex // number_of_local_points
+            local_point_index = vertex % number_of_local_points
+            global_dofs.extend(local_space.local2global[elem, :])
+            node_dofs.extend(nshape_funs * [vertex])
+            values.extend(basis_values[elem][:, local_point_index])
 
+    if return_transpose:
+        transform = coo_matrix(
+            (values, (global_dofs, node_dofs)),
+            shape=(local_space.global_dof_count, number_of_vertices),
+        )
+
+        return aslinearoperator(space.map_to_localised_space.T) @ aslinearoperator(
+            transform
+        )
+    else:
         transform = coo_matrix(
             (values, (node_dofs, global_dofs)),
             shape=(number_of_vertices, local_space.global_dof_count),
         )
-
-        return transform @ space.map_to_localised_space
-
-    def _collect_near_field_indices(self, number_of_local_points):
-        """Collect all indices of near-field points."""
-        import bempp.api
-
-        # Could also be target grid.
-        # Only used if target and source grid identical
-        elements = self.source_grid.elements
-
-        grid_identical = self.source_grid == self.target_grid
-
-        source_vertex_ids_dict = _numba.typed.Dict.empty(
-            key_type=_numba.types.int64, value_type=_numba.types.int64[:]
+        return aslinearoperator(transform) @ aslinearoperator(
+            space.map_to_localised_space
         )
-
-        target_vertex_ids_dict = _numba.typed.Dict.empty(
-            key_type=_numba.types.int64, value_type=_numba.types.int64[:]
-        )
-        target_colleagues_dict = _numba.typed.Dict.empty(
-            key_type=_numba.types.int64, value_type=_numba.types.int64[:]
-        )
-
-        for key in self.leaf_node_keys:
-            target_vertex_ids_dict[key] = self.nodes[key].target_ids
-            source_vertex_ids_dict[key] = self.nodes[key].source_ids
-            target_colleagues_dict[key] = self.nodes[key].colleagues
-
-        target_indices, source_indices = _numba_collect_near_field_indices(
-            number_of_local_points,
-            elements,
-            grid_identical,
-            self.leaf_node_keys,
-            source_vertex_ids_dict,
-            target_vertex_ids_dict,
-            target_colleagues_dict,
-        )
-        return target_indices, source_indices
 
 
 def grid_to_points(grid, support_elements, local_points):
@@ -288,100 +135,3 @@ def grid_to_points(grid, support_elements, local_points):
         )
 
     return points
-
-
-@_numba.njit(_numba.boolean(_numba.uint32[:], _numba.uint32[:]), cache=True)
-def _check_elements_adjacent(e1, e2):
-    """Check if two elements are adjacent."""
-    for ind1 in e1:
-        for ind2 in e2:
-            if ind1 == ind2:
-                return True
-    return False
-
-
-@_numba.njit(cache=True)
-def _compute_element_adjacency_matrix(elements, elem_set1, elem_set2):
-    """Compute the element adjacency between two sets of elements."""
-    result = _np.empty((len(elem_set1), len(elem_set2)), dtype=_np.bool_)
-
-    for ind1, elem1 in enumerate(elem_set1):
-        for ind2, elem2 in enumerate(elem_set2):
-            result[ind1, ind2] = _check_elements_adjacent(
-                elements[:, elem1], elements[:, elem2]
-            )
-    return result
-
-
-@_numba.njit(cache=True)
-def _map_element_set_to_indices(elem_set):
-    """Return a mapping from element set to indices."""
-    mapping = _numba.typed.Dict.empty(
-        key_type=_numba.types.int64, value_type=_numba.types.int64
-    )
-    for index, elem in enumerate(elem_set):
-        mapping[elem] = index
-    return mapping
-
-
-@_numba.njit(cache=True)
-def _compute_element_list(vertices, number_of_local_points):
-    """Compute element list from vertices."""
-    return _np.array(
-        list(set([vertex // number_of_local_points for vertex in vertices])),
-        dtype=_np.int64,
-    )
-
-
-@_numba.njit(cache=True)
-def _numba_collect_near_field_indices(
-    number_of_local_points,
-    elements,
-    grid_identical,
-    leaf_node_keys,
-    source_vertex_ids_dict,
-    target_vertex_ids_dict,
-    target_colleagues_dict,
-):
-    """Collect all indices of near-field points."""
-
-    source_indices = []
-    target_indices = []
-
-    for key in leaf_node_keys:
-        target_vertices = target_vertex_ids_dict[key]
-        if len(target_vertices) == 0:
-            continue
-        target_elements = _compute_element_list(target_vertices, number_of_local_points)
-        target_map = _map_element_set_to_indices(target_elements)
-
-        for colleague in target_colleagues_dict[key]:
-            if colleague == -1:
-                continue
-            source_vertices = source_vertex_ids_dict[colleague]
-            if len(source_vertices) == 0:
-                continue
-            source_elements = _compute_element_list(
-                source_vertices, number_of_local_points
-            )
-            source_map = _map_element_set_to_indices(source_elements)
-
-            adjacency_matrix = _compute_element_adjacency_matrix(
-                elements, target_elements, source_elements
-            )
-
-            for target_vertex in target_vertices:
-                target_elem = target_vertex // number_of_local_points
-                for source_vertex in source_vertices:
-                    source_elem = source_vertex // number_of_local_points
-                    if not grid_identical or source_elem == target_elem:
-                        continue
-                    elements_adjacent = adjacency_matrix[
-                        target_map[target_elem], source_map[source_elem]
-                    ]
-
-                    if not elements_adjacent:
-                        source_indices.append(source_vertex)
-                        target_indices.append(target_vertex)
-
-    return target_indices, source_indices

@@ -1,13 +1,25 @@
 """Interface to ExaFMM."""
-from .common import FmmInterface
 import numpy as _np
 
+_NCRITICAL = 100
 
-class ExafmmLaplace(FmmInterface):
+
+class Exafmm(object):
     """Interface to ExaFmm."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        domain,
+        dual_to_range,
+        kernel,
+        regular_order,
+        singular_order,
+        expansion_order=10,
+        max_level=-1,
+    ):
         """Initalize the ExaFmm Interface."""
+        import bempp.api
+
         self._domain = None
         self._dual_to_range = None
         self._regular_order = None
@@ -15,153 +27,31 @@ class ExafmmLaplace(FmmInterface):
         self._sources = None
         self._targets = None
         self._interactions = None
-
-        self._source_bodies = None
-        self._target_bodies = None
-
         self._source_transform = None
         self._target_transform = None
-
         self._local_points = None
-
-        self._nodes = {}
-        self._leaf_nodes = []
-
+        self._leaf_nodes = {}
         self._near_field_matrix = None
-
         self._shape = None
 
-    def setup(
-        self,
-        domain,
-        dual_to_range,
-        regular_order,
-        singular_order,
-        expansion_order=10,
-        ncritical=100,
-        max_level=-1,
-    ):
-        """Setup the Fmm computation."""
-        import bempp.api
-        from bempp.api.integration.triangle_gauss import rule
-        import exafmm_laplace
+        self._kernel = kernel
 
-        self._domain = domain
-        self._dual_to_range = dual_to_range
-        self._regular_order = regular_order
-        self._singular_order = singular_order
-        self._expansion_order = expansion_order
-
-        self._shape = (dual_to_range.global_dof_count, domain.global_dof_count)
-
-        self._local_points, self._weights = rule(regular_order)
-
-        hmax = _np.max(
-            [
-                domain.grid.maximum_element_diameter,
-                dual_to_range.grid.maximum_element_diameter,
-            ]
-        )
-
-        domain_box = domain.grid.bounding_box
-        dual_to_range_box = dual_to_range.grid.bounding_box
-
-        merged_box = _np.array(
-            [
-                _np.minimum(domain_box[:, 0], dual_to_range_box[:, 0]),
-                _np.maximum(domain_box[:, 1], dual_to_range_box[:, 1]),
-            ]
-        ).T
-        center = (merged_box[:, 0] + merged_box[:, 1]) / 2
-        radius = (
-            _np.maximum(
-                _np.max(center - merged_box[:, 0]), _np.max(merged_box[:, 1] - center)
-            )
-            * 1.00001
-        )
-
-        if max_level == -1:
-            max_level = int(_np.log2(2 * radius) - _np.log2(hmax))
-
-        if max_level < 0:
-            raise ValueError("Could not correctly determine maximum level.")
-
-        exafmm_laplace.configure(expansion_order, ncritical, max_level)
+        bempp.api.log("Initializing FMM...")
 
         with bempp.api.Timer() as t:
-            self._setup_tree()
-        print(f"Tree: {t.interval}")
-
-        with bempp.api.Timer() as t:
-            self._source_transform = self._map_space_to_points(
-                self._domain, self._local_points, self._weights, "source"
+            self._setup(
+                domain,
+                dual_to_range,
+                regular_order,
+                singular_order,
+                expansion_order,
+                max_level,
             )
-
-            self._target_transform = self._map_space_to_points(
-                self._domain, self._local_points, self._weights, "target"
-            )
-        print(f"Transforms: {t.interval}")
-
-        with bempp.api.Timer() as t:
-            self._compute_near_field_matrix()
-        print(f"Near field matrix: {t.interval}")
-
-        with bempp.api.Timer() as t:
-            exafmm_laplace.precompute()
-        print(f"Precompute: {t.interval}")
-
-    def create_evaluator(self):
-        """
-        Return a Scipy Linear Operator that evaluates the FMM.
-
-        The returned class should subclass the Scipy LinearOperator class
-        so that it provides a matvec routine that accept a vector of coefficients
-        and returns the result of a matrix vector product.
-        """
-        from scipy.sparse.linalg import LinearOperator
-
-        return LinearOperator(self._shape, matvec=self._evaluate, dtype=_np.float64)
-
-    def _compute_near_field_matrix(self):
-        """Compute the near-field matrix."""
-        import bempp.api
-        from bempp.api.operators.boundary.laplace import single_layer
-        from bempp.core.near_field_assembler import NearFieldAssembler
-        from scipy.sparse.linalg import aslinearoperator
-
-        near_field_op = NearFieldAssembler(
-            self, bempp.api.default_device(), bempp.api.DEVICE_PRECISION_CPU,
-        ).as_linear_operator()
-
-        singular_interactions = (
-            single_layer(
-                self._domain,
-                self._domain,
-                self._dual_to_range,
-                assembler="only_singular_part",
-            )
-            .weak_form()
-        )
-
-        source_op = aslinearoperator(self._source_transform)
-        target_op = aslinearoperator(self._target_transform.T)
-
-
-        with bempp.api.Timer() as t:
-            self._near_field_matrix = (
-                target_op @ near_field_op @ source_op
-                + singular_interactions
-            )
-        print(f"Near field matmat: {t.interval}")
+        bempp.api.log(f"Setup took {t.interval} seconds.")
 
     @property
-    def nodes(self):
+    def leaf_nodes(self):
         """Return the nodes."""
-        return self._nodes
-
-    @property
-    def leaf_node_keys(self):
-        """Return leaf nodes."""
         return self._leaf_nodes
 
     @property
@@ -209,52 +99,133 @@ class ExafmmLaplace(FmmInterface):
         """Return dual_to_Range space."""
         return self._dual_to_range
 
-    def _setup_tree(self):
-        """Setup the FMM tree."""
-        from .common import Node
-        from .common import grid_to_points
+    def as_linear_operator(self):
+        """
+        Return a Scipy Linear Operator that evaluates the FMM.
 
+        The returned class should subclass the Scipy LinearOperator class
+        so that it provides a matvec routine that accept a vector of coefficients
+        and returns the result of a matrix vector product.
+        """
+        from scipy.sparse.linalg import LinearOperator
+
+        return LinearOperator(self._shape, matvec=self._evaluate, dtype=_np.float64)
+
+    def _setup(
+        self,
+        domain,
+        dual_to_range,
+        regular_order,
+        singular_order,
+        expansion_order=10,
+        max_level=-1,
+    ):
+        """Setup the Fmm computation."""
+        import bempp.api
+        from .common import map_space_to_points
+        from .common import grid_to_points
+        from .common import LeafNode
         from exafmm_laplace import init_sources
         from exafmm_laplace import init_targets
         from exafmm_laplace import build_tree
         from exafmm_laplace import build_list
+        from bempp.api.integration.triangle_gauss import rule
+        import exafmm_laplace
+
+        self._domain = domain
+        self._dual_to_range = dual_to_range
+        self._regular_order = regular_order
+        self._singular_order = singular_order
+        self._expansion_order = expansion_order
+        self._shape = (dual_to_range.global_dof_count, domain.global_dof_count)
+        self._local_points, self._weights = rule(regular_order)
+
+        if max_level == -1:
+            max_level = compute_max_level(domain, dual_to_range)
+
+        if max_level < 0:
+            raise ValueError("Could not correctly determine maximum level.")
+
+        exafmm_laplace.configure(expansion_order, _NCRITICAL, max_level)
 
         self._sources = grid_to_points(
             self._domain.grid, self._domain.support_elements, self._local_points
         )
+
         self._targets = grid_to_points(
             self._dual_to_range.grid,
             self._dual_to_range.support_elements,
             self._local_points,
         )
-        self._source_bodies = init_sources(
+
+        source_bodies = init_sources(
             self._sources, _np.zeros(len(self._sources), dtype=_np.float64)
         )
-        self._target_bodies = init_targets(self._targets)
 
-        build_tree(self._source_bodies, self._target_bodies)
+        target_bodies = init_targets(self._targets)
+
+        build_tree(source_bodies, target_bodies)
         exafmm_nodes = build_list(True)
 
         for exafmm_node in exafmm_nodes:
-            self._nodes[exafmm_node.key] = Node(
+            if not exafmm_node.is_leaf:
+                continue
+            self._leaf_nodes[exafmm_node.key] = LeafNode(
                 exafmm_node.key,
-                _np.array(
-                    [exafmm_node.x[0], exafmm_node.x[1], exafmm_node.x[2]],
-                    dtype="float64",
-                ),
-                exafmm_node.r,
                 exafmm_node.isrcs,
                 exafmm_node.itrgs,
-                [
-                    node.key if node is not None else -1
-                    for node in exafmm_node.colleagues
-                ],
-                exafmm_node.is_leaf,
-                exafmm_node.level,
-                exafmm_node.parent.key if exafmm_node.parent is not None else -1,
+                [node.key for node in exafmm_node.colleagues if node is not None],
             )
 
-        self._leaf_nodes = [key for (key, node) in self._nodes.items() if node.is_leaf]
+        with bempp.api.MemProfiler() as m:
+            self._source_transform = map_space_to_points(
+                self.leaf_nodes,
+                self._domain,
+                self._local_points,
+                self._weights,
+                "source",
+            )
+
+            self._target_transform = map_space_to_points(
+                self.leaf_nodes,
+                self._domain,
+                self._local_points,
+                self._weights,
+                "target",
+                return_transpose=True,
+            )
+        print(f"Transform matrices: {m.interval / 2**20}")
+
+        with bempp.api.MemProfiler() as m:
+            self._compute_near_field_matrix()
+        print(f"Near field setup: {m.interval / 2**20}")
+
+        exafmm_laplace.precompute()
+
+    def _compute_near_field_matrix(self):
+        """Compute the near-field matrix."""
+        import bempp.api
+        from bempp.api.operators.boundary.laplace import single_layer
+        from bempp.core.near_field_assembler import NearFieldAssembler
+        from scipy.sparse.linalg import aslinearoperator
+
+        near_field_op = NearFieldAssembler(
+            self, bempp.api.default_device(), bempp.api.DEVICE_PRECISION_CPU
+        ).as_linear_operator()
+
+        singular_interactions = single_layer(
+            self._domain,
+            self._domain,
+            self._dual_to_range,
+            assembler="only_singular_part",
+        ).weak_form()
+
+        source_op = self._source_transform
+        target_op = self._target_transform
+
+        self._near_field_matrix = (
+            target_op @ near_field_op @ source_op + singular_interactions
+        )
 
     def _evaluate_far_field(self, vec):
         """Evaluate the far-field."""
@@ -265,9 +236,41 @@ class ExafmmLaplace(FmmInterface):
         exafmm_laplace.clear()
         potentials = exafmm_laplace.evaluate()
 
-        return self._target_transform.T @ potentials
+        return self._target_transform @ potentials
 
     def _evaluate(self, vec):
         """Evaluate the FMM."""
 
         return self._near_field_matrix @ vec + self._evaluate_far_field(vec)
+
+
+def compute_max_level(domain, dual_to_range):
+    """Compute the maximum possible level for the FMM."""
+
+    hmax = _np.max(
+        [
+            domain.grid.maximum_element_diameter,
+            dual_to_range.grid.maximum_element_diameter,
+        ]
+    )
+
+    domain_box = domain.grid.bounding_box
+    dual_to_range_box = dual_to_range.grid.bounding_box
+
+    merged_box = _np.array(
+        [
+            _np.minimum(domain_box[:, 0], dual_to_range_box[:, 0]),
+            _np.maximum(domain_box[:, 1], dual_to_range_box[:, 1]),
+        ]
+    ).T
+    center = (merged_box[:, 0] + merged_box[:, 1]) / 2
+    radius = (
+        _np.maximum(
+            _np.max(center - merged_box[:, 0]), _np.max(merged_box[:, 1] - center)
+        )
+        * 1.00001
+    )
+
+    max_level = int(_np.log2(2 * radius) - _np.log2(hmax))
+
+    return max_level

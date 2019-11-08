@@ -69,5 +69,29 @@ def serialise_list_of_lists(array):
     return new_list, index_ptr
 
 
+class MemProfiler:
+    """Context manager to measure mem usage in bytes."""
+
+    def __init__(self):
+        """Constructor."""
+        import psutil
+        import os
+
+        self._process = psutil.Process(os.getpid())
+        self.start = 0
+        self.end = 0
+        self.interval = 0
+
+    def __enter__(self):
+        import gc
+        gc.collect()
+        self.start = self._process.memory_info()[0]
+        return self
+
+    def __exit__(self, *args):
+        import gc
+        gc.collect()
+        self.end = self._process.memory_info()[0]
+        self.interval = self.end - self.start
 
 

@@ -27,15 +27,15 @@ __kernel void evaluate_near_field(
 {
    int myId = get_global_id(0);
 
-   int targetIndexStart = targetIndexPtr[myId];
-   int targetIndexEnd = targetIndexPtr[myId + 1];
-   int numberOfTargets = targetIndexEnd - targetIndexStart;
+   long targetIndexStart = targetIndexPtr[myId];
+   long targetIndexEnd = targetIndexPtr[myId + 1];
+   long numberOfTargets = targetIndexEnd - targetIndexStart;
 
-   int sourceIndexStart = sourceIndexPtr[myId];
-   int sourceIndexEnd = sourceIndexPtr[myId + 1];
-   int numberOfSources = sourceIndexEnd - sourceIndexStart;
+   long sourceIndexStart = sourceIndexPtr[myId];
+   long sourceIndexEnd = sourceIndexPtr[myId + 1];
+   long numberOfSources = sourceIndexEnd - sourceIndexStart;
 
-   int numSourceTiles = numberOfSources / VEC_LENGTH;
+   long numSourceTiles = numberOfSources / VEC_LENGTH;
 
    REALTYPE myResults[MAX_NUM_TARGETS];
    uint myTargetElements[3];
@@ -52,11 +52,11 @@ __kernel void evaluate_near_field(
    REALTYPE myResult;
    REALTYPE tmp;
 
-   for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++)
+   for (long targetIndex = 0; targetIndex < numberOfTargets; targetIndex++)
        myResults[targetIndex] = M_ZERO;
    
-   for (int sourceTile = 0; sourceTile < numSourceTiles; sourceTile++){
-       int myTileStart = sourceIndexStart + VEC_LENGTH * sourceTile;
+   for (long sourceTile = 0; sourceTile < numSourceTiles; sourceTile++){
+       long myTileStart = sourceIndexStart + VEC_LENGTH * sourceTile;
        
 #if VEC_LENGTH == 1
        vecSources[0] = sourceVertices[3 * myTileStart + 0];
@@ -185,7 +185,7 @@ __kernel void evaluate_near_field(
                mySourceElements[3 * i + j] = sourceElements[3 * (myTileStart + i) + j];
 
 
-       for (int targetVertexIndex = 0; targetVertexIndex < numberOfTargets; targetVertexIndex += 1){
+       for (long targetVertexIndex = 0; targetVertexIndex < numberOfTargets; targetVertexIndex += 1){
             vecDiff[0] = vecSources[0] - targetVertices[3 * (targetIndexStart + targetVertexIndex) + 0];
             vecDiff[1] = vecSources[1] - targetVertices[3 * (targetIndexStart + targetVertexIndex) + 1];
             vecDiff[2] = vecSources[2] - targetVertices[3 * (targetIndexStart + targetVertexIndex) + 2];
@@ -210,7 +210,7 @@ __kernel void evaluate_near_field(
 
    // Now do the remainder case with non-vector variables.
 
-   for (int mySourceIndex = sourceIndexStart + VEC_LENGTH * numSourceTiles; 
+   for (long mySourceIndex = sourceIndexStart + VEC_LENGTH * numSourceTiles; 
            mySourceIndex < sourceIndexEnd; mySourceIndex++){
 
        sources[0] = sourceVertices[3 * mySourceIndex + 0];
@@ -221,7 +221,7 @@ __kernel void evaluate_near_field(
            mySourceElements[j] = sourceElements[3 * mySourceIndex + j];
 
 
-       for (int targetVertexIndex = 0; targetVertexIndex < numberOfTargets; targetVertexIndex += 1){
+       for (long targetVertexIndex = 0; targetVertexIndex < numberOfTargets; targetVertexIndex += 1){
             diff[0] = sources[0] - targetVertices[3 * (targetIndexStart + targetVertexIndex) + 0];
             diff[1] = sources[1] - targetVertices[3 * (targetIndexStart + targetVertexIndex) + 1];
             diff[2] = sources[2] - targetVertices[3 * (targetIndexStart + targetVertexIndex) + 2];
@@ -239,7 +239,7 @@ __kernel void evaluate_near_field(
 
    }
 
-   for (int targetVertexIndex = 0; targetVertexIndex < numberOfTargets; targetVertexIndex += 1){
+   for (long targetVertexIndex = 0; targetVertexIndex < numberOfTargets; targetVertexIndex += 1){
        long myTargetId = targetIds[targetIndexStart + targetVertexIndex];
        result[myTargetId] = myResults[targetVertexIndex];
 

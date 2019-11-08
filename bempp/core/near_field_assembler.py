@@ -80,8 +80,8 @@ class NearFieldAssembler(object):
 
         number_of_local_points = self._fmm_interface.local_points.shape[1]
 
-        for key in self._fmm_interface.leaf_node_keys:
-            target_node = self._fmm_interface.nodes[key]
+        for key in self._fmm_interface.leaf_nodes:
+            target_node = self._fmm_interface.leaf_nodes[key]
             if len(target_node.target_ids) == 0:
                 continue
 
@@ -89,7 +89,7 @@ class NearFieldAssembler(object):
                 source_id
                 for colleague in target_node.colleagues
                 if colleague != -1
-                for source_id in self._fmm_interface.nodes[colleague].source_ids
+                for source_id in self._fmm_interface.leaf_nodes[colleague].source_ids
             ]
 
             if len(my_near_field) == 0:

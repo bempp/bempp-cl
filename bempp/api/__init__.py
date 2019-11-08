@@ -7,6 +7,7 @@ import time as _time
 
 import pyopencl as _cl
 from bempp.api.utils import DefaultParameters
+from bempp.api.utils.helpers import MemProfiler
 
 from bempp.api.utils.helpers import assign_parameters
 from bempp.api.grid.io import import_grid
