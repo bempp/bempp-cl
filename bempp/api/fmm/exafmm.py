@@ -269,3 +269,6 @@ def compute_max_level(domain, dual_to_range):
     max_level = int(_np.log2(2 * radius) - _np.log2(hmax))
 
     return max_level
+
+
+
