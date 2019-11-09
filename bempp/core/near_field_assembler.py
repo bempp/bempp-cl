@@ -74,10 +74,12 @@ class NearFieldAssembler(object):
         device_interface = self._device_interface
 
         source_id_buffer = _cl_helpers.DeviceBuffer.from_array(
-                source_ids, device_interface, access_mode="read_only")
+            source_ids, device_interface, access_mode="read_only"
+        )
 
         target_id_buffer = _cl_helpers.DeviceBuffer.from_array(
-                target_ids, device_interface, access_mode="read_only")
+            target_ids, device_interface, access_mode="read_only"
+        )
 
         source_index_ptr_buffer = _cl_helpers.DeviceBuffer.from_array(
             source_index_ptr, device_interface, access_mode="read_only"
@@ -96,11 +98,15 @@ class NearFieldAssembler(object):
         )
 
         source_vertex_buffer = _cl_helpers.DeviceBuffer.from_array(
-            self._fmm_interface.sources, device_interface, access_mode="read_only"
+            self._fmm_interface.sources.astype(self._real_type),
+            device_interface,
+            access_mode="read_only",
         )
 
         target_vertex_buffer = _cl_helpers.DeviceBuffer.from_array(
-            self._fmm_interface.targets, device_interface, access_mode="read_only"
+            self._fmm_interface.targets.astype(self._real_type),
+            device_interface,
+            access_mode="read_only",
         )
 
         input_buffer = _cl_helpers.DeviceBuffer(
@@ -151,7 +157,6 @@ class NearFieldAssembler(object):
             grids_disjoint = 0
         else:
             grids_disjoint = 1
-
 
         options = {}
         options["VEC_LENGTH"] = vec_length
@@ -225,11 +230,13 @@ def process_near_field(nodes):
         my_number_of_sources = 0
         for colleague in nodes[key].colleagues:
             nsources = len(nodes[colleague].source_ids)
-            if nsources == 0: continue
+            if nsources == 0:
+                continue
             my_number_of_sources += nsources
             sources.append(nodes[colleague].source_ids)
         # Do not process if the target has no sources in near field
-        if my_number_of_sources == 0: continue
+        if my_number_of_sources == 0:
+            continue
         number_of_near_field_targets += ntargets
         number_of_near_field_sources += my_number_of_sources
         target_index_ptr.append(number_of_near_field_targets)
