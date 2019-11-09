@@ -148,15 +148,9 @@ class Exafmm(object):
 
         exafmm_laplace.configure(expansion_order, _NCRITICAL, max_level)
 
-        self._sources = grid_to_points(
-            self._domain.grid, self._domain.support_elements, self._local_points
-        )
+        self._sources = grid_to_points(self._domain.grid, self._local_points)
 
-        self._targets = grid_to_points(
-            self._dual_to_range.grid,
-            self._dual_to_range.support_elements,
-            self._local_points,
-        )
+        self._targets = grid_to_points(self._dual_to_range.grid, self._local_points)
 
         source_bodies = init_sources(
             self._sources, _np.zeros(len(self._sources), dtype=_np.float64)
@@ -167,40 +161,39 @@ class Exafmm(object):
         build_tree(source_bodies, target_bodies)
         exafmm_nodes = build_list(True)
 
-        for exafmm_node in exafmm_nodes:
-            if not exafmm_node.is_leaf:
-                continue
-            self._leaf_nodes[exafmm_node.key] = LeafNode(
-                exafmm_node.key,
-                exafmm_node.isrcs,
-                exafmm_node.itrgs,
-                [node.key for node in exafmm_node.colleagues if node is not None],
-            )
+        with bempp.api.Timer() as t:
+            for exafmm_node in exafmm_nodes:
+                if not exafmm_node.is_leaf:
+                    continue
+                self._leaf_nodes[exafmm_node.key] = LeafNode(
+                    exafmm_node.key,
+                    exafmm_node.isrcs,
+                    exafmm_node.itrgs,
+                    [node.key for node in exafmm_node.colleagues if node is not None],
+                )
+        bempp.api.log(f"Time for node data structures: {t.interval}")
 
-        with bempp.api.MemProfiler() as m:
+        with bempp.api.Timer() as t:
             self._source_transform = map_space_to_points(
-                self.leaf_nodes,
-                self._domain,
-                self._local_points,
-                self._weights,
-                "source",
+                self._domain, self._local_points, self._weights, "source"
             )
+        bempp.api.log(f"Time for domain map: {t.interval}")
 
+        with bempp.api.Timer() as t:
             self._target_transform = map_space_to_points(
-                self.leaf_nodes,
-                self._domain,
+                self._dual_to_range,
                 self._local_points,
                 self._weights,
                 "target",
                 return_transpose=True,
             )
-        print(f"Transform matrices: {m.interval / 2**20}")
+        bempp.api.log(f"Time for dual map: {t.interval}")
 
-        with bempp.api.MemProfiler() as m:
-            self._compute_near_field_matrix()
-        print(f"Near field setup: {m.interval / 2**20}")
+        self._compute_near_field_matrix()
 
-        exafmm_laplace.precompute()
+        with bempp.api.Timer() as t:
+            exafmm_laplace.precompute()
+        bempp.api.log(f"Time for FMM precomputation. {t.interval}")
 
     def _compute_near_field_matrix(self):
         """Compute the near-field matrix."""
@@ -209,9 +202,11 @@ class Exafmm(object):
         from bempp.core.near_field_assembler import NearFieldAssembler
         from scipy.sparse.linalg import aslinearoperator
 
-        near_field_op = NearFieldAssembler(
-            self, bempp.api.default_device(), bempp.api.DEVICE_PRECISION_CPU
-        ).as_linear_operator()
+        with bempp.api.Timer() as t:
+            near_field_op = NearFieldAssembler(
+                self, bempp.api.default_device(), bempp.api.DEVICE_PRECISION_CPU
+            ).as_linear_operator()
+        bempp.api.log(f"Near field setup time: {t.interval}")
 
         singular_interactions = single_layer(
             self._domain,
