@@ -616,6 +616,7 @@ class GridFunction(object):
         return cls(space, coefficients=zeros(ndofs))
 
 
+@_numba.njit
 def _integrate(
     coefficients,
     grid_data,
@@ -718,10 +719,10 @@ def _project_function(
             )
             fvalues[:, j] = fun_result
 
-        projections[local2global[index]] += (
-            _np.sum(
-                _np.sum(element_vals * _np.expand_dims(fvalues * weights, 1), axis=0),
-                axis=1,
+        for local_fun_index in range(element_vals.shape[1]):
+            projections[local2global[index, local_fun_index]] += (
+                _np.sum(
+                    _np.sum(element_vals[:, local_fun_index, :] * fvalues * weights, axis=0)
+                )
+                * grid_data.integration_elements[index]
             )
-            * grid_data.integration_elements[index] * local_multipliers[index]
-        )

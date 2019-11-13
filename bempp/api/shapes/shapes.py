@@ -75,6 +75,44 @@ def __generate_grid_from_geo_string(geo_string):
     os.remove(msh_name)
     return grid
 
+def screen(corners, h=.1):
+    """
+    Creates a screen.
+
+    Parameters
+    ----------
+    corners : np.ndarray
+        A (4 x 3) array that defines four corners of the screen.
+    h : float
+        A floating point number specifying the grid size.
+
+    Output 
+    -------
+    grid : bempp.Grid
+        A structured grid.
+
+    """
+    stub = f"""
+    cl = {h};
+    Point(1) = {{ {corners[0, 0]}, {corners[0, 1]}, {corners[0, 2]}, cl }};
+    Point(2) = {{ {corners[1, 0]}, {corners[1, 1]}, {corners[1, 2]}, cl }};
+    Point(3) = {{ {corners[2, 0]}, {corners[2, 1]}, {corners[2, 2]}, cl }};
+    Point(4) = {{ {corners[3, 0]}, {corners[3, 1]}, {corners[3, 2]}, cl }};
+
+    Line(1) = {{1,2}};
+    Line(2) = {{2,3}};
+    Line(3) = {{3,4}};
+    Line(4) = {{4,1}};
+    Line Loop(1) = {{1, 2, 3, 4}};
+    Plane Surface(1) = {{1}};
+    Physical Surface(1) = {{1}};
+
+    Mesh.Algorithm = 6;
+    """
+    return __generate_grid_from_geo_string(stub)
+
+
+
 def regular_sphere(refine_level):
     """
     Create a regular sphere with a given refinement level.

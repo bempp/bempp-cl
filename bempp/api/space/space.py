@@ -170,7 +170,7 @@ class SpaceBuilder(object):
 
     def set_numba_evaluator(self, basis_evaluator):
         """Hand over Numba method that evaluates the basis."""
-        self._basis_evaluator = basis_evaluator
+        self._numba_evaluator = basis_evaluator
         return self
 
     def set_numba_surface_gradient(self, surface_gradient):
