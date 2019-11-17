@@ -245,7 +245,7 @@ class GridFunction(object):
             else:
                 dtype = "complex128"
 
-            grid_projections = _np.zeros(dual_space.grid_dof_count, dtype=dtype)
+            grid_projections = _np.zeros(comp_dual.grid_dof_count, dtype=dtype)
 
             # Create a Numba callable from the function
 
@@ -313,9 +313,9 @@ class GridFunction(object):
 
             op = InverseSparseDiscreteBoundaryOperator(
                 identity(
-                    self._comp_domain,
-                    self._comp_domain,
-                    self._comp_dual,
+                    self.space,
+                    self.space,
+                    self.dual_space,
                     parameters=self.parameters,
                 )
                 .weak_form()
