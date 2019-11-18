@@ -1,0 +1,26 @@
+The following packages are recommended to run bempp-cl
+
+numpy, scipy, numba, pytest, pyopencl, meshio, plotly, jupyter.
+
+The easiest installation is through conda. The bempp directory contains
+a file environment.yaml. Simply run
+
+>> conda env create -f environment.yaml
+
+and a complete conda environment called bempp is setup. Once it is created
+change into the environment with 
+
+>> conda activate bempp
+
+You can now install the bempp-cl package with
+
+>> pip install git+git://github.com/bempp/bempp-cl.git
+
+By default bempp-cl uses the pocl (portablecl.org) OpenCL CPU library.
+Other OpenCL capable devices can be used if a corresponding ICD file is
+available. These need to be copied into the 
+~/.conda/envs/bempp/conda/etc/OpenCL/vendors directory.
+
+
+
+
