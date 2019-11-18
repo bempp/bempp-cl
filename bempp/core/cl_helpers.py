@@ -172,6 +172,7 @@ class Kernel(object):
         self._precision = precision
         self._prg = self._build(context)
         self._kernel_name = self._prg.kernel_names
+        self._compiled_kernel = None
 
     def _build(self, context):
         """Build the OpenCL kernel instance."""
@@ -191,7 +192,9 @@ class Kernel(object):
     @property
     def implementation(self):
         """Return the compiled CL Kernel."""
-        return getattr(self._prg, self._kernel_name)
+        if self._compiled_kernel is None:
+            self._compiled_kernel = getattr(self._prg, self._kernel_name)
+        return self._compiled_kernel
 
     @property
     def kernel_source(self):
@@ -246,6 +249,17 @@ class Kernel(object):
             _cl.kernel_work_group_info.PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
             device_interface.cl_device,
         )
+
+    def __del__(self):
+        """
+        Need to clean up the kernel before prg is cleaned up.
+
+        This seems to be an issue with resource handling in PyOpenCL.
+
+        """
+        if self._compiled_kernel is not None:
+            self._compiled_kernel = None
+        self._prg = None
 
 
 def _get_kernel_compile_options_from_parameters(parameters, precision):

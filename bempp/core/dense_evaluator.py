@@ -358,7 +358,7 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
             event.wait()
             runtime += event.runtime()
 
-        log("Regular kernel runtime [ms]: {0}".format(runtime))
+        log("Regular kernel runtime [ms]: {0}".format(runtime), "debug")
 
         result = self._result_buffer.get_host_copy(self._device_interface)
 

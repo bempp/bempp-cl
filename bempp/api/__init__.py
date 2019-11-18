@@ -38,11 +38,16 @@ from bempp.api.assembly.blocked_operator import GeneralizedBlockedOperator
 # Disable Numba warnings
 
 
-from numba.errors import NumbaDeprecationWarning, NumbaPendingDeprecationWarning
+from numba.errors import (
+    NumbaDeprecationWarning,
+    NumbaPendingDeprecationWarning,
+    NumbaPerformanceWarning,
+)
 import warnings
 
-warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
-warnings.simplefilter('ignore', category=NumbaPendingDeprecationWarning)
+warnings.simplefilter("ignore", category=NumbaDeprecationWarning)
+warnings.simplefilter("ignore", category=NumbaPendingDeprecationWarning)
+warnings.simplefilter("ignore", category=NumbaPerformanceWarning)
 
 
 CONSOLE_LOGGING_HANDLER = None
@@ -65,9 +70,18 @@ def _init_logger():
     return logger
 
 
-def log(message, level=INFO, flush=True):
+def log(message, level="info", flush=True):
     """Log including default flushing for IPython."""
-    LOGGER.log(level, message)
+    if level == "info":
+        log_level = INFO
+    elif level == "debug":
+        log_level = DEBUG
+    elif level == "error":
+        log_level = ERROR
+    elif level == "critical":
+        log_level = CRITICAL
+
+    LOGGER.log(log_level, message)
     if flush:
         flush_log()
 

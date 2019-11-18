@@ -102,11 +102,11 @@ def multitrace_operator(
         target is set to the input grid (that is the domain
         grid).
     space_type : string
-        One of "all_rwg", "all_dual", "electric_dual" (default),
+        One of "all_rwg", "all_bc", "electric_dual" (default),
         "magnetic_dual". These lead to the following
         choices of space, range, and dual_to_range:
-        default - (RWG, RWG), (RWG, RWG), (SNC, SNC)
-        all_dual - (BC, BC), (BC, BC), (RBC, RBC)
+        default - (RWG, RWG), (BC, BC), (SNC, SNC)
+        all_dual - (BC, BC), (RWG, RWG), (RBC, RBC)
         electric_dual - (RWG, BC), (RWG, BC), (RBC, SNC)
         magnetic_dual - (BC, RWG), (BC, RWG), (SNC, RBC)
     parameters : Parameters
@@ -134,31 +134,33 @@ def multitrace_operator(
 
     if space_type == "all_rwg":
         rwg = bempp.api.function_space(grid, "RWG", 0)
+        bc = bempp.api.function_space(grid, "BC", 0)
         snc = bempp.api.function_space(grid, "SNC", 0)
 
         if target is not None:
-            rwg_target = bempp.api.function_space(target, "RWG", 0)
+            bc_target = bempp.api.function_space(target, "BC", 0)
             snc_target = bempp.api.function_space(target, "SNC", 0)
         else:
-            rwg_target = rwg
+            bc_target = bc
             snc_target = snc
 
         domain = [rwg, rwg]
-        range_ = [rwg_target, rwg_target]
+        range_ = [bc_target, bc_target]
         dual_to_range = [snc_target, snc_target]
-    elif space_type == "all_dual":
+    elif space_type == "all_bc":
         bc = bempp.api.function_space(grid, "BC", 0)
+        rwg = bempp.api.function_space(grid, "RWG", 0)
         rbc = bempp.api.function_space(grid, "RBC", 0)
 
         if target is not None:
-            bc_target = bempp.api.function_space(target, "BC", 0)
+            rwg_target = bempp.api.function_space(target, "RWG", 0)
             rbc_target = bempp.api.function_space(target, "RBC", 0)
         else:
-            bc_target = bc 
+            rwg_target = rwg 
             rbc_target = rbc
 
         domain = [bc, bc]
-        range_ = [bc_target, bc_target]
+        range_ = [rwg_target, rwg_target]
         dual_to_range = [rbc_target, rbc_target]
 
     elif space_type == "electric_dual":

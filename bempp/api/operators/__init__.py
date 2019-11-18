@@ -5,6 +5,7 @@ import numpy as _np
 
 from . import boundary
 from . import potential
+from . import far_field
 
 
 OperatorDescriptor = _collections.namedtuple(
