@@ -19,6 +19,7 @@ class _it_counter(object):
         self._rhs = rhs
 
     def __call__(self, x):
+        from bempp.api import log
         self._count += 1
         if self._store_residuals:
             if self._iteration_is_cg:
@@ -26,6 +27,9 @@ class _it_counter(object):
             else:
                 res = x
             self._residuals.append(_np.linalg.norm(res))
+            log(f"GMRES Iteration {self._count} with residual {self._residuals[-1]}")
+        else:
+            log(f"GMRES Iteration {self._count}")
 
     @property
     def count(self):

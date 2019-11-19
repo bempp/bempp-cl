@@ -131,7 +131,7 @@ def export(
         geom_indices = _np.array([geom_indices_map[dom_index] for dom_index in grid.domain_indices], dtype='int32')    
         cell_data["triangle"]["gmsh:geometrical"] = geom_indices
     else:
-        cell_data["triangle"]["domain index"] = grid.domain_indices.astype("int32")
+        cell_data["triangle"]["domain_index"] = grid.domain_indices.astype("int32")
 
     _meshio.write_points_cells(
         filename,
@@ -139,7 +139,7 @@ def export(
         cells,
         point_data=point_data,
         cell_data=cell_data,
-        write_binary=write_binary,
+        binary=write_binary,
         file_format=file_format,
     )
 

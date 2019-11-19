@@ -39,6 +39,9 @@ __kernel void evaluate_dense_laplace_hypersingular_regular(
   uint myTestLocal2Global[NUMBER_OF_TEST_SHAPE_FUNCTIONS];
   uint myTrialLocal2Global[NUMBER_OF_TRIAL_SHAPE_FUNCTIONS];
 
+  REALTYPE myTestLocalMultipliers[NUMBER_OF_TEST_SHAPE_FUNCTIONS];
+  REALTYPE myTrialLocalMultipliers[NUMBER_OF_TRIAL_SHAPE_FUNCTIONS];
+
   REALTYPE3 testJac[2];
   REALTYPE3 trialJac[2];
 
@@ -82,6 +85,11 @@ __kernel void evaluate_dense_laplace_hypersingular_regular(
 
   updateNormals(testIndex, testNormalSigns, &testNormal);
   updateNormals(trialIndex, trialNormalSigns, &trialNormal);
+
+  getLocalMultipliers(testLocalMultipliers, testIndex, myTestLocalMultipliers,
+                      NUMBER_OF_TEST_SHAPE_FUNCTIONS);
+  getLocalMultipliers(trialLocalMultipliers, trialIndex,
+                      myTrialLocalMultipliers, NUMBER_OF_TRIAL_SHAPE_FUNCTIONS);
 
   testInv[0][0] = dot(testJac[1], testJac[1]);
   testInv[1][1] = dot(testJac[0], testJac[0]);
@@ -145,7 +153,7 @@ __kernel void evaluate_dense_laplace_hypersingular_regular(
         globalRowIndex = myTestLocal2Global[i];
         globalColIndex = myTrialLocal2Global[j];
         globalResult[globalRowIndex * nTrial + globalColIndex] +=
-            shapeIntegral * basisProduct[i][j];
+            shapeIntegral * basisProduct[i][j] * myTestLocalMultipliers[i] * myTrialLocalMultipliers[j];
       }
   }
 }

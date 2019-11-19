@@ -6,5 +6,11 @@ from .shapes import multitrace_cube
 from .shapes import reference_triangle
 from .shapes import sphere
 from .shapes import ellipsoid
+from .shapes import cuboid
+from .shapes import almond
+from .shapes import reentrant_cube
+from .shapes import screen
+
+
 
 

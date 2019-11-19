@@ -47,6 +47,9 @@ __kernel __attribute__((vec_type_hint(REALTYPE8))) void evaluate_dense_regular(
   uint myTestLocal2Global[NUMBER_OF_TEST_SHAPE_FUNCTIONS];
   uint myTrialLocal2Global[8][NUMBER_OF_TRIAL_SHAPE_FUNCTIONS];
 
+  REALTYPE myTestLocalMultipliers[NUMBER_OF_TEST_SHAPE_FUNCTIONS];
+  REALTYPE myTrialLocalMultipliers[8][NUMBER_OF_TRIAL_SHAPE_FUNCTIONS];
+
   REALTYPE3 testJac[2];
   REALTYPE8 trialJac[2][3];
 
@@ -124,6 +127,12 @@ __kernel __attribute__((vec_type_hint(REALTYPE8))) void evaluate_dense_regular(
                   NUMBER_OF_TEST_SHAPE_FUNCTIONS);
   getLocal2GlobalVec8(trialLocal2Global, trialIndex, &myTrialLocal2Global[0][0],
                       NUMBER_OF_TRIAL_SHAPE_FUNCTIONS);
+
+  getLocalMultipliers(testLocalMultipliers, testIndex, myTestLocalMultipliers,
+                      NUMBER_OF_TEST_SHAPE_FUNCTIONS);
+  getLocalMultipliersVec8(trialLocalMultipliers, trialIndex,
+                          &myTrialLocalMultipliers[0][0],
+                          NUMBER_OF_TRIAL_SHAPE_FUNCTIONS);
 
   getJacobian(testCorners, testJac);
   getJacobianVec8(trialCorners, trialJac);
@@ -312,12 +321,15 @@ __kernel __attribute__((vec_type_hint(REALTYPE8))) void evaluate_dense_regular(
           globalColIndex = myTrialLocal2Global[vecIndex][j];
 #ifndef COMPLEX_KERNEL
           globalResult[globalRowIndex * nTrial + globalColIndex] +=
-              ((REALTYPE*)(&shapeIntegral[i][j]))[vecIndex];
+              ((REALTYPE*)(&shapeIntegral[i][j]))[vecIndex] *
+              myTestLocalMultipliers[i] * myTrialLocalMultipliers[vecIndex][j];
 #else
           globalResult[2 * (globalRowIndex * nTrial + globalColIndex)] +=
-              ((REALTYPE*)(&shapeIntegral[i][j][0]))[vecIndex];
+              ((REALTYPE*)(&shapeIntegral[i][j][0]))[vecIndex] *
+              myTestLocalMultipliers[i] * myTrialLocalMultipliers[vecIndex][j];
           globalResult[2 * (globalRowIndex * nTrial + globalColIndex) + 1] +=
-              ((REALTYPE*)(&shapeIntegral[i][j][1]))[vecIndex];
+              ((REALTYPE*)(&shapeIntegral[i][j][1]))[vecIndex] *
+              myTestLocalMultipliers[i] * myTrialLocalMultipliers[vecIndex][j];
 #endif
         }
     }

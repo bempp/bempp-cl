@@ -18,6 +18,7 @@ def function_space(
 ):
     """Initialize a function space."""
     from . import scalar_spaces
+    from . import scalar_dual_spaces
     from . import maxwell_spaces
 
     if _np.count_nonzero([support_elements, segments]) > 1:
@@ -41,6 +42,15 @@ def function_space(
                 grid, support_elements, segments, swapped_normals, **kwargs
             )
 
+    if kind == "DUAL":
+        if degree == 0:
+            return scalar_dual_spaces.dual0_function_space(
+                grid, support_elements, segments, swapped_normals
+            )
+        if degree == 1:
+            raise ValueError("Requested space not implemented yet.")
+
+
     if kind == "RWG":
         if degree == 0:
             return maxwell_spaces.rwg0_function_space(
@@ -55,14 +65,12 @@ def function_space(
 
     if kind == "BC":
         if degree == 0:
-
             return maxwell_spaces.bc_function_space(
                 grid, support_elements, segments, swapped_normals, **kwargs
             )
 
     if kind == "RBC":
         if degree == 0:
-
             return maxwell_spaces.rbc_function_space(
                 grid, support_elements, segments, swapped_normals, **kwargs
             )
@@ -162,7 +170,7 @@ class SpaceBuilder(object):
 
     def set_numba_evaluator(self, basis_evaluator):
         """Hand over Numba method that evaluates the basis."""
-        self._basis_evaluator = basis_evaluator
+        self._numba_evaluator = basis_evaluator
         return self
 
     def set_numba_surface_gradient(self, surface_gradient):
@@ -218,7 +226,7 @@ class SpaceBuilder(object):
             self._support = _np.ones(self._grid.number_of_elements, dtype=_np.bool)
 
         if self._normal_multipliers is None:
-            self._normal_multipliers = _np.ones(self._grid.number_of_elemnets, dtype=_np.int32)
+            self._normal_multipliers = _np.ones(self._grid.number_of_elements, dtype=_np.int32)
 
         if self._dof_transformation is None:
             ndofs = 1 + _np.max(self._local2global_map)
@@ -570,7 +578,14 @@ class FunctionSpace(object):
         return (self._sorted_indices, self._indexptr)
 
     def evaluate(self, element_index, local_coordinates):
-        """Evaluate the basis on an element."""
+        """
+        Evaluate the basis on an element.
+        
+        Returns an array of the form 
+        (codomain_dimension, number_of_shape_functions, number_of_eval_points)
+        that contains the basis functions evaluated at the given points.
+        
+        """
         return self.numba_evaluate(
             element_index,
             self.shapeset.evaluate,

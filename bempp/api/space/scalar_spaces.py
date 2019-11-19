@@ -113,7 +113,7 @@ def p1_continuous_function_space(
             vertex_neighbors[vertex].append(index)
     vertex_neighbors, index_ptr = serialise_list_of_lists(vertex_neighbors)
 
-    local2global, local_multipliers = _compute_p1_dof_map(
+    local2global, local_multipliers, support = _compute_p1_dof_map(
         grid.data,
         support,
         include_boundary_dofs,
@@ -230,7 +230,7 @@ def _compute_p1_dof_map(
             if local2global[element_index, local_index] == -1:
                 local2global_final[element_index, local_index] = min_dof
 
-    return local2global_final, local_multipliers
+    return local2global_final, local_multipliers, support_final
 
 
 @_numba.njit

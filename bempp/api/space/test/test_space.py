@@ -59,7 +59,14 @@ def test_p1_open_segment():
     for elem_index in range(grid.number_of_elements):
         if space.support[elem_index]:
             if _np.any(
-                space.support[list(grid.element_neighbors[elem_index])] == False
+                space.support[
+                    grid.element_neighbors.indices[
+                        grid.element_neighbors.indexptr[
+                            elem_index
+                        ] : grid.element_neighbors.indexptr[elem_index + 1]
+                    ]
+                ]
+                == False
             ):
                 # Element is on the boundary
                 for index, vertex_index in enumerate(grid.elements[:, elem_index]):
@@ -124,7 +131,14 @@ def test_p1_closed_segment():
     for elem_index in range(grid.number_of_elements):
         if space.support[elem_index]:
             if _np.any(
-                space.support[list(grid.element_neighbors[elem_index])] == False
+                space.support[
+                    grid.element_neighbors.indices[
+                        grid.element_neighbors.indexptr[
+                            elem_index
+                        ] : grid.element_neighbors.indexptr[elem_index + 1]
+                    ]
+                ]
+                == False
             ):
                 # Element is on the boundary
                 if _np.any(space.local_multipliers[elem_index] == 0):
@@ -151,7 +165,14 @@ def test_rwg_open_segment():
     for elem_index in range(grid.number_of_elements):
         if space.support[elem_index]:
             if _np.any(
-                space.support[list(grid.element_neighbors[elem_index])] == False
+                space.support[
+                    grid.element_neighbors.indices[
+                        grid.element_neighbors.indexptr[
+                            elem_index
+                        ] : grid.element_neighbors.indexptr[elem_index + 1]
+                    ]
+                ]
+                == False
             ):
                 # Element is on the boundary
                 for index, edge_index in enumerate(grid.element_edges[:, elem_index]):
@@ -187,6 +208,7 @@ def test_rwg_closed_segment():
         else:
             assert _np.all(space.local_multipliers[elem_index] == 0)
 
+
 def test_snc_closed_segment():
     """Check an SNC closed segment."""
     import bempp.api
@@ -221,7 +243,14 @@ def test_snc_open_segment():
     for elem_index in range(grid.number_of_elements):
         if space.support[elem_index]:
             if _np.any(
-                space.support[list(grid.element_neighbors[elem_index])] == False
+                space.support[
+                    grid.element_neighbors.indices[
+                        grid.element_neighbors.indexptr[
+                            elem_index
+                        ] : grid.element_neighbors.indexptr[elem_index + 1]
+                    ]
+                ]
+                == False
             ):
                 # Element is on the boundary
                 for index, edge_index in enumerate(grid.element_edges[:, elem_index]):
@@ -244,9 +273,7 @@ def test_dp1_closed_segment():
 
     grid = bempp.api.shapes.cube()
 
-    space = bempp.api.function_space(
-        grid, "DP", 1, segments=[1]
-    )
+    space = bempp.api.function_space(grid, "DP", 1, segments=[1])
 
     for elem_index in range(grid.number_of_elements):
         if space.support[elem_index]:

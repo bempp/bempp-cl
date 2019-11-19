@@ -94,4 +94,3 @@ class MemProfiler:
         self.end = self._process.memory_info()[0]
         self.interval = self.end - self.start
 
-

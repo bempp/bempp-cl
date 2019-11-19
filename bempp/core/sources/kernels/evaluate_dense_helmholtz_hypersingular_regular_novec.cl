@@ -39,6 +39,9 @@ __kernel void evaluate_dense_helmholtz_hypersingular_novec(
   uint myTestLocal2Global[NUMBER_OF_TEST_SHAPE_FUNCTIONS];
   uint myTrialLocal2Global[NUMBER_OF_TRIAL_SHAPE_FUNCTIONS];
 
+  REALTYPE myTestLocalMultipliers[NUMBER_OF_TEST_SHAPE_FUNCTIONS];
+  REALTYPE myTrialLocalMultipliers[NUMBER_OF_TRIAL_SHAPE_FUNCTIONS];
+
   REALTYPE3 testJac[2];
   REALTYPE3 trialJac[2];
 
@@ -115,6 +118,11 @@ __kernel void evaluate_dense_helmholtz_hypersingular_novec(
 
   getNormalAndIntegrationElement(testJac, &testNormal, &testIntElem);
   getNormalAndIntegrationElement(trialJac, &trialNormal, &trialIntElem);
+
+  getLocalMultipliers(testLocalMultipliers, testIndex, myTestLocalMultipliers,
+                      NUMBER_OF_TEST_SHAPE_FUNCTIONS);
+  getLocalMultipliers(trialLocalMultipliers, trialIndex,
+                      myTrialLocalMultipliers, NUMBER_OF_TRIAL_SHAPE_FUNCTIONS);
 
   updateNormals(testIndex, testNormalSigns, &testNormal);
   updateNormals(trialIndex, trialNormalSigns, &trialNormal);
@@ -268,12 +276,15 @@ __kernel void evaluate_dense_helmholtz_hypersingular_novec(
         globalColIndex = myTrialLocal2Global[j];
 #ifndef COMPLEX_KERNEL
         globalResult[globalRowIndex * nTrial + globalColIndex] +=
-            shapeIntegral[i][j] * testIntElem * trialIntElem;
+            shapeIntegral[i][j] * testIntElem * trialIntElem *
+            myTestLocalMultipliers[i] * myTrialLocalMultipliers[j];
 #else
         globalResult[2 * (globalRowIndex * nTrial + globalColIndex)] +=
-            shapeIntegral[i][j][0] * testIntElem * trialIntElem;
+            shapeIntegral[i][j][0] * testIntElem * trialIntElem *
+            myTestLocalMultipliers[i] * myTrialLocalMultipliers[j];
         globalResult[2 * (globalRowIndex * nTrial + globalColIndex) + 1] +=
-            shapeIntegral[i][j][1] * testIntElem * trialIntElem;
+            shapeIntegral[i][j][1] * testIntElem * trialIntElem *
+            myTestLocalMultipliers[i] * myTrialLocalMultipliers[j];
 #endif
       }
   }

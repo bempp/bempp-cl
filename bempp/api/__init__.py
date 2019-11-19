@@ -12,6 +12,7 @@ from bempp.api.utils.helpers import MemProfiler
 from bempp.api.utils.helpers import assign_parameters
 from bempp.api.grid.io import import_grid
 from bempp.api.grid.io import export
+from bempp.api.grid.grid import Grid
 from bempp.api.assembly.grid_function import GridFunction
 from bempp.api.assembly.grid_function import real_callable
 from bempp.api.assembly.grid_function import complex_callable
@@ -32,15 +33,22 @@ from bempp.api.linalg.iterative_solvers import gmres, cg
 from bempp.api.assembly.discrete_boundary_operator import as_matrix
 from bempp.api.assembly.boundary_operator import ZeroBoundaryOperator
 from bempp.api.assembly.boundary_operator import MultiplicationOperator
+from bempp.api.assembly.blocked_operator import BlockedOperator
+from bempp.api.assembly.blocked_operator import GeneralizedBlockedOperator
 
 # Disable Numba warnings
 
 
-from numba.errors import NumbaDeprecationWarning, NumbaPendingDeprecationWarning
+from numba.errors import (
+    NumbaDeprecationWarning,
+    NumbaPendingDeprecationWarning,
+    NumbaPerformanceWarning,
+)
 import warnings
 
-warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
-warnings.simplefilter('ignore', category=NumbaPendingDeprecationWarning)
+warnings.simplefilter("ignore", category=NumbaDeprecationWarning)
+warnings.simplefilter("ignore", category=NumbaPendingDeprecationWarning)
+warnings.simplefilter("ignore", category=NumbaPerformanceWarning)
 
 
 CONSOLE_LOGGING_HANDLER = None
@@ -51,6 +59,14 @@ WARNING = _logging.WARNING
 ERROR = _logging.ERROR
 CRITICAL = _logging.CRITICAL
 
+LOG_LEVEL = {
+    "debug": DEBUG,
+    "info": INFO,
+    "warning": WARNING,
+    "error": ERROR,
+    "critical": CRITICAL,
+}
+
 GLOBAL_PARAMETERS = DefaultParameters()
 
 
@@ -58,14 +74,14 @@ def _init_logger():
     """Initialize the Bempp logger."""
 
     logger = _logging.getLogger()
-    logger.setLevel(INFO)
+    logger.setLevel(DEBUG)
     logger.addHandler(_logging.NullHandler())
     return logger
 
 
-def log(message, level=INFO, flush=True):
+def log(message, level="info", flush=True):
     """Log including default flushing for IPython."""
-    LOGGER.log(level, message)
+    LOGGER.log(LOG_LEVEL[level], message)
     if flush:
         flush_log()
 
@@ -76,13 +92,13 @@ def flush_log():
         handler.flush()
 
 
-def enable_console_logging(level=DEBUG):
+def enable_console_logging(level="info"):
     """Enable console logging and return the console handler."""
     # pylint: disable=W0603
     global CONSOLE_LOGGING_HANDLER
     if not CONSOLE_LOGGING_HANDLER:
         console_handler = _logging.StreamHandler()
-        console_handler.setLevel(level)
+        console_handler.setLevel(LOG_LEVEL[level])
         console_handler.setFormatter(
             _logging.Formatter(DEFAULT_LOGGING_FORMAT, "%H:%M:%S")
         )
@@ -103,29 +119,9 @@ def enable_file_logging(file_name, level=DEBUG, logging_format=DEFAULT_LOGGING_F
 
 def set_logging_level(level):
     """Set the logging level."""
-    LOGGER.setLevel(level)
+    LOGGER.setLevel(LOG_LEVEL[level])
 
 
-def timeit(message):
-    """Decorator to time a method in Bempp"""
-
-    def timeit_impl(fun):
-        """Implementation of timeit."""
-
-        def timed_fun(*args, **kwargs):
-            """The actual timer function."""
-            if not GLOBAL_PARAMETERS.verbosity.extended_verbosity:
-                return fun(*args, **kwargs)
-
-            start_time = _time.time()
-            res = fun(*args, **kwargs)
-            end_time = _time.time()
-            log(message + " : {0:.3e}s".format(end_time - start_time))
-            return res
-
-        return timed_fun
-
-    return timeit_impl
 
 
 # pylint: disable=too-few-public-methods
@@ -226,6 +222,6 @@ GMSH_PATH = _gmsh_path()
 VECTORIZATION = "auto"
 DEVICE_PRECISION_CPU = "double"
 DEVICE_PRECISION_GPU = "single"
-PLOT_BACKEND = "gmsh"
+PLOT_BACKEND = "jupyter_notebook"
 
 ALL = -1  # Useful global identifier

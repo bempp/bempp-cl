@@ -1,4 +1,5 @@
 """The basic grid class"""
+from bempp.helpers import timeit as _timeit
 import collections as _collections
 
 import numba as _numba
@@ -13,6 +14,7 @@ _EDGE_LOCAL = _np.array([[0, 1], [2, 0], [1, 2]])
 class Grid(object):
     """The Grid class."""
 
+    @_timeit
     def __init__(self, vertices, elements, domain_indices=None):
         """Create a grid from a vertices and an elements array."""
         from uuid import uuid4
@@ -116,11 +118,13 @@ class Grid(object):
     @property
     def element_neighbors(self):
         """
-        Return list of element neighbors.
+        Return named tuple (indices, indexptr)
 
-        For element i the value of element_neighbors[i] is a set
-        that contains all elements different from i that share at
-        least one vertex with element i.
+        The neighbors of element i are given as 
+        element_neighbors.indices[
+            element_neighbors.indptr[i] : element_neighbors.indptr[i +1]]. 
+        Note that the element i is contained in the list of neighbors.
+
         """
         return self._element_neighbors
 
@@ -434,29 +438,17 @@ class Grid(object):
         two nodes associated with the jth edge.
 
         """
-        not_found = -1
 
-        edges = []
-        edge_tuple_to_index = {}
+        # The following would be better defined inside the njitted routiine.
+        # But Numba then throws an error that it cannot find the UniTuple type.
+        edge_tuple_to_index = _numba.typed.Dict.empty(
+            key_type=_numba.types.containers.UniTuple(_numba.types.int64, 2),
+            value_type=_numba.types.int64,
+        )
 
-        number_of_elements = self._elements.shape[1]
-        element_edges = _np.zeros((3, number_of_elements), dtype="int32")
-
-        number_of_edges = 0
-
-        for elem_index, elem in enumerate(self._elements.T):
-            for local_index in range(3):
-                edge_tuple = _vertices_from_edge_index(elem, local_index)
-                edge_index = edge_tuple_to_index.get(edge_tuple, not_found)
-                if edge_index == not_found:
-                    edge_index = number_of_edges
-                    edge_tuple_to_index[edge_tuple] = edge_index
-                    edges.append(edge_tuple)
-                    number_of_edges += 1
-                element_edges[local_index, elem_index] = edge_index
-
-        self._edges = _np.array(edges, dtype="int32").T
-        self._element_edges = element_edges
+        self._edges, self._element_edges = _numba_enumerate_edges(
+            self._elements, edge_tuple_to_index
+        )
 
     def _get_element_adjacency_for_edges_and_vertices(self):
         """
@@ -473,10 +465,6 @@ class Grid(object):
         in the first element and the vertex vertex_adjacency[3, j]
         in the second element. The vertex numbers here are local numbers
         (0, 1 or 2).
-
-        The list element_neighbors is defined such that element_neighbors[i]
-        contains the element indices of all elements which share at least one
-        vertex with element i.
 
         """
         self._element_to_vertex_matrix = get_element_to_vertex_matrix(
@@ -509,7 +497,9 @@ class Grid(object):
             self._elements, edge_connected_elements1, edge_connected_elements2
         )
 
-        self._element_neighbors = _get_element_neighbors(elem_to_elem_matrix)
+        self._element_neighbors = _collections.namedtuple(
+            "ElementNeighbors", ["indices", "indexptr"]
+        )(elem_to_elem_matrix.indices, elem_to_elem_matrix.indptr)
 
     def _compute_geometric_quantities(self):
         """Compute geometric quantities for the grid."""
@@ -759,18 +749,6 @@ class Element(object):
         """Return the domain index."""
         return self._grid.domain_indices[self.index]
 
-    @property
-    def neighbors(self):
-        """
-        Return a list of neighboring elements.
-
-        Two elements are neighbors if they share at least one vertex.
-        """
-        return [
-            Element(self._grid, index)
-            for index in self.grid.element_neighbors[self.index]
-        ]
-
     def sub_entity_iterator(self, codim):
         """Return iterator over subentitites."""
 
@@ -913,7 +891,7 @@ def _compare_array_to_value(array, val):
         "index1": _numba.types.int32,
         "index2": _numba.types.int32,
         "full_index1": _numba.types.int32,
-    },
+    }
 )
 def _find_first_common_array_index_pair_from_position(array1, array2, start=0):
     """
@@ -1098,24 +1076,6 @@ def _vertices_from_edge_index(element, local_index):
     return _sort_values(vertex0, vertex1)
 
 
-def _get_element_neighbors(element_to_element_matrix):
-    """Return a list of neighbors for each element."""
-
-    number_of_elements = element_to_element_matrix.shape[0]
-    indices = element_to_element_matrix.indices
-    indptr = element_to_element_matrix.indptr
-    neighbors = [[] for _ in range(number_of_elements)]
-
-    for element_index in range(number_of_elements):
-        neighbors[element_index] = set(
-            indices[indptr[element_index] : indptr[element_index + 1]]
-        )
-        # We don't want the element itself in the neighbors set.
-        neighbors[element_index].remove(element_index)
-
-    return neighbors
-
-
 def grid_from_segments(grid, segments):
     """Return new grid from segments of existing grid."""
 
@@ -1290,12 +1250,7 @@ def enumerate_vertex_adjacent_elements(grid, support_elements):
     the local indices of the two edges that are adjacent to vertex i. They are sorted in
     anti-clockwise order with respect to the natural normal directions of the elements.
     Moreover, all tuples represent elements in anti-clockwise order.
-
     """
-    import pprofile
-
-    prof = pprofile.Profile()
-
     vertex_edges = [[] for _ in range(grid.vertices.shape[1])]
 
     for element_index in support_elements:
@@ -1374,3 +1329,41 @@ def enumerate_vertex_adjacent_elements(grid, support_elements):
         )
 
     return vertex_edges
+
+
+@_numba.njit
+def _numba_enumerate_edges(elements, edge_tuple_to_index):
+    """
+    Enumerate all edges in a given grid.
+
+    Assigns a tuple (edges, element_edges) to
+    self._edges and self._element_edges.
+    element_edges is an array a such that a[i, j] is the
+    index of the ith edge in the jth elements, and edges
+    is a 2 x nedges array such that the jth column stores the
+    two nodes associated with the jth edge.
+
+    """
+    not_found = -1
+
+    edges = []
+
+    number_of_elements = elements.shape[1]
+    element_edges = _np.zeros((3, number_of_elements), dtype=_np.int32)
+
+    number_of_edges = 0
+
+    for elem_index in range(number_of_elements):
+        elem = elements[:, elem_index]
+        for local_index in range(3):
+            edge_tuple = _vertices_from_edge_index(elem, local_index)
+            if not edge_tuple in edge_tuple_to_index:
+                edge_index = number_of_edges
+                edge_tuple_to_index[edge_tuple] = edge_index
+                edges.append(edge_tuple)
+                number_of_edges += 1
+            else:
+                edge_index = edge_tuple_to_index[edge_tuple]
+            element_edges[local_index, elem_index] = edge_index
+
+    return _np.array(edges, dtype=_np.int32).T, element_edges

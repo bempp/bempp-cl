@@ -29,6 +29,9 @@ class DenseAssembler(_assembler.AssemblerBase):
 
         source_name = choose_source_name(operator_descriptor.compute_kernel)
 
+        if self.domain.requires_dof_transformation or self.dual_to_range.requires_dof_transformation:
+            raise ValueError("Spaces that require dof transformations not supported for dense assembly.")
+
         mat = assemble_dense(
             self.domain,
             self.dual_to_range,

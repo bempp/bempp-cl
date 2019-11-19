@@ -7,54 +7,78 @@ import numpy as _np
 from bempp.api.grid.grid import GridData as _GridData
 
 
-def real_callable(*args, jit=True):
-    """JIT Compile a callable for a grid function if jit is true."""
+def real_callable(f):
+    """Wrap function as a real Numba callable."""
 
-    def wrap(f):
-        """Actual wrapper."""
-        if jit:
-            fun = _numba.njit(
-                _numba.void(
-                    _numba.float64[:],
-                    _numba.float64[:],
-                    _numba.uint32,
-                    _numba.float64[:],
-                )
-            )(f)
-        else:
-            fun = f
-        fun.bempp_type = "real"
-        return fun
-
-    if not args:
-        return wrap
-    else:
-        return wrap(args[0])
+    fun = _numba.njit(
+        _numba.void(
+            _numba.float64[:], _numba.float64[:], _numba.uint32, _numba.float64[:]
+        )
+    )(f)
+    fun.bempp_type = "real"
+    return fun
 
 
-def complex_callable(*args, jit=True):
-    """JIT Compile a callable for a grid function if jit is true."""
+def complex_callable(f):
+    """Wrap function as a complex Numba callable."""
 
-    def wrap(f):
-        """Actual wrapper."""
-        if jit:
-            fun = _numba.njit(
-                _numba.void(
-                    _numba.float64[:],
-                    _numba.float64[:],
-                    _numba.uint32,
-                    _numba.complex128[:],
-                )
-            )(f)
-        else:
-            fun = f
-        fun.bempp_type = "complex"
-        return fun
+    fun = _numba.njit(
+        _numba.void(
+            _numba.float64[:], _numba.float64[:], _numba.uint32, _numba.complex128[:]
+        )
+    )(f)
+    fun.bempp_type = "complex"
+    return fun
 
-    if not args:
-        return wrap
-    else:
-        return wrap(args[0])
+
+# def real_callable(*args, jit=True):
+# """JIT Compile a callable for a grid function if jit is true."""
+
+# def wrap(f):
+# """Actual wrapper."""
+# if jit:
+# fun = _numba.njit(
+# _numba.void(
+# _numba.float64[:],
+# _numba.float64[:],
+# _numba.uint32,
+# _numba.float64[:],
+# )
+# )(f)
+# else:
+# fun = f
+# fun.bempp_type = "real"
+# return fun
+
+# if not args:
+# return wrap
+# else:
+# return wrap(args[0])
+
+
+# def complex_callable(*args, jit=True):
+# """JIT Compile a callable for a grid function if jit is true."""
+
+# def wrap(f):
+# """Actual wrapper."""
+# if jit:
+# fun = _numba.njit(
+# _numba.void(
+# _numba.float64[:],
+# _numba.float64[:],
+# _numba.uint32,
+# _numba.complex128[:],
+# )
+# )(f)
+# else:
+# fun = f
+# fun.bempp_type = "complex"
+# return fun
+
+# if not args:
+# return wrap
+# else:
+# return wrap(args[0])
 
 
 class GridFunction(object):
@@ -186,12 +210,13 @@ class GridFunction(object):
 
         if (
             not comp_domain.grid == comp_dual.grid
-            or not _np.all(comp_domain.support_elements == comp_dual.support_elements)
-            or not _np.all(comp_domain.normal_multipliers == comp_dual.normal_multipliers)
+            or not _np.all(
+                comp_domain.normal_multipliers == comp_dual.normal_multipliers
+            )
         ):
             raise ValueError(
                 "Space and dual space must be defined on the "
-                + "same elements with same normal directions."
+                + "same grid with same normal directions."
             )
 
         self._parameters = assign_parameters(parameters)
@@ -220,7 +245,7 @@ class GridFunction(object):
             else:
                 dtype = "complex128"
 
-            self._projections = _np.zeros(dual_space.global_dof_count, dtype=dtype)
+            grid_projections = _np.zeros(comp_dual.grid_dof_count, dtype=dtype)
 
             # Create a Numba callable from the function
 
@@ -236,8 +261,10 @@ class GridFunction(object):
                 points,
                 weights,
                 comp_domain.codomain_dimension,
-                self._projections,
+                grid_projections,
             )
+
+            self._projections = comp_dual.dof_transformation.T @ grid_projections
 
             self._representation = "dual"
 
@@ -280,16 +307,21 @@ class GridFunction(object):
         """Return coefficient vector."""
         if self._coefficients is None:
             from bempp.api.operators.boundary.sparse import identity
-            from scipy.sparse.linalg import spsolve
+            from bempp.api.assembly.discrete_boundary_operator import (
+                InverseSparseDiscreteBoundaryOperator,
+            )
 
-            mat = (
+            op = InverseSparseDiscreteBoundaryOperator(
                 identity(
-                    self._comp_domain, self._comp_domain, self._comp_dual, parameters=self.parameters
+                    self.space,
+                    self.space,
+                    self.dual_space,
+                    parameters=self.parameters,
                 )
                 .weak_form()
-                .A
+                .A.tocsc()
             )
-            self._coefficients = spsolve(mat, self._projections)
+            self._coefficients = op @ self._projections
             self._representation = "primal"
 
         return self._coefficients
@@ -373,10 +405,7 @@ class GridFunction(object):
         ident = bempp.api.operators.boundary.sparse.identity(
             self.space, self.space, dual_space
         ).weak_form()
-        self._dual_space = dual_space
-        self._projections = ident * self.coefficients
-
-        return self._projections
+        return ident * self.coefficients
 
     def project_to_space(self, space):
         """Return an L^2 projection on another space."""
@@ -418,7 +447,9 @@ class GridFunction(object):
         # Get global dof ids and weights
         global_dofs = self.space.local2global[element_index]
         element_values = self.space.evaluate(element_index, local_coordinates)
-        return _np.tensordot(element_values, self.grid_coefficients[global_dofs], axes=([1], [0]))
+        return _np.tensordot(
+            element_values, self.grid_coefficients[global_dofs], axes=([1], [0])
+        )
 
     def evaluate_on_element_centers(self):
         """Evaluate the grid function on all element centers."""
@@ -451,14 +482,40 @@ class GridFunction(object):
         # Sum up the areas of all elements adjacent to the vertices
         vertex_areas = _np.zeros(grid.number_of_vertices, dtype="float64")
 
+        vertex_used = _np.zeros(grid.number_of_vertices, dtype=_np.bool)
+
         for element_index in self.space.support_elements:
             local_values = self.evaluate(element_index, local_coordinates)
             for i in range(3):
                 index = grid.elements[i, element_index]
+                vertex_used[index] = True
                 element_area = grid.volumes[element_index]
                 vertex_areas[index] += element_area
                 values[:, index] += local_values[:, i] * element_area
-        return values / vertex_areas
+
+        values[:, vertex_used] /= vertex_areas[vertex_used]
+        return values 
+
+    def integrate(self):
+        """Integrate grid function over a grid."""
+        from bempp.api.integration.triangle_gauss import rule
+
+        points, weights = rule(self._parameters.quadrature.regular)
+
+        return _integrate(
+            self.grid_coefficients,
+            self.space.grid.data,
+            self.space.support_elements,
+            self.space.local2global,
+            self.space.local_multipliers,
+            self.space.normal_multipliers,
+            self.space.numba_evaluate,
+            self.space.shapeset.evaluate,
+            points,
+            weights,
+            self.component_count,
+            self.space.number_of_shape_functions,
+        )
 
     def l2_norm(self):
         """L^2 norm of the function"""
@@ -559,8 +616,57 @@ class GridFunction(object):
         return cls(space, coefficients=zeros(ndofs))
 
 
+@_numba.njit
+def _integrate(
+    coefficients,
+    grid_data,
+    support_elements,
+    local2global,
+    local_multipliers,
+    normal_multipliers,
+    evaluate_on_element,
+    shapeset_evaluate,
+    points,
+    weights,
+    codomain_dimension,
+    number_of_shape_functions,
+):
+    """Integrate a grid function over a grid."""
+    number_of_elements = grid_data.elements.shape[1]
+    npoints = points.shape[1]
+    global_points = _np.empty((3, npoints), dtype=_np.float64)
+
+    result = _np.zeros(codomain_dimension, dtype=coefficients.dtype)
+
+    for index in support_elements:
+        element_vals = evaluate_on_element(
+            index,
+            shapeset_evaluate,
+            points,
+            grid_data,
+            local_multipliers,
+            normal_multipliers,
+        )
+
+        result += (
+            _np.sum(
+                _np.sum(
+                    (element_vals * weights)
+                    * (
+                        coefficients[local2global[index]] * local_multipliers[index]
+                    ).reshape(number_of_shape_functions, 1),
+                    axis=-1,
+                ),
+                axis=-1,
+            )
+            * grid_data.integration_elements[index]
+        )
+
+    return result
+
+
 # Must be used in jit mode as fun might just be a Python callable and not numba compiled.
-@_numba.jit
+@_numba.njit
 def _project_function(
     fun,
     grid_data,
@@ -613,10 +719,10 @@ def _project_function(
             )
             fvalues[:, j] = fun_result
 
-        projections[local2global[index]] += (
-            _np.sum(
-                _np.sum(element_vals * _np.expand_dims(fvalues * weights, 1), axis=0),
-                axis=1,
+        for local_fun_index in range(element_vals.shape[1]):
+            projections[local2global[index, local_fun_index]] += (
+                _np.sum(
+                    _np.sum(element_vals[:, local_fun_index, :] * fvalues * weights, axis=0)
+                )
+                * grid_data.integration_elements[index]
             )
-            * grid_data.integration_elements[index]
-        )
