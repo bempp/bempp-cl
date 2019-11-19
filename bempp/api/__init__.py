@@ -58,6 +58,14 @@ WARNING = _logging.WARNING
 ERROR = _logging.ERROR
 CRITICAL = _logging.CRITICAL
 
+LOG_LEVEL = {
+    "debug": DEBUG,
+    "info": INFO,
+    "warning": WARNING,
+    "error": ERROR,
+    "critical": CRITICAL,
+}
+
 GLOBAL_PARAMETERS = DefaultParameters()
 
 
@@ -65,23 +73,14 @@ def _init_logger():
     """Initialize the Bempp logger."""
 
     logger = _logging.getLogger()
-    logger.setLevel(INFO)
+    logger.setLevel(DEBUG)
     logger.addHandler(_logging.NullHandler())
     return logger
 
 
 def log(message, level="info", flush=True):
     """Log including default flushing for IPython."""
-    if level == "info":
-        log_level = INFO
-    elif level == "debug":
-        log_level = DEBUG
-    elif level == "error":
-        log_level = ERROR
-    elif level == "critical":
-        log_level = CRITICAL
-
-    LOGGER.log(log_level, message)
+    LOGGER.log(LOG_LEVEL[level], message)
     if flush:
         flush_log()
 
@@ -92,13 +91,13 @@ def flush_log():
         handler.flush()
 
 
-def enable_console_logging(level=DEBUG):
+def enable_console_logging(level="info"):
     """Enable console logging and return the console handler."""
     # pylint: disable=W0603
     global CONSOLE_LOGGING_HANDLER
     if not CONSOLE_LOGGING_HANDLER:
         console_handler = _logging.StreamHandler()
-        console_handler.setLevel(level)
+        console_handler.setLevel(LOG_LEVEL[level])
         console_handler.setFormatter(
             _logging.Formatter(DEFAULT_LOGGING_FORMAT, "%H:%M:%S")
         )
@@ -119,29 +118,9 @@ def enable_file_logging(file_name, level=DEBUG, logging_format=DEFAULT_LOGGING_F
 
 def set_logging_level(level):
     """Set the logging level."""
-    LOGGER.setLevel(level)
+    LOGGER.setLevel(LOG_LEVEL[level])
 
 
-def timeit(message):
-    """Decorator to time a method in Bempp"""
-
-    def timeit_impl(fun):
-        """Implementation of timeit."""
-
-        def timed_fun(*args, **kwargs):
-            """The actual timer function."""
-            if not GLOBAL_PARAMETERS.verbosity.extended_verbosity:
-                return fun(*args, **kwargs)
-
-            start_time = _time.time()
-            res = fun(*args, **kwargs)
-            end_time = _time.time()
-            log(message + " : {0:.3e}s".format(end_time - start_time))
-            return res
-
-        return timed_fun
-
-    return timeit_impl
 
 
 # pylint: disable=too-few-public-methods
