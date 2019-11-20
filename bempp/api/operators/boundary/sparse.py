@@ -190,7 +190,7 @@ def multitrace_identity(
 
     domain0, domain1 = multitrace_operator.domain_spaces
     dual_to_range0, dual_to_range1 = multitrace_operator.dual_to_range_spaces
-    range0, range1 = multitrace_operator.domain_spaces
+    range0, range1 = multitrace_operator.range_spaces
 
     blocked_operator = BlockedOperator(2, 2)
 
