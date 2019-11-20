@@ -7,6 +7,8 @@ bempp.api first.
 """
 import time as _time
 import functools as _functools
+import collections as _collections
+
 
 def timeit(fun):
     """Decorator to time a method in Bempp"""
@@ -25,4 +27,4 @@ def timeit(fun):
     return timed_fun
 
 
-
+IndexList = _collections.namedtuple("IndexList", ["indices", "indexptr"])

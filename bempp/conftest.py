@@ -19,7 +19,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--precision",
         action="store",
-        default="single",
+        default="double",
         help="Valid values: single double",
     )
 

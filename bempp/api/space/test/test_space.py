@@ -70,7 +70,11 @@ def test_p1_open_segment():
             ):
                 # Element is on the boundary
                 for index, vertex_index in enumerate(grid.elements[:, elem_index]):
-                    neighbors = grid.vertex_neighbors[vertex_index]
+                    neighbors = grid.vertex_neighbors.indices[
+                        grid.vertex_neighbors.indexptr[
+                            vertex_index
+                        ] : grid.vertex_neighbors.indexptr[vertex_index + 1]
+                    ]
                     if _np.any(space.support[neighbors] == False):
                         # Vertex is on the boundary
                         if space.local_multipliers[elem_index, index] != 0:
@@ -101,7 +105,11 @@ def test_p1_extended_segment():
     eligible_index_pairs = set()
 
     for vertex_index in range(grid.number_of_vertices):
-        neighbors = grid.vertex_neighbors[vertex_index]
+        neighbors = grid.vertex_neighbors.indices[
+            grid.vertex_neighbors.indexptr[
+                vertex_index
+            ] : grid.vertex_neighbors.indexptr[vertex_index + 1]
+        ]
         if 1 in grid.domain_indices[neighbors]:
             # Vertex adjacent an element with domain index 1
             for index_pair in zip(*_np.where(grid.elements == vertex_index)):
