@@ -31,8 +31,6 @@ def rwg0_function_space(
         include_boundary_dofs,
     )
 
-    global2local = invert_local2global(local2global, local_multipliers)
-
     return (
         SpaceBuilder(grid)
         .set_codomain_dimension(3)
@@ -43,7 +41,6 @@ def rwg0_function_space(
         .set_shapeset("rwg0")
         .set_identifier("rwg0")
         .set_local2global(local2global)
-        .set_global2local(global2local)
         .set_local_multipliers(local_multipliers)
         .set_barycentric_representation(rwg0_barycentric_function_space)
         .set_numba_evaluator(_numba_rwg0_evaluate)
@@ -120,7 +117,6 @@ def rwg0_barycentric_function_space(coarse_space):
     )
 
     local_multipliers[support] = 1
-    global2local = invert_local2global(local2global, local_multipliers)
 
     transform = coo_matrix(
         (values, (bary_dofs, coarse_dofs)),
@@ -141,7 +137,6 @@ def rwg0_barycentric_function_space(coarse_space):
         .set_shapeset("rwg0")
         .set_identifier("rwg0")
         .set_local2global(local2global)
-        .set_global2local(global2local)
         .set_local_multipliers(local_multipliers)
         .set_dof_transformation(dof_transformation)
         .set_numba_evaluator(_numba_rwg0_evaluate)
@@ -176,8 +171,6 @@ def snc0_function_space(
         include_boundary_dofs,
     )
 
-    global2local = invert_local2global(local2global, local_multipliers)
-
     return (
         SpaceBuilder(grid)
         .set_codomain_dimension(3)
@@ -188,7 +181,6 @@ def snc0_function_space(
         .set_shapeset("rwg0")
         .set_identifier("snc0")
         .set_local2global(local2global)
-        .set_global2local(global2local)
         .set_local_multipliers(local_multipliers)
         .set_barycentric_representation(snc0_barycentric_function_space)
         .set_numba_evaluator(_numba_snc0_evaluate)
@@ -265,7 +257,6 @@ def snc0_barycentric_function_space(coarse_space):
     )
 
     local_multipliers[support] = 1
-    global2local = invert_local2global(local2global, local_multipliers)
 
     transform = coo_matrix(
         (values, (bary_dofs, coarse_dofs)),
@@ -286,7 +277,6 @@ def snc0_barycentric_function_space(coarse_space):
         .set_shapeset("rwg0")
         .set_identifier("snc0")
         .set_local2global(local2global)
-        .set_global2local(global2local)
         .set_local_multipliers(local_multipliers)
         .set_dof_transformation(dof_transformation)
         .set_numba_evaluator(_numba_snc0_evaluate)
@@ -338,7 +328,6 @@ def bc_function_space(grid, support_elements=None, segments=None, swapped_normal
     )
 
     local_multipliers[support] = 1
-    global2local = invert_local2global(local2global, local_multipliers)
 
     coarse_dofs, bary_dofs, values = generate_bc_map(
         grid.data,
@@ -368,7 +357,6 @@ def bc_function_space(grid, support_elements=None, segments=None, swapped_normal
         .set_shapeset("rwg0")
         .set_identifier("rwg0")
         .set_local2global(local2global)
-        .set_global2local(global2local)
         .set_local_multipliers(local_multipliers)
         .set_dof_transformation(dof_transformation)
         .set_numba_evaluator(_numba_rwg0_evaluate)
@@ -419,7 +407,6 @@ def rbc_function_space(grid, support_elements=None, segments=None, swapped_norma
     )
 
     local_multipliers[support] = 1
-    global2local = invert_local2global(local2global, local_multipliers)
 
     coarse_dofs, bary_dofs, values = generate_bc_map(
         grid.data,
@@ -449,7 +436,6 @@ def rbc_function_space(grid, support_elements=None, segments=None, swapped_norma
         .set_shapeset("rwg0")
         .set_identifier("snc0")
         .set_local2global(local2global)
-        .set_global2local(global2local)
         .set_local_multipliers(local_multipliers)
         .set_dof_transformation(dof_transformation)
         .set_numba_evaluator(_numba_snc0_evaluate)

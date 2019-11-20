@@ -1,9 +1,12 @@
 """Definition of scalar function spaces."""
 
+from bempp.helpers import timeit as _timeit
+
 import numpy as _np
 import numba as _numba
 
 
+@_timeit
 def p0_discontinuous_function_space(
     grid, support_elements=None, segments=None, swapped_normals=None
 ):
@@ -23,8 +26,6 @@ def p0_discontinuous_function_space(
     local_multipliers = _np.zeros((grid.number_of_elements, 1), dtype="float64")
     local_multipliers[support] = 1
 
-    global2local = invert_local2global(local2global, local_multipliers)
-
     collocation_points = _np.array([[1.0 / 3], [1.0 / 3]])
 
     return (
@@ -37,7 +38,6 @@ def p0_discontinuous_function_space(
         .set_shapeset("p0_discontinuous")
         .set_identifier("p0_discontinuous")
         .set_local2global(local2global)
-        .set_global2local(global2local)
         .set_local_multipliers(local_multipliers)
         .set_collocation_points(collocation_points)
         .set_numba_surface_gradient(_numba_p0_surface_gradient)
@@ -45,6 +45,7 @@ def p0_discontinuous_function_space(
     )
 
 
+@_timeit
 def p1_discontinuous_function_space(
     grid, support_elements=None, segments=None, swapped_normals=None
 ):
@@ -65,8 +66,6 @@ def p1_discontinuous_function_space(
     local_multipliers = _np.zeros((grid.number_of_elements, 3), dtype="float64")
     local_multipliers[support] = 1
 
-    global2local = invert_local2global(local2global, local_multipliers)
-
     return (
         SpaceBuilder(grid)
         .set_codomain_dimension(1)
@@ -77,13 +76,13 @@ def p1_discontinuous_function_space(
         .set_shapeset("p1_discontinuous")
         .set_identifier("p1_discontinuous")
         .set_local2global(local2global)
-        .set_global2local(global2local)
         .set_local_multipliers(local_multipliers)
         .set_numba_surface_gradient(_numba_p1_surface_gradient)
         .build()
     )
 
 
+@_timeit
 def p1_continuous_function_space(
     grid,
     support_elements=None,
@@ -107,11 +106,13 @@ def p1_continuous_function_space(
 
     # Create list of vertex neighbors. Needed for dofmap computation
 
-    vertex_neighbors = [[] for _ in range(grid.number_of_vertices)]
-    for index in range(grid.number_of_elements):
-        for vertex in grid.elements[:, index]:
-            vertex_neighbors[vertex].append(index)
-    vertex_neighbors, index_ptr = serialise_list_of_lists(vertex_neighbors)
+    # vertex_neighbors = [[] for _ in range(grid.number_of_vertices)]
+    # for index in range(grid.number_of_elements):
+        # for vertex in grid.elements[:, index]:
+            # vertex_neighbors[vertex].append(index)
+    # vertex_neighbors1, index_ptr1 = serialise_list_of_lists(vertex_neighbors)
+
+    vertex_neighbors, index_ptr = grid.vertex_neighbors
 
     local2global, local_multipliers, support = _compute_p1_dof_map(
         grid.data,
@@ -122,7 +123,6 @@ def p1_continuous_function_space(
         index_ptr,
     )
 
-    global2local = invert_local2global(local2global, local_multipliers)
 
     return (
         SpaceBuilder(grid)
@@ -134,13 +134,13 @@ def p1_continuous_function_space(
         .set_shapeset("p1_discontinuous")
         .set_identifier("p1_continuous")
         .set_local2global(local2global)
-        .set_global2local(global2local)
         .set_local_multipliers(local_multipliers)
         .set_numba_surface_gradient(_numba_p1_surface_gradient)
         .build()
     )
 
 
+@_timeit
 @_numba.njit(cache=True)
 def _compute_p1_dof_map(
     grid_data,

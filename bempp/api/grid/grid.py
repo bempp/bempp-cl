@@ -406,14 +406,17 @@ class Grid(object):
 
     def _compute_vertex_neighbors(self):
         """Return all elements adjacent to a given vertex."""
+        from bempp.helpers import IndexList
 
-        self._vertex_neighbors = [None for _ in range(self.number_of_vertices)]
+        # self._vertex_neighbors = [None for _ in range(self.number_of_vertices)]
 
         indptr = self.element_to_vertex_matrix.indptr
         indices = self.element_to_vertex_matrix.indices
-
-        for index in range(self.number_of_vertices):
-            self._vertex_neighbors[index] = indices[indptr[index] : indptr[index + 1]]
+        self._vertex_neighbors = IndexList(
+                indices, indptr
+                )
+        #for index in range(self.number_of_vertices):
+        #    self._vertex_neighbors[index] = indices[indptr[index] : indptr[index + 1]]
 
     def _normalize_and_assign_input(self, vertices, elements, domain_indices):
         """Convert input into the right form."""
@@ -467,6 +470,8 @@ class Grid(object):
         (0, 1 or 2).
 
         """
+        from bempp.helpers import IndexList
+
         self._element_to_vertex_matrix = get_element_to_vertex_matrix(
             self._vertices, self._elements
         )
@@ -497,9 +502,9 @@ class Grid(object):
             self._elements, edge_connected_elements1, edge_connected_elements2
         )
 
-        self._element_neighbors = _collections.namedtuple(
-            "ElementNeighbors", ["indices", "indexptr"]
-        )(elem_to_elem_matrix.indices, elem_to_elem_matrix.indptr)
+        self._element_neighbors = IndexList(
+            elem_to_elem_matrix.indices, elem_to_elem_matrix.indptr
+        )
 
     def _compute_geometric_quantities(self):
         """Compute geometric quantities for the grid."""
@@ -1324,9 +1329,7 @@ def enumerate_vertex_adjacent_elements(grid, support_elements):
         if not neighbors:
             # Continue if empty
             continue
-        vertex_edges[vertex_index] = sort_neighbors(
-            grid.data, neighbors
-        )
+        vertex_edges[vertex_index] = sort_neighbors(grid.data, neighbors)
 
     return vertex_edges
 

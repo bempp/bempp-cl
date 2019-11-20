@@ -259,13 +259,13 @@ def test_laplace_single_layer_evaluator_p0_p0(
         precision=precision,
     ).weak_form()
 
-    x = _np.random.RandomState(0).randn(space1.global_dof_count)
+    x = _np.random.RandomState(0).rand(space1.global_dof_count)
 
     actual = discrete_op @ x
     expected = mat @ x
 
     if precision == "single":
-        tol = 1e-4
+        tol = 2e-4
     else:
         tol = 1e-12
 
@@ -304,7 +304,7 @@ def test_laplace_single_layer_evaluator_p0_dp1(
         precision=precision,
     ).weak_form()
 
-    x = _np.random.RandomState(0).randn(space1.global_dof_count)
+    x = _np.random.RandomState(0).rand(space1.global_dof_count)
 
     actual = discrete_op @ x
     expected = mat @ x
@@ -349,7 +349,7 @@ def test_laplace_single_layer_evaluator_p0_p1(
         precision=precision,
     ).weak_form()
 
-    x = _np.random.RandomState(0).randn(space1.global_dof_count)
+    x = _np.random.RandomState(0).rand(space1.global_dof_count)
 
     actual = discrete_op @ x
     expected = mat @ x
@@ -394,15 +394,15 @@ def test_laplace_single_layer_evaluator_complex(
         precision=precision,
     ).weak_form()
 
-    x = _np.random.RandomState(0).randn(
+    x = _np.random.RandomState(0).rand(
         space1.global_dof_count
-    ) + 1j * _np.random.RandomState(0).randn(space1.global_dof_count)
+    ) + 1j * _np.random.RandomState(0).rand(space1.global_dof_count)
 
     actual = discrete_op @ x
     expected = mat @ x
 
     if precision == "single":
-        tol = 1e-4
+        tol = 2e-4
     else:
         tol = 1e-12
 
@@ -441,7 +441,7 @@ def test_laplace_double_layer_evaluator(
         precision=precision,
     ).weak_form()
 
-    x = _np.random.RandomState(0).randn(space1.global_dof_count)
+    x = _np.random.RandomState(0).rand(space1.global_dof_count)
 
     actual = discrete_op @ x
     expected = mat @ x
@@ -479,7 +479,7 @@ def test_laplace_adjoint_double_layer_evaluator(
         precision=precision,
     ).weak_form()
 
-    x = _np.random.RandomState(0).randn(space1.global_dof_count)
+    x = _np.random.RandomState(0).rand(space1.global_dof_count)
 
     actual = discrete_op @ x
     expected = mat @ x
