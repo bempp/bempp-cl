@@ -22,6 +22,7 @@ from bempp.core.cl_helpers import set_default_device
 from bempp.core.cl_helpers import default_device
 from bempp.core.cl_helpers import default_context
 from bempp.core.cl_helpers import get_precision
+from bempp.core.cl_helpers import get_devices_by_name
 
 from bempp.api.space import function_space
 

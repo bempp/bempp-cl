@@ -6,10 +6,114 @@ from bempp.api.assembly import assembler as _assembler
 
 
 class DenseEvaluatorAssembler(_assembler.AssemblerBase):
+    """Matvec kernel evaluator."""
+
+    def __init__(self, domain, dual_to_range, parameters=None):
+        """Initialise the assembler."""
+
+        super().__init__(domain, dual_to_range, parameters)
+
+        self._dtype = None
+        self._shape = (
+            self.dual_to_range.global_dof_count,
+            self.domain.global_dof_count,
+        )
+        self._singular_contribution = None
+
+        from concurrent.futures import ThreadPoolExecutor
+
+        self._executor = ThreadPoolExecutor()
+
+    @property
+    def shape(self):
+        """Return shape."""
+        return self._shape
+
+    @property
+    def dtype(self):
+        """Return dtype."""
+        return self._dtype
+
+    def assemble(
+        self, operator_descriptor, device_interface, precision, *args, **kwargs
+    ):
+        """The assembler calls the assembler instances for each device."""
+        from bempp.core.singular_assembler import SingularAssembler
+        from bempp.api.assembly.discrete_boundary_operator import (
+            GenericDiscreteBoundaryOperator,
+        )
+        from bempp.api.space.space import return_compatible_representation
+        from collections.abc import Iterable
+
+        if not isinstance(device_interface, Iterable):
+            self._device_group = [device_interface]
+        else:
+            self._device_group = device_interface
+
+        self._actual_domain, self._actual_dual_to_range = return_compatible_representation(
+            self.domain, self.dual_to_range
+        )
+
+        self._singular_contribution = (
+            SingularAssembler(self.domain, self.dual_to_range, self.parameters)
+            .assemble(
+                operator_descriptor, self._device_group[0], precision, *args, **kwargs
+            )
+            .A
+        )
+
+        ndevices = len(self._device_group)
+        support_elements = self._actual_domain.support_elements
+
+        chunks = _np.array_split(support_elements, ndevices)
+        self._assembler_instances = []
+
+        for device, chunk in zip(self._device_group, chunks):
+            instance = DenseEvaluatorAssemblerInstance(
+                self._actual_domain,
+                self._actual_dual_to_range,
+                chunk,
+                parameters=self.parameters,
+            )
+            instance.assemble(operator_descriptor, device, precision, *args, **kwargs)
+            self._assembler_instances.append(instance)
+
+        self._dtype = self._assembler_instances[0].dtype
+        return GenericDiscreteBoundaryOperator(self)
+
+    def matvec(self, x):
+        """Apply operator to a vector x."""
+
+        transformed_vec = self._actual_domain.map_to_full_grid @ (
+            self._actual_domain.dof_transformation @ x.flat
+        )
+
+        result = sum(
+            self._executor.map(
+                lambda instance: instance.matvec(transformed_vec),
+                self._assembler_instances,
+            )
+        )
+
+        # result = sum(
+        # [instance.matvec(transformed_vec) for instance in self._assembler_instances]
+        # )
+
+        result = self._actual_dual_to_range.dof_transformation.T @ (
+            self._actual_dual_to_range.map_to_localised_space.T @ result
+        )
+
+        if x.ndim > 1:
+            return _np.expand_dims(result, 1) + self._singular_contribution @ x
+        else:
+            return result + self._singular_contribution @ x
+
+
+class DenseEvaluatorAssemblerInstance(_assembler.AssemblerBase):
     """A matvec evaluator."""
 
     # pylint: disable=useless-super-delegation
-    def __init__(self, domain, dual_to_range, parameters=None):
+    def __init__(self, domain, dual_to_range, chunk=None, parameters=None):
         """Create a dense evaluator instance."""
         from bempp.api.space.space import return_compatible_representation
 
@@ -32,14 +136,20 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
         self._workgroup_size = 128
 
         self._dtype = None
+
         self._shape = (
             self.dual_to_range.global_dof_count,
             self.domain.global_dof_count,
         )
 
-
         self._actual_domain, self._actual_dual_to_range = return_compatible_representation(
-                self.domain, self.dual_to_range)
+            self.domain, self.dual_to_range
+        )
+
+        if chunk is None:
+            self._chunk = self._actual_domain.support_elements
+        else:
+            self._chunk = chunk
 
     @property
     def shape(self):
@@ -66,17 +176,10 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
         from bempp.core import kernel_helpers
         from bempp.api import log
 
-
         _, quad_weights = rule(self.parameters.quadrature.regular)
 
         self._device_interface = device_interface
         self._precision = precision
-
-        self._singular_contribution = (
-            SingularAssembler(self.domain, self.dual_to_range, self.parameters)
-            .assemble(operator_descriptor, device_interface, precision, *args, **kwargs)
-            .A
-        )
 
         localised_domain = self._actual_domain.localised_space
         localised_dual_to_range = self._actual_dual_to_range.localised_space
@@ -104,17 +207,15 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
                 self._dtype = _np.float32
 
         self._prepare_buffers(complex_kernel, device_interface, precision)
-        
-        domain_support_size = localised_domain.number_of_support_elements
+
+        domain_support_size = len(self._chunk)
         dual_to_range_support_size = localised_dual_to_range.number_of_support_elements
 
         options["NUMBER_OF_QUAD_POINTS"] = len(quad_weights)
         options["TEST"] = localised_dual_to_range.shapeset.identifier
         options["TRIAL"] = localised_domain.shapeset.identifier
         options["TRIAL_NUMBER_OF_ELEMENTS"] = domain_support_size
-        options[
-            "TEST_NUMBER_OF_ELEMENTS"
-        ] = dual_to_range_support_size
+        options["TEST_NUMBER_OF_ELEMENTS"] = dual_to_range_support_size
 
         options[
             "NUMBER_OF_TEST_SHAPE_FUNCTIONS"
@@ -123,7 +224,6 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
         options[
             "NUMBER_OF_TRIAL_SHAPE_FUNCTIONS"
         ] = localised_domain.number_of_shape_functions
-
 
         self._vec_extension, self._vec_length = kernel_helpers.get_vectorization_information(
             device_interface, precision
@@ -135,7 +235,9 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
             )
         )
 
-        source_name = choose_source_name_dense_evaluator(operator_descriptor.compute_kernel)
+        source_name = choose_source_name_dense_evaluator(
+            operator_descriptor.compute_kernel
+        )
 
         self._main_size, self._remainder_size = kernel_helpers.closest_multiple_to_number(
             domain_support_size, self._workgroup_size
@@ -169,8 +271,8 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
             )
 
         test_indices = localised_dual_to_range.support_elements.astype("uint32")
-        trial_indices = localised_domain.support_elements.astype("uint32")
-        
+        trial_indices = self._chunk.astype("uint32")
+
         test_indices_buffer = _cl_helpers.DeviceBuffer.from_array(
             test_indices, device_interface, dtype=_np.uint32, access_mode="read_only"
         )
@@ -194,8 +296,10 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
 
         trial_nshape_fun = self._actual_domain.number_of_shape_functions
 
-        domain_support_size = self._actual_domain.localised_space.number_of_support_elements
-        dual_to_range_support_size = self._actual_dual_to_range.localised_space.number_of_support_elements
+        domain_support_size = len(self._chunk)
+        dual_to_range_support_size = (
+            self._actual_dual_to_range.localised_space.number_of_support_elements
+        )
 
         shape = (
             self._actual_dual_to_range.localised_space.grid_dof_count,
@@ -225,26 +329,19 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
             order="F",
         )
 
-        test_connectivity = _cl_helpers.DeviceBuffer.from_array(
-            self._actual_dual_to_range.localised_space.grid.elements,
-            device_interface,
-            dtype=_np.uint32,
-            access_mode="read_only",
-            order="F",
-        )
+        test_connectivity = test_grid.push_to_device(
+            device_interface, precision
+        ).elements_buffer
+        trial_connectivity = trial_grid.push_to_device(
+            device_interface, precision
+        ).elements_buffer
 
-        trial_connectivity = _cl_helpers.DeviceBuffer.from_array(
-            self._actual_domain.localised_space.grid.elements,
-            device_interface,
-            dtype=_np.uint32,
-            access_mode="read_only",
-            order="F",
-        )
-
-        test_grid_buffer = test_grid.push_to_device(device_interface, precision).buffer
+        test_grid_buffer = test_grid.push_to_device(
+            device_interface, precision
+        ).grid_buffer
         trial_grid_buffer = trial_grid.push_to_device(
             device_interface, precision
-        ).buffer
+        ).grid_buffer
 
         input_buffer = _cl_helpers.DeviceBuffer(
             trial_nshape_fun * trial_grid.number_of_elements,
@@ -270,7 +367,6 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
             order="C",
         )
 
-
         test_normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
             self._actual_dual_to_range.localised_space.normal_multipliers,
             device_interface,
@@ -278,7 +374,10 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
             access_mode="read_only",
         )
         trial_normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
-            self._actual_domain.localised_space.normal_multipliers, device_interface, dtype=_np.int32, access_mode="read_only"
+            self._actual_domain.localised_space.normal_multipliers,
+            device_interface,
+            dtype=_np.int32,
+            access_mode="read_only",
         )
 
         buffers = [
@@ -307,10 +406,8 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
         from bempp.core import kernel_helpers
         from bempp.api import log
 
-        mat_test = self._actual_dual_to_range.map_to_localised_space
-
         with self._input_buffer.host_array(self._device_interface, "write") as array:
-            array[:] = self._actual_domain.map_to_full_grid @ (self._actual_domain.dof_transformation @ x.flat)
+            array[:] = x
 
         self._sum_buffer.set_zero(self._device_interface)
 
@@ -325,9 +422,9 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
                     self._main_size // self._vec_length,
                 ),
                 (1, self._workgroup_size // self._vec_length),
-                *self._buffers, self._sum_buffer
+                *self._buffers,
+                self._sum_buffer
             )
-
 
             event.wait()
             runtime += event.runtime()
@@ -338,7 +435,7 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
                 (1,),
                 self._sum_buffer,
                 self._result_buffer,
-                _np.uint32(self._actual_domain.localised_space.number_of_support_elements // self._workgroup_size)
+                _np.uint32(len(self._chunk) // self._workgroup_size),
             )
 
             event.wait()
@@ -348,10 +445,13 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
 
             event = self._remainder_kernel.run(
                 self._device_interface,
-                (self._actual_dual_to_range.localised_space.number_of_support_elements, 
-                        self._remainder_size),
+                (
+                    self._actual_dual_to_range.localised_space.number_of_support_elements,
+                    self._remainder_size,
+                ),
                 (1, self._remainder_size),
-                *self._buffers, self._result_buffer,
+                *self._buffers,
+                self._result_buffer,
                 global_offset=(0, self._main_size)
             )
 
@@ -362,10 +462,4 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
 
         result = self._result_buffer.get_host_copy(self._device_interface)
 
-        result = self._actual_dual_to_range.dof_transformation.T @ (self._actual_dual_to_range.map_to_localised_space.T @ result)
-
-        if x.ndim > 1:
-            return _np.expand_dims(result, 1) + self._singular_contribution @ x
-        else:
-            return result + self._singular_contribution @ x
-
+        return result

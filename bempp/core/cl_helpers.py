@@ -672,3 +672,24 @@ def show_available_platforms_and_devices():
                 + ": "
                 + device.get_info(_cl.device_info.NAME)
             )
+
+def get_devices_by_name(string):
+    """Return devices whose context contains given string."""
+
+    platforms = _cl.get_platforms()
+    devices = []
+    for platform in platforms:
+        if string in platform.name:
+            ctx = Context(
+                    _cl.Context(
+                        dev_type=_cl.device_type.ALL,
+                        properties=[(_cl.context_properties.PLATFORM, platform)]
+                        )
+                    )
+            for device in ctx.devices:
+                devices.append(device)
+            break
+    if not devices:
+        raise ValueError(f"No platform found that matches string '{string}'.")
+    return devices
+                
