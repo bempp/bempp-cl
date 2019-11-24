@@ -49,6 +49,10 @@ class Context(object):
         for device in self.cl_context.devices:
             self.devices.append(DeviceInterface(self, device))
 
+    def get_platform_name(self):
+        """Get platform string."""
+        return self._devices[0].platform.name
+
 
 class DeviceInterface(object):
     """Provides an easy interface to an OpenCL device."""
@@ -104,6 +108,11 @@ class DeviceInterface(object):
     def max_mem_alloc_size(self):
         """Maximum allowed object size in global memory."""
         return self._device_property(_MAX_MEM_ALLOC_SIZE)
+
+    @property
+    def platform_name(self):
+        """Return name of associated platform."""
+        return self.cl_device.platform.name
 
     @property
     def name(self):
