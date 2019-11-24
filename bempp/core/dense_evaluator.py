@@ -20,10 +20,6 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
         )
         self._singular_contribution = None
 
-        from concurrent.futures import ThreadPoolExecutor
-
-        self._executor = ThreadPoolExecutor()
-
     @property
     def shape(self):
         """Return shape."""
@@ -88,16 +84,11 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
             self._actual_domain.dof_transformation @ x.flat
         )
 
-        result = sum(
-            self._executor.map(
-                lambda instance: instance.matvec(transformed_vec),
-                self._assembler_instances,
-            )
-        )
 
-        # result = sum(
-        # [instance.matvec(transformed_vec) for instance in self._assembler_instances]
-        # )
+        for instance in self._assembler_instances:
+            instance.compute(transformed_vec)
+
+        result = sum([instance.get_result() for instance in self._assembler_instances])
 
         result = self._actual_dual_to_range.dof_transformation.T @ (
             self._actual_dual_to_range.map_to_localised_space.T @ result
@@ -401,7 +392,7 @@ class DenseEvaluatorAssemblerInstance(_assembler.AssemblerBase):
         self._input_buffer = input_buffer
         self._sum_buffer = sum_buffer
 
-    def matvec(self, x):
+    def compute(self, x):
         """Evaluate the product with a vector."""
         from bempp.core import kernel_helpers
         from bempp.api import log
@@ -411,11 +402,9 @@ class DenseEvaluatorAssemblerInstance(_assembler.AssemblerBase):
 
         self._sum_buffer.set_zero(self._device_interface)
 
-        runtime = 0.0
-
         if self._main_size > 0:
 
-            event = self._main_kernel.run(
+            self._main_kernel.run(
                 self._device_interface,
                 (
                     self._actual_dual_to_range.localised_space.number_of_support_elements,
@@ -426,10 +415,8 @@ class DenseEvaluatorAssemblerInstance(_assembler.AssemblerBase):
                 self._sum_buffer
             )
 
-            event.wait()
-            runtime += event.runtime()
 
-            event = self._sum_kernel.run(
+            self._sum_kernel.run(
                 self._device_interface,
                 (self._actual_dual_to_range.localised_space.grid_dof_count,),
                 (1,),
@@ -438,12 +425,10 @@ class DenseEvaluatorAssemblerInstance(_assembler.AssemblerBase):
                 _np.uint32(len(self._chunk) // self._workgroup_size),
             )
 
-            event.wait()
-            runtime += event.runtime()
 
         if self._remainder_size > 0:
 
-            event = self._remainder_kernel.run(
+            self._remainder_kernel.run(
                 self._device_interface,
                 (
                     self._actual_dual_to_range.localised_space.number_of_support_elements,
@@ -455,11 +440,8 @@ class DenseEvaluatorAssemblerInstance(_assembler.AssemblerBase):
                 global_offset=(0, self._main_size)
             )
 
-            event.wait()
-            runtime += event.runtime()
 
-        log("Regular kernel runtime [ms]: {0}".format(runtime), "debug")
+    def get_result(self):
+        """Return result."""
 
-        result = self._result_buffer.get_host_copy(self._device_interface)
-
-        return result
+        return self._result_buffer.get_host_copy(self._device_interface)

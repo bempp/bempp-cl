@@ -59,7 +59,7 @@ class DeviceInterface(object):
         self._context = context
         self._cl_device = cl_device
 
-        self._kernel_queue = _cl.CommandQueue(
+        self._queue = _cl.CommandQueue(
             context.cl_context,
             device=cl_device,
             properties=_cl.command_queue_properties.PROFILING_ENABLE,
@@ -69,7 +69,6 @@ class DeviceInterface(object):
         # If this is ever changed be careful with the release
         # operation in the memory copy. It seems only blocking within
         # the same queue.
-        self._data_queue = self._kernel_queue
 
     @property
     def context(self):
@@ -84,12 +83,17 @@ class DeviceInterface(object):
     @property
     def data_queue(self):
         """Data queue."""
-        return self._data_queue
+        return self._queue
 
     @property
     def kernel_queue(self):
         """Kernel queue."""
-        return self._kernel_queue
+        return self._queue
+
+    @property
+    def queue(self):
+        """Device queue."""
+        return self._queue
 
     @property
     def global_mem_size(self):
