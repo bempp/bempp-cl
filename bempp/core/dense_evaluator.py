@@ -792,6 +792,9 @@ class DenseEvaluatorMultiprocessingInstance(object):
 
         options = self._kernel_options.options.copy()
 
+        if "COMPLEX_KERNEL" in options:
+            options["COMPLEX_RESULT"] = None
+
         options["NUMBER_OF_QUAD_POINTS"] = len(quad_weights)
         options["TEST"] = self._test_shape_set
         options["TRIAL"] = self._trial_shape_set
