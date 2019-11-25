@@ -6,6 +6,8 @@ from bempp.api.assembly import assembler as _assembler
 
 WORKGROUP_SIZE = 128
 
+_evaluator = None
+
 class DenseEvaluatorAssembler(_assembler.AssemblerBase):
     """Matvec kernel evaluator."""
 
@@ -68,6 +70,8 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
                     f"Could not find platform that contains the string {device_interface}."
                 )
 
+        self._ndevices = ndevices
+
         self._actual_domain, self._actual_dual_to_range = return_compatible_representation(
             self.domain, self.dual_to_range
         )
@@ -84,16 +88,17 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
         chunks = _np.array_split(support_elements, ndevices)
         self._assembler_instances = []
 
-        complex_kernel = 'COMPLEX_KERNEL' in operator_descriptor.options
+        complex_kernel = "COMPLEX_KERNEL" in operator_descriptor.options
 
         if complex_kernel:
             self._dtype = _np.complex128
         else:
             self._dtype = _np.float64
 
-        #        self._pool = mp.get_context("spawn").Pool(ndevices)
-        for device_index, chunk in enumerate(chunks):
-            self._assembler_instances.append(DenseEvaluatorMultiProcessingInstance(
+        self._pool = mp.get_context("spawn").Pool(
+            ndevices,
+            initializer=_init_workers,
+            initargs=[
                 self._actual_dual_to_range.grid.as_array,
                 self._actual_domain.grid.as_array,
                 self._actual_dual_to_range.grid.elements,
@@ -101,18 +106,20 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
                 self._actual_dual_to_range.normal_multipliers,
                 self._actual_domain.normal_multipliers,
                 self._actual_dual_to_range.support_elements,
-                chunk,
                 self._parameters.quadrature.regular,
                 self._actual_dual_to_range.shapeset.identifier,
                 self._actual_domain.shapeset.identifier,
                 self._actual_dual_to_range.number_of_shape_functions,
                 self._actual_domain.number_of_shape_functions,
                 platform_name,
-                device_index,
                 operator_descriptor,
                 precision,
                 self._actual_dual_to_range.grid != self._actual_domain.grid,
-            ))
+                ]
+        )
+
+        self._pool.starmap(prepare_evaluator, zip(chunks, range(ndevices)), chunksize=1)
+
 
         return GenericDiscreteBoundaryOperator(self)
 
@@ -123,10 +130,11 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
             self._actual_domain.dof_transformation @ x.flat
         )
 
-        for instance in self._assembler_instances:
-            instance.compute(transformed_vec)
+        # for instance in self._assembler_instances:
+        # instance.compute(transformed_vec)
 
-        result = sum([instance.get_result() for instance in self._assembler_instances])
+        # result = sum([instance.get_result() for instance in self._assembler_instances])
+        result = sum(self._pool.map(_worker, self._ndevices * [transformed_vec]))
 
         result = self._actual_dual_to_range.dof_transformation.T @ (
             self._actual_dual_to_range.map_to_localised_space.T @ result
@@ -576,7 +584,7 @@ class DenseEvaluatorAssemblerInstance(_assembler.AssemblerBase):
         return self._result_buffer.get_host_copy(self._device_interface)
 
 
-class DenseEvaluatorMultiProcessingInstance(object):
+class DenseEvaluatorMultiprocessingInstance(object):
     """Evaluator Instance for MultiProcessing."""
 
     def __init__(
@@ -603,7 +611,6 @@ class DenseEvaluatorMultiProcessingInstance(object):
         """Instantiate the class."""
         import pyopencl as cl
         from bempp.core.cl_helpers import Context
-
 
         self._test_grid = test_grid
         self._trial_grid = trial_grid
@@ -652,10 +659,10 @@ class DenseEvaluatorMultiProcessingInstance(object):
         dual_to_range_support_size = len(self._test_support_elements)
         shape = (
             self._number_of_test_shape_functions * self._test_elements.shape[1],
-            self._number_of_trial_shape_functions * self._trial_elements.shape[1]
+            self._number_of_trial_shape_functions * self._trial_elements.shape[1],
         )
 
-        complex_kernel = 'COMPLEX_KERNEL' in self._kernel_options.options
+        complex_kernel = "COMPLEX_KERNEL" in self._kernel_options.options
 
         dtype = cl_helpers.get_type(self._precision).real
 
@@ -681,34 +688,34 @@ class DenseEvaluatorMultiProcessingInstance(object):
         )
 
         test_connectivity = cl_helpers.DeviceBuffer.from_array(
-                self._test_elements,
-                self._device_interface,
-                dtype='uint32',
-                access_mode="read_only",
-                order="F",
-                )
+            self._test_elements,
+            self._device_interface,
+            dtype="uint32",
+            access_mode="read_only",
+            order="F",
+        )
 
         trial_connectivity = cl_helpers.DeviceBuffer.from_array(
-                self._trial_elements,
-                self._device_interface,
-                dtype='uint32',
-                access_mode="read_only",
-                order="F",
-                )
+            self._trial_elements,
+            self._device_interface,
+            dtype="uint32",
+            access_mode="read_only",
+            order="F",
+        )
 
         test_grid_buffer = cl_helpers.DeviceBuffer.from_array(
-                self._test_grid,
-                self._device_interface,
-                dtype=dtype,
-                access_mode='read_only',
-                )
+            self._test_grid,
+            self._device_interface,
+            dtype=dtype,
+            access_mode="read_only",
+        )
 
         trial_grid_buffer = cl_helpers.DeviceBuffer.from_array(
-                self._trial_grid,
-                self._device_interface,
-                dtype=dtype,
-                access_mode='read_only',
-                )
+            self._trial_grid,
+            self._device_interface,
+            dtype=dtype,
+            access_mode="read_only",
+        )
 
         input_buffer = cl_helpers.DeviceBuffer(
             shape[1],
@@ -741,7 +748,6 @@ class DenseEvaluatorMultiProcessingInstance(object):
             access_mode="read_only",
         )
 
-
         trial_normal_signs_buffer = cl_helpers.DeviceBuffer.from_array(
             self._trial_normal_signs,
             self._device_interface,
@@ -753,10 +759,16 @@ class DenseEvaluatorMultiProcessingInstance(object):
         trial_indices = self._chunk.astype("uint32")
 
         test_indices_buffer = _cl_helpers.DeviceBuffer.from_array(
-            test_indices, self._device_interface, dtype=_np.uint32, access_mode="read_only"
+            test_indices,
+            self._device_interface,
+            dtype=_np.uint32,
+            access_mode="read_only",
         )
         trial_indices_buffer = _cl_helpers.DeviceBuffer.from_array(
-            trial_indices, self._device_interface, dtype=_np.uint32, access_mode="read_only"
+            trial_indices,
+            self._device_interface,
+            dtype=_np.uint32,
+            access_mode="read_only",
         )
 
         self._buffers = [
@@ -784,9 +796,7 @@ class DenseEvaluatorMultiProcessingInstance(object):
         options["TEST"] = self._test_shape_set
         options["TRIAL"] = self._trial_shape_set
 
-        options[
-            "NUMBER_OF_TEST_SHAPE_FUNCTIONS"
-        ] = self._number_of_test_shape_functions
+        options["NUMBER_OF_TEST_SHAPE_FUNCTIONS"] = self._number_of_test_shape_functions
 
         options[
             "NUMBER_OF_TRIAL_SHAPE_FUNCTIONS"
@@ -845,10 +855,7 @@ class DenseEvaluatorMultiProcessingInstance(object):
 
             self._main_kernel.run(
                 self._device_interface,
-                (
-                    len(self._test_support_elements),
-                    self._main_size // self._vec_length,
-                ),
+                (len(self._test_support_elements), self._main_size // self._vec_length),
                 (1, WORKGROUP_SIZE // self._vec_length),
                 *self._buffers,
                 self._sum_buffer,
@@ -867,10 +874,7 @@ class DenseEvaluatorMultiProcessingInstance(object):
 
             self._remainder_kernel.run(
                 self._device_interface,
-                (
-                    len(self._test_support_elements),
-                    self._remainder_size,
-                ),
+                (len(self._test_support_elements), self._remainder_size),
                 (1, self._remainder_size),
                 *self._buffers,
                 self._result_buffer,
@@ -881,3 +885,65 @@ class DenseEvaluatorMultiProcessingInstance(object):
         """Return result."""
 
         return self._result_buffer.get_host_copy(self._device_interface)
+
+
+def _init_workers(
+    test_grid,
+    trial_grid,
+    test_elements,
+    trial_elements,
+    test_normal_signs,
+    trial_normal_signs,
+    test_support_elements,
+    number_of_quad_points,
+    test_shape_set,
+    trial_shape_set,
+    number_of_test_shape_functions,
+    number_of_trial_shape_functions,
+    platform_name,
+    kernel_options,
+    precision,
+    grids_disjoint,
+):
+    """Initialization."""
+    from bempp.core import dense_evaluator
+
+    def prepare_evaluator(chunk, device_index):
+        from bempp.core import dense_evaluator
+
+        return dense_evaluator.DenseEvaluatorMultiprocessingInstance(
+            test_grid,
+            trial_grid,
+            test_elements,
+            trial_elements,
+            test_normal_signs,
+            trial_normal_signs,
+            test_support_elements,
+            chunk,
+            number_of_quad_points,
+            test_shape_set,
+            trial_shape_set,
+            number_of_test_shape_functions,
+            number_of_trial_shape_functions,
+            platform_name,
+            device_index,
+            kernel_options,
+            precision,
+            grids_disjoint,
+        )
+
+    dense_evaluator._evaluator = prepare_evaluator
+
+
+def prepare_evaluator(chunk, device_index):
+    """Initialize the worker."""
+    from bempp.core import dense_evaluator
+    dense_evaluator._evaluator = dense_evaluator._evaluator(chunk, device_index)
+
+
+def _worker(x):
+    """Apply the operator."""
+    from bempp.core import dense_evaluator
+    dense_evaluator._evaluator.compute(x)
+    return dense_evaluator._evaluator.get_result()
+
