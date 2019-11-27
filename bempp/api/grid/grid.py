@@ -15,7 +15,7 @@ class Grid(object):
     """The Grid class."""
 
     @_timeit
-    def __init__(self, vertices, elements, domain_indices=None):
+    def __init__(self, vertices, elements, domain_indices=None, grid_id=None):
         """Create a grid from a vertices and an elements array."""
         from uuid import uuid4
 
@@ -32,7 +32,10 @@ class Grid(object):
         self._edge_neighbors = None
         self._vertex_neighbors = None
         self._barycentric_grid = None
-        self._id = str(uuid4())
+        if grid_id:
+            self._id = grid_id
+        else:
+            self._id = str(uuid4())
 
         self._volumes = None
         self._normals = None
@@ -290,6 +293,18 @@ class Grid(object):
         """Return a unique id for the grid."""
         return self._id
 
+    def scatter(self):
+        """Initialise the grid on all workers."""
+        from bempp.api.utils import pool
+
+        pool.execute(
+            _grid_scatter_worker,
+            self.id,
+            self.vertices,
+            self.elements,
+            self.domain_indices,
+        )
+
     def entity_count(self, codim):
         """Return the number of entities of given codimension."""
 
@@ -412,10 +427,8 @@ class Grid(object):
 
         indptr = self.element_to_vertex_matrix.indptr
         indices = self.element_to_vertex_matrix.indices
-        self._vertex_neighbors = IndexList(
-                indices, indptr
-                )
-        #for index in range(self.number_of_vertices):
+        self._vertex_neighbors = IndexList(indices, indptr)
+        # for index in range(self.number_of_vertices):
         #    self._vertex_neighbors[index] = indices[indptr[index] : indptr[index + 1]]
 
     def _normalize_and_assign_input(self, vertices, elements, domain_indices):
@@ -1370,3 +1383,12 @@ def _numba_enumerate_edges(elements, edge_tuple_to_index):
             element_edges[local_index, elem_index] = edge_index
 
     return _np.array(edges, dtype=_np.int32).T, element_edges
+
+
+def _grid_scatter_worker(grid_id, vertices, elements, domain_indices):
+    """Assign a new grid on the worker."""
+    from bempp.api.utils import pool
+    from bempp.api.grid.grid import Grid
+
+    pool.insert_data(Grid(vertices, elements, domain_indices, grid_id))
+
