@@ -297,6 +297,9 @@ class Grid(object):
         """Initialise the grid on all workers."""
         from bempp.api.utils import pool
 
+        if not pool.is_initialised:
+            raise Exception("Process pool must first be initialised.")
+
         pool.execute(
             _grid_scatter_worker,
             self.id,
@@ -1389,6 +1392,12 @@ def _grid_scatter_worker(grid_id, vertices, elements, domain_indices):
     """Assign a new grid on the worker."""
     from bempp.api.utils import pool
     from bempp.api.grid.grid import Grid
+    from bempp.api import log
 
-    pool.insert_data(Grid(vertices, elements, domain_indices, grid_id))
+    if not pool.has_key(grid_id):
+        pool.insert_data(grid_id, Grid(vertices, elements, domain_indices, grid_id))
+        log(f"Created grid with id {grid_id} on worker {pool.get_id()}")
+    else:
+        log(f"Use cached grid with id {grid_id} on worker {pool.get_id()}")
+    
 
