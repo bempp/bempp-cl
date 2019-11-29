@@ -1396,7 +1396,7 @@ def _grid_scatter_worker(grid_id, vertices, elements, domain_indices):
 
     if not pool.has_key(grid_id):
         pool.insert_data(grid_id, Grid(vertices, elements, domain_indices, grid_id))
-        log(f"Created grid with id {grid_id} on worker {pool.get_id()}")
+        log(f"Copied grid with id {grid_id} to worker {pool.get_id()}")
     else:
         log(f"Use cached grid with id {grid_id} on worker {pool.get_id()}")
     

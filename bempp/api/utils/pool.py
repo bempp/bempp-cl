@@ -1,4 +1,5 @@
 """Routines to administrate a process pool."""
+import numpy as _np
 
 # Variables used inside the workers.
 _DATA = {}
@@ -11,14 +12,16 @@ _POOL = None
 # Variables in host and workers
 _NWORKERS = None
 _IN_WORKER = False
+_BUFFER = None
 
 
-def worker(in_queue, out_queue, worker_id):
+def worker(in_queue, out_queue, worker_id, buf):
     """Definition of a worker. """
     from bempp.api.utils import pool
     import traceback
 
     pool._MY_ID = worker_id
+    pool._BUFFER = buf
 
     get = in_queue.get
     put = out_queue.put
@@ -45,6 +48,67 @@ def worker(in_queue, out_queue, worker_id):
     put("FINISHED")
 
 
+def as_array(dtype, offset, nitems):
+    """
+    Return part of the buffer as array.
+
+    Parameters
+    ----------
+    dtype : Numpy dtype object
+        The type of the array
+    offset : int
+        Start index in buffer
+    nitems : int 
+        Number of items of type dtype
+
+    """
+    from bempp.api.utils import pool
+
+    nbytes = np.dtype(dtype).itemsize * count
+
+    return _np.frombuffer(pool._BUFFER, offset=offset, count=nbytes)
+
+
+def to_buffer(*args):
+    """
+    Save a number of numpy arrays to a buffer.
+
+    """
+    from bempp.api.utils import pool
+
+    offset = 0
+
+    for arr in args:
+        ar_size = arr.nbytes
+        pool._BUFFER[offset : offset + ar_size] = arr.data
+        offset += ar_size
+
+
+def from_buffer(arrays):
+    """
+    Retrieve arrays from buffer.
+    arrays is a list of tuples
+    [(dtype1, count1), (dtype2, count2), ...],
+    where dtype is the type of the array and count
+    is the number of elements in the array.
+    Arrays are retrieved without shape information.
+
+    """
+    from bempp.api.utils import pool
+
+    result = []
+
+    offset = 0
+    for ar in arrays:
+        dtype, nitems = ar
+        nbytes = _np.dtype(dtype).itemsize * nitems
+        result.append(
+            _np.frombuffer(pool._BUFFER, offset=offset, count=nbytes, dtype=dtype)
+        )
+        offset += nbytes
+    return result
+
+
 class Pool(object):
     """
     A simple pool.
@@ -56,8 +120,20 @@ class Pool(object):
 
     """
 
-    def __init__(self, nworkers):
-        """Initialise the pool."""
+    def __init__(self, nworkers, buffer_size=100):
+        """
+        Initialise the pool.
+
+        Parameters
+        ----------
+        nworkers : int
+            Number of workers
+        buffer_size : int
+            Size of the shared memory buffer
+            in MB.
+
+        """
+        from bempp.api.utils import pool
         from bempp.api.utils.pool import worker
 
         from multiprocessing import SimpleQueue
@@ -67,13 +143,15 @@ class Pool(object):
 
         ctx = get_context("spawn")
 
+        pool._BUFFER = ctx.RawArray("b", buffer_size * 1024 * 1024)
+
         self._senders = [ctx.SimpleQueue() for _ in range(nworkers)]
         self._receivers = [ctx.SimpleQueue() for _ in range(nworkers)]
 
         self._workers = [
             ctx.Process(
                 target=worker,
-                args=(self._senders[i], self._receivers[i], i),
+                args=(self._senders[i], self._receivers[i], i, pool._BUFFER),
             )
             for i in range(nworkers)
         ]
@@ -152,14 +230,14 @@ def check_worker():
     return _IN_WORKER is True
 
 
-def create_pool(nworkers, use_threading=False, log=True):
+def create_pool(nworkers, use_threading=False, log=True, buffer_size=100):
     """Create a pool."""
 
     from bempp.api.utils import pool
     from concurrent.futures import ThreadPoolExecutor
     import multiprocessing as mp
 
-    pool._POOL = Pool(nworkers)
+    pool._POOL = Pool(nworkers, buffer_size=buffer_size)
     pool._NWORKERS = nworkers
 
     if log:
@@ -177,6 +255,7 @@ def map(fun, args):
     from bempp.api.utils import pool
 
     return _POOL.map(fun, args)
+
 
 def starmap(fun, args):
     """Corresponds to multiprocessing map."""
@@ -234,6 +313,7 @@ def _enable_pool_log_worker():
 def _execute_function_without_arguments(fun):
     """Execute function without arguments."""
     return fun()
+
 
 def _remove_key_worker(key):
     from bempp.api.utils import pool
