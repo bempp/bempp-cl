@@ -244,6 +244,26 @@ def is_worker():
     return _IN_WORKER is True
 
 
+def create_device_pool(identifier):
+    """
+    Create a pool based on a given platform identifer.
+    
+    identifier : string
+        A unique identifier that is part of the platform name.
+        Used to find the 
+    
+    """
+    from bempp.core.cl_helpers import get_context_by_name
+
+    ctx = get_context_by_name(identifier)
+    ndevices = len(ctx.devices)
+
+    create_pool(ndevices)
+    execute(_init_device_worker, identifier)
+
+
+
+
 def create_pool(nworkers, use_threading=False, log=True, buffer_size=100):
     """Create a pool."""
 
@@ -333,3 +353,11 @@ def _remove_key_worker(key):
 
     del pool._DATA[key]
 
+def _init_device_worker(identifier):
+    """Worker to initialise device."""
+    import bempp.api
+    from bempp.api.utils.pool import get_id
+    from bempp.core.cl_helpers import get_context_by_name
+
+    ctx, platform_index = get_context_by_name(identifier)
+    bempp.api.set_default_device(platform_index, get_id())
