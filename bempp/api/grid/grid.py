@@ -18,6 +18,8 @@ class Grid(object):
     def __init__(self, vertices, elements, domain_indices=None, grid_id=None):
         """Create a grid from a vertices and an elements array."""
         from uuid import uuid4
+        from bempp.api import log
+        from bempp.api.utils import pool
 
         self._vertices = None
         self._elements = None
@@ -75,6 +77,13 @@ class Grid(object):
             self._centroids,
             self._domain_indices,
         )
+        if not pool.is_worker():
+            log( 
+                (
+                    f"Created grid with id {self.id}. Elements: {self.number_of_elements}. "
+                    + f"Edges: {self.number_of_edges}. Vertices: {self.number_of_vertices}"
+                )
+            )
 
     @property
     def vertex_adjacency(self):
@@ -300,13 +309,11 @@ class Grid(object):
         if not pool.is_initialised:
             raise Exception("Process pool must first be initialised.")
 
-        pool.execute(
-            _grid_scatter_worker,
-            self.id,
-            self.vertices,
-            self.elements,
-            self.domain_indices,
+        array_proxies = pool.to_buffer(
+            self.vertices, self.elements, self.domain_indices
         )
+
+        pool.execute(_grid_scatter_worker, self.id, array_proxies)
 
     def entity_count(self, codim):
         """Return the number of entities of given codimension."""
@@ -1388,16 +1395,19 @@ def _numba_enumerate_edges(elements, edge_tuple_to_index):
     return _np.array(edges, dtype=_np.int32).T, element_edges
 
 
-def _grid_scatter_worker(grid_id, vertices, elements, domain_indices):
+def _grid_scatter_worker(grid_id, array_proxies):
     """Assign a new grid on the worker."""
     from bempp.api.utils import pool
     from bempp.api.grid.grid import Grid
     from bempp.api import log
 
+    vertices, elements, domain_indices = pool.from_buffer(array_proxies)
+
     if not pool.has_key(grid_id):
-        pool.insert_data(grid_id, Grid(vertices, elements, domain_indices, grid_id))
+        pool.insert_data(
+            grid_id,
+            Grid(vertices.copy(), elements.copy(), domain_indices.copy(), grid_id),
+        )
         log(f"Copied grid with id {grid_id} to worker {pool.get_id()}")
     else:
         log(f"Use cached grid with id {grid_id} on worker {pool.get_id()}")
-    
-

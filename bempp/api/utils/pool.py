@@ -17,6 +17,7 @@ _BUFFER = None
 
 def worker(in_queue, out_queue, worker_id, buf):
     """Definition of a worker. """
+    import bempp.api
     from bempp.api.utils import pool
     import traceback
 
@@ -45,10 +46,11 @@ def worker(in_queue, out_queue, worker_id, buf):
         except Exception:
             traceback.print_exc()
 
+    bempp.api.flush_log()
     put("FINISHED")
 
 
-def as_array(dtype, offset, nitems):
+def as_array(dtype, offset, shape):
     """
     Return part of the buffer as array.
 
@@ -64,9 +66,11 @@ def as_array(dtype, offset, nitems):
     """
     from bempp.api.utils import pool
 
-    nbytes = np.dtype(dtype).itemsize * count
+    nitems = _np.prod(shape)
 
-    return _np.frombuffer(pool._BUFFER, offset=offset, count=nbytes)
+    return _np.frombuffer(
+        pool._BUFFER, dtype=dtype, count=nitems, offset=offset
+    ).reshape(*shape)
 
 
 def to_buffer(*args):
@@ -77,21 +81,25 @@ def to_buffer(*args):
     from bempp.api.utils import pool
 
     offset = 0
+    result = []
 
     for arr in args:
         ar_size = arr.nbytes
-        pool._BUFFER[offset : offset + ar_size] = arr.data
+        pool._BUFFER[offset : offset + ar_size] = _np.require(
+            arr.flat, requirements="C"
+        ).view(dtype="uint8")
         offset += ar_size
+        result.append((arr.dtype, arr.shape))
+    return result
 
 
 def from_buffer(arrays):
     """
     Retrieve arrays from buffer.
     arrays is a list of tuples
-    [(dtype1, count1), (dtype2, count2), ...],
-    where dtype is the type of the array and count
-    is the number of elements in the array.
-    Arrays are retrieved without shape information.
+    [(dtype1, shape1), (dtype2, shape2), ...],
+    where dtype is the type of the array and shape 
+    is a shape tuple.
 
     """
     from bempp.api.utils import pool
@@ -100,11 +108,9 @@ def from_buffer(arrays):
 
     offset = 0
     for ar in arrays:
-        dtype, nitems = ar
-        nbytes = _np.dtype(dtype).itemsize * nitems
-        result.append(
-            _np.frombuffer(pool._BUFFER, offset=offset, count=nbytes, dtype=dtype)
-        )
+        dtype, shape = ar
+        nbytes = _np.dtype(dtype).itemsize * _np.prod(shape)
+        result.append(pool.as_array(dtype, offset, shape))
         offset += nbytes
     return result
 
@@ -178,10 +184,18 @@ class Pool(object):
         """Map function onto workers."""
         return self._map_impl(fun, args, "STARMAP")
 
+    def shutdown(self):
+        """Shutdown all workers."""
+        for index in range(self._nworkers):
+            self._senders[index].put(None)
+        result = [self._receivers[index].get() for index in range(self._nworkers)]
+        for worker in self._workers:
+            worker.join()
+
 
 def _raise_if_not_worker(name):
     """Raise exception if not in worker."""
-    if not check_worker():
+    if not is_worker():
         raise Exception(f"Method {name} can only be called inside a worker.")
 
 
@@ -225,7 +239,7 @@ def has_key(key):
     return key in pool._DATA
 
 
-def check_worker():
+def is_worker():
     """Returns true if called from worker process."""
     return _IN_WORKER is True
 
@@ -287,8 +301,7 @@ def shutdown():
     """Shutdown the pool."""
     from bempp.api.utils import pool
 
-    pool._POOL.close()
-    pool._POOL.join()
+    pool._POOL.shutdown()
     pool._POOL = None
     pool._NWORKERS = False
     pool._USE_THREADS = None
@@ -319,3 +332,4 @@ def _remove_key_worker(key):
     from bempp.api.utils import pool
 
     del pool._DATA[key]
+
