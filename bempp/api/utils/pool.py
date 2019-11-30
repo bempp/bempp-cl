@@ -203,13 +203,16 @@ def _raise_if_not_worker(name):
     if not is_worker():
         raise Exception(f"Method {name} can only be called inside a worker.")
 
+
 def number_of_workers():
     """Return number of workers."""
     from bempp.api.utils import pool
+
     if not is_initialised():
         raise Exception("Pool is not initialised.")
 
     return pool._POOL.number_of_workers
+
 
 def insert_data(key, data):
     """Insert data."""
@@ -256,24 +259,39 @@ def is_worker():
     return _IN_WORKER is True
 
 
-def create_device_pool(identifier, log=True, buffer_size=100):
+def create_device_pool(identifier, log=True, buffer_size=100, max_workers=-1):
     """
     Create a pool based on a given platform identifer.
     
     identifier : string
         A unique identifier that is part of the platform name.
-        Used to find the 
+        Used to find the correct platform.
+    log : Boolean
+        Set to True to log workers.
+    buffer_size : int
+        Shared memory buffer size in MB
+    max_workers : int
+        Maximum number of workers. If max_workers=-1 (default)
+        the maximum number of workers is identical to the number
+        of devices in the pool.
     
     """
     from bempp.core.cl_helpers import get_context_by_name
 
     ctx, _ = get_context_by_name(identifier)
-    ndevices = len(ctx.devices)
+
+    if max_workers > len(ctx.devices):
+        raise ValueError(
+            f"Maximum number of workers ({max_workers}) "
+            + f"is bigger than number of devices {len(ctx.devices)}"
+        )
+    if max_workers == -1:
+        ndevices = len(ctx.devices)
+    else:
+        ndevices = max_workers
 
     create_pool(ndevices, log, buffer_size)
     execute(_init_device_worker, identifier)
-
-
 
 
 def create_pool(nworkers, log=True, buffer_size=100):
@@ -363,6 +381,7 @@ def _remove_key_worker(key):
     from bempp.api.utils import pool
 
     del pool._DATA[key]
+
 
 def _init_device_worker(identifier):
     """Worker to initialise device."""
