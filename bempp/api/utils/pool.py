@@ -165,6 +165,11 @@ class Pool(object):
             w.daemon = True
             w.start()
 
+    @property
+    def number_of_workers(self):
+        """Return number of workers."""
+        return self._nworkers
+
     def _map_impl(self, fun, args, options):
         """Map implementation."""
         for index, arg in zip(range(self._nworkers), args):
@@ -198,6 +203,13 @@ def _raise_if_not_worker(name):
     if not is_worker():
         raise Exception(f"Method {name} can only be called inside a worker.")
 
+def number_of_workers():
+    """Return number of workers."""
+    from bempp.api.utils import pool
+    if not is_initialised():
+        raise Exception("Pool is not initialised.")
+
+    return pool._POOL.number_of_workers
 
 def insert_data(key, data):
     """Insert data."""

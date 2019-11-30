@@ -37,6 +37,8 @@ from bempp.api.assembly.boundary_operator import MultiplicationOperator
 from bempp.api.assembly.blocked_operator import BlockedOperator
 from bempp.api.assembly.blocked_operator import GeneralizedBlockedOperator
 
+from bempp.api.utils import pool
+
 # Disable Numba warnings
 
 

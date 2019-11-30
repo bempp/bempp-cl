@@ -15,11 +15,11 @@ class Grid(object):
     """The Grid class."""
 
     @_timeit
-    def __init__(self, vertices, elements, domain_indices=None, grid_id=None):
+    def __init__(self, vertices, elements, domain_indices=None, grid_id=None, scatter=True):
         """Create a grid from a vertices and an elements array."""
-        from uuid import uuid4
         from bempp.api import log
         from bempp.api.utils import pool
+        from bempp.api.utils.helpers import create_unique_id
 
         self._vertices = None
         self._elements = None
@@ -37,7 +37,7 @@ class Grid(object):
         if grid_id:
             self._id = grid_id
         else:
-            self._id = str(uuid4())
+            self._id = create_unique_id()
 
         self._volumes = None
         self._normals = None
@@ -77,6 +77,9 @@ class Grid(object):
             self._centroids,
             self._domain_indices,
         )
+
+        if scatter and pool.is_initialised() and not pool.is_worker():
+            self._scatter()
         if not pool.is_worker():
             log( 
                 (
@@ -302,12 +305,9 @@ class Grid(object):
         """Return a unique id for the grid."""
         return self._id
 
-    def scatter(self):
+    def _scatter(self):
         """Initialise the grid on all workers."""
         from bempp.api.utils import pool
-
-        if not pool.is_initialised:
-            raise Exception("Process pool must first be initialised.")
 
         array_proxies = pool.to_buffer(
             self.vertices, self.elements, self.domain_indices

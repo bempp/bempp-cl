@@ -2,6 +2,11 @@
 
 import numpy as _np
 
+def create_unique_id():
+    """Create a unique id."""
+    from uuid import uuid4
+
+    return str(uuid4())
 
 def align_array(arr, dtype, order):
     """

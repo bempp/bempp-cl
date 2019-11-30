@@ -14,12 +14,18 @@ def function_space(
     support_elements=None,
     segments=None,
     swapped_normals=None,
-    **kwargs
+    scatter=True,
+    **kwargs,
 ):
     """Initialize a function space."""
+    from bempp.api.utils.helpers import create_unique_id
+    from bempp.api.utils import pool
+
     from . import scalar_spaces
     from . import scalar_dual_spaces
     from . import maxwell_spaces
+
+    space = None
 
     if _np.count_nonzero([support_elements, segments]) > 1:
         raise ValueError(
@@ -28,23 +34,23 @@ def function_space(
 
     if kind == "DP":
         if degree == 0:
-            return scalar_spaces.p0_discontinuous_function_space(
+            space = scalar_spaces.p0_discontinuous_function_space(
                 grid, support_elements, segments, swapped_normals
             )
         if degree == 1:
-            return scalar_spaces.p1_discontinuous_function_space(
+            space = scalar_spaces.p1_discontinuous_function_space(
                 grid, support_elements, segments, swapped_normals
             )
 
     if kind == "P":
         if degree == 1:
-            return scalar_spaces.p1_continuous_function_space(
+            space = scalar_spaces.p1_continuous_function_space(
                 grid, support_elements, segments, swapped_normals, **kwargs
             )
 
     if kind == "DUAL":
         if degree == 0:
-            return scalar_dual_spaces.dual0_function_space(
+            space = scalar_dual_spaces.dual0_function_space(
                 grid, support_elements, segments, swapped_normals
             )
         if degree == 1:
@@ -52,29 +58,44 @@ def function_space(
 
     if kind == "RWG":
         if degree == 0:
-            return maxwell_spaces.rwg0_function_space(
+            space = maxwell_spaces.rwg0_function_space(
                 grid, support_elements, segments, swapped_normals, **kwargs
             )
 
     if kind == "SNC":
         if degree == 0:
-            return maxwell_spaces.snc0_function_space(
+            space = maxwell_spaces.snc0_function_space(
                 grid, support_elements, segments, swapped_normals, **kwargs
             )
 
     if kind == "BC":
         if degree == 0:
-            return maxwell_spaces.bc_function_space(
+            space = maxwell_spaces.bc_function_space(
                 grid, support_elements, segments, swapped_normals, **kwargs
             )
 
     if kind == "RBC":
         if degree == 0:
-            return maxwell_spaces.rbc_function_space(
+            space = maxwell_spaces.rbc_function_space(
                 grid, support_elements, segments, swapped_normals, **kwargs
             )
+    if space is None:
+        raise ValueError("Requested space not implemented.")
 
-    raise ValueError("Requested space not implemented.")
+    if scatter and pool.is_initialised() and not pool.is_worker():
+        pool.execute(
+            _space_scatter_worker,
+            grid.id,
+            space.id,
+            kind,
+            degree,
+            support_elements,
+            segments,
+            swapped_normals,
+            kwargs,
+        )
+
+    return space
 
 
 class SpaceBuilder(object):
@@ -299,6 +320,7 @@ class FunctionSpace(object):
         from .shapesets import Shapeset
         from scipy.sparse import coo_matrix
         from scipy.sparse import identity
+        from bempp.api.utils.helpers import create_unique_id
 
         self._grid = grid
         self._grid_id = self._grid.id
@@ -321,7 +343,8 @@ class FunctionSpace(object):
         self._support_elements = _np.flatnonzero(self._support).astype("uint32")
         self._collocation_points = collocation_points
 
-        self._id_string = None
+        self._id = create_unique_id()
+        self._hash_string = None
         self._color_map = None
         self._mass_matrix = None
         self._inverse_mass_matrix = None
@@ -464,6 +487,11 @@ class FunctionSpace(object):
         return self._support
 
     @property
+    def id(self):
+        """Return id string of the space."""
+        return self._id
+
+    @property
     def shapeset(self):
         """Return the shapeset."""
         return self._shapeset
@@ -522,12 +550,12 @@ class FunctionSpace(object):
         return self._is_barycentric
 
     @property
-    def id_string(self):
-        """Return an id string for space comparison."""
-        if self._id_string is None:
-            self._id_string = self._generate_hash()
+    def hash(self):
+        """Return hash string for space comparison."""
+        if self._hash_string is None:
+            self._hash_string = self._generate_hash()
 
-        return self._id_string
+        return self._hash_string
 
     @property
     def numba_evaluate(self):
@@ -648,6 +676,10 @@ class FunctionSpace(object):
         """Check if space is compatible with other space."""
         return self == other
 
+    def set_id(self, new_id):
+        """Assign a new id string to the space."""
+        self._id = new_id
+
     def _compute_color_map(self):
         """Compute the color map."""
 
@@ -707,12 +739,12 @@ def return_compatible_representation(*args):
 def check_if_compatible(space1, space2):
     """Return true if two spaces are compatible."""
 
-    if id(space1) == id(space2):
+    if space1.id == space2.id:
         return True
 
     try:
         new_space1, new_space2 = return_compatible_representation(space1, space2)
-        return new_space1.id_string == new_space2.id_string
+        return new_space1.hash == new_space2.hash
     except:
         return False
 
@@ -810,6 +842,34 @@ def make_localised_space(space):
         .set_is_barycentric(space.is_barycentric)
         .build()
     )
+
+
+def _space_scatter_worker(
+    grid_id,
+    space_id,
+    kind,
+    degree,
+    support_elements,
+    segments,
+    swapped_normals,
+    keyword_args,
+):
+    import bempp.api
+    from bempp.api.utils import pool
+
+    grid = pool.get_data(grid_id)
+    space = bempp.api.function_space(
+        grid,
+        kind,
+        degree,
+        support_elements=support_elements,
+        segments=segments,
+        swapped_normals=swapped_normals,
+        **keyword_args,
+    )
+    space.set_id(space_id)
+    pool.insert_data(space_id, space)
+    bempp.api.log(f"Copied space {space.id} to worker {pool.get_id()}.")
 
 
 @_numba.njit
