@@ -244,7 +244,7 @@ def is_worker():
     return _IN_WORKER is True
 
 
-def create_device_pool(identifier):
+def create_device_pool(identifier, log=True, buffer_size=100):
     """
     Create a pool based on a given platform identifer.
     
@@ -255,20 +255,19 @@ def create_device_pool(identifier):
     """
     from bempp.core.cl_helpers import get_context_by_name
 
-    ctx = get_context_by_name(identifier)
+    ctx, _ = get_context_by_name(identifier)
     ndevices = len(ctx.devices)
 
-    create_pool(ndevices)
+    create_pool(ndevices, log, buffer_size)
     execute(_init_device_worker, identifier)
 
 
 
 
-def create_pool(nworkers, use_threading=False, log=True, buffer_size=100):
+def create_pool(nworkers, log=True, buffer_size=100):
     """Create a pool."""
 
     from bempp.api.utils import pool
-    from concurrent.futures import ThreadPoolExecutor
     import multiprocessing as mp
 
     pool._POOL = Pool(nworkers, buffer_size=buffer_size)

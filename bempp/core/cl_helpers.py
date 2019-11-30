@@ -682,7 +682,7 @@ def get_context_by_name(identifier):
 
     platforms = _cl.get_platforms()
     for index, platform in enumerate(platforms):
-        if string in platform.name:
+        if identifier in platform.name:
             ctx = Context(
                     _cl.Context(
                         dev_type=_cl.device_type.ALL,
