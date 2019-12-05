@@ -617,7 +617,7 @@ class DenseEvaluatorMultiprocessingInstance(object):
         )
         self._kernel_options = kernel_options
         self._precision = precision
-        self._grids_disjoint = test_space.grid != trial_space.grid
+        self._grids_disjoint = actual_test_space.grid != actual_trial_space.grid
 
         self._device_interface = bempp.api.default_device()
 
