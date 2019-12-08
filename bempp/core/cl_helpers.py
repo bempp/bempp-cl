@@ -39,6 +39,11 @@ class Context(object):
         return self._cl_context
 
     @property
+    def platform_name(self):
+        """Return name of the associated platform."""
+        return self._devices[0].cl_device.platform.name
+
+    @property
     def devices(self):
         """Return all devices in context."""
         return self._devices
@@ -658,7 +663,7 @@ def set_default_device(platform_index, device_index):
     vector_width_double = _DEFAULT_DEVICE.native_vector_width("double")
 
     bempp.api.log(
-        f"{_DEFAULT_DEVICE.name}. "
+            f"Default device: {_DEFAULT_DEVICE.name}. "
         + f"Device Type: {_DEFAULT_DEVICE.type}. "
         + f"Native vector width: {vector_width_single} (single) / "
         + f"{vector_width_double} (double)."

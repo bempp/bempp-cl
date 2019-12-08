@@ -15,14 +15,20 @@ _IN_WORKER = False
 _BUFFER = None
 
 
-def worker(in_queue, out_queue, worker_id, buf):
+def worker(in_queue, out_queue, worker_id, nworkers, buf, log, log_level):
     """Definition of a worker. """
     import bempp.api
     from bempp.api.utils import pool
     import traceback
 
+
     pool._MY_ID = worker_id
+    pool._NWORKERS = nworkers
     pool._BUFFER = buf
+    pool._IN_WORKER = True
+
+    if log:
+        bempp.api.enable_console_logging(log_level)
 
     get = in_queue.get
     put = out_queue.put
@@ -126,7 +132,7 @@ class Pool(object):
 
     """
 
-    def __init__(self, nworkers, buffer_size=100):
+    def __init__(self, nworkers, buffer_size=100, log=False, log_level='info'):
         """
         Initialise the pool.
 
@@ -137,8 +143,13 @@ class Pool(object):
         buffer_size : int
             Size of the shared memory buffer
             in MB.
+        log : Boolean
+            Set to True for logging
+        log_level : String
+            One of 'debug', 'info', 'warning', 'error', 'critical'
 
         """
+        import bempp.api
         from bempp.api.utils import pool
         from bempp.api.utils.pool import worker
 
@@ -157,13 +168,14 @@ class Pool(object):
         self._workers = [
             ctx.Process(
                 target=worker,
-                args=(self._senders[i], self._receivers[i], i, pool._BUFFER),
+                args=(self._senders[i], self._receivers[i], i, nworkers, pool._BUFFER, log, log_level),
             )
             for i in range(nworkers)
         ]
         for w in self._workers:
             w.daemon = True
             w.start()
+        bempp.api.log(f"Created pool with {nworkers} workers.")
 
     @property
     def number_of_workers(self):
@@ -202,6 +214,7 @@ def _raise_if_not_worker(name):
     """Raise exception if not in worker."""
     if not is_worker():
         raise Exception(f"Method {name} can only be called inside a worker.")
+
 
 def number_of_workers():
     """Return number of workers."""
@@ -265,17 +278,26 @@ def is_worker():
     return _IN_WORKER is True
 
 
-def create_device_pool(identifier, log=True, buffer_size=100, max_workers=-1, precision=None):
+def create_device_pool(
+    identifier,
+    buffer_size=100,
+    log=False,
+    log_level="info",
+    max_workers=-1,
+    precision=None,
+):
     """
     Create a pool based on a given platform identifer.
     
     identifier : string
         A unique identifier that is part of the platform name.
         Used to find the correct platform.
-    log : Boolean
-        Set to True to log workers.
     buffer_size : int
         Shared memory buffer size in MB
+    log : Boolean
+        Set to True to log workers.
+    log_level : String
+        Logging level. One of 'debug', 'info', 'warning', 'error', 'critical'
     max_workers : int
         Maximum number of workers. If max_workers=-1 (default)
         the maximum number of workers is identical to the number
@@ -286,12 +308,17 @@ def create_device_pool(identifier, log=True, buffer_size=100, max_workers=-1, pr
         If precision is 'single' or 'double' use the corresponding mode for the pool.
 
     """
+    import bempp.api
     from bempp.core.cl_helpers import get_context_by_name
 
     ctx, _ = get_context_by_name(identifier)
 
-    if not precision in [None, 'single', 'double']:
-        raise ValueError(f"'precision' is {precision}. Allowed values are: 'single', 'double'")
+    bempp.api.log(f"Creating pool for Platform: {ctx.platform_name}")
+
+    if not precision in [None, "single", "double"]:
+        raise ValueError(
+            f"'precision' is {precision}. Allowed values are: 'single', 'double'"
+        )
 
     if max_workers > len(ctx.devices):
         raise ValueError(
@@ -303,23 +330,19 @@ def create_device_pool(identifier, log=True, buffer_size=100, max_workers=-1, pr
     else:
         ndevices = max_workers
 
-    create_pool(ndevices, log, buffer_size)
+    create_pool(ndevices, buffer_size, log, log_level)
 
     execute(_init_device_worker, identifier, precision)
 
 
-def create_pool(nworkers, log=True, buffer_size=100):
+def create_pool(nworkers, buffer_size=100, log=False, log_level="info"):
     """Create a pool."""
 
     from bempp.api.utils import pool
     import multiprocessing as mp
 
-    pool._POOL = Pool(nworkers, buffer_size=buffer_size)
+    pool._POOL = Pool(nworkers, buffer_size=buffer_size, log=log, log_level=log_level)
     pool._NWORKERS = nworkers
-
-    if log:
-        enable_pool_log()
-    starmap(_init_worker, zip(range(nworkers), nworkers * [nworkers]))
 
 
 def nworkers():
@@ -350,11 +373,6 @@ def execute(fun, *args):
         return _POOL.starmap(fun, nworkers() * [args])
 
 
-def enable_pool_log():
-    """Enable console logging in pools."""
-    execute(_enable_pool_log_worker)
-
-
 def _assign_ids(nworkers):
     """Assign pool ids."""
     map(_assign_ids_worker, zip(range(nworkers), nworkers * [nworkers]))
@@ -369,21 +387,6 @@ def shutdown():
     pool._NWORKERS = False
     pool._USE_THREADS = None
 
-
-def _init_worker(my_id, nworkers):
-    """Initialise workers."""
-    from bempp.api import log
-    from bempp.api.utils import pool
-
-    pool._NWORKERS = nworkers
-    pool._IN_WORKER = True
-    log(f"Created worker {pool._MY_ID} out of {pool.nworkers()}.")
-
-
-def _enable_pool_log_worker():
-    import bempp.api
-
-    bempp.api.enable_console_logging()
 
 
 def _execute_function_without_arguments(fun):
@@ -409,6 +412,7 @@ def _init_device_worker(identifier, precision):
     if precision is not None:
         bempp.api.DEVICE_PRECISION_CPU = precision
         bempp.api.DEVICE_PRECISION_GPU = precision
+
 
 def _clear_data_worker():
     """Clear worker."""

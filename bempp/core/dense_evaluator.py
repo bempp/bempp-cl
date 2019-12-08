@@ -3,6 +3,7 @@ import numpy as _np
 
 import bempp.core.cl_helpers as _cl_helpers
 from bempp.api.assembly import assembler as _assembler
+from bempp.helpers import timeit as _timeit
 
 WORKGROUP_SIZE = 128
 
@@ -97,6 +98,7 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
 
         return GenericDiscreteBoundaryOperator(self)
 
+    @_timeit
     def matvec(self, x):
         """Apply operator to a vector x."""
         from bempp.api.utils import pool
@@ -442,6 +444,7 @@ def _prepare_evaluator(
     kernel_options,
 ):
     """Initialize the worker."""
+    import bempp.api
     from bempp.api.utils import pool
     from bempp.core import dense_evaluator
 

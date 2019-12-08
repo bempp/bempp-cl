@@ -38,6 +38,7 @@ from bempp.api.assembly.blocked_operator import BlockedOperator
 from bempp.api.assembly.blocked_operator import GeneralizedBlockedOperator
 
 from bempp.api.utils import pool
+from bempp.api.utils.pool import create_device_pool
 
 # Disable Numba warnings
 
@@ -57,6 +58,7 @@ warnings.simplefilter("ignore", category=NumbaPerformanceWarning)
 CONSOLE_LOGGING_HANDLER = None
 DEFAULT_LOGGING_FORMAT = "%(name)s:%(levelname)s: %(message)s"
 DEBUG = _logging.DEBUG
+TIMING = 11
 INFO = _logging.INFO
 WARNING = _logging.WARNING
 ERROR = _logging.ERROR
@@ -64,6 +66,7 @@ CRITICAL = _logging.CRITICAL
 
 LOG_LEVEL = {
     "debug": DEBUG,
+    "timing": TIMING,
     "info": INFO,
     "warning": WARNING,
     "error": ERROR,
@@ -76,7 +79,8 @@ GLOBAL_PARAMETERS = DefaultParameters()
 def _init_logger():
     """Initialize the Bempp logger."""
 
-    logger = _logging.getLogger()
+    _logging.addLevelName(11, "TIMING")
+    logger = _logging.getLogger('bempp')
     logger.setLevel(DEBUG)
     logger.addHandler(_logging.NullHandler())
     return logger
@@ -97,34 +101,39 @@ def flush_log():
 
 def enable_console_logging(level="info"):
     """Enable console logging and return the console handler."""
+    from bempp.api.utils import pool
+
     # pylint: disable=W0603
     global CONSOLE_LOGGING_HANDLER
     if not CONSOLE_LOGGING_HANDLER:
         console_handler = _logging.StreamHandler()
         console_handler.setLevel(LOG_LEVEL[level])
-        console_handler.setFormatter(
-            _logging.Formatter(DEFAULT_LOGGING_FORMAT, "%H:%M:%S")
-        )
+        if pool.is_worker():
+            console_handler.setFormatter(
+                    _logging.Formatter(f"%(name)s:PROC{pool._MY_ID}:%(levelname)s: %(message)s", "%H:%M:%S")
+            )
+        else:
+            console_handler.setFormatter(
+                    _logging.Formatter("%(name)s:HOST:%(levelname)s: %(message)s", "%H:%M:%S")
+            )
         LOGGER.addHandler(console_handler)
         CONSOLE_LOGGING_HANDLER = console_handler
     return CONSOLE_LOGGING_HANDLER
 
 
-def enable_file_logging(file_name, level=DEBUG, logging_format=DEFAULT_LOGGING_FORMAT):
-    """Enable logging to a specific file."""
+# def enable_file_logging(file_name, level=DEBUG, logging_format=DEFAULT_LOGGING_FORMAT):
+    # """Enable logging to a specific file."""
 
-    file_handler = _logging.FileHandler(file_name)
-    file_handler.setLevel(level)
-    file_handler.setFormatter(_logging.Formatter(logging_format, "%H:%M:%S"))
-    LOGGER.addHandler(file_handler)
-    return file_handler
+    # file_handler = _logging.FileHandler(file_name)
+    # file_handler.setLevel(level)
+    # file_handler.setFormatter(_logging.Formatter(logging_format, "%H:%M:%S"))
+    # LOGGER.addHandler(file_handler)
+    # return file_handler
 
 
 def set_logging_level(level):
     """Set the logging level."""
     LOGGER.setLevel(LOG_LEVEL[level])
-
-
 
 
 # pylint: disable=too-few-public-methods

@@ -21,7 +21,7 @@ def timeit(fun):
         start_time = _time.time()
         res = fun(*args, **kwargs)
         end_time = _time.time()
-        log(fun.__qualname__ + " : {0:.3e}s".format(end_time - start_time), "debug")
+        log(fun.__qualname__ + " : {0:.3e}s".format(end_time - start_time), "timing")
         return res
 
     return timed_fun

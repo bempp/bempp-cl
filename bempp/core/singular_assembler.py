@@ -6,6 +6,7 @@ import numpy as _np
 from bempp.api.assembly import assembler as _assembler
 from bempp.api.integration import duffy_galerkin as _duffy_galerkin
 from bempp.api.integration import duffy_collocation as _duffy_collocation
+from bempp.helpers import timeit as _timeit
 
 WORKGROUP_SIZE_COLLOCATION = 4
 WORKGROUP_SIZE_GALERKIN = 16
@@ -86,6 +87,7 @@ class SingularAssembler(_assembler.AssemblerBase):
         return SparseDiscreteBoundaryOperator(mat)
 
 
+@_timeit
 def assemble_singular_part(
     domain,
     dual_to_range,
@@ -220,7 +222,7 @@ def assemble_singular_part(
 
     event.wait()
 
-    bempp.api.log("Singular kernel runtime [ms]: {0}".format(event.runtime()))
+    #bempp.api.log("Singular kernel runtime [ms]: {0}".format(event.runtime()), "timing")
 
     irange = _np.arange(number_of_test_shape_functions)
     jrange = _np.arange(number_of_trial_shape_functions)

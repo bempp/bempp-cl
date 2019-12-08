@@ -871,7 +871,7 @@ def _space_scatter_worker(
     )
     space._set_id(space_id)
     pool.insert_data(space_id, space)
-    bempp.api.log(f"Copied space {space.id} to worker {pool.get_id()}.")
+    bempp.api.log(f"Copied space {space.id} to worker {pool.get_id()}.", "debug")
 
 
 @_numba.njit

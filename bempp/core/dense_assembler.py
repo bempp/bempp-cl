@@ -3,6 +3,7 @@ import numpy as _np
 
 import bempp.core.cl_helpers as _cl_helpers
 from bempp.api.assembly import assembler as _assembler
+from bempp.helpers import timeit as _timeit
 
 
 class DenseAssembler(_assembler.AssemblerBase):
@@ -48,6 +49,7 @@ class DenseAssembler(_assembler.AssemblerBase):
         return DenseDiscreteBoundaryOperator(mat)
 
 
+@_timeit
 def assemble_dense(
     domain,
     dual_to_range,
@@ -113,7 +115,7 @@ def assemble_dense(
     log(
         "Regular kernel vector length: {0} ({1} precision)".format(
             vec_length, precision
-        )
+        ), "debug"
     )
 
 
@@ -168,7 +170,7 @@ def assemble_dense(
         parameters,
         chunks=(test_color_indexptr, trial_color_indexptr),
     )
-    log("Regular kernel runtime [ms]: {0}".format(runtime))
+    #log("Regular kernel runtime [ms]: {0}".format(runtime), "timing")
 
     regular_result = buffers[-4].get_host_copy(device_interface)
 

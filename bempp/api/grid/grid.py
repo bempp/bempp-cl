@@ -1410,6 +1410,6 @@ def _grid_scatter_worker(grid_id, array_proxies):
             grid_id,
             Grid(vertices.copy(), elements.copy(), domain_indices.copy(), grid_id),
         )
-        log(f"Copied grid with id {grid_id} to worker {pool.get_id()}")
+        log(f"Copied grid with id {grid_id} to worker {pool.get_id()}", "debug")
     else:
-        log(f"Use cached grid with id {grid_id} on worker {pool.get_id()}")
+        log(f"Use cached grid with id {grid_id} on worker {pool.get_id()}", "debug")
