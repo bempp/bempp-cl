@@ -203,7 +203,6 @@ def _raise_if_not_worker(name):
     if not is_worker():
         raise Exception(f"Method {name} can only be called inside a worker.")
 
-
 def number_of_workers():
     """Return number of workers."""
     from bempp.api.utils import pool
@@ -225,6 +224,13 @@ def insert_data(key, data):
 def is_initialised():
     """Return true if pool is initialised."""
     return _POOL is not None
+
+
+def clear_data():
+    """Clear the data in all workers."""
+    from bempp.api.utils import pool
+
+    pool.execute(_clear_data_worker)
 
 
 def get_data(key):
@@ -259,7 +265,7 @@ def is_worker():
     return _IN_WORKER is True
 
 
-def create_device_pool(identifier, log=True, buffer_size=100, max_workers=-1):
+def create_device_pool(identifier, log=True, buffer_size=100, max_workers=-1, precision=None):
     """
     Create a pool based on a given platform identifer.
     
@@ -274,11 +280,18 @@ def create_device_pool(identifier, log=True, buffer_size=100, max_workers=-1):
         Maximum number of workers. If max_workers=-1 (default)
         the maximum number of workers is identical to the number
         of devices in the pool.
-    
+    precision : string or None
+        Precision for the devices in the pool. If precision is None use
+        single precision for GPU devices and double precision for CPU devices.
+        If precision is 'single' or 'double' use the corresponding mode for the pool.
+
     """
     from bempp.core.cl_helpers import get_context_by_name
 
     ctx, _ = get_context_by_name(identifier)
+
+    if not precision in [None, 'single', 'double']:
+        raise ValueError(f"'precision' is {precision}. Allowed values are: 'single', 'double'")
 
     if max_workers > len(ctx.devices):
         raise ValueError(
@@ -291,7 +304,8 @@ def create_device_pool(identifier, log=True, buffer_size=100, max_workers=-1):
         ndevices = max_workers
 
     create_pool(ndevices, log, buffer_size)
-    execute(_init_device_worker, identifier)
+
+    execute(_init_device_worker, identifier, precision)
 
 
 def create_pool(nworkers, log=True, buffer_size=100):
@@ -383,11 +397,21 @@ def _remove_key_worker(key):
     del pool._DATA[key]
 
 
-def _init_device_worker(identifier):
+def _init_device_worker(identifier, precision):
     """Worker to initialise device."""
     import bempp.api
+    from bempp.api.utils import pool
     from bempp.api.utils.pool import get_id
     from bempp.core.cl_helpers import get_context_by_name
 
     ctx, platform_index = get_context_by_name(identifier)
     bempp.api.set_default_device(platform_index, get_id())
+    if precision is not None:
+        bempp.api.DEVICE_PRECISION_CPU = precision
+        bempp.api.DEVICE_PRECISION_GPU = precision
+
+def _clear_data_worker():
+    """Clear worker."""
+    from bempp.api.utils import pool
+
+    pool._DATA = {}

@@ -94,6 +94,7 @@ def function_space(
             swapped_normals,
             kwargs,
         )
+        space._is_scattered = True
 
     return space
 
@@ -350,6 +351,7 @@ class FunctionSpace(object):
         self._inverse_mass_matrix = None
         self._sorted_indices = None
         self._indexptr = None
+        self._is_scattered = False
 
         # Number of dofs for the space defined over the grid
         # This is different from the global_dof_count, which
@@ -676,7 +678,7 @@ class FunctionSpace(object):
         """Check if space is compatible with other space."""
         return self == other
 
-    def set_id(self, new_id):
+    def _set_id(self, new_id):
         """Assign a new id string to the space."""
         self._id = new_id
 
@@ -867,7 +869,7 @@ def _space_scatter_worker(
         swapped_normals=swapped_normals,
         **keyword_args,
     )
-    space.set_id(space_id)
+    space._set_id(space_id)
     pool.insert_data(space_id, space)
     bempp.api.log(f"Copied space {space.id} to worker {pool.get_id()}.")
 

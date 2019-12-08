@@ -119,6 +119,19 @@ class DeviceInterface(object):
             return "gpu"
         return "unknown"
 
+    @property
+    def default_precision(self):
+        """Return default precision."""
+        import bempp.api
+
+        if self.type == 'gpu':
+            return bempp.api.DEVICE_PRECISION_GPU
+        if self.type == 'cpu':
+            return bempp.api.DEVICE_PRECISION_CPU
+        else:
+            raise ValueError("Unknown device type.")
+
+
     def native_vector_width(self, precision):
         """Return native vector width for 'single' and 'double'."""
         if precision == "single":

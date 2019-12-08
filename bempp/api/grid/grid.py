@@ -77,6 +77,7 @@ class Grid(object):
             self._centroids,
             self._domain_indices,
         )
+        self._is_scattered = False
 
         if scatter and pool.is_initialised() and not pool.is_worker():
             self._scatter()
@@ -314,6 +315,7 @@ class Grid(object):
         )
 
         pool.execute(_grid_scatter_worker, self.id, array_proxies)
+        self._is_scattered=True
 
     def entity_count(self, codim):
         """Return the number of entities of given codimension."""
@@ -1205,7 +1207,7 @@ def barycentric_refinement(grid):
         grid.number_of_edges,
     )
 
-    return Grid(new_vertices, new_elements, _np.repeat(grid.domain_indices, 6))
+    return Grid(new_vertices, new_elements, _np.repeat(grid.domain_indices, 6), scatter=False)
 
 
 def union(grids, domain_indices=None, swapped_normals=None):
