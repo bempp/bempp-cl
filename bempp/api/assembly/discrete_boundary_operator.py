@@ -1,6 +1,7 @@
 """Data structures for assembled boundary operators."""
 
 import numpy as _np
+from bempp.helpers import timeit as _timeit
 from scipy.sparse.linalg.interface import LinearOperator as _LinearOperator
 
 # Disable warnings for differing overridden parameters
@@ -305,6 +306,7 @@ class _Solver(object):  # pylint: disable=too-few-public-methods
     """Actual solve of a sparse linear system."""
 
     # pylint: disable=too-many-locals
+    @_timeit
     def __init__(self, operator):
 
         from scipy.sparse import csc_matrix
@@ -345,12 +347,6 @@ class _Solver(object):  # pylint: disable=too-few-public-methods
             solver_interface = splu
             actual_mat = mat
 
-        bempp.api.log(
-            "Start computing LU "
-            + "(pseudo)-inverse of ({0}, {1}) matrix.".format(
-                mat.shape[0], mat.shape[1]
-            )
-        )
 
         start_time = time.time()
         if mat.shape[0] == mat.shape[1]:
@@ -376,10 +372,8 @@ class _Solver(object):  # pylint: disable=too-few-public-methods
             self._solve_fun = lambda x: mat_hermitian * solver.solve(x)
 
         end_time = time.time()
-        bempp.api.log(
-            "Finished computation of inverse in %.2E seconds." % (end_time - start_time)
-        )
 
+    @_timeit
     def solve(self, rhs):
         """Solve with right-hand side mat."""
 
