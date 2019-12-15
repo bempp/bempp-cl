@@ -1,8 +1,12 @@
 from setuptools import setup
 import os
 
-BEMPP_PATH = os.path.realpath(__file__)
-__version__ = open(os.path.join(BEMPP_PATH, "./VERSION"), "r").readlines()[0].strip("\n")
+
+VERSION_FILE = os.path.abspath(
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "VERSION")
+)
+
+__version__ = open(VERSION_FILE).readlines()[0].strip("\n")
 
 setup(
         name='Bempp-cl',
