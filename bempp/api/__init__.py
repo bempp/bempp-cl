@@ -228,10 +228,14 @@ def _gmsh_path():
         )
     return gmp
 
+def _get_version():
+    """Get version string."""
+    from bempp import version
+    return version.__version__
 
 GMSH_PATH = _gmsh_path()
 
-__version__ = open(_os.path.join(BEMPP_PATH, "../VERSION"), "r").readlines()[0].strip("\n")
+__version__ = _get_version()
 
 VECTORIZATION = "auto"
 DEVICE_PRECISION_CPU = "double"
