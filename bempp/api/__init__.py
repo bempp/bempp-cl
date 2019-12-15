@@ -231,6 +231,8 @@ def _gmsh_path():
 
 GMSH_PATH = _gmsh_path()
 
+__version__ = open(_os.path.join(BEMPP_PATH, "../VERSION"), "r").readlines()[0].strip("\n")
+
 VECTORIZATION = "auto"
 DEVICE_PRECISION_CPU = "double"
 DEVICE_PRECISION_GPU = "single"

@@ -1,5 +1,6 @@
 include LICENSE.md
 include README.md
+include VERSION
 
 graft bempp
 global-exclude *.py[cod] *.so
