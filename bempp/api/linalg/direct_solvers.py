@@ -37,6 +37,12 @@ def lu(A, b, lu_factor=None):
     """
     from bempp.api import GridFunction, as_matrix
     from scipy.linalg import solve, lu_solve
+    from bempp.api.assembly.blocked_operator import BlockedOperatorBase
+
+    if isinstance(A, BlockedOperatorBase):
+        blocked = True
+
+
 
     if lu_factor is not None:
         vec = b.projections(A.dual_to_range)

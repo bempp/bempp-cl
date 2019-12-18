@@ -81,8 +81,10 @@ def magnetic_field(
 def multitrace_operator(
     grid,
     wavenumber,
+    epsilon_r=1,
+    mu_r=1,
     target=None,
-    space_type="electric_dual",
+    space_type="magnetic_dual",
     parameters=None,
     assembler="default_nonlocal",
     device_interface=None,
@@ -97,18 +99,22 @@ def multitrace_operator(
         Bempp grid object.
     wavenumber : complex
         A real or complex wavenumber
+    epsilon_r : float
+        Relative permittivity with respect to vacuum.
+    mu_r : float
+        Relative permeability with respect to vacuum.
     target : Grid
         The grid for the range spaces. If target is None then
         target is set to the input grid (that is the domain
         grid).
     space_type : string
-        One of "all_rwg", "all_bc", "electric_dual" (default),
-        "magnetic_dual". These lead to the following
+        One of "all_rwg", "all_bc", "magnetic_dual" (default),
+        "electric_dual". These lead to the following
         choices of space, range, and dual_to_range:
         default - (RWG, RWG), (BC, BC), (SNC, SNC)
         all_dual - (BC, BC), (RWG, RWG), (RBC, RBC)
-        electric_dual - (RWG, BC), (RWG, BC), (RBC, SNC)
-        magnetic_dual - (BC, RWG), (BC, RWG), (SNC, RBC)
+        magnetic_dual - (RWG, BC), (RWG, BC), (RBC, SNC)
+        electric_dual - (BC, RWG), (BC, RWG), (SNC, RBC)
     parameters : Parameters
         An optional parameters object.
     assembler : string
@@ -215,6 +221,8 @@ def multitrace_operator(
         range_,
         dual_to_range,
         wavenumber,
+        epsilon_r=epsilon_r,
+        mu_r=mu_r,
         parameters=parameters,
         assembler=assembler,
         device_interface=device_interface,
@@ -226,6 +234,8 @@ def _multitrace_operator_impl(
     range_,
     dual_to_range,
     wavenumber,
+    epsilon_r=1,
+    mu_r=1,
     parameters=None,
     assembler="default_nonlocal",
     device_interface=None,
@@ -233,6 +243,8 @@ def _multitrace_operator_impl(
 ):
 
     from bempp.api.assembly.blocked_operator import BlockedOperator
+
+    rho = _np.sqrt(epsilon_r / mu_r)
 
     magnetic1 = magnetic_field(
         domain[0],
@@ -280,204 +292,10 @@ def _multitrace_operator_impl(
 
     blocked = BlockedOperator(2, 2)
     blocked[0, 0] = magnetic1
-    blocked[0, 1] = electric1
-    blocked[1, 0] = -electric2
+    blocked[0, 1] = (1. / rho) * electric1
+    blocked[1, 0] = -rho * electric2
     blocked[1, 1] = magnetic2
 
     return blocked
 
 
-# def multitrace_operator(
-# grid,
-# wavenumber,
-# segments=None,
-# parameters=None,
-# swapped_normals=None,
-# assembler="multitrace_evaluator",
-# device_interface=None,
-# precision=None,
-# ):
-# """Assemble the Maxwell multitrace operator."""
-# from bempp.api.space import function_space
-# from bempp.api.operators import _add_wavenumber
-
-# if assembler != "multitrace_evaluator":
-# raise ValueError("Only multitrace evaluator supported.")
-
-# domain = function_space(
-# grid,
-# "RWG",
-# 0,
-# segments=segments,
-# swapped_normals=swapped_normals,
-# include_boundary_dofs=True,
-# )
-# range_ = domain
-# dual_to_range = function_space(
-# grid,
-# "SNC",
-# 0,
-# segments=segments,
-# swapped_normals=swapped_normals,
-# include_boundary_dofs=True,
-# )
-# magnetic = magnetic_field(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# "only_singular_part",
-# device_interface,
-# precision,
-# )
-# electric = electric_field(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# "only_singular_part",
-# device_interface,
-# precision,
-# )
-
-# options = {"COMPLEX_KERNEL": None}
-
-# _add_wavenumber(options, wavenumber)
-
-# singular_contribution = _np.array(
-# [[magnetic, electric], [-electric, magnetic]], dtype=_np.object
-# )
-# return _common.create_multitrace_operator(
-# "maxwell_multitrace",
-# [domain, domain],
-# [range_, range_],
-# [dual_to_range, dual_to_range],
-# parameters,
-# assembler,
-# options,
-# "maxwell_multitrace",
-# singular_contribution,
-# device_interface,
-# precision,
-# )
-
-
-# def transmission_operator(
-# grid,
-# wavenumber,
-# eps_rel,
-# mu_rel,
-# segments=None,
-# parameters=None,
-# swapped_normals=None,
-# assembler="multitrace_evaluator",
-# device_interface=None,
-# precision=None,
-# ):
-# """Assemble the Maxwell transmission operator."""
-# from bempp.api.space import function_space
-# from bempp.api.operators import _add_wavenumber
-
-# if assembler != "multitrace_evaluator":
-# raise ValueError("Only multitrace evaluator supported.")
-
-# domain = function_space(
-# grid,
-# "RWG",
-# 0,
-# segments=segments,
-# swapped_normals=swapped_normals,
-# include_boundary_dofs=True,
-# )
-# range_ = domain
-# dual_to_range = function_space(
-# grid,
-# "SNC",
-# 0,
-# segments=segments,
-# swapped_normals=swapped_normals,
-# include_boundary_dofs=True,
-# )
-
-# sqrt_eps_rel = _np.sqrt(eps_rel)
-# sqrt_mu_rel = _np.sqrt(mu_rel)
-
-# wavenumber_int = wavenumber * sqrt_eps_rel * sqrt_mu_rel
-
-# magnetic_ext = magnetic_field(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# "only_singular_part",
-# device_interface,
-# precision,
-# )
-
-# magnetic_int = magnetic_field(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber_int,
-# parameters,
-# "only_singular_part",
-# device_interface,
-# precision,
-# )
-
-# electric_ext = electric_field(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# "only_singular_part",
-# device_interface,
-# precision,
-# )
-
-# electric_int = electric_field(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber_int,
-# parameters,
-# "only_singular_part",
-# device_interface,
-# precision,
-# )
-
-# options = {"COMPLEX_KERNEL": None, "TRANSMISSION": None}
-
-# _add_wavenumber(options, wavenumber)
-# _add_wavenumber(options, sqrt_mu_rel, "SQRT_MU_REL")
-# _add_wavenumber(options, sqrt_eps_rel, "SQRT_EPS_REL")
-# _add_wavenumber(options, wavenumber_int, "WAVENUMBER_INT")
-# _add_wavenumber(options, sqrt_mu_rel / sqrt_eps_rel, "SQRT_MU_EPS_RATIO")
-# _add_wavenumber(options, sqrt_eps_rel / sqrt_mu_rel, "SQRT_EPS_MU_RATIO")
-
-# fac = sqrt_mu_rel / sqrt_eps_rel
-
-# singular_contribution = _np.array(
-# [
-# [magnetic_ext + magnetic_int, electric_ext + fac * electric_int],
-# [(-1.0 / fac) * electric_int - electric_ext, magnetic_int + magnetic_ext],
-# ],
-# dtype=_np.object,
-# )
-# return _common.create_multitrace_operator(
-# "maxwell_transmission",
-# [domain, domain],
-# [range_, range_],
-# [dual_to_range, dual_to_range],
-# parameters,
-# assembler,
-# options,
-# "maxwell_multitrace",
-# singular_contribution,
-# device_interface,
-# precision,
-# )

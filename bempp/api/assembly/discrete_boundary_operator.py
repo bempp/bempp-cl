@@ -8,7 +8,126 @@ from scipy.sparse.linalg.interface import LinearOperator as _LinearOperator
 # pylint: disable=W0221
 
 
-class GenericDiscreteBoundaryOperator(_LinearOperator):
+class _DiscreteOperatorBase(_LinearOperator):
+    """Discrete boundary operator base."""
+
+    def __init__(self, dtype, shape):
+        """Constructor. Should not be called directly."""
+        super().__init__(dtype, shape)
+
+    def __add__(self, other):
+        """Sum of two operators."""
+
+        if isinstance(other, _DiscreteOperatorBase):
+            return _SumDiscreteOperator(self, other)
+        else:
+            return super().__add__(other)
+
+    def __neg__(self):
+        """Negation."""
+        return _ScaledLinearOperator(self, -1)
+
+    def __sub__(self, other):
+        """Subtraction."""
+        return self.__add__(self, -other)
+
+    def dot(self, other):
+        """Product with other objects."""
+
+        if isinstance(other, _DiscreteOperatorBase):
+            return _ProductDiscreteOperator(self, other)
+        elif _np.isscalar(other):
+            return _ScaledDiscreteOperator(self, other)
+        else:
+            return super().dot(other)
+        
+    def __mul__(self, other):
+        """Product with other objects."""
+        return self.dot(other)
+
+    def __rmul__(self, other):
+        """Reverse product."""
+        if _np.isscalar(other):
+            return _ScaledDiscreteOperator(self, other)
+        else:
+            return NotImplemented
+
+class _ScaledDiscreteOperator(_DiscreteOperatorBase):
+    """Return a scaled operator."""
+
+    def __init__(self, op, alpha):
+        dtype = _np.find_common_type([op.dtype], [type(alpha)])
+        self._op = op
+        self._alpha = alpha
+        super().__init__(dtype, op.shape)
+
+    def _matvec(self, x):
+        """Matvec."""
+        return self._alpha * (self._op @ x)
+
+    @property
+    def A(self):
+        """Return matrix."""
+
+        return self._alpha * self._op.A
+
+class _SumDiscreteOperator(_DiscreteOperatorBase):
+    """Return a sum operator."""
+
+    def __init__(self, op1, op2):
+        """Constructor."""
+
+        if op1.shape != op2.shape:
+            raise ValueError(f"Operators have incompatible shapes {op1.shape} != {op2.shape}")
+
+        self._op1 = op1
+        self._op2 = op2
+
+        dtype = _np.find_common_type([op1.dtype, op2.dtype], [])
+
+        super().__init__(dtype, op1.shape)
+
+    def _matvec(self, x):
+        """Evaluate matvec."""
+        return op1 @ x + op2 @ x
+
+    @property
+    def A(self):
+        """Return matrix representation."""
+
+        res1, res2 = _get_dense(self._op1.A, self._op2.A)
+
+        return res1 + res2
+
+class _ProductDiscreteOperator(_DiscreteOperatorBase):
+    """Product of two operators."""
+
+    def __init__(self, op1, op2):
+        """Constructor."""
+
+        if op1.shape[1] != op2.shape[0]:
+            raise ValueError(f"Incompatible dimensions shapes for multiplication with {op1.shape} and {op2.shape}")
+
+        self._op1 = op1
+        self._op2 = op2
+
+        dtype = _np.find_common_type([op1.dtype, op2.dtype], [])
+
+        super().__init__(dtype, (op1.shape[0], op2.shape[1]))
+
+    def _matvec(self, x):
+        """Evaluate matvec."""
+        return op1 @ (op2 @ x)
+
+    @property
+    def A(self):
+        """Return matrix representation."""
+
+        res1, res2 = _get_dense(self._op1.A, self._op2.A)
+
+        return res1 @ res2
+
+class GenericDiscreteBoundaryOperator(_DiscreteOperatorBase):
     """Discrete boundary operator that implements a matvec routine."""
 
     def __init__(self, evaluator):
@@ -30,8 +149,12 @@ class GenericDiscreteBoundaryOperator(_LinearOperator):
         else:
             return self._evaluator.matvec(x)
 
+    @property
+    def A(self):
+        """Convert to dense."""
+        return self @ _np.eye(self.shape[1])
 
-class DenseDiscreteBoundaryOperator(_LinearOperator):
+class DenseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     """
     Main class for the discrete form of dense nonlocal operators.
 
@@ -102,7 +225,7 @@ class DenseDiscreteBoundaryOperator(_LinearOperator):
         return self._impl
 
 
-class SparseDiscreteBoundaryOperator(_LinearOperator):
+class SparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     """
     Main class for the discrete form of sparse operators.
 
@@ -164,7 +287,7 @@ class SparseDiscreteBoundaryOperator(_LinearOperator):
         return self._impl
 
 
-class InverseSparseDiscreteBoundaryOperator(_LinearOperator):
+class InverseSparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     """
     Apply the (pseudo-)inverse of a sparse operator.
 
@@ -197,8 +320,15 @@ class InverseSparseDiscreteBoundaryOperator(_LinearOperator):
 
         return self._solver.solve(vec)
 
+    def A(self):
+        """Return dense representation."""
 
-class ZeroDiscreteBoundaryOperator(_LinearOperator):
+        eye = _np.eye(self.shape[1])
+
+        return self @ eye
+
+
+class ZeroDiscreteBoundaryOperator(_DiscreteOperatorBase):
     """A discrete operator that represents a zero operator.
 
     This class derives from
@@ -224,7 +354,7 @@ class ZeroDiscreteBoundaryOperator(_LinearOperator):
             return _np.zeros((self.shape[0], x.shape[1]), dtype="float64")
 
 
-class DiscreteRankOneOperator(_LinearOperator):
+class DiscreteRankOneOperator(_DiscreteOperatorBase):
     """Creates a discrete rank one operator.
 
     This class represents a rank one operator given
@@ -270,10 +400,15 @@ class DiscreteRankOneOperator(_LinearOperator):
     def _adjoint(self):
         return DiscreteRankOneOperator(self._row.conjugate(), self._column.conjugate())
 
+    @property
+    def A(self):
+        """Return as dense."""
+        return _np.outer(self._column, self._row)
+
 
 def as_matrix(operator):
     """
-    Convert a discrte operator into a dense or sparse matrix.
+    Convert a discrte operator into a dense matrix.
 
     Parameters
     ----------
@@ -293,13 +428,11 @@ def as_matrix(operator):
     """
     from numpy import eye
 
+    if hasattr(operator, A):
+        return operator.A
+
     cols = operator.shape[1]
-    if isinstance(operator, DenseDiscreteBoundaryOperator):
-        return operator.A
-    elif isinstance(operator, SparseDiscreteBoundaryOperator):
-        return operator.A
-    else:
-        return operator * eye(cols, cols)
+    return operator @ eye(cols)
 
 
 class _Solver(object):  # pylint: disable=too-few-public-methods
@@ -391,3 +524,31 @@ class _Solver(object):  # pylint: disable=too-few-public-methods
     def dtype(self):
         """Return the dtype."""
         return self._dtype
+
+def _get_dense(A, B):
+    """
+    Convert to dense if necessary.
+
+    If exactly one of A or B are sparse matrices,
+    both are returned as dense. If both are sparse,
+    then both are returned as sparse.
+
+    """
+    a_is_sparse = False
+    b_is_sparse = False
+
+    if not isinstance(A, _np.ndarray):
+        a_is_sparse = True
+    if not isinstance(B, _np.ndarray):
+        b_is_sparse = True
+
+    if a_is_sparse and b_is_sparse:
+        return A, B
+    
+    if a_is_sparse:
+        A = A.todense()
+    if b_is_sparse:
+        B = B.todense()
+
+    return A, B
+

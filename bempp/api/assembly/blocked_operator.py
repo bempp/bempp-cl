@@ -2,6 +2,7 @@
 
 import numpy as _np
 from scipy.sparse.linalg.interface import LinearOperator as _LinearOperator
+from bempp.api.assembly.discrete_boundary_operator import _DiscreteOperatorBase
 
 
 def _sum(op1, op2):
@@ -514,7 +515,7 @@ class ScaledBlockedOperator(BlockedOperatorBase):
         return tuple(self._op.domain_spaces)
 
 
-class GeneralizedDiscreteBlockedOperator(_LinearOperator):
+class GeneralizedDiscreteBlockedOperator(_DiscreteOperatorBase):
     """A discrete generalized blocked operator."""
 
     def __init__(self, operators):
@@ -556,6 +557,15 @@ class GeneralizedDiscreteBlockedOperator(_LinearOperator):
 
         super().__init__(dtype, shape)
 
+    @property
+    def A(self):
+        rows = []
+        for row in self._operators:
+            rows.append([])
+            for op in row:
+                rows[-1].append(op.A)
+        return _np.block(rows)
+
     def _matmat(self, other):
         """Implement the matrix/vector product."""
         from bempp.api.utils.data_types import combined_type
@@ -579,7 +589,7 @@ class GeneralizedDiscreteBlockedOperator(_LinearOperator):
         return output
 
 
-class BlockedDiscreteOperator(_LinearOperator):
+class BlockedDiscreteOperator(_DiscreteOperatorBase):
     """Implementation of a discrete blocked boundary operator."""
 
     def __init__(self, ops):
@@ -694,12 +704,13 @@ class BlockedDiscreteOperator(_LinearOperator):
     def _get_column_dimensions(self):
         return self._cols
 
-    def _as_matrix(self):
+    @property
+    def A(self):
         rows = []
         for i in range(self._ndims[0]):
             row = []
             for j in range(self._ndims[1]):
-                row.append(self[i, j].as_matrix())
+                row.append(self[i, j].A)
             rows.append(_np.hstack(row))
         return _np.vstack(rows)
 
