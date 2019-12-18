@@ -89,7 +89,7 @@ class _SumDiscreteOperator(_DiscreteOperatorBase):
 
     def _matvec(self, x):
         """Evaluate matvec."""
-        return op1 @ x + op2 @ x
+        return self._op1 @ x + self._op2 @ x
 
     @property
     def A(self):
@@ -117,7 +117,7 @@ class _ProductDiscreteOperator(_DiscreteOperatorBase):
 
     def _matvec(self, x):
         """Evaluate matvec."""
-        return op1 @ (op2 @ x)
+        return self._op1 @ (self._op2 @ x)
 
     @property
     def A(self):

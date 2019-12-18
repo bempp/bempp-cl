@@ -38,17 +38,24 @@ def lu(A, b, lu_factor=None):
     from bempp.api import GridFunction, as_matrix
     from scipy.linalg import solve, lu_solve
     from bempp.api.assembly.blocked_operator import BlockedOperatorBase
+    from bempp.api.assembly.blocked_operator import projections_from_grid_functions_list
+    from bempp.api.assembly.blocked_operator import grid_function_list_from_coefficients
 
     if isinstance(A, BlockedOperatorBase):
         blocked = True
-
-
-
-    if lu_factor is not None:
-        vec = b.projections(A.dual_to_range)
-        sol = lu_solve(lu_factor, vec)
+        vec = projections_from_grid_functions_list(b, A.dual_to_range_spaces)
+        if lu_factor is not None:
+            sol = lu_solve(lu_factor, vec)
+        else:
+            mat = A.weak_form().A
+            sol = solve(mat, vec)
+        return grid_function_list_from_coefficients(sol, A.domain_spaces)
     else:
-        mat = as_matrix(A.weak_form())
         vec = b.projections(A.dual_to_range)
-        sol = solve(mat, vec)
-    return GridFunction(A.domain, coefficients=sol)
+        if lu_factor is not None:
+            sol = lu_solve(lu_factor, vec)
+        else:
+            mat = A.weak_form().A
+            sol = solve(mat, vec)
+        return GridFunction(A.domain, coefficients=sol)
+
