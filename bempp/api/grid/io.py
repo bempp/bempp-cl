@@ -19,10 +19,10 @@ def import_grid(filename):
     mesh = _meshio.read(filename)
 
     vertices = mesh.points.T
-    elements = mesh.cells["triangle"].T.astype("uint32")
+    elements = mesh.cells_dict["triangle"].T.astype("uint32")
 
     try:
-        domain_indices = mesh.cell_data["triangle"]["gmsh:physical"]
+        domain_indices = mesh.cell_data_dict["gmsh_physical"]["triangle"]
     except:
         domain_indices = None
 
@@ -90,6 +90,12 @@ def export(
     else:
         gmsh = False
 
+    if extension == ".vtk":
+        if write_binary:
+            file_format = "vtk-binary"
+        else:
+            file_format = "vtk-ascii"
+
     if grid is not None and grid_function is not None:
         raise ValueError("Exactly one of 'grid' and 'grid_function' must be supplied.")
 
@@ -139,9 +145,9 @@ def export(
         cells,
         point_data=point_data,
         cell_data=cell_data,
-        binary=write_binary,
         file_format=file_format,
     )
+
 
 
 def _transform_array(a, mode=None):
