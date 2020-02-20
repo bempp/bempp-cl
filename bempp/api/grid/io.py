@@ -22,7 +22,7 @@ def import_grid(filename):
     elements = mesh.cells_dict["triangle"].T.astype("uint32")
 
     try:
-        domain_indices = mesh.cell_data_dict["gmsh_physical"]["triangle"]
+        domain_indices = mesh.cell_data_dict["gmsh:physical"]["triangle"]
     except:
         domain_indices = None
 
@@ -99,7 +99,7 @@ def export(
     if grid is not None and grid_function is not None:
         raise ValueError("Exactly one of 'grid' and 'grid_function' must be supplied.")
 
-    cell_data = {"triangle": {}}
+    cell_data = {}
     point_data = None
 
     if grid_function is not None:
@@ -118,26 +118,28 @@ def export(
                 grid_function.evaluate_on_element_centers(), transformation
             ).T
             if _np.iscomplexobj(data):
-                cell_data["triangle"]["real"] = _np.real(data)
-                cell_data["triangle"]["imag"] = _np.imag(data)
+                cell_data["real"] = _np.real(data)
+                cell_data["imag"] = _np.imag(data)
             else:
-                cell_data["triangle"]["data"] = data
+                cell_data["data"] = data
 
         else:
             raise ValueError("'data_type' must be one of 'element' or 'node'")
 
-    cells = {"triangle": grid.elements.T.astype("int32")}
+    cells = [("triangle", grid.elements.T.astype("int32"))]
     points = grid.vertices.T
 
     if gmsh:
-        cell_data["triangle"]["gmsh:physical"] = grid.domain_indices.astype("int32")
+        # physical and geometrical index must be 2 dim arrays with first dimension
+        # equal to the number of different element types (here always 1
+        cell_data["gmsh:physical"] = grid.domain_indices.astype("int32").reshape((1, -1))
         unique_dom_indices = set(grid.domain_indices)
         unique_geom_indices = range(1, 1 + len(unique_dom_indices))
         geom_indices_map = dict(zip(unique_dom_indices, unique_geom_indices))
         geom_indices = _np.array([geom_indices_map[dom_index] for dom_index in grid.domain_indices], dtype='int32')    
-        cell_data["triangle"]["gmsh:geometrical"] = geom_indices
+        cell_data["gmsh:geometrical"] = geom_indices.reshape((1, -1))
     else:
-        cell_data["triangle"]["domain_index"] = grid.domain_indices.astype("int32")
+        cell_data["domain_index"] = grid.domain_indices.astype("int32").reshape((-1, 1))
 
     _meshio.write_points_cells(
         filename,
