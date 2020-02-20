@@ -176,7 +176,8 @@ def _compute_p1_dof_map(
             vertex = grid_data.elements[local_index, element_index]
             neighbors = vertex_neighbors[index_ptr[vertex] : index_ptr[vertex + 1]]
             non_support_neighbors = [n for n in neighbors if not support[n]]
-            if include_boundary_dofs or len(non_support_neighbors) == 0:
+            node_is_interior = len(non_support_neighbors) == 0 and not grid_data.vertex_on_boundary[vertex]
+            if include_boundary_dofs or node_is_interior:
                 # Just add dof
                 local2global[element_index, local_index] = vertex
                 vertex_is_dof[vertex] = True

@@ -76,6 +76,7 @@ class Grid(object):
             self._integration_elements,
             self._centroids,
             self._domain_indices,
+            self._vertex_on_boundary
         )
         self._is_scattered = False
 
@@ -653,6 +654,7 @@ class Grid(object):
         ("integration_elements", _numba.float64[:]),
         ("centroids", _numba.float64[:, :]),
         ("domain_indices", _numba.uint32[:]),
+        ("vertex_on_boundary", _numba.boolean[:]),
     ]
 )
 class GridData(object):
@@ -672,6 +674,7 @@ class GridData(object):
         integration_elements,
         centroids,
         domain_indices,
+        vertex_on_boundary,
     ):
 
         self.vertices = vertices
@@ -686,6 +689,7 @@ class GridData(object):
         self.integration_elements = integration_elements
         self.centroids = centroids
         self.domain_indices = domain_indices
+        self.vertex_on_boundary = vertex_on_boundary
 
     def local2global(self, elem_index, local_coords):
         """
