@@ -79,6 +79,11 @@ class AssemblerInterface(object):
             **kwargs
         )
 
+    def update(self, *args):
+        """Update with new parameters."""
+        return self._implementation.update(*args)
+
+
 
 class AssemblerBase(object):
     """Base class for assemblers."""

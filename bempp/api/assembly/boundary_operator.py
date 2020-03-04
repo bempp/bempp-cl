@@ -137,6 +137,14 @@ class BoundaryOperatorWithAssembler(BoundaryOperator):
         """Assemble the operator."""
         return self.assembler.assemble(self.descriptor)
 
+    def update(self, *args):
+        """Update the operator with new parameters."""
+
+        if args:
+            self._cached = self.assembler.update(args)
+
+        return self._cached
+
 
 class _SumBoundaryOperator(BoundaryOperator):
     """Return the sum of two boundary operators."""

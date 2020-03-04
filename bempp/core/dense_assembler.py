@@ -4,6 +4,7 @@ import numpy as _np
 import bempp.core.cl_helpers as _cl_helpers
 from bempp.api.assembly import assembler as _assembler
 from bempp.helpers import timeit as _timeit
+from bempp.api.utils.helpers import list_to_float as _list_to_float
 
 
 class DenseAssembler(_assembler.AssemblerBase):
@@ -13,6 +14,20 @@ class DenseAssembler(_assembler.AssemblerBase):
     def __init__(self, domain, dual_to_range, parameters=None):
         """Create a dense assembler instance."""
         super().__init__(domain, dual_to_range, parameters)
+
+    def update(self, kernel_parameters=None):
+        """Re-assemble with updated parameters."""
+        from bempp.api.assembly.discrete_boundary_operator import (
+            DenseDiscreteBoundaryOperator,
+        )
+        from bempp.api.utils.helpers import promote_to_double_precision
+
+        mat = self._run_kernel(kernel_parameters)
+
+        if self.parameters.assembly.always_promote_to_double:
+            mat = promote_to_double_precision(mat)
+
+        return DenseDiscreteBoundaryOperator(mat)
 
     def assemble(
         self, operator_descriptor, device_interface, precision, *args, **kwargs
@@ -26,14 +41,12 @@ class DenseAssembler(_assembler.AssemblerBase):
 
         ### Check if we can use the simple assember
 
-        mat = None
-
         source_name = choose_source_name(operator_descriptor.compute_kernel)
 
         if self.domain.requires_dof_transformation or self.dual_to_range.requires_dof_transformation:
             raise ValueError("Spaces that require dof transformations not supported for dense assembly.")
 
-        mat = assemble_dense(
+        self._run_kernel = assemble_dense(
             self.domain,
             self.dual_to_range,
             self.parameters,
@@ -43,11 +56,7 @@ class DenseAssembler(_assembler.AssemblerBase):
             precision,
         )
 
-        if self.parameters.assembly.always_promote_to_double:
-            mat = promote_to_double_precision(mat)
-
-        return DenseDiscreteBoundaryOperator(mat)
-
+        return self.update()
 
 @_timeit
 def assemble_dense(
@@ -82,6 +91,10 @@ def assemble_dense(
 
     use_collocation = parameters.assembly.discretization_type == 'collocation'
 
+    # kernel_parameters must have at least one element as we pass it as
+    # Numpy buffer to the OpenCL kernel, and we can't pass empty buffers.
+    kernel_parameters = options.get('kernel_parameters', [0]) 
+
     buffers = _prepare_buffers(
         domain,
         dual_to_range,
@@ -91,6 +104,7 @@ def assemble_dense(
         device_interface,
         precision,
         use_collocation,
+        kernel_parameters,
     )
 
     options["NUMBER_OF_QUAD_POINTS"] = len(quad_weights)
@@ -155,24 +169,7 @@ def assemble_dense(
         domain.normal_multipliers, device_interface, dtype=_np.int32, access_mode="read_only"
     )
 
-    runtime = kernel_helpers.run_chunked_kernel(
-        main_kernel,
-        remainder_kernel,
-        device_interface,
-        vec_length,
-        [
-            test_indices_buffer,
-            trial_indices_buffer,
-            test_normal_signs_buffer,
-            trial_normal_signs_buffer,
-            *buffers,
-        ],
-        parameters,
-        chunks=(test_color_indexptr, trial_color_indexptr),
-    )
-    #log("Regular kernel runtime [ms]: {0}".format(runtime), "timing")
-
-    regular_result = buffers[-4].get_host_copy(device_interface)
+    run_singular_kernel = None
 
     if domain.grid == dual_to_range.grid:
         trial_local2global = domain.local2global.ravel()
@@ -180,7 +177,7 @@ def assemble_dense(
         trial_multipliers = domain.local_multipliers.ravel()
         test_multipliers = dual_to_range.local_multipliers.ravel()
 
-        singular_rows, singular_cols, singular_values = assemble_singular_part(
+        run_singular_kernel = assemble_singular_part(
             domain.localised_space,
             dual_to_range.localised_space,
             parameters,
@@ -190,17 +187,46 @@ def assemble_dense(
             precision,
         )
 
-        rows = test_local2global[singular_rows]
-        cols = trial_local2global[singular_cols]
-        values = (
-            singular_values
-            * trial_multipliers[singular_cols]
-            * test_multipliers[singular_rows]
+
+    def run_kernel(kernel_parameters=None):
+        """Run the kernel with given parameters."""
+        if kernel_parameters is not None:
+            buffers[-4].fill_buffer(device_interface, kernel_parameters)
+
+        runtime = kernel_helpers.run_chunked_kernel(
+            main_kernel,
+            remainder_kernel,
+            device_interface,
+            vec_length,
+            [
+                test_indices_buffer,
+                trial_indices_buffer,
+                test_normal_signs_buffer,
+                trial_normal_signs_buffer,
+                *buffers,
+            ],
+            parameters,
+            chunks=(test_color_indexptr, trial_color_indexptr),
         )
 
-        _np.add.at(regular_result, (rows, cols), values)
+        regular_result = buffers[-5].get_host_copy(device_interface)
 
-    return regular_result
+        if run_singular_kernel is not None:
+            singular_rows, singular_cols, singular_values = run_singular_kernel(kernel_parameters)
+            rows = test_local2global[singular_rows]
+            cols = trial_local2global[singular_cols]
+            values = (
+                singular_values
+                * trial_multipliers[singular_cols]
+                * test_multipliers[singular_rows]
+            )
+
+            _np.add.at(regular_result, (rows, cols), values)
+
+        return regular_result
+
+    return run_kernel
+
 
 
 def _prepare_buffers(
@@ -212,6 +238,7 @@ def _prepare_buffers(
     device_interface,
     precision,
     use_collocation,
+    kernel_parameters
 ):
     """Prepare kernel buffers."""
 
@@ -283,6 +310,14 @@ def _prepare_buffers(
         order="C",
     )
 
+    kernel_parameters_buffer = _cl_helpers.DeviceBuffer.from_array(
+            _list_to_float(kernel_parameters, precision),
+            device_interface,
+            dtype=dtype,
+            access_mode="read_only",
+            order="C"
+            )
+
     if use_collocation:
 
         collocation_points = _cl_helpers.DeviceBuffer.from_array(
@@ -320,6 +355,7 @@ def _prepare_buffers(
             quad_weights_buffer,
             collocation_points,
             result_buffer,
+            kernel_parameters_buffer,
             _np.int32(dual_to_range.global_dof_count),
             _np.int32(domain.global_dof_count),
             _np.uint8(domain.grid != dual_to_range.grid),
@@ -339,9 +375,12 @@ def _prepare_buffers(
             quad_points_buffer,
             quad_weights_buffer,
             result_buffer,
+            kernel_parameters_buffer,
             _np.int32(dual_to_range.global_dof_count),
             _np.int32(domain.global_dof_count),
             _np.uint8(domain.grid != dual_to_range.grid),
         ]
 
     return buffers
+
+

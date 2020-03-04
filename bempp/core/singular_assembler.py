@@ -63,7 +63,7 @@ class SingularAssembler(_assembler.AssemblerBase):
             source_name,
             device_interface,
             precision,
-        )
+        )()
 
         rows = test_local2global[singular_rows]
         cols = trial_local2global[singular_cols]
@@ -105,6 +105,7 @@ def assemble_singular_part(
 
     """
     import bempp.core.cl_helpers as cl_helpers
+    from bempp.api.utils.helpers import list_to_float
     import bempp.api
 
     if domain.grid != dual_to_range.grid:
@@ -118,6 +119,8 @@ def assemble_singular_part(
     options["WORKGROUP_SIZE"] = WORKGROUP_SIZE
     options["TEST"] = dual_to_range.shapeset.identifier
     options["TRIAL"] = domain.shapeset.identifier
+
+    kernel_parameters = options.get('kernel_parameters', [0])
 
     number_of_test_shape_functions = dual_to_range.number_of_shape_functions
     number_of_trial_shape_functions = domain.number_of_shape_functions
@@ -184,6 +187,12 @@ def assemble_singular_part(
         domain.normal_multipliers, device_interface, dtype=_np.int32, access_mode="read_only"
     )
 
+    kernel_parameters_buffer = cl_helpers.DeviceBuffer.from_array(
+            list_to_float(kernel_parameters, precision),
+            device_interface, dtype=cl_helpers.get_type(precision).real,
+            access_mode='read_only'
+            )
+
     if use_collocation:
         collocation_points = cl_helpers.DeviceBuffer.from_array(
                 dual_to_range.collocation_points,
@@ -200,6 +209,7 @@ def assemble_singular_part(
             collocation_points,
             *quadrature_buffers,
             result_buffer,
+            kernel_parameters_buffer,
         ]
 
     else:
@@ -210,6 +220,7 @@ def assemble_singular_part(
             trial_normal_signs_buffer,
             *quadrature_buffers,
             result_buffer,
+            kernel_parameters_buffer,
         ]
 
     event = kernel.run(
@@ -241,7 +252,23 @@ def assemble_singular_part(
         number_of_test_shape_functions * number_of_trial_shape_functions,
     )
 
-    return (i_ind, j_ind, result_buffer.get_host_copy(device_interface))
+    def run_kernel(kernel_parameters=None):
+        """Runs the kernel with given parameters."""
+        if kernel_parameters is not None:
+            kernel_parameters_buffer.fill_buffer(device_interface, kernel_parameters)
+
+        event = kernel.run(
+            device_interface,
+            (number_of_singular_indices,),
+            (WORKGROUP_SIZE,),
+            *all_buffers,
+            g_times_l=True
+        )
+
+        event.wait()
+        return (i_ind, j_ind, result_buffer.get_host_copy(device_interface))
+
+    return run_kernel
 
 
 _SingularQuadratureRule = _collections.namedtuple(

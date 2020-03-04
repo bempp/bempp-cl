@@ -57,6 +57,7 @@ inline void laplace_single_layer_novec(const REALTYPE3 testGlobalPoint,
                                          const REALTYPE3 trialGlobalPoint, 
                                          const REALTYPE3 testNormal,
                                          const REALTYPE3 trialNormal,
+                                         __global REALTYPE* kernel_parameters,
                                          REALTYPE* result)
 {
     REALTYPE dist = distance(testGlobalPoint, trialGlobalPoint);
@@ -440,15 +441,16 @@ inline void helmholtz_single_layer_novec(const REALTYPE3 testGlobalPoint,
                                            const REALTYPE3 trialGlobalPoint, 
                                            const REALTYPE3 testNormal,
                                            const REALTYPE3 trialNormal,
+                                           __global REALTYPE* kernel_parameters,
                                            REALTYPE* result)
 {
     REALTYPE dist = distance(testGlobalPoint, trialGlobalPoint);
-    result[0] = M_INV_4PI * cos(WAVENUMBER_REAL * dist) / dist;
-    result[1] = M_INV_4PI * sin(WAVENUMBER_REAL * dist) / dist;
+    result[0] = M_INV_4PI * cos(kernel_parameters[0] * dist) / dist;
+    result[1] = M_INV_4PI * sin(kernel_parameters[0] * dist) / dist;
 
 #ifdef WAVENUMBER_COMPLEX
-    result[0] *= exp(-WAVENUMBER_COMPLEX * dist);
-    result[1] *= exp(-WAVENUMBER_COMPLEX * dist);
+    result[0] *= exp(-kernel_parameters[1] * dist);
+    result[1] *= exp(-kernel_parameters[1] * dist);
 #endif
 }
 

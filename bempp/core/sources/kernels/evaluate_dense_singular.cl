@@ -11,7 +11,8 @@ __kernel void evaluate_singular(
     __global uint *testIndices, __global uint *trialIndices,
     __global uint *testOffsets, __global uint *trialOffsets,
     __global uint *weightOffsets, __global uint *numberOfLocalQuadPoints,
-    __global REALTYPE *globalResult) {
+    __global REALTYPE *globalResult,
+    __global REALTYPE *kernel_parameters) {
   /* Variable declarations */
 
   size_t groupId;
@@ -110,10 +111,10 @@ __kernel void evaluate_singular(
 
 #ifndef COMPLEX_KERNEL
     KERNEL(novec)
-    (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, &kernelValue);
+    (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernel_parameters, &kernelValue);
 #else
     KERNEL(novec)
-    (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernelValue);
+    (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernel_parameters, kernelValue);
 #endif
 
     for (i = 0; i < NUMBER_OF_TEST_SHAPE_FUNCTIONS; ++i)

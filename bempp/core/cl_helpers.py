@@ -298,6 +298,7 @@ def _get_kernel_compile_options_from_parameters(parameters, precision):
 
     options = []
     for key, value in parameters.items():
+        if key == 'kernel_parameters': continue
         if value is None:
             options += ["-D", "{0}".format(key)]
         else:

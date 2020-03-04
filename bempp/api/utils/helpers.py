@@ -97,3 +97,12 @@ class MemProfiler:
         self.end = self._process.memory_info()[0]
         self.interval = self.end - self.start
 
+def list_to_float(vals, precision):
+    """Convert a list of values to float array."""
+
+    if precision == 'double':
+        return _np.array(vals, dtype=_np.float64)
+    elif precision == 'single':
+        return _np.array(vals, dtype=_np.float32)
+    else:
+        raise ValueError("Supported value for 'precision' are: 'single', 'double'.")
