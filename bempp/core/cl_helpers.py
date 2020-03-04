@@ -214,9 +214,7 @@ class Kernel(object):
     @property
     def implementation(self):
         """Return the compiled CL Kernel."""
-        if self._compiled_kernel is None:
-            self._compiled_kernel = getattr(self._prg, self._kernel_name)
-        return self._compiled_kernel
+        return getattr(self._prg, self._kernel_name)
 
     @property
     def kernel_source(self):
@@ -272,16 +270,6 @@ class Kernel(object):
             device_interface.cl_device,
         )
 
-    def __del__(self):
-        """
-        Need to clean up the kernel before prg is cleaned up.
-
-        This seems to be an issue with resource handling in PyOpenCL.
-
-        """
-        if self._compiled_kernel is not None:
-            self._compiled_kernel = None
-        self._prg = None
 
 
 def _get_kernel_compile_options_from_parameters(parameters, precision):
