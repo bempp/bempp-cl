@@ -89,11 +89,13 @@ class MemProfiler:
 
     def __enter__(self):
         import gc
+        gc.collect()
         self.start = self._process.memory_info()[0]
         return self
 
     def __exit__(self, *args):
         import gc
+        gc.collect()
         self.end = self._process.memory_info()[0]
         self.interval = self.end - self.start
 

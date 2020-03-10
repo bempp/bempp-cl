@@ -18,16 +18,31 @@ MultitraceOperatorDescriptor = _collections.namedtuple(
 )
 
 
-def _add_wavenumber(options, wavenumber, identifier="WAVENUMBER"):
+def _add_wavenumber(options, wavenumber):
     """Add a real/complex wavenumber to an options array."""
 
     if 'kernel_parameters' not in options:
         options['kernel_parameters'] = []
+    if 'source' not in options:
+        options['source'] = dict()
     if _np.iscomplexobj(wavenumber):
-        options[identifier + "_REAL"] = None
-        options[identifier + "_COMPLEX"] = None
+        options["source"]["WAVENUMBER_REAL"] = None
+        options["source"]["WAVENUMBER_COMPLEX"] = None
         options['kernel_parameters'].append(1.0 * _np.real(wavenumber))
         options['kernel_parameters'].append(1.0 * _np.imag(wavenumber))
     else:
-        options[identifier + "_REAL"] = None
+        options["source"]["WAVENUMBER_REAL"] = None
         options['kernel_parameters'].append(1.0 * _np.real(wavenumber))
+
+    return options
+
+def _add_source_option(options, name, value=None):
+    """Add a source parameter."""
+
+    if 'source' not in options:
+        options['source'] = dict()
+
+    options['source'][name] = value
+
+    return options
+

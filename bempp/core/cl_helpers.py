@@ -8,6 +8,8 @@ import os as _os
 import numpy as _np
 import pyopencl as _cl
 
+BUFFER_ALLOCATED = 0
+
 _MAX_MEM_ALLOC_SIZE = _cl.device_info.MAX_MEM_ALLOC_SIZE
 _GLOBAL_MEM_SIZE = _cl.device_info.GLOBAL_MEM_SIZE
 
@@ -279,6 +281,7 @@ class Kernel(object):
         This seems to be an issue with resource handling in PyOpenCL.
 
         """
+        import gc
         if self._compiled_kernel is not None:
             self._compiled_kernel = None
         self._prg = None
@@ -298,7 +301,6 @@ def _get_kernel_compile_options_from_parameters(parameters, precision):
 
     options = []
     for key, value in parameters.items():
-        if key == 'kernel_parameters': continue
         if value is None:
             options += ["-D", "{0}".format(key)]
         else:
@@ -360,6 +362,9 @@ class DeviceBuffer(object):
             between device buffer and host.
 
         """
+        global BUFFER_ALLOCATED
+        BUFFER_ALLOCATED += 1
+        print("Allocated")
 
         self._shape = shape
         self._dtype = _np.dtype(dtype)
@@ -542,6 +547,12 @@ class DeviceBuffer(object):
 
         return buffer
 
+
+    def __del__(self):
+        """Count deletion."""
+        global BUFFER_ALLOCATED
+        BUFFER_ALLOCATED -= 1
+        print("Deleted.")
 
 class Event(object):
     """Stores event information."""

@@ -69,6 +69,7 @@ inline void laplace_single_layer_vec4(const REALTYPE3 testGlobalPoint,
                                       const REALTYPE4 trialGlobalPoint[3], 
                                       const REALTYPE3 testNormal,
                                       const REALTYPE4 trialNormal[3],
+                                      __global REALTYPE* kernel_parameters,
                                       REALTYPE4* result)
 {
     REALTYPE4 diff[3];
@@ -84,6 +85,7 @@ inline void laplace_single_layer_vec8(const REALTYPE3 testGlobalPoint,
                                       const REALTYPE8 trialGlobalPoint[3], 
                                       const REALTYPE3 testNormal,
                                       const REALTYPE8 trialNormal[3],
+                                      __global REALTYPE* kernel_parameters,
                                       REALTYPE8* result)
 {
     REALTYPE8 diff[3];
@@ -99,6 +101,7 @@ inline void laplace_single_layer_vec16(const REALTYPE3 testGlobalPoint,
                                        const REALTYPE16 trialGlobalPoint[3], 
                                        const REALTYPE3 testNormal,
                                        const REALTYPE16 trialNormal[3],
+                                       __global REALTYPE* kernel_parameters,
                                        REALTYPE16* result)
 {
     REALTYPE16 diff[3];
@@ -114,6 +117,7 @@ inline void laplace_double_layer_novec(const REALTYPE3 testGlobalPoint,
                                          const REALTYPE3 trialGlobalPoint, 
                                          const REALTYPE3 testNormal,
                                          const REALTYPE3 trialNormal,
+                                         __global REALTYPE* kernel_parameters,
                                          REALTYPE* result)
 {
     REALTYPE3 diff = trialGlobalPoint - testGlobalPoint;
@@ -126,6 +130,7 @@ inline void laplace_double_layer_vec4(const REALTYPE3 testGlobalPoint,
                                          const REALTYPE4 trialGlobalPoint[3], 
                                          const REALTYPE3 testNormal,
                                          const REALTYPE4 trialNormal[3],
+                                         __global REALTYPE* kernel_parameters,
                                          REALTYPE4* result)
 {
     REALTYPE4 diff[3];
@@ -141,6 +146,7 @@ inline void laplace_double_layer_vec8(const REALTYPE3 testGlobalPoint,
                                       const REALTYPE8 trialGlobalPoint[3], 
                                       const REALTYPE3 testNormal,
                                       const REALTYPE8 trialNormal[3],
+                                      __global REALTYPE* kernel_parameters,
                                       REALTYPE8* result)
 {
     REALTYPE8 diff[3];
@@ -156,6 +162,7 @@ inline void laplace_double_layer_vec16(const REALTYPE3 testGlobalPoint,
                                        const REALTYPE16 trialGlobalPoint[3], 
                                        const REALTYPE3 testNormal,
                                        const REALTYPE16 trialNormal[3],
+                                       __global REALTYPE* kernel_parameters,
                                        REALTYPE16* result)
 {
     REALTYPE16 diff[3];
@@ -171,6 +178,7 @@ inline void laplace_adjoint_double_layer_novec(const REALTYPE3 testGlobalPoint,
                                                  const REALTYPE3 trialGlobalPoint, 
                                                  const REALTYPE3 testNormal,
                                                  const REALTYPE3 trialNormal,
+                                                 __global REALTYPE* kernel_parameters,
                                                  REALTYPE* result)
 {
     REALTYPE3 diff = trialGlobalPoint - testGlobalPoint;
@@ -183,6 +191,7 @@ inline void laplace_adjoint_double_layer_vec4(const REALTYPE3 testGlobalPoint,
                                               const REALTYPE4 trialGlobalPoint[3], 
                                               const REALTYPE3 testNormal,
                                               const REALTYPE4 trialNormal[3],
+                                              __global REALTYPE* kernel_parameters,
                                               REALTYPE4* result)
 {
     REALTYPE4 diff[3];
@@ -200,6 +209,7 @@ inline void laplace_adjoint_double_layer_vec8(const REALTYPE3 testGlobalPoint,
                                               const REALTYPE8 trialGlobalPoint[3], 
                                               const REALTYPE3 testNormal,
                                               const REALTYPE8 trialNormal[3],
+                                              __global REALTYPE* kernel_parameters,
                                               REALTYPE8* result)
 {
     REALTYPE8 diff[3];
@@ -215,6 +225,7 @@ inline void laplace_adjoint_double_layer_vec16(const REALTYPE3 testGlobalPoint,
                                                const REALTYPE16 trialGlobalPoint[3], 
                                                const REALTYPE3 testNormal,
                                                const REALTYPE16 trialNormal[3],
+                                               __global REALTYPE* kernel_parameters,
                                                REALTYPE16* result)
 {
     REALTYPE16 diff[3];
@@ -230,10 +241,11 @@ inline void modified_helmholtz_real_single_layer_novec(const REALTYPE3 testGloba
                                                          const REALTYPE3 trialGlobalPoint, 
                                                          const REALTYPE3 testNormal,
                                                          const REALTYPE3 trialNormal,
+                                                         __global REALTYPE* kernel_parameters,
                                                          REALTYPE* result)
 {
     REALTYPE dist = distance(testGlobalPoint, trialGlobalPoint);
-    *result = M_INV_4PI * exp(-OMEGA * dist) / dist;
+    *result = M_INV_4PI * exp(-kernel_parameters[0] * dist) / dist;
 
 }
 
@@ -241,6 +253,7 @@ inline void modified_helmholtz_real_single_layer_vec4(const REALTYPE3 testGlobal
                                                       const REALTYPE4 trialGlobalPoint[3], 
                                                       const REALTYPE3 testNormal,
                                                       const REALTYPE4 trialNormal[3],
+                                                      __global REALTYPE* kernel_parameters,
                                                       REALTYPE4* result)
 {
     REALTYPE4 diff[3];
@@ -248,7 +261,7 @@ inline void modified_helmholtz_real_single_layer_vec4(const REALTYPE3 testGlobal
 
     diff_vec4(testGlobalPoint, trialGlobalPoint, diff);
     dist = sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
-    *result = M_INV_4PI * exp(-OMEGA * dist) / dist;
+    *result = M_INV_4PI * exp(-kernel_parameters[0] * dist) / dist;
 
 }
 
@@ -256,6 +269,7 @@ inline void modified_helmholtz_real_single_layer_vec8(const REALTYPE3 testGlobal
                                                       const REALTYPE8 trialGlobalPoint[3], 
                                                       const REALTYPE3 testNormal,
                                                       const REALTYPE8 trialNormal[3],
+                                                      __global REALTYPE* kernel_parameters,
                                                       REALTYPE8* result)
 {
     REALTYPE8 diff[3];
@@ -263,7 +277,7 @@ inline void modified_helmholtz_real_single_layer_vec8(const REALTYPE3 testGlobal
 
     diff_vec8(testGlobalPoint, trialGlobalPoint, diff);
     dist = sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
-    *result = M_INV_4PI * exp(-OMEGA * dist) / dist;
+    *result = M_INV_4PI * exp(-kernel_parameters[0] * dist) / dist;
 
 }
 
@@ -271,6 +285,7 @@ inline void modified_helmholtz_real_single_layer_vec16(const REALTYPE3 testGloba
                                                        const REALTYPE16 trialGlobalPoint[3], 
                                                        const REALTYPE3 testNormal,
                                                        const REALTYPE16 trialNormal[3],
+                                                       __global REALTYPE* kernel_parameters,
                                                        REALTYPE16* result)
 {
     REALTYPE16 diff[3];
@@ -278,7 +293,7 @@ inline void modified_helmholtz_real_single_layer_vec16(const REALTYPE3 testGloba
 
     diff_vec16(testGlobalPoint, trialGlobalPoint, diff);
     dist = sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
-    *result = M_INV_4PI * exp(-OMEGA * dist) / dist;
+    *result = M_INV_4PI * exp(-kernel_parameters[0] * dist) / dist;
 
 }
 
@@ -287,6 +302,7 @@ inline void modified_helmholtz_real_double_layer_novec(const REALTYPE3 testGloba
                                                        const REALTYPE3 trialGlobalPoint, 
                                                        const REALTYPE3 testNormal,
                                                        const REALTYPE3 trialNormal,
+                                                       __global REALTYPE* kernel_parameters,
                                                        REALTYPE* result)
 {
 
@@ -295,8 +311,8 @@ inline void modified_helmholtz_real_double_layer_novec(const REALTYPE3 testGloba
 
     REALTYPE inner = dot(diff, trialNormal);
 
-    *result = -M_INV_4PI * exp(-OMEGA * dist) / 
-        (dist * dist * dist) * (M_ONE + OMEGA * dist) * inner;
+    *result = -M_INV_4PI * exp(-kernel_parameters[0] * dist) / 
+        (dist * dist * dist) * (M_ONE + kernel_parameters[0] * dist) * inner;
 
 }
 
@@ -304,6 +320,7 @@ inline void modified_helmholtz_real_double_layer_vec4(const REALTYPE3 testGlobal
                                            const REALTYPE4 trialGlobalPoint[3], 
                                            const REALTYPE3 testNormal,
                                            const REALTYPE4 trialNormal[3],
+                                           __global REALTYPE* kernel_parameters,
                                            REALTYPE4* result)
 {
     REALTYPE4 diff[3];
@@ -315,8 +332,8 @@ inline void modified_helmholtz_real_double_layer_vec4(const REALTYPE3 testGlobal
     dist = sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
     inner = -(trialNormal[0] * diff[0] + trialNormal[1] * diff[1] + trialNormal[2] * diff[2]);
 
-    *result = -M_INV_4PI * exp(-OMEGA * dist) / 
-        (dist * dist * dist) * (M_ONE + OMEGA * dist) * inner;
+    *result = -M_INV_4PI * exp(-kernel_parameters[0] * dist) / 
+        (dist * dist * dist) * (M_ONE + kernel_parameters[0] * dist) * inner;
 
 }
 
@@ -324,6 +341,7 @@ inline void modified_helmholtz_real_double_layer_vec8(const REALTYPE3 testGlobal
                                            const REALTYPE8 trialGlobalPoint[3], 
                                            const REALTYPE3 testNormal,
                                            const REALTYPE8 trialNormal[3],
+                                           __global REALTYPE* kernel_parameters,
                                            REALTYPE8* result)
 {
     REALTYPE8 diff[3];
@@ -335,8 +353,8 @@ inline void modified_helmholtz_real_double_layer_vec8(const REALTYPE3 testGlobal
     dist = sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
     inner = -(trialNormal[0] * diff[0] + trialNormal[1] * diff[1] + trialNormal[2] * diff[2]);
 
-    *result = -M_INV_4PI * exp(-OMEGA * dist) / 
-        (dist * dist * dist) * (M_ONE + OMEGA * dist) * inner;
+    *result = -M_INV_4PI * exp(-kernel_parameters[0] * dist) / 
+        (dist * dist * dist) * (M_ONE + kernel_parameters[0] * dist) * inner;
 
 }
 
@@ -344,6 +362,7 @@ inline void modified_helmholtz_real_double_layer_vec16(const REALTYPE3 testGloba
                                            const REALTYPE16 trialGlobalPoint[3], 
                                            const REALTYPE3 testNormal,
                                            const REALTYPE16 trialNormal[3],
+                                           __global REALTYPE* kernel_parameters,
                                            REALTYPE16* result)
 {
     REALTYPE16 diff[3];
@@ -355,8 +374,8 @@ inline void modified_helmholtz_real_double_layer_vec16(const REALTYPE3 testGloba
     dist = sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
     inner = -(trialNormal[0] * diff[0] + trialNormal[1] * diff[1] + trialNormal[2] * diff[2]);
 
-    *result = -M_INV_4PI * exp(-OMEGA * dist) / 
-        (dist * dist * dist) * (M_ONE + OMEGA * dist) * inner;
+    *result = -M_INV_4PI * exp(-kernel_parameters[0] * dist) / 
+        (dist * dist * dist) * (M_ONE + kernel_parameters[0] * dist) * inner;
 
 }
 
@@ -364,6 +383,7 @@ inline void modified_helmholtz_real_adjoint_double_layer_novec(const REALTYPE3 t
                                                        const REALTYPE3 trialGlobalPoint, 
                                                        const REALTYPE3 testNormal,
                                                        const REALTYPE3 trialNormal,
+                                                       __global REALTYPE* kernel_parameters,
                                                        REALTYPE* result)
 {
 
@@ -372,8 +392,8 @@ inline void modified_helmholtz_real_adjoint_double_layer_novec(const REALTYPE3 t
 
     REALTYPE inner = dot(diff, testNormal);
 
-    *result = -M_INV_4PI * exp(-OMEGA * dist) / 
-        (dist * dist * dist) * (M_ONE + OMEGA * dist) * inner;
+    *result = -M_INV_4PI * exp(-kernel_parameters[0] * dist) / 
+        (dist * dist * dist) * (M_ONE + kernel_parameters[0] * dist) * inner;
 
 }
 
@@ -381,6 +401,7 @@ inline void modified_helmholtz_real_adjoint_double_layer_vec4(const REALTYPE3 te
                                            const REALTYPE4 trialGlobalPoint[3], 
                                            const REALTYPE3 testNormal,
                                            const REALTYPE4 trialNormal[3],
+                                           __global REALTYPE* kernel_parameters,
                                            REALTYPE4* result)
 {
     REALTYPE4 diff[3];
@@ -392,8 +413,8 @@ inline void modified_helmholtz_real_adjoint_double_layer_vec4(const REALTYPE3 te
     dist = sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
     inner = (testNormal.x * diff[0] + testNormal.y * diff[1] + testNormal.z * diff[2]);
 
-    *result = -M_INV_4PI * exp(-OMEGA * dist) / 
-        (dist * dist * dist) * (M_ONE + OMEGA * dist) * inner;
+    *result = -M_INV_4PI * exp(-kernel_parameters[0] * dist) / 
+        (dist * dist * dist) * (M_ONE + kernel_parameters[0] * dist) * inner;
 
 }
 
@@ -401,6 +422,7 @@ inline void modified_helmholtz_real_adjoint_double_layer_vec8(const REALTYPE3 te
                                            const REALTYPE8 trialGlobalPoint[3], 
                                            const REALTYPE3 testNormal,
                                            const REALTYPE8 trialNormal[3],
+                                           __global REALTYPE* kernel_parameters,
                                            REALTYPE8* result)
 {
     REALTYPE8 diff[3];
@@ -412,8 +434,8 @@ inline void modified_helmholtz_real_adjoint_double_layer_vec8(const REALTYPE3 te
     dist = sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
     inner = (testNormal.x * diff[0] + testNormal.y * diff[1] + testNormal.z * diff[2]);
 
-    *result = -M_INV_4PI * exp(-OMEGA * dist) / 
-        (dist * dist * dist) * (M_ONE + OMEGA * dist) * inner;
+    *result = -M_INV_4PI * exp(-kernel_parameters[0] * dist) / 
+        (dist * dist * dist) * (M_ONE + kernel_parameters[0] * dist) * inner;
 
 }
 
@@ -421,6 +443,7 @@ inline void modified_helmholtz_real_adjoint_double_layer_vec16(const REALTYPE3 t
                                            const REALTYPE16 trialGlobalPoint[3], 
                                            const REALTYPE3 testNormal,
                                            const REALTYPE16 trialNormal[3],
+                                           __global REALTYPE* kernel_parameters,
                                            REALTYPE16* result)
 {
     REALTYPE16 diff[3];
@@ -432,8 +455,8 @@ inline void modified_helmholtz_real_adjoint_double_layer_vec16(const REALTYPE3 t
     dist = sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
     inner = (testNormal.x * diff[0] + testNormal.y * diff[1] + testNormal.z * diff[2]);
 
-    *result = -M_INV_4PI * exp(-OMEGA * dist) / 
-        (dist * dist * dist) * (M_ONE + OMEGA * dist) * inner;
+    *result = -M_INV_4PI * exp(-kernel_parameters[0] * dist) / 
+        (dist * dist * dist) * (M_ONE + kernel_parameters[0] * dist) * inner;
 
 }
 
@@ -448,16 +471,17 @@ inline void helmholtz_single_layer_novec(const REALTYPE3 testGlobalPoint,
     result[0] = M_INV_4PI * cos(kernel_parameters[0] * dist) / dist;
     result[1] = M_INV_4PI * sin(kernel_parameters[0] * dist) / dist;
 
-#ifdef WAVENUMBER_COMPLEX
-    result[0] *= exp(-kernel_parameters[1] * dist);
-    result[1] *= exp(-kernel_parameters[1] * dist);
-#endif
+    if (kernel_parameters[1] != 0) {
+        result[0] *= exp(-kernel_parameters[1] * dist);
+        result[1] *= exp(-kernel_parameters[1] * dist);
+    }
 }
 
 inline void helmholtz_single_layer_vec4(const REALTYPE3 testGlobalPoint, 
                                         const REALTYPE4 trialGlobalPoint[3], 
                                         const REALTYPE3 testNormal,
                                         const REALTYPE4 trialNormal[3],
+                                        __global REALTYPE* kernel_parameters,
                                         REALTYPE4* result)
 {
     REALTYPE4 diff[3];
@@ -465,14 +489,13 @@ inline void helmholtz_single_layer_vec4(const REALTYPE3 testGlobalPoint,
 
     diff_vec4(testGlobalPoint, trialGlobalPoint, diff);
     dist = sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
-    result[0] = M_INV_4PI * cos(WAVENUMBER_REAL * dist) / dist;
-    result[1] = M_INV_4PI * sin(WAVENUMBER_REAL * dist) / dist;
+    result[0] = M_INV_4PI * cos(kernel_parameters[0] * dist) / dist;
+    result[1] = M_INV_4PI * sin(kernel_parameters[0] * dist) / dist;
 
-#ifdef WAVENUMBER_COMPLEX
-    result[0] *= exp(-WAVENUMBER_COMPLEX * dist);
-    result[1] *= exp(-WAVENUMBER_COMPLEX * dist);
-#endif
-
+    if (kernel_parameters[1] != 0) {
+        result[0] *= exp(-kernel_parameters[1] * dist);
+        result[1] *= exp(-kernel_parameters[1] * dist);
+    }
 
 }
 
@@ -480,6 +503,7 @@ inline void helmholtz_single_layer_vec8(const REALTYPE3 testGlobalPoint,
                                         const REALTYPE8 trialGlobalPoint[3], 
                                         const REALTYPE3 testNormal,
                                         const REALTYPE8 trialNormal[3],
+                                        __global REALTYPE* kernel_parameters,
                                         REALTYPE8* result)
 {
     REALTYPE8 diff[3];
@@ -487,13 +511,13 @@ inline void helmholtz_single_layer_vec8(const REALTYPE3 testGlobalPoint,
 
     diff_vec8(testGlobalPoint, trialGlobalPoint, diff);
     dist = sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
-    result[0] = M_INV_4PI * cos(WAVENUMBER_REAL * dist) / dist;
-    result[1] = M_INV_4PI * sin(WAVENUMBER_REAL * dist) / dist;
+    result[0] = M_INV_4PI * cos(kernel_parameters[0] * dist) / dist;
+    result[1] = M_INV_4PI * sin(kernel_parameters[0] * dist) / dist;
 
-#ifdef WAVENUMBER_COMPLEX
-    result[0] *= exp(-WAVENUMBER_COMPLEX * dist);
-    result[1] *= exp(-WAVENUMBER_COMPLEX * dist);
-#endif
+    if (kernel_parameters[1] != 0) {
+        result[0] *= exp(-kernel_parameters[1] * dist);
+        result[1] *= exp(-kernel_parameters[1] * dist);
+    }
 
 }
 
@@ -501,6 +525,7 @@ inline void helmholtz_single_layer_vec16(const REALTYPE3 testGlobalPoint,
                                          const REALTYPE16 trialGlobalPoint[3], 
                                          const REALTYPE3 testNormal,
                                          const REALTYPE16 trialNormal[3],
+                                         __global REALTYPE* kernel_parameters,
                                          REALTYPE16* result)
 {
     REALTYPE16 diff[3];
@@ -508,13 +533,13 @@ inline void helmholtz_single_layer_vec16(const REALTYPE3 testGlobalPoint,
 
     diff_vec16(testGlobalPoint, trialGlobalPoint, diff);
     dist = sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
-    result[0] = M_INV_4PI * cos(WAVENUMBER_REAL * dist) / dist;
-    result[1] = M_INV_4PI * sin(WAVENUMBER_REAL * dist) / dist;
+    result[0] = M_INV_4PI * cos(kernel_parameters[0] * dist) / dist;
+    result[1] = M_INV_4PI * sin(kernel_parameters[0] * dist) / dist;
 
-#ifdef WAVENUMBER_COMPLEX
-    result[0] *= exp(-WAVENUMBER_COMPLEX * dist);
-    result[1] *= exp(-WAVENUMBER_COMPLEX * dist);
-#endif
+    if (kernel_parameters[1] != 0) {
+        result[0] *= exp(-kernel_parameters[1] * dist);
+        result[1] *= exp(-kernel_parameters[1] * dist);
+    }
 
 }
 

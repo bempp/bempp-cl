@@ -17,7 +17,17 @@ class SingularAssembler(_assembler.AssemblerBase):
     # pylint: disable=useless-super-delegation
     def __init__(self, domain, dual_to_range, parameters=None):
         """Instantiate the assembler."""
+
+        self._run_assembler = None
         super().__init__(domain, dual_to_range, parameters)
+
+    def update(self, kernel_parameters=None):
+        """Update with given kernel parameters."""
+
+        if self._run_assembler is None:
+            raise Error("'assemble' must be called before 'update' can be called.")
+
+        return self._run_assembler(kernel_parameters)
 
     def assemble(
         self, operator_descriptor, device_interface, precision, *args, **kwargs
@@ -55,7 +65,8 @@ class SingularAssembler(_assembler.AssemblerBase):
         trial_multipliers = domain.local_multipliers.ravel()
         test_multipliers = dual_to_range.local_multipliers.ravel()
 
-        singular_rows, singular_cols, singular_values = assemble_singular_part(
+
+        singular_assembler_function = create_singular_kernel_function(
             domain.localised_space,
             dual_to_range.localised_space,
             self.parameters,
@@ -63,32 +74,44 @@ class SingularAssembler(_assembler.AssemblerBase):
             source_name,
             device_interface,
             precision,
-        )()
-
-        rows = test_local2global[singular_rows]
-        cols = trial_local2global[singular_cols]
-        values = (
-            singular_values
-            * trial_multipliers[singular_cols]
-            * test_multipliers[singular_rows]
         )
 
-        if self.parameters.assembly.always_promote_to_double:
-            values = promote_to_double_precision(values)
 
-        mat = coo_matrix((values, (rows, cols)), shape=(row_grid_dofs, col_grid_dofs)).tocsr()
+        def run_assembler(kernel_parameters=None):
+            """Run the full assembler."""
 
-        if domain.requires_dof_transformation:
-            mat = mat @ domain.dof_transformation
+            singular_rows, singular_cols, singular_values = singular_assembler_function(
+                    kernel_parameters)
 
-        if dual_to_range.requires_dof_transformation:
-            mat = dual_to_range.dof_transformation.T @ mat
+            rows = test_local2global[singular_rows]
+            cols = trial_local2global[singular_cols]
+            values = (
+                singular_values
+                * trial_multipliers[singular_cols]
+                * test_multipliers[singular_rows]
+            )
 
-        return SparseDiscreteBoundaryOperator(mat)
+            if self.parameters.assembly.always_promote_to_double:
+                values = promote_to_double_precision(values)
+
+            mat = coo_matrix((values, (rows, cols)), shape=(row_grid_dofs, col_grid_dofs)).tocsr()
+
+            if domain.requires_dof_transformation:
+                mat = mat @ domain.dof_transformation
+
+            if dual_to_range.requires_dof_transformation:
+                mat = dual_to_range.dof_transformation.T @ mat
+
+            return SparseDiscreteBoundaryOperator(mat)
+
+        self._run_assembler = run_assembler
+
+        return self.update()
+
 
 
 @_timeit
-def assemble_singular_part(
+def create_singular_kernel_function( 
     domain,
     dual_to_range,
     parameters,
@@ -98,7 +121,7 @@ def assemble_singular_part(
     precision,
 ):
     """
-    Really assemble the singular part.
+    Return an assembler function for the singular part.
 
     Returns three arrays i, j, data, which contain the i-indices,
     j-indices, and computed data values for the singular part.
@@ -116,20 +139,21 @@ def assemble_singular_part(
     WORKGROUP_SIZE = WORKGROUP_SIZE_COLLOCATION if use_collocation else WORKGROUP_SIZE_GALERKIN
 
     options = operator_descriptor.options.copy()
-    options["WORKGROUP_SIZE"] = WORKGROUP_SIZE
-    options["TEST"] = dual_to_range.shapeset.identifier
-    options["TRIAL"] = domain.shapeset.identifier
-
     kernel_parameters = options.get('kernel_parameters', [0])
+    source_options = options['source']
+    source_options["WORKGROUP_SIZE"] = WORKGROUP_SIZE
+    source_options["TEST"] = dual_to_range.shapeset.identifier
+    source_options["TRIAL"] = domain.shapeset.identifier
+
 
     number_of_test_shape_functions = dual_to_range.number_of_shape_functions
     number_of_trial_shape_functions = domain.number_of_shape_functions
 
-    options["NUMBER_OF_TEST_SHAPE_FUNCTIONS"] = number_of_test_shape_functions
+    source_options["NUMBER_OF_TEST_SHAPE_FUNCTIONS"] = number_of_test_shape_functions
 
-    options["NUMBER_OF_TRIAL_SHAPE_FUNCTIONS"] = number_of_trial_shape_functions
+    source_options["NUMBER_OF_TRIAL_SHAPE_FUNCTIONS"] = number_of_trial_shape_functions
 
-    if "COMPLEX_KERNEL" in options:
+    if "COMPLEX_KERNEL" in source_options:
         result_type = cl_helpers.get_type(precision).complex
     else:
         result_type = cl_helpers.get_type(precision).real
@@ -141,7 +165,7 @@ def assemble_singular_part(
         source_name += '_collocation'
 
     kernel_source = cl_helpers.kernel_source_from_identifier(
-        source_name + "_singular", options
+        source_name + "_singular", source_options
     )
 
     kernel = cl_helpers.Kernel(kernel_source, device_interface.context, precision)
@@ -222,18 +246,6 @@ def assemble_singular_part(
             result_buffer,
             kernel_parameters_buffer,
         ]
-
-    event = kernel.run(
-        device_interface,
-        (number_of_singular_indices,),
-        (WORKGROUP_SIZE,),
-        *all_buffers,
-        g_times_l=True
-    )
-
-    event.wait()
-
-    #bempp.api.log("Singular kernel runtime [ms]: {0}".format(event.runtime()), "timing")
 
     irange = _np.arange(number_of_test_shape_functions)
     jrange = _np.arange(number_of_trial_shape_functions)

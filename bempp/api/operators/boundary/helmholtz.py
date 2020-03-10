@@ -16,6 +16,7 @@ def single_layer(
 ):
     """Assemble the Helmholtz single-layer boundary operator."""
     from bempp.api.operators import _add_wavenumber
+    from bempp.api.operators import _add_source_option
     from .modified_helmholtz import single_layer as _modified_single_layer
 
     if _np.real(wavenumber) == 0:
@@ -30,9 +31,9 @@ def single_layer(
             precision,
         )
 
-    options = {"KERNEL_FUNCTION": "helmholtz_single_layer", "COMPLEX_KERNEL": None}
-
-    _add_wavenumber(options, wavenumber)
+    options = _add_source_option({}, "KERNEL_FUNCTION", "helmholtz_single_layer")
+    options = _add_source_option(options, "COMPLEX_KERNEL", None)
+    options = _add_wavenumber(options, wavenumber)
 
     return _common.create_operator(
         "helmholtz_single_layer_boundary",
@@ -61,6 +62,7 @@ def double_layer(
     """Assemble the Helmholtz double-layer boundary operator."""
     from bempp.api.operators import _add_wavenumber
     from .modified_helmholtz import double_layer as _modified_double_layer
+    from bempp.api.operators import _add_source_option
 
     if _np.real(wavenumber) == 0:
         return _modified_double_layer(
@@ -74,7 +76,9 @@ def double_layer(
             precision,
         )
 
-    options = {"KERNEL_FUNCTION": "helmholtz_double_layer", "COMPLEX_KERNEL": None}
+    options = _add_source_option({}, "KERNEL_FUNCTION", "helmholtz_double_layer")
+    options = _add_source_option(options, "COMPLEX_KERNEL", None)
+    options = _add_wavenumber(options, wavenumber)
 
     _add_wavenumber(options, wavenumber)
 
@@ -107,6 +111,7 @@ def adjoint_double_layer(
     from .modified_helmholtz import (
         adjoint_double_layer as _modified_adjoint_double_layer,
     )
+    from bempp.api.operators import _add_source_option
 
     if _np.real(wavenumber) == 0:
         return _modified_adjoint_double_layer(
@@ -120,10 +125,9 @@ def adjoint_double_layer(
             precision,
         )
 
-    options = {
-        "KERNEL_FUNCTION": "helmholtz_adjoint_double_layer",
-        "COMPLEX_KERNEL": None,
-    }
+    options = _add_source_option({}, "KERNEL_FUNCTION", "helmholtz_adjoint_double_layer")
+    options = _add_source_option(options, "COMPLEX_KERNEL", None)
+    options = _add_wavenumber(options, wavenumber)
 
     _add_wavenumber(options, wavenumber)
 
@@ -154,6 +158,7 @@ def hypersingular(
     """Assemble the Helmholtz hypersingular boundary operator."""
     from bempp.api.operators import _add_wavenumber
     from .modified_helmholtz import hypersingular as _hypersingular
+    from bempp.api.operators import _add_source_option
 
     if _np.real(wavenumber) == 0:
         return _hypersingular(
@@ -167,9 +172,10 @@ def hypersingular(
             precision,
         )
 
-    options = {"KERNEL_FUNCTION": "helmholtz_single_layer", "COMPLEX_KERNEL": None}
+    options = _add_source_option({}, "KERNEL_FUNCTION", "helmholtz_single_layer")
+    options = _add_source_option(options, "COMPLEX_KERNEL", None)
+    options = _add_wavenumber(options, wavenumber)
 
-    _add_wavenumber(options, wavenumber)
 
     return _common.create_operator(
         "helmholtz_hypersingular_boundary",

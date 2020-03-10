@@ -13,6 +13,9 @@ class DenseAssembler(_assembler.AssemblerBase):
     # pylint: disable=useless-super-delegation
     def __init__(self, domain, dual_to_range, parameters=None):
         """Create a dense assembler instance."""
+
+        self._run_assembler = None
+
         super().__init__(domain, dual_to_range, parameters)
 
     def update(self, kernel_parameters=None):
@@ -22,7 +25,10 @@ class DenseAssembler(_assembler.AssemblerBase):
         )
         from bempp.api.utils.helpers import promote_to_double_precision
 
-        mat = self._run_kernel(kernel_parameters)
+        if self._run_assembler is None:
+            raise Error("'assemble' must be called before 'update' can be called.")
+
+        mat = self._run_assembler(kernel_parameters)
 
         if self.parameters.assembly.always_promote_to_double:
             mat = promote_to_double_precision(mat)
@@ -46,7 +52,7 @@ class DenseAssembler(_assembler.AssemblerBase):
         if self.domain.requires_dof_transformation or self.dual_to_range.requires_dof_transformation:
             raise ValueError("Spaces that require dof transformations not supported for dense assembly.")
 
-        self._run_kernel = assemble_dense(
+        self._run_assembler = create_kernel_function(
             self.domain,
             self.dual_to_range,
             self.parameters,
@@ -59,7 +65,7 @@ class DenseAssembler(_assembler.AssemblerBase):
         return self.update()
 
 @_timeit
-def assemble_dense(
+def create_kernel_function(
     domain,
     dual_to_range,
     parameters,
@@ -69,14 +75,12 @@ def assemble_dense(
     precision,
 ):
     """
-    Really assemble the operator.
+    Creates and returns a function that assembles the operator.
 
-    Assembles the complete operator (near-field and far-field)
-    Returns a dense matrix.
     """
     from bempp.api.integration.triangle_gauss import rule as regular_rule
     from bempp.api import log
-    from bempp.core.singular_assembler import assemble_singular_part
+    from bempp.core.singular_assembler import create_singular_kernel_function
     from bempp.core import kernel_helpers
 
     options = operator_descriptor.options.copy()
@@ -84,7 +88,10 @@ def assemble_dense(
     order = parameters.quadrature.regular
     quad_points, quad_weights = regular_rule(order)
 
-    if "COMPLEX_KERNEL" in options:
+    kernel_parameters = options.get('kernel_parameters', [0]) 
+    source_options = options['source']
+
+    if "COMPLEX_KERNEL" in source_options:
         complex_kernel = True
     else:
         complex_kernel = False
@@ -93,7 +100,6 @@ def assemble_dense(
 
     # kernel_parameters must have at least one element as we pass it as
     # Numpy buffer to the OpenCL kernel, and we can't pass empty buffers.
-    kernel_parameters = options.get('kernel_parameters', [0]) 
 
     buffers = _prepare_buffers(
         domain,
@@ -107,15 +113,15 @@ def assemble_dense(
         kernel_parameters,
     )
 
-    options["NUMBER_OF_QUAD_POINTS"] = len(quad_weights)
-    options["TEST"] = dual_to_range.shapeset.identifier
-    options["TRIAL"] = domain.shapeset.identifier
-    options["TRIAL_NUMBER_OF_ELEMENTS"] = domain.number_of_support_elements
-    options["TEST_NUMBER_OF_ELEMENTS"] = dual_to_range.number_of_support_elements
+    source_options["NUMBER_OF_QUAD_POINTS"] = len(quad_weights)
+    source_options["TEST"] = dual_to_range.shapeset.identifier
+    source_options["TRIAL"] = domain.shapeset.identifier
+    source_options["TRIAL_NUMBER_OF_ELEMENTS"] = domain.number_of_support_elements
+    source_options["TEST_NUMBER_OF_ELEMENTS"] = dual_to_range.number_of_support_elements
 
-    options["NUMBER_OF_TEST_SHAPE_FUNCTIONS"] = dual_to_range.number_of_shape_functions
+    source_options["NUMBER_OF_TEST_SHAPE_FUNCTIONS"] = dual_to_range.number_of_shape_functions
 
-    options["NUMBER_OF_TRIAL_SHAPE_FUNCTIONS"] = domain.number_of_shape_functions
+    source_options["NUMBER_OF_TRIAL_SHAPE_FUNCTIONS"] = domain.number_of_shape_functions
 
     if use_collocation:
         collocation_string = '_collocation'
@@ -134,11 +140,11 @@ def assemble_dense(
 
 
     main_source = _cl_helpers.kernel_source_from_identifier(
-        source_name + collocation_string + "_regular" + vec_extension, options
+        source_name + collocation_string + "_regular" + vec_extension, source_options 
     )
 
     remainder_source = _cl_helpers.kernel_source_from_identifier(
-        source_name + collocation_string + "_regular_novec", options
+        source_name + collocation_string + "_regular_novec", source_options
     )
 
     main_kernel = _cl_helpers.Kernel(main_source, device_interface.context, precision)
@@ -177,7 +183,7 @@ def assemble_dense(
         trial_multipliers = domain.local_multipliers.ravel()
         test_multipliers = dual_to_range.local_multipliers.ravel()
 
-        run_singular_kernel = assemble_singular_part(
+        run_singular_kernel = create_singular_kernel_function(
             domain.localised_space,
             dual_to_range.localised_space,
             parameters,
