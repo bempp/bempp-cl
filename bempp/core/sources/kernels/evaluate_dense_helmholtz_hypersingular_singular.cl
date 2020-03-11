@@ -194,17 +194,17 @@ __kernel void evaluate_singular(
 #ifndef COMPLEX_KERNEL
       localResult[localId][i][j] =
           (firstTermIntegral * basisProduct[i][j] +
-           OMEGA * OMEGA * result[i][j] * normalProduct) *
+           kernel_parameters[0] * kernel_parameters[0] * result[i][j] * normalProduct) *
           testIntElem * trialIntElem;
 #else
 
 #ifdef WAVENUMBER_COMPLEX
-      wavenumberProduct[0] = WAVENUMBER_REAL * WAVENUMBER_REAL -
-                             WAVENUMBER_COMPLEX * WAVENUMBER_COMPLEX;
-      wavenumberProduct[1] = M_TWO * WAVENUMBER_REAL * WAVENUMBER_COMPLEX;
+  wavenumberProduct[0] = kernel_parameters[0] * kernel_parameters[0] -
+                         kernel_parameters[1] * kernel_parameters[1];
+  wavenumberProduct[1] = M_TWO * kernel_parameters[0] * kernel_parameters[1];
 #else
-      wavenumberProduct[0] = WAVENUMBER_REAL * WAVENUMBER_REAL;
-      wavenumberProduct[1] = M_ZERO;
+  wavenumberProduct[0] = kernel_parameters[0] * kernel_parameters[0];
+  wavenumberProduct[1] = M_ZERO;
 #endif
 
       localResult[localId][i][j][0] =

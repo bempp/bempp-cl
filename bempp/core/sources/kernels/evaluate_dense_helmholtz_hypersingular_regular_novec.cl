@@ -12,6 +12,7 @@ __kernel void evaluate_dense_helmholtz_hypersingular_novec(
     __global REALTYPE* testLocalMultipliers,
     __global REALTYPE* trialLocalMultipliers, __constant REALTYPE* quadPoints,
     __constant REALTYPE* quadWeights, __global REALTYPE* globalResult,
+    __global REALTYPE* kernel_parameters,
     int nTest, int nTrial, char gridsAreDisjoint) {
   /* Variable declarations */
 
@@ -237,17 +238,17 @@ __kernel void evaluate_dense_helmholtz_hypersingular_novec(
   for (i = 0; i < 3; ++i)
     for (j = 0; j < 3; ++j)
       shapeIntegral[i][j] =
-          OMEGA * OMEGA * shapeIntegral[i][j] * normalProduct +
+          kernel_parameters[0] * kernel_parameters[0] * shapeIntegral[i][j] * normalProduct +
           firstTermIntegral * basisProduct[i][j];
 
 #else
 
 #ifdef WAVENUMBER_COMPLEX
-  wavenumberProduct[0] = WAVENUMBER_REAL * WAVENUMBER_REAL -
-                         WAVENUMBER_COMPLEX * WAVENUMBER_COMPLEX;
-  wavenumberProduct[1] = M_TWO * WAVENUMBER_REAL * WAVENUMBER_COMPLEX;
+  wavenumberProduct[0] = kernel_parameters[0] * kernel_parameters[0] -
+                         kernel_parameters[1] * kernel_parameters[1];
+  wavenumberProduct[1] = M_TWO * kernel_parameters[0] * kernel_parameters[1];
 #else
-  wavenumberProduct[0] = WAVENUMBER_REAL * WAVENUMBER_REAL;
+  wavenumberProduct[0] = kernel_parameters[0] * kernel_parameters[0];
   wavenumberProduct[1] = M_ZERO;
 #endif
 

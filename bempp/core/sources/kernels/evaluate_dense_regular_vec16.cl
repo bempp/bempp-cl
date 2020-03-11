@@ -12,6 +12,7 @@ __kernel __attribute__((vec_type_hint(REALTYPE16))) void evaluate_dense_regular(
     __global REALTYPE* testLocalMultipliers,
     __global REALTYPE* trialLocalMultipliers, __constant REALTYPE* quadPoints,
     __constant REALTYPE* quadWeights, __global REALTYPE* globalResult,
+    __global REALTYPE* kernel_parameters,
     int nTest, int nTrial, char gridsAreDisjoint) {
   /* Variable declarations */
 
@@ -144,14 +145,14 @@ __kernel __attribute__((vec_type_hint(REALTYPE16))) void evaluate_dense_regular(
       BASIS(TRIAL, evaluate)(&trialPoint, &trialValue[0]);
 #ifndef COMPLEX_KERNEL
       KERNEL(vec16)
-      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal,
+      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernel_parameters,
        &kernelValue);
       tempFactor = quadWeights[trialQuadIndex] * kernelValue;
       for (j = 0; j < NUMBER_OF_TRIAL_SHAPE_FUNCTIONS; ++j)
         tempResult[j] += trialValue[j] * tempFactor;
 #else
       KERNEL(vec16)
-      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernelValue);
+      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernel_parameters, kernelValue);
       tempFactor[0] = quadWeights[trialQuadIndex] * kernelValue[0];
       tempFactor[1] = quadWeights[trialQuadIndex] * kernelValue[1];
       for (j = 0; j < NUMBER_OF_TRIAL_SHAPE_FUNCTIONS; ++j) {

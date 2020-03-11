@@ -33,6 +33,7 @@ def _add_wavenumber(options, wavenumber):
     else:
         options["source"]["WAVENUMBER_REAL"] = None
         options['kernel_parameters'].append(1.0 * _np.real(wavenumber))
+        options['kernel_parameters'].append(1.0 * _np.imag(wavenumber))
 
     return options
 
