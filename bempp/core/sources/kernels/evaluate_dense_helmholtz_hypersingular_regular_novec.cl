@@ -193,7 +193,7 @@ __kernel void evaluate_dense_helmholtz_hypersingular_novec(
       BASIS(TRIAL, evaluate)(&trialPoint, &trialValue[0]);
 #ifndef COMPLEX_KERNEL
       KERNEL(novec)
-      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal,
+      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernel_parameters,
        &kernelValue);
       tempFactor = quadWeights[trialQuadIndex] * kernelValue;
       tempFirstTerm += tempFactor;
@@ -201,7 +201,7 @@ __kernel void evaluate_dense_helmholtz_hypersingular_novec(
         tempResult[j] += trialValue[j] * tempFactor;
 #else
       KERNEL(novec)
-      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernelValue);
+      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernel_parameters, kernelValue);
       tempFactor[0] = quadWeights[trialQuadIndex] * kernelValue[0];
       tempFactor[1] = quadWeights[trialQuadIndex] * kernelValue[1];
       tempFirstTerm[0] += tempFactor[0];
@@ -243,14 +243,9 @@ __kernel void evaluate_dense_helmholtz_hypersingular_novec(
 
 #else
 
-#ifdef WAVENUMBER_COMPLEX
   wavenumberProduct[0] = kernel_parameters[0] * kernel_parameters[0] -
                          kernel_parameters[1] * kernel_parameters[1];
   wavenumberProduct[1] = M_TWO * kernel_parameters[0] * kernel_parameters[1];
-#else
-  wavenumberProduct[0] = kernel_parameters[0] * kernel_parameters[0];
-  wavenumberProduct[1] = M_ZERO;
-#endif
 
   for (i = 0; i < 3; ++i)
     for (j = 0; j < 3; ++j) {

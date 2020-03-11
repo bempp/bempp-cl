@@ -11,7 +11,8 @@ __kernel void evaluate_singular(
     __global uint *testIndices, __global uint *trialIndices,
     __global uint *testOffsets, __global uint *trialOffsets,
     __global uint *weightOffsets, __global uint *numberOfLocalQuadPoints,
-    __global REALTYPE *globalResult) {
+    __global REALTYPE *globalResult,
+    __global REALTYPE* kernel_parameters){
   /* Variable declarations */
 
   size_t groupId;
@@ -166,11 +167,11 @@ __kernel void evaluate_singular(
 
 #ifndef COMPLEX_KERNEL
     KERNEL(novec)
-    (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, &kernelValue);
+    (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernel_parameters, &kernelValue);
     firstTermIntegral += weight * kernelValue;
 #else
     KERNEL(novec)
-    (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernelValue);
+    (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernel_parameters, kernelValue);
     firstTermIntegral[0] += weight * kernelValue[0];
     firstTermIntegral[1] += weight * kernelValue[1];
 
@@ -198,14 +199,9 @@ __kernel void evaluate_singular(
           testIntElem * trialIntElem;
 #else
 
-#ifdef WAVENUMBER_COMPLEX
   wavenumberProduct[0] = kernel_parameters[0] * kernel_parameters[0] -
                          kernel_parameters[1] * kernel_parameters[1];
   wavenumberProduct[1] = M_TWO * kernel_parameters[0] * kernel_parameters[1];
-#else
-  wavenumberProduct[0] = kernel_parameters[0] * kernel_parameters[0];
-  wavenumberProduct[1] = M_ZERO;
-#endif
 
       localResult[localId][i][j][0] =
           (firstTermIntegral[0] * basisProduct[i][j] -
