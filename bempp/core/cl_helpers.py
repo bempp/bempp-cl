@@ -279,7 +279,6 @@ class Kernel(object):
         This seems to be an issue with resource handling in PyOpenCL.
 
         """
-        import gc
         if self._compiled_kernel is not None:
             self._compiled_kernel = None
         self._prg = None
