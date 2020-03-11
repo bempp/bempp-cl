@@ -8,8 +8,6 @@ import os as _os
 import numpy as _np
 import pyopencl as _cl
 
-BUFFER_ALLOCATED = 0
-
 _MAX_MEM_ALLOC_SIZE = _cl.device_info.MAX_MEM_ALLOC_SIZE
 _GLOBAL_MEM_SIZE = _cl.device_info.GLOBAL_MEM_SIZE
 
@@ -362,10 +360,6 @@ class DeviceBuffer(object):
             between device buffer and host.
 
         """
-        global BUFFER_ALLOCATED
-        BUFFER_ALLOCATED += 1
-        print("Allocated")
-
         self._shape = shape
         self._dtype = _np.dtype(dtype)
         self._access_mode = access_mode
@@ -547,12 +541,6 @@ class DeviceBuffer(object):
 
         return buffer
 
-
-    def __del__(self):
-        """Count deletion."""
-        global BUFFER_ALLOCATED
-        BUFFER_ALLOCATED -= 1
-        print("Deleted.")
 
 class Event(object):
     """Stores event information."""
