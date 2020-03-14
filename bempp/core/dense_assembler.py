@@ -26,7 +26,7 @@ class DenseAssembler(_assembler.AssemblerBase):
         from bempp.api.utils.helpers import promote_to_double_precision
 
         if self._run_assembler is None:
-            raise Error("'assemble' must be called before 'update' can be called.")
+            raise Exception("'assemble' must be called before 'update' can be called.")
 
         mat = self._run_assembler(kernel_parameters)
 
@@ -88,7 +88,7 @@ def create_kernel_function(
     order = parameters.quadrature.regular
     quad_points, quad_weights = regular_rule(order)
 
-    kernel_parameters = options.get('kernel_parameters', [0]) 
+    kernel_parameters = options.get('kernel_parameters', [0])
     source_options = options['source']
 
     if "COMPLEX_KERNEL" in source_options:
@@ -198,6 +198,8 @@ def create_kernel_function(
         """Run the kernel with given parameters."""
         if kernel_parameters is not None:
             buffers[-4].fill_buffer(device_interface, kernel_parameters)
+
+        buffers[-5].set_zero(device_interface)
 
         runtime = kernel_helpers.run_chunked_kernel(
             main_kernel,
@@ -315,6 +317,7 @@ def _prepare_buffers(
         access_mode="read_only",
         order="C",
     )
+
 
     kernel_parameters_buffer = _cl_helpers.DeviceBuffer.from_array(
             _list_to_float(kernel_parameters, precision),

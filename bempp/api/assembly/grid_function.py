@@ -311,16 +311,19 @@ class GridFunction(object):
                 InverseSparseDiscreteBoundaryOperator,
             )
 
-            op = InverseSparseDiscreteBoundaryOperator(
-                identity(
-                    self.space,
-                    self.space,
-                    self.dual_space,
-                    parameters=self.parameters,
+            if self.space == self.dual_space:
+                op =  self.space.inverse_mass_matrix()
+            else:
+                op = InverseSparseDiscreteBoundaryOperator(
+                    identity(
+                        self.space,
+                        self.space,
+                        self.dual_space,
+                        parameters=self.parameters,
+                    )
+                    .weak_form()
+                    .A.tocsc()
                 )
-                .weak_form()
-                .A.tocsc()
-            )
             self._coefficients = op @ self._projections
             self._representation = "primal"
 

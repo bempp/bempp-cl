@@ -26,6 +26,10 @@ class PotentialOperator(object):
 
         return self._evaluator.evaluate(grid_fun.coefficients)
 
+    def update(self, *args):
+        """Update kernel arguments."""
+        self._evaluator.update(args)
+
     def _is_compatible(self, other):
         """Check compatibility with other potential operator."""
         import numpy as np

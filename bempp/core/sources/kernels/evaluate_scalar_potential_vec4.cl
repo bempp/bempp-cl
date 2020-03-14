@@ -11,7 +11,8 @@ evaluate_scalar_potential_novec(__global REALTYPE *grid,
                                 __global REALTYPE *coefficients,
                                 __constant REALTYPE* quadPoints,
                                 __constant REALTYPE *quadWeights,
-                                __global REALTYPE *globalResult) {
+                                __global REALTYPE *globalResult,
+                                __global REALTYPE* kernel_parameters) {
   size_t gid[2];
 
   gid[0] = get_global_id(0);
@@ -105,10 +106,10 @@ evaluate_scalar_potential_novec(__global REALTYPE *grid,
     getGlobalPointVec4(corners, &point, surfaceGlobalPoint);
 #ifndef COMPLEX_KERNEL
     KERNEL(vec4)
-    (evalGlobalPoint, surfaceGlobalPoint, dummy, normal, &kernelValue);
+    (evalGlobalPoint, surfaceGlobalPoint, dummy, normal, kernel_parameters, &kernelValue);
 #else
     KERNEL(vec4)
-    (evalGlobalPoint, surfaceGlobalPoint, dummy, normal, kernelValue);
+    (evalGlobalPoint, surfaceGlobalPoint, dummy, normal, kernel_parameters, kernelValue);
 #endif
 
 #ifndef COMPLEX_COEFFICIENTS

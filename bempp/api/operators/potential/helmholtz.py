@@ -9,10 +9,11 @@ def single_layer(
     from bempp.core.dense_potential_assembler import DensePotentialAssembler
     from bempp.api.operators import OperatorDescriptor
     from bempp.api.operators import _add_wavenumber
+    from bempp.api.operators import _add_source_option
     from bempp.api.assembly.potential_operator import PotentialOperator
 
-    options = {"KERNEL_FUNCTION": "helmholtz_single_layer"}
-    _add_wavenumber(options, wavenumber)
+    options = _add_source_option({}, "KERNEL_FUNCTION", "helmholtz_single_layer")
+    options = _add_wavenumber(options, wavenumber)
 
     return PotentialOperator(
         DensePotentialAssembler(
@@ -37,10 +38,11 @@ def double_layer(
     from bempp.core.dense_potential_assembler import DensePotentialAssembler
     from bempp.api.operators import OperatorDescriptor
     from bempp.api.operators import _add_wavenumber
+    from bempp.api.operators import _add_source_option
     from bempp.api.assembly.potential_operator import PotentialOperator
 
-    options = {"KERNEL_FUNCTION": "helmholtz_double_layer"}
-    _add_wavenumber(options, wavenumber)
+    options = _add_source_option({}, "KERNEL_FUNCTION", "helmholtz_double_layer")
+    options = _add_wavenumber(options, wavenumber)
 
     return PotentialOperator(
         DensePotentialAssembler(

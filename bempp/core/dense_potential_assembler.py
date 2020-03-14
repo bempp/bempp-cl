@@ -2,6 +2,7 @@
 import numpy as _np
 
 from bempp.core import cl_helpers as _cl_helpers
+from bempp.api.utils.helpers import list_to_float as _list_to_float
 
 
 class DensePotentialAssembler(object):
@@ -32,6 +33,11 @@ class DensePotentialAssembler(object):
         self._operator_descriptor = operator_descriptor
         self._kernel_dimension = kernel_dimension
 
+        options = operator_descriptor.options.copy()
+
+        self._kernel_parameters = options.get('kernel_parameters', [0])
+        self._source_options = options['source']
+
         if device_interface is None:
             self._device_interface = default_device()
         else:
@@ -56,6 +62,14 @@ class DensePotentialAssembler(object):
             self._compute_kernel = "evaluate_maxwell_magnetic_far_field"
         else:
             raise ValueError("Unknown compute kernel for potential.")
+
+        self._run_kernel = self._init_operator()
+
+    def update(self, kernel_parameters=None):
+        """Re-assemble with updated parameters."""
+        if kernel_parameters is not None:
+            self._kernel_parameters_buffer.fill_buffer(
+                    self._device_interface, kernel_parameters)
 
     @property
     def space(self):
@@ -92,38 +106,32 @@ class DensePotentialAssembler(object):
         """Return precision."""
         return self._precision
 
-    def evaluate(self, coefficients):
-        """Evaluate the potential for given coefficients."""
+    def _init_operator(self):
+        """Setup the operator."""
         from bempp.api.integration.triangle_gauss import rule as regular_rule
         from bempp.api import log
         from bempp.core import kernel_helpers
 
+        source_options = self._source_options
+
         localised_space = self.space.localised_space
         grid = localised_space.grid
-        localised_coefficients = self.space.map_to_full_grid.dot(
-            self.space.dof_transformation @ coefficients
-        )
 
         order = self.parameters.quadrature.regular
         dtype = _cl_helpers.get_type(self.precision).real
 
         npoints = self.points.shape[1]
 
-        options = self.operator_descriptor.options.copy()
+        source_options = self.operator_descriptor.options['source']
 
         if self._is_complex:
-            options["COMPLEX_RESULT"] = None
-            options["COMPLEX_KERNEL"] = None
+            source_options["COMPLEX_RESULT"] = None
+            source_options["COMPLEX_KERNEL"] = None
+            source_options["COMPLEX_COEFFICIENTS"] = None
             result_type = _cl_helpers.get_type(self.precision).complex
+            coefficient_type = _cl_helpers.get_type(self.precision).complex
         else:
             result_type = _cl_helpers.get_type(self.precision).real
-
-        if _np.iscomplexobj(localised_coefficients):
-            coefficient_type = _cl_helpers.get_type(self.precision).complex
-            result_type = _cl_helpers.get_type(self.precision).complex
-            options["COMPLEX_COEFFICIENTS"] = None
-            options["COMPLEX_RESULT"] = None
-        else:
             coefficient_type = _cl_helpers.get_type(self.precision).real
 
         points_buffer = _cl_helpers.DeviceBuffer.from_array(
@@ -152,12 +160,12 @@ class DensePotentialAssembler(object):
             order="F",
         )
 
-        coefficients_buffer = _cl_helpers.DeviceBuffer.from_array(
-            localised_coefficients,
-            self.device_interface,
-            dtype=coefficient_type,
+        coefficients_buffer = _cl_helpers.DeviceBuffer(
+            self.space.map_to_full_grid.shape[0],
+            coefficient_type,
+            self.device_interface.context,
             access_mode="read_only",
-            order="F",
+            order="C",
         )
 
         normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
@@ -176,10 +184,10 @@ class DensePotentialAssembler(object):
 
         workgroup_size = 128
 
-        options["SHAPESET"] = localised_space.shapeset.identifier
-        options["NUMBER_OF_SHAPE_FUNCTIONS"] = localised_space.number_of_shape_functions
-        options["KERNEL_DIMENSION"] = self.kernel_dimension
-        options["NUMBER_OF_QUAD_POINTS"] = len(quad_weights)
+        source_options["SHAPESET"] = localised_space.shapeset.identifier
+        source_options["NUMBER_OF_SHAPE_FUNCTIONS"] = localised_space.number_of_shape_functions
+        source_options["KERNEL_DIMENSION"] = self.kernel_dimension
+        source_options["NUMBER_OF_QUAD_POINTS"] = len(quad_weights)
 
         main_size, remainder_size = kernel_helpers.closest_multiple_to_number(
             localised_space.number_of_support_elements, workgroup_size
@@ -192,6 +200,16 @@ class DensePotentialAssembler(object):
             access_mode="read_write",
             order="C",
         )
+        
+        kernel_parameters_buffer = _cl_helpers.DeviceBuffer.from_array(
+                _list_to_float(self._kernel_parameters, self._precision),
+                self.device_interface,
+                dtype=dtype,
+                access_mode="read_only",
+                order="C"
+                )
+
+        self._kernel_parameters_buffer = kernel_parameters_buffer
 
         if main_size > 0:
 
@@ -199,7 +217,7 @@ class DensePotentialAssembler(object):
                 self.device_interface, self.precision
             )
 
-            options["WORKGROUP_SIZE"] = workgroup_size // vec_length
+            source_options["WORKGROUP_SIZE"] = workgroup_size // vec_length
 
             sum_buffer = _cl_helpers.DeviceBuffer(
                 (
@@ -214,11 +232,11 @@ class DensePotentialAssembler(object):
             sum_buffer.set_zero(self.device_interface)
 
             main_source = _cl_helpers.kernel_source_from_identifier(
-                self._compute_kernel + vec_extension, options
+                self._compute_kernel + vec_extension, source_options
             )
 
             sum_source = _cl_helpers.kernel_source_from_identifier(
-                "sum_for_potential_novec", options
+                "sum_for_potential_novec", source_options
             )
 
             main_kernel = _cl_helpers.Kernel(
@@ -228,65 +246,95 @@ class DensePotentialAssembler(object):
                 sum_source, self.device_interface.context, self.precision
             )
 
-            event = main_kernel.run(
-                self.device_interface,
-                (npoints, main_size // vec_length),
-                (1, workgroup_size // vec_length),
-                grid_buffer,
-                indices_buffer,
-                normal_signs_buffer,
-                points_buffer,
-                coefficients_buffer,
-                quad_points_buffer,
-                quad_weights_buffer,
-                sum_buffer,
-            )
-
-            event.wait()
-
-            event = sum_kernel.run(
-                self.device_interface,
-                (self.kernel_dimension * npoints,),
-                (1,),
-                sum_buffer,
-                result_buffer,
-                _np.uint32(
-                    localised_space.number_of_support_elements // workgroup_size
-                ),
-            )
-
-            event.wait()
 
         if remainder_size > 0:
 
-            options["WORKGROUP_SIZE"] = remainder_size
+            source_options["WORKGROUP_SIZE"] = remainder_size
 
             remainder_source = _cl_helpers.kernel_source_from_identifier(
-                self._compute_kernel + "_novec", options
+                self._compute_kernel + "_novec", source_options
             )
 
             remainder_kernel = _cl_helpers.Kernel(
                 remainder_source, self.device_interface.context, self.precision
             )
-            event = remainder_kernel.run(
-                self.device_interface,
-                (npoints, remainder_size),
-                (1, remainder_size),
-                grid_buffer,
-                indices_buffer,
-                normal_signs_buffer,
-                points_buffer,
-                coefficients_buffer,
-                quad_points_buffer,
-                quad_weights_buffer,
-                result_buffer,
-                global_offset=(0, main_size),
+
+        def run_kernel(coefficients):
+            """Actually run the kernel."""
+            localised_coefficients = self.space.map_to_full_grid.dot(
+                self.space.dof_transformation @ coefficients
             )
 
-            event.wait()
+            coefficients_buffer.fill_buffer(self.device_interface, localised_coefficients)
+            if main_size > 0:
+                sum_buffer.set_zero(self.device_interface)
+                event = main_kernel.run(
+                    self.device_interface,
+                    (npoints, main_size // vec_length),
+                    (1, workgroup_size // vec_length),
+                    grid_buffer,
+                    indices_buffer,
+                    normal_signs_buffer,
+                    points_buffer,
+                    coefficients_buffer,
+                    quad_points_buffer,
+                    quad_weights_buffer,
+                    sum_buffer,
+                    kernel_parameters_buffer
+                )
 
-        result = result_buffer.get_host_copy(self.device_interface).reshape(
-            self.kernel_dimension, npoints, order="F"
-        )
+                event.wait()
 
-        return result
+                event = sum_kernel.run(
+                    self.device_interface,
+                    (self.kernel_dimension * npoints,),
+                    (1,),
+                    sum_buffer,
+                    result_buffer,
+                    _np.uint32(
+                        localised_space.number_of_support_elements // workgroup_size
+                    ),
+                )
+
+                event.wait()
+
+            if remainder_size > 0:
+                event = remainder_kernel.run(
+                    self.device_interface,
+                    (npoints, remainder_size),
+                    (1, remainder_size),
+                    grid_buffer,
+                    indices_buffer,
+                    normal_signs_buffer,
+                    points_buffer,
+                    coefficients_buffer,
+                    quad_points_buffer,
+                    quad_weights_buffer,
+                    result_buffer,
+                    kernel_parameters_buffer,
+                    global_offset=(0, main_size),
+                )
+
+                event.wait()
+
+            
+            result = result_buffer.get_host_copy(self.device_interface).reshape(
+                self.kernel_dimension, npoints, order="F"
+            )
+
+            return result
+
+        return run_kernel
+
+    def evaluate(self, coefficients):
+        """Evaluate the potential for given coefficients."""
+
+        if not self._is_complex and _np.iscomplexobj(coefficients):
+            return self._run_kernel(_np.real(coefficients)) + self._run_kernel(
+                    _np.imag(coefficients))
+        else:
+            return self._run_kernel(coefficients)
+
+
+
+

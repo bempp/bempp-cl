@@ -30,17 +30,26 @@ def test_helmholtz_single_layer_potential_p1(
 
     fun = GridFunction(space, coefficients=coefficients)
 
-    actual = single_layer(
+    op = single_layer(
         space,
         points,
         WAVENUMBER,
         parameters=default_parameters,
         precision=precision,
         device_interface=device_interface,
-    ).evaluate(fun)
+    )
+
+    actual1 = op.evaluate(fun)
+    actual2 = op.evaluate(2.3 * fun)
+
+    op.update(WAVENUMBER)
 
     _np.testing.assert_allclose(
-        actual, expected, rtol=helpers.default_tolerance(precision)
+        actual1, expected, rtol=helpers.default_tolerance(precision)
+    )
+
+    _np.testing.assert_allclose(
+        actual2, 2.3 * expected, rtol=helpers.default_tolerance(precision)
     )
 
 

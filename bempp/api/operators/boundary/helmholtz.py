@@ -80,8 +80,6 @@ def double_layer(
     options = _add_source_option(options, "COMPLEX_KERNEL", None)
     options = _add_wavenumber(options, wavenumber)
 
-    _add_wavenumber(options, wavenumber)
-
     return _common.create_operator(
         "helmholtz_double_layer_boundary",
         domain,
