@@ -410,28 +410,6 @@ class Grid(object):
 
         return Grid(new_vertices, new_elements, new_domain_indices)
 
-    def push_to_device(self, device_interface, precision):
-        """
-        Copy serialized grid onto device.
-
-        The property as_array is used to create a representation
-        of the grid, which is pushed onto a given device.
-        The method returns a DeviceGridInterface object. If
-        the grid with the given precision is already in the context, 
-        an existing DeviceGridInterface instance is returned to avoid
-        multiple copies of the grid in the same context.
-        """
-        from bempp.core.device_grid_interface import DeviceGridInterface
-
-        context = device_interface.context
-
-        if (context, precision) in self.device_interfaces.keys():
-            return self.device_interfaces[(context, precision)]
-
-        interface = DeviceGridInterface(self, device_interface, precision)
-        self.device_interfaces[(device_interface.context, precision)] = interface
-        return interface
-
     def _compute_vertex_neighbors(self):
         """Return all elements adjacent to a given vertex."""
         from bempp.helpers import IndexList

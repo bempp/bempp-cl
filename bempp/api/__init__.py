@@ -5,7 +5,6 @@ import tempfile as _tempfile
 import logging as _logging
 import time as _time
 
-import pyopencl as _cl
 from bempp.api.utils import DefaultParameters
 from bempp.api.utils.helpers import MemProfiler
 
@@ -16,13 +15,6 @@ from bempp.api.grid.grid import Grid
 from bempp.api.assembly.grid_function import GridFunction
 from bempp.api.assembly.grid_function import real_callable
 from bempp.api.assembly.grid_function import complex_callable
-from bempp.core.cl_helpers import DeviceInterface as _DeviceInterface
-from bempp.core.cl_helpers import show_available_platforms_and_devices
-from bempp.core.cl_helpers import set_default_device
-from bempp.core.cl_helpers import default_device
-from bempp.core.cl_helpers import default_context
-from bempp.core.cl_helpers import get_precision
-from bempp.core.cl_helpers import get_context_by_name
 
 from bempp.api.space import function_space
 
@@ -237,9 +229,6 @@ GMSH_PATH = _gmsh_path()
 
 __version__ = _get_version()
 
-VECTORIZATION = "auto"
-DEVICE_PRECISION_CPU = "double"
-DEVICE_PRECISION_GPU = "single"
 PLOT_BACKEND = "jupyter_notebook"
 
 ALL = -1  # Useful global identifier
