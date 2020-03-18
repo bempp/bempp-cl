@@ -206,9 +206,8 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
         return _duffy_galerkin.number_of_quadrature_points(self.order, adjacency)
 
     def get_arrays(self, (precision)
-        """e."""
-        from bempp.core.cl_helpers import DeviceBuffer
-        from bempp.core.cl_helpers import get_type
+        """Return the arrays."""
+	from bempp.api.utils.helpers import get_type
 
         types = get_type(precision)
 
@@ -225,9 +224,9 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
         self._trial_indices = trial_indices
 
         arrays = [
-            test_points,
-            trial_points,
-            weights,
+            test_points.astype(types.real),
+            trial_points.astype(types.real),
+            weights.astype(types.real),
             test_indices,
             trial_indices,
             test_offsets,

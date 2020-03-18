@@ -73,6 +73,13 @@ def serialise_list_of_lists(array):
         index_ptr.append(count)
     return new_list, index_ptr
 
+def get_type(precision):
+    """Return a TypeContainer depending on the given precision."""
+    if precision == "single":
+        return TypeContainer("float32", "complex64", "float")
+    if precision == "double":
+        return TypeContainer("float64", "complex128", "double")
+    raise ValueError("precision must be one of 'single' or 'double'")
 
 class MemProfiler:
     """Context manager to measure mem usage in bytes."""
