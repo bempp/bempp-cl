@@ -15,7 +15,9 @@ class Grid(object):
     """The Grid class."""
 
     @_timeit
-    def __init__(self, vertices, elements, domain_indices=None, grid_id=None, scatter=True):
+    def __init__(
+        self, vertices, elements, domain_indices=None, grid_id=None, scatter=True
+    ):
         """Create a grid from a vertices and an elements array."""
         from bempp.api import log
         from bempp.api.utils import pool
@@ -63,7 +65,7 @@ class Grid(object):
         self._compute_edge_neighbors()
         self._compute_vertex_neighbors()
 
-        self._grid_data = GridData(
+        self._grid_data_double = GridDataDouble(
             self._vertices,
             self._elements,
             self._edges,
@@ -76,14 +78,31 @@ class Grid(object):
             self._integration_elements,
             self._centroids,
             self._domain_indices,
-            self._vertex_on_boundary
+            self._vertex_on_boundary,
         )
+
+        self._grid_data_single = GridDataFloat(
+            self._vertices.astype("float32"),
+            self._elements,
+            self._edges,
+            self._element_edges,
+            self._volumes.astype("float32"),
+            self._normals.astype("float32"),
+            self._jacobians.astype("float32"),
+            self._jacobian_inverse_transposed.astype("float32"),
+            self._diameters.astype("float32"),
+            self._integration_elements.astype("float32"),
+            self._centroids.astype("float32"),
+            self._domain_indices,
+            self._vertex_on_boundary,
+        )
+
         self._is_scattered = False
 
         if scatter and pool.is_initialised() and not pool.is_worker():
             self._scatter()
         if not pool.is_worker():
-            log( 
+            log(
                 (
                     f"Created grid with id {self.id}. Elements: {self.number_of_elements}. "
                     + f"Edges: {self.number_of_edges}. Vertices: {self.number_of_vertices}"
@@ -285,10 +304,14 @@ class Grid(object):
         """Return for each edge the list of neighboring elements.."""
         return self._edge_neighbors
 
-    @property
-    def data(self):
+    def data(self, precision="double"):
         """Return Numba container with all relevant grid data."""
-        return self._grid_data
+        if precision == "double":
+            return self._grid_data_double
+        elif precision == "single":
+            return self._grid_data_single
+        else:
+            raise ValueError("precision must be one of 'single', 'double'")
 
     @property
     def vertex_neighbors(self):
@@ -316,7 +339,7 @@ class Grid(object):
         )
 
         pool.execute(_grid_scatter_worker, self.id, array_proxies)
-        self._is_scattered=True
+        self._is_scattered = True
 
     def entity_count(self, codim):
         """Return the number of entities of given codimension."""
@@ -635,7 +658,67 @@ class Grid(object):
         ("vertex_on_boundary", _numba.boolean[:]),
     ]
 )
-class GridData(object):
+class GridDataDouble(object):
+    """A Numba container class for the grid data."""
+
+    def __init__(
+        self,
+        vertices,
+        elements,
+        edges,
+        element_edges,
+        volumes,
+        normals,
+        jacobians,
+        jac_inv_trans,
+        diameters,
+        integration_elements,
+        centroids,
+        domain_indices,
+        vertex_on_boundary,
+    ):
+
+        self.vertices = vertices
+        self.elements = elements
+        self.edges = edges
+        self.element_edges = element_edges
+        self.volumes = volumes
+        self.normals = normals
+        self.jacobians = jacobians
+        self.jac_inv_trans = jac_inv_trans
+        self.diameters = diameters
+        self.integration_elements = integration_elements
+        self.centroids = centroids
+        self.domain_indices = domain_indices
+        self.vertex_on_boundary = vertex_on_boundary
+
+    def local2global(self, elem_index, local_coords):
+        """
+        Map local to global coordinates.
+        """
+        return _np.expand_dims(
+            self.vertices[:, self.elements[0, elem_index]], 1
+        ) + self.jacobians[elem_index].dot(local_coords)
+
+
+@_numba.jitclass(
+    [
+        ("vertices", _numba.float32[:, :]),
+        ("elements", _numba.uint32[:, :]),
+        ("edges", _numba.uint32[:, :]),
+        ("element_edges", _numba.uint32[:, :]),
+        ("volumes", _numba.float32[:]),
+        ("normals", _numba.float32[:, :]),
+        ("jacobians", _numba.float32[:, :, :]),
+        ("jac_inv_trans", _numba.float32[:, :, :]),
+        ("diameters", _numba.float32[:]),
+        ("integration_elements", _numba.float32[:]),
+        ("centroids", _numba.float32[:, :]),
+        ("domain_indices", _numba.uint32[:]),
+        ("vertex_on_boundary", _numba.boolean[:]),
+    ]
+)
+class GridDataFloat(object):
     """A Numba container class for the grid data."""
 
     def __init__(
@@ -1189,7 +1272,9 @@ def barycentric_refinement(grid):
         grid.number_of_edges,
     )
 
-    return Grid(new_vertices, new_elements, _np.repeat(grid.domain_indices, 6), scatter=False)
+    return Grid(
+        new_vertices, new_elements, _np.repeat(grid.domain_indices, 6), scatter=False
+    )
 
 
 def union(grids, domain_indices=None, swapped_normals=None):
@@ -1336,7 +1421,7 @@ def enumerate_vertex_adjacent_elements(grid, support_elements):
         if not neighbors:
             # Continue if empty
             continue
-        vertex_edges[vertex_index] = sort_neighbors(grid.data, neighbors)
+        vertex_edges[vertex_index] = sort_neighbors(grid.data(), neighbors)
 
     return vertex_edges
 

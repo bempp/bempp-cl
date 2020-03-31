@@ -15,18 +15,22 @@ class SingularAssembler(_assembler.AssemblerBase):
         """Instantiate the assembler."""
         super().__init__(domain, dual_to_range, parameters)
 
-    def assembler(
-            self, operator_descriptor, device_interface, precision, *args, **kwargs):
+    def assemble(
+        self, operator_descriptor, device_interface, precision, *args, **kwargs
+    ):
 
         """Assemble the singular part."""
         from bempp.api.assembly.discrete_boundary_operator import (
-                SparseDiscreteBoundaryOperator
-                )
+            SparseDiscreteBoundaryOperator,
+        )
+        from bempp.api.utils.helpers import promote_to_double_precision
         from scipy.sparse import coo_matrix, csr_matrix
         from bempp.api.space.space import return_compatible_representation
-        from .dense_assembly_helpers import choose_kernel
+        from .kernels import select_numba_kernels
 
-        domain, dual_to_range = return_compatible_representation(self.domain, self.dual_to_range)
+        domain, dual_to_range = return_compatible_representation(
+            self.domain, self.dual_to_range
+        )
         row_dof_count = dual_to_range.global_dof_count
         col_dof_count = domain.global_dof_count
         row_grid_dofs = dual_to_range.grid_dof_count
@@ -34,37 +38,37 @@ class SingularAssembler(_assembler.AssemblerBase):
 
         if domain.grid != dual_to_range.grid:
             return SparseDiscreteBoundaryOperator(
-                    csr_matrix((row_dof_count, col_dof_count), dtype='float64')
-                    )
-
+                csr_matrix((row_dof_count, col_dof_count), dtype="float64")
+            )
 
         trial_local2global = domain.local2global.ravel()
-        test_local2global = dual_to_range.local2globalravel()
+        test_local2global = dual_to_range.local2global.ravel()
         trial_multipliers = domain.local_multipliers.ravel()
         test_multipliers = dual_to_range.local_multipliers.ravel()
 
+        numba_assembly_function, numba_kernel_function = select_numba_kernels(
+            operator_descriptor, mode="singular"
+        )
+
         rows, cols, values = assemble_singular_part(
-                domain.localised_space,
-                dual_to_range.localised_space,
-                self.parameters,
-                numba_kernel,
-                device_interface,
-                precision,
-                )
+            domain.localised_space,
+            dual_to_range.localised_space,
+            self.parameters,
+            numba_assembly_function,
+            numba_kernel_function,
+            precision,
+        )
         global_rows = test_local2global[rows]
-        global_cos = trial_local2global[cols]
-        global_values = (
-                values * 
-                trial_multipliers[cols]
-                * test_multipliers[rows]
-                )
+        global_cols = trial_local2global[cols]
+        global_values = values * trial_multipliers[cols] * test_multipliers[rows]
 
         if self.parameters.assembly.always_promot_to_double:
-            values = promot_to_double_precision(values)
+            values = promote_to_double_precision(values)
 
-        mat = coo_matrix((values, (rows, cols)), 
-                shape=(row_grid_dofs, col_grid_dofs),
-                )
+        mat = coo_matrix(
+            (global_values, (global_rows, global_cols)),
+            shape=(row_grid_dofs, col_grid_dofs),
+        )
 
         if domain.requires_dof_transformation:
             mat = mat @ domain.dof_transformation
@@ -76,13 +80,57 @@ class SingularAssembler(_assembler.AssemblerBase):
 
 
 def assemble_singular_part(
-        domain,
-        dual_to_range,
-        parameters,
-        numba_kernel,
-        ):
+    domain,
+    dual_to_range,
+    parameters,
+    numba_assembly_function,
+    numba_kernel_function,
+    precision,
+):
     """Actually assemble the Numba kernel."""
-    pass
+
+    grid = domain.grid
+    grid_data = grid.data(precision)
+    order = parameters.quadrature.singular
+
+    rule = _SingularQuadratureRuleInterfaceGalerkin(
+        grid, order, domain.support, dual_to_range.support
+    )
+
+    number_of_test_shape_functions = dual_to_range.number_of_shape_functions
+    number_of_trial_shape_functions = domain.number_of_shape_functions
+
+    result = numba_assembly_function(
+        grid_data,
+        *rule.get_arrays(precision),
+        dual_to_range.normal_multipliers,
+        domain.normal_multipliers,
+        number_of_test_shape_functions,
+        number_of_trial_shape_functions,
+        dual_to_range.shapeset.evaluate,
+        domain.shapeset.evaluate,
+        numba_kernel_function
+    )
+
+    irange = _np.arange(number_of_test_shape_functions)
+    jrange = _np.arange(number_of_trial_shape_functions)
+
+    i_ind = _np.tile(
+        _np.repeat(irange, number_of_trial_shape_functions), len(rule.trial_indices)
+    ) + _np.repeat(
+        rule.test_indices * number_of_test_shape_functions,
+        number_of_test_shape_functions * number_of_trial_shape_functions,
+    )
+
+    j_ind = _np.tile(
+        _np.tile(jrange, number_of_test_shape_functions), len(rule.trial_indices)
+    ) + _np.repeat(
+        rule.trial_indices * number_of_trial_shape_functions,
+        number_of_test_shape_functions * number_of_trial_shape_functions,
+    )
+
+    return (i_ind, j_ind, result)
+
 
 _SingularQuadratureRule = _collections.namedtuple(
     "_QuadratureRule", "test_points trial_points weights"
@@ -205,9 +253,9 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
         """Return the number of quadrature points for given adjacency."""
         return _duffy_galerkin.number_of_quadrature_points(self.order, adjacency)
 
-    def get_arrays(self, (precision)
+    def get_arrays(self, precision):
         """Return the arrays."""
-	from bempp.api.utils.helpers import get_type
+        from bempp.api.utils.helpers import get_type
 
         types = get_type(precision)
 
@@ -215,10 +263,7 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
         test_points, trial_points = self._vectorize_points()
         weights = self._vectorize_weights()
         test_offsets, trial_offsets, weights_offsets = self._vectorize_offsets()
-
-        number_of_local_quad_points = self._vectorized_local_number_of_integration_points(
-            workgroup_size
-        )
+        number_of_quad_points = self._get_number_of_quad_points()
 
         self._test_indices = test_indices
         self._trial_indices = trial_indices
@@ -232,19 +277,7 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
             test_offsets,
             trial_offsets,
             weights_offsets,
-            number_of_local_quad_points,
-        ]
-
-        dtypes = [
-            types.real,
-            types.real,
-            types.real,
-            "uint32",
-            "uint32",
-            "uint32",
-            "uint32",
-            "uint32",
-            "uint32",
+            number_of_quad_points,
         ]
 
         return arrays
@@ -343,23 +376,23 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
 
         return test_indices, trial_indices
 
-    def _vectorized_local_number_of_integration_points(self, workgroup_size):
+    def _get_number_of_quad_points(self):
         """Compute an array of local numbers of integration points."""
-        number_of_local_quad_points = _np.empty(self.index_count["all"], dtype="uint32")
+        number_of_quad_points = _np.empty(self.index_count["all"], dtype="uint32")
 
-        number_of_local_quad_points[: self.index_count["coincident"]] = (
-            self.number_of_points("coincident") // workgroup_size
+        number_of_quad_points[: self.index_count["coincident"]] = self.number_of_points(
+            "coincident"
         )
-        number_of_local_quad_points[
+        number_of_quad_points[
             self.index_count["coincident"] : (
                 self.index_count["coincident"] + self.index_count["edge_adjacent"]
             )
-        ] = (self.number_of_points("edge_adjacent") // workgroup_size)
-        number_of_local_quad_points[-self.index_count["vertex_adjacent"] :] = (
-            self.number_of_points("vertex_adjacent") // workgroup_size
-        )
+        ] = self.number_of_points("edge_adjacent")
+        number_of_quad_points[
+            -self.index_count["vertex_adjacent"] :
+        ] = self.number_of_points("vertex_adjacent")
 
-        return number_of_local_quad_points
+        return number_of_quad_points
 
     def _vectorize_points(self):
         """Return an array of all quadrature points for all different rules."""

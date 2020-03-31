@@ -3,7 +3,10 @@ import numba as _numba
 
 from .scalar_spaces import p1_continuous_function_space, _numba_p0_surface_gradient
 
-def dual0_function_space(grid, support_elements=None, segments=None, swapped_normals=None):
+
+def dual0_function_space(
+    grid, support_elements=None, segments=None, swapped_normals=None
+):
     """Define a space of DP0 functions on the dual grid."""
     from .space import SpaceBuilder, invert_local2global
     from scipy.sparse import coo_matrix
@@ -27,18 +30,16 @@ def dual0_function_space(grid, support_elements=None, segments=None, swapped_nor
     local2global = _np.zeros((bary_grid.number_of_elements, 1), dtype="uint32")
     local_multipliers = _np.zeros((bary_grid.number_of_elements, 1), dtype="uint32")
 
-    local2global[support] = _np.arange(bary_support_size).reshape(
-        bary_support_size, 1
-    )
+    local2global[support] = _np.arange(bary_support_size).reshape(bary_support_size, 1)
 
     local_multipliers[support] = 1
     global2local = invert_local2global(local2global, local_multipliers)
 
     coarse_dofs, bary_dofs, values = generate_dual0_map(
-        grid.data,
-        bary_grid.data,
+        grid.data(),
+        bary_grid.data(),
         coarse_space.global_dof_count,
-        coarse_space.global2local
+        coarse_space.global2local,
     )
 
     dof_transformation = coo_matrix(
@@ -67,11 +68,9 @@ def dual0_function_space(grid, support_elements=None, segments=None, swapped_nor
         .build()
     )
 
+
 def generate_dual0_map(
-    coarse_grid_data,
-    bary_grid_data,
-    global_dof_count,
-    global2local
+    coarse_grid_data, bary_grid_data, global_dof_count, global2local
 ):
     """Generate the DUAL0 map."""
 
@@ -84,8 +83,8 @@ def generate_dual0_map(
         for face, vertex in local_dofs:
             coarse_dofs.append(global_dof_index)
             coarse_dofs.append(global_dof_index)
-            bary_dofs.append(6*face+(2*vertex-1)%6)
-            bary_dofs.append(6*face+2*vertex)
+            bary_dofs.append(6 * face + (2 * vertex - 1) % 6)
+            bary_dofs.append(6 * face + 2 * vertex)
 
     nentries = len(bary_dofs)
 

@@ -1,12 +1,15 @@
 """Various helper routines."""
 
 import numpy as _np
+import collections as _collections
+
 
 def create_unique_id():
     """Create a unique id."""
     from uuid import uuid4
 
     return str(uuid4())
+
 
 def align_array(arr, dtype, order):
     """
@@ -54,6 +57,7 @@ def promote_to_double_precision(array):
         return array.astype("complex128", copy=False)
     return array
 
+
 def serialise_list_of_lists(array):
     """
     Serialises a list of lists (or other iterable).
@@ -73,6 +77,10 @@ def serialise_list_of_lists(array):
         index_ptr.append(count)
     return new_list, index_ptr
 
+
+TypeContainer = _collections.namedtuple("TypeContainer", "real complex opencl")
+
+
 def get_type(precision):
     """Return a TypeContainer depending on the given precision."""
     if precision == "single":
@@ -80,6 +88,7 @@ def get_type(precision):
     if precision == "double":
         return TypeContainer("float64", "complex128", "double")
     raise ValueError("precision must be one of 'single' or 'double'")
+
 
 class MemProfiler:
     """Context manager to measure mem usage in bytes."""
@@ -96,11 +105,25 @@ class MemProfiler:
 
     def __enter__(self):
         import gc
+
         self.start = self._process.memory_info()[0]
         return self
 
     def __exit__(self, *args):
         import gc
+
         self.end = self._process.memory_info()[0]
         self.interval = self.end - self.start
 
+
+def numba_decorate(fun):
+    """Numba decorator for functions."""
+    import bempp.api
+    import numba
+
+    if not bempp.api.USE_JIT:
+        return fun
+    else:
+        return numba.jit(
+            nopython=True, parallel=True, error_model="numpy", fastmath=True
+        )(fun)

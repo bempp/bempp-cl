@@ -14,26 +14,24 @@ def create_operator(
     parameters,
     assembler,
     operator_options,
-    compute_kernel,
+    kernel_type,
+    assembly_type,
     device_interface,
     precision,
 ):
     """Generic instantiation of operators."""
     from bempp.api.operators import OperatorDescriptor
-    from bempp.api import default_device
-    from bempp.api import get_precision
-
-    if device_interface is None:
-        device_interface = default_device()
 
     if precision is None:
-        precision = get_precision(device_interface)
+        precision = "double"
 
     assembler = _assembler.AssemblerInterface(
         domain, dual_to_range, assembler, device_interface, precision, parameters
     )
 
-    descriptor = OperatorDescriptor(identifier, operator_options, compute_kernel)
+    descriptor = OperatorDescriptor(
+        identifier, operator_options, kernel_type, assembly_type, precision
+    )
     return _boundary_operator.BoundaryOperatorWithAssembler(
         domain, range_, dual_to_range, assembler, descriptor
     )
@@ -55,25 +53,21 @@ def create_multitrace_operator(
     """Generic instantiation of operators."""
     from bempp.api.operators import OperatorDescriptor
     from bempp.api.operators import MultitraceOperatorDescriptor
-    from bempp.api import default_device
-    from bempp.api import get_precision
+    import bempp.api
 
     if device_interface is None:
-        device_interface = default_device()
+        device_interface = bempp.api.DEFAULT_DEVICE
 
     if precision is None:
-        precision = get_precision(device_interface)
+        precision = bempp.api.DEFAULT_PRECISION
 
     assembler = _assembler.AssemblerInterface(
         domain, dual_to_range, assembler, device_interface, precision, parameters
     )
 
     descriptor = MultitraceOperatorDescriptor(
-        identifier,
-        operator_options,
-        multitrace_kernel,
-        singular_contribution
-   )
+        identifier, operator_options, multitrace_kernel, singular_contribution
+    )
     return _blocked_operator.MultitraceOperatorFromAssembler(
         domain, range_, dual_to_range, assembler, descriptor
     )

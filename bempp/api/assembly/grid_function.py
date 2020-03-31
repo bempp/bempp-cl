@@ -4,8 +4,6 @@
 import numba as _numba
 import numpy as _np
 
-from bempp.api.grid.grid import GridData as _GridData
-
 
 def real_callable(f):
     """Wrap function as a real Numba callable."""
@@ -208,11 +206,8 @@ class GridFunction(object):
         self._comp_domain = comp_domain
         self._comp_dual = comp_dual
 
-        if (
-            not comp_domain.grid == comp_dual.grid
-            or not _np.all(
-                comp_domain.normal_multipliers == comp_dual.normal_multipliers
-            )
+        if not comp_domain.grid == comp_dual.grid or not _np.all(
+            comp_domain.normal_multipliers == comp_dual.normal_multipliers
         ):
             raise ValueError(
                 "Space and dual space must be defined on the "
@@ -313,10 +308,7 @@ class GridFunction(object):
 
             op = InverseSparseDiscreteBoundaryOperator(
                 identity(
-                    self.space,
-                    self.space,
-                    self.dual_space,
-                    parameters=self.parameters,
+                    self.space, self.space, self.dual_space, parameters=self.parameters,
                 )
                 .weak_form()
                 .A.tocsc()
@@ -494,7 +486,7 @@ class GridFunction(object):
                 values[:, index] += local_values[:, i] * element_area
 
         values[:, vertex_used] /= vertex_areas[vertex_used]
-        return values 
+        return values
 
     def integrate(self):
         """Integrate grid function over a grid."""
@@ -722,7 +714,9 @@ def _project_function(
         for local_fun_index in range(element_vals.shape[1]):
             projections[local2global[index, local_fun_index]] += (
                 _np.sum(
-                    _np.sum(element_vals[:, local_fun_index, :] * fvalues * weights, axis=0)
+                    _np.sum(
+                        element_vals[:, local_fun_index, :] * fvalues * weights, axis=0
+                    )
                 )
                 * grid_data.integration_elements[index]
             )

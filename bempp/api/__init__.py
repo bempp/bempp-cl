@@ -72,7 +72,7 @@ def _init_logger():
     """Initialize the Bempp logger."""
 
     _logging.addLevelName(11, "TIMING")
-    logger = _logging.getLogger('bempp')
+    logger = _logging.getLogger("bempp")
     logger.setLevel(DEBUG)
     logger.addHandler(_logging.NullHandler())
     return logger
@@ -102,11 +102,15 @@ def enable_console_logging(level="info"):
         console_handler.setLevel(LOG_LEVEL[level])
         if pool.is_worker():
             console_handler.setFormatter(
-                    _logging.Formatter(f"%(name)s:PROC{pool._MY_ID}:%(levelname)s: %(message)s", "%H:%M:%S")
+                _logging.Formatter(
+                    f"%(name)s:PROC{pool._MY_ID}:%(levelname)s: %(message)s", "%H:%M:%S"
+                )
             )
         else:
             console_handler.setFormatter(
-                    _logging.Formatter("%(name)s:HOST:%(levelname)s: %(message)s", "%H:%M:%S")
+                _logging.Formatter(
+                    "%(name)s:HOST:%(levelname)s: %(message)s", "%H:%M:%S"
+                )
             )
         LOGGER.addHandler(console_handler)
         CONSOLE_LOGGING_HANDLER = console_handler
@@ -114,13 +118,13 @@ def enable_console_logging(level="info"):
 
 
 # def enable_file_logging(file_name, level=DEBUG, logging_format=DEFAULT_LOGGING_FORMAT):
-    # """Enable logging to a specific file."""
+# """Enable logging to a specific file."""
 
-    # file_handler = _logging.FileHandler(file_name)
-    # file_handler.setLevel(level)
-    # file_handler.setFormatter(_logging.Formatter(logging_format, "%H:%M:%S"))
-    # LOGGER.addHandler(file_handler)
-    # return file_handler
+# file_handler = _logging.FileHandler(file_name)
+# file_handler.setLevel(level)
+# file_handler.setFormatter(_logging.Formatter(logging_format, "%H:%M:%S"))
+# LOGGER.addHandler(file_handler)
+# return file_handler
 
 
 def set_logging_level(level):
@@ -220,15 +224,22 @@ def _gmsh_path():
         )
     return gmp
 
+
 def _get_version():
     """Get version string."""
     from bempp import version
+
     return version.__version__
+
 
 GMSH_PATH = _gmsh_path()
 
 __version__ = _get_version()
 
 PLOT_BACKEND = "jupyter_notebook"
+USE_JIT = True
+
+DEFAULT_DEVICE = "numba"
+DEFAULT_PRECISION = "double"
 
 ALL = -1  # Useful global identifier

@@ -1,21 +1,22 @@
 """Various assemblers to discretize boundary operators."""
 
 
-def _create_assembler(domain, dual_to_range, identifier, parameters, device_interface):
+def _create_assembler(
+    domain, dual_to_range, identifier, parameters, device_interface="numba"
+):
     """Create assembler based on string."""
-    from bempp.core.singular_assembler import SingularAssembler
-    from bempp.core.dense_assembler import DenseAssembler
-    from bempp.core.sparse_assembler import SparseAssembler
-    from bempp.core.dense_evaluator import DenseEvaluatorAssembler
-    from bempp.core.dense_multitrace_evaluator import DenseMultitraceEvaluatorAssembler
+    from bempp.core.numba.singular_assembler import SingularAssembler
+
+    # from bempp.core.dense_assembler import DenseAssembler
+    # from bempp.core.sparse_assembler import SparseAssembler
+    # from bempp.core.dense_evaluator import DenseEvaluatorAssembler
+    # from bempp.core.dense_multitrace_evaluator import DenseMultitraceEvaluatorAssembler
 
     if identifier == "only_singular_part":
         return SingularAssembler(domain, dual_to_range, parameters)
     if identifier == "dense":
         return DenseAssembler(domain, dual_to_range, parameters)
     if identifier == "default_nonlocal":
-        if device_interface.type == 'gpu':
-            return DenseEvaluatorAssembler(domain, dual_to_range, parameters)
         return DenseAssembler(domain, dual_to_range, parameters)
     if identifier == "sparse":
         return SparseAssembler(domain, dual_to_range, parameters)
@@ -50,8 +51,7 @@ class AssemblerInterface(object):
             self._implementation = assembler
         else:
             self._implementation = _create_assembler(
-                domain, dual_to_range, assembler, self.parameters,
-                device_interface
+                domain, dual_to_range, assembler, self.parameters, device_interface
             )
 
     @property
