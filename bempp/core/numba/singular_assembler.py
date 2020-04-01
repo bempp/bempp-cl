@@ -57,12 +57,13 @@ class SingularAssembler(_assembler.AssemblerBase):
             numba_assembly_function,
             numba_kernel_function,
             precision,
+            _np.array(operator_descriptor.options),
         )
         global_rows = test_local2global[rows]
         global_cols = trial_local2global[cols]
         global_values = values * trial_multipliers[cols] * test_multipliers[rows]
 
-        if self.parameters.assembly.always_promot_to_double:
+        if self.parameters.assembly.always_promote_to_double:
             values = promote_to_double_precision(values)
 
         mat = coo_matrix(
@@ -86,6 +87,7 @@ def assemble_singular_part(
     numba_assembly_function,
     numba_kernel_function,
     precision,
+    kernel_parameters,
 ):
     """Actually assemble the Numba kernel."""
 
@@ -109,7 +111,8 @@ def assemble_singular_part(
         number_of_trial_shape_functions,
         dual_to_range.shapeset.evaluate,
         domain.shapeset.evaluate,
-        numba_kernel_function
+        numba_kernel_function,
+        kernel_parameters
     )
 
     irange = _np.arange(number_of_test_shape_functions)

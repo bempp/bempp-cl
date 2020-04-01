@@ -617,7 +617,7 @@ class FunctionSpace(object):
             element_index,
             self.shapeset.evaluate,
             local_coordinates,
-            self.grid.data,
+            self.grid.data(),
             self.local_multipliers,
             self.normal_multipliers,
         )
@@ -628,7 +628,7 @@ class FunctionSpace(object):
             element_index,
             self.shapeset.gradient,
             local_coordinates,
-            self.grid.data,
+            self.grid.data(),
             self.local_multipliers,
             self.normal_multipliers,
         )
