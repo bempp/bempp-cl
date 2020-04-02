@@ -24,6 +24,7 @@ def single_layer(
         "default_scalar",
         device_interface,
         precision,
+        False,
     )
 
 

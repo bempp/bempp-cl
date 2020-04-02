@@ -11,7 +11,9 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
     assembly_functions_singular = {
         "default_scalar": default_scalar_singular_kernel,
     }
-    assembly_functions_regular = {}
+    assembly_functions_regular = {
+        "default_scalar": default_scalar_regular_kernel,
+    }
     kernel_functions_regular = {
         "laplace_single_layer": laplace_single_layer_regular,
     }
@@ -48,6 +50,22 @@ def get_normals(grid_data, nrepetitions, elements, multipliers):
 
 
 @_numba_decorate
+def elements_adjacent(elements, index1, index2):
+    """Check if two elements are adjacent."""
+    return (
+        elements[0, index1] == elements[0, index2]
+        or elements[0, index1] == elements[1, index2]
+        or elements[0, index1] == elements[2, index2]
+        or elements[1, index1] == elements[0, index2]
+        or elements[1, index1] == elements[1, index2]
+        or elements[1, index1] == elements[2, index2]
+        or elements[2, index1] == elements[0, index2]
+        or elements[2, index1] == elements[1, index2]
+        or elements[2, index1] == elements[2, index2]
+    )
+
+
+@_numba_decorate
 def laplace_single_layer_regular(
     test_point, trial_points, test_normal, trial_normals, kernel_parameters
 ):
@@ -79,6 +97,23 @@ def laplace_single_layer_singular(
     for j in range(npoints):
         output[j] = m_inv_4pi / _np.sqrt(output[j])
     return output
+
+
+@_numba_decorate
+def default_scalar_regular_kernel(
+    test_grid_data,
+    trial_grid_data,
+    nshape_test,
+    nshape_trial,
+    test_indices,
+    trial_indices,
+    quad_points,
+    quad_weights,
+    kernel_evaluator,
+    kernel_parameters,
+    result,
+):
+    pass
 
 
 @_numba_decorate

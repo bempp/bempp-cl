@@ -57,7 +57,7 @@ class SingularAssembler(_assembler.AssemblerBase):
             numba_assembly_function,
             numba_kernel_function,
             precision,
-            _np.array(operator_descriptor.options),
+            operator_descriptor.options,
         )
         global_rows = test_local2global[rows]
         global_cols = trial_local2global[cols]
@@ -69,7 +69,7 @@ class SingularAssembler(_assembler.AssemblerBase):
         mat = coo_matrix(
             (global_values, (global_rows, global_cols)),
             shape=(row_grid_dofs, col_grid_dofs),
-        )
+        ).tocsr()
 
         if domain.requires_dof_transformation:
             mat = mat @ domain.dof_transformation
@@ -112,7 +112,7 @@ def assemble_singular_part(
         dual_to_range.shapeset.evaluate,
         domain.shapeset.evaluate,
         numba_kernel_function,
-        kernel_parameters
+        _np.array(kernel_parameters),
     )
 
     irange = _np.arange(number_of_test_shape_functions)

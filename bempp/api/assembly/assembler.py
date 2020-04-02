@@ -6,6 +6,7 @@ def _create_assembler(
 ):
     """Create assembler based on string."""
     from bempp.core.numba.singular_assembler import SingularAssembler
+    from bempp.core.numba.dense_assembler import DenseAssembler
 
     # from bempp.core.dense_assembler import DenseAssembler
     # from bempp.core.sparse_assembler import SparseAssembler

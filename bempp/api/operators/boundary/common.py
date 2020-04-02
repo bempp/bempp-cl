@@ -18,6 +18,7 @@ def create_operator(
     assembly_type,
     device_interface,
     precision,
+    is_complex,
 ):
     """Generic instantiation of operators."""
     from bempp.api.operators import OperatorDescriptor
@@ -30,7 +31,7 @@ def create_operator(
     )
 
     descriptor = OperatorDescriptor(
-        identifier, operator_options, kernel_type, assembly_type, precision
+        identifier, operator_options, kernel_type, assembly_type, precision, is_complex
     )
     return _boundary_operator.BoundaryOperatorWithAssembler(
         domain, range_, dual_to_range, assembler, descriptor
