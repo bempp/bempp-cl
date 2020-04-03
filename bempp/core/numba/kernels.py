@@ -137,13 +137,11 @@ def default_scalar_regular_kernel(
 ):
     # Compute global points
     dtype = test_grid_data.vertices.dtype
+    result_type = result.dtype
     n_quad_points = len(quad_weights)
     n_test_indices = len(test_indices)
     n_trial_indices = len(trial_indices)
 
-    test_normals = get_normals(
-        test_grid_data, n_quad_points, test_indices, test_normal_multipliers
-    )
     trial_normals = get_normals(
         trial_grid_data, n_quad_points, trial_indices, trial_normal_multipliers
     )
@@ -153,26 +151,60 @@ def default_scalar_regular_kernel(
     local_test_fun_values = test_shapeset(quad_points)
     local_trial_fun_values = trial_shapeset(quad_points)
 
-    all_test_fun_values = _np.empty(
-        (nshape_test, n_quad_points * n_test_indices), dtype=dtype
-    )
-    all_trial_fun_values = _np.empty(
-        (nshape_trial, n_quad_points * n_trial_indices), dtype=dtype
-    )
+    for i in _numba.prange(n_test_indices):
+        test_element = test_indices[i]
+        local_result = _np.zeros(
+            nshape_test, nshape_trial, n_trial_indices, dtype=result_type
+        )
+        test_global_points = test_grid_data.local2global(test_element, quad_points)
+        test_normal = test_grid_data.normals[test_element]
+        for test_point_index in range(n_quad_points):
+            test_global_point = test_global_points[:, test_point_index]
+            kernel_values = kernel_evaluator(
+                test_global_point,
+                trial_global_points,
+                test_normal,
+                trial_normals,
+                kernel_parameters,
+            )
+            for test_fun_index in range(nshape_test):
+                for trial_fun_index in range(nshape_trial):
+                    for trial_element_index in range(n_trial_indices):
+                        for trial_point_index in range(n_quad_points):
+                            local_result[
+                                test_fun_index, trial_fun_index, trial_element_index
+                            ] += (
+                                kernel_values[
+                                    trial_element_index * n_quad_points
+                                    + trial_point_index
+                                ]
+                                * quad_weights[trial_point_index]
+                                * quad_weights[test_point_index]
+                                * local_trial_fun_values[
+                                    0, trial_fun_index, trial_point_index
+                                ]
+                                * local_test_fun_values[
+                                    0, test_fun_index, test_point_index
+                                ]
+                            )
 
-    for index in range(n_test_indices):
-        for function_index in range(nshape_test):
-            for point_index in range(n_quad_points):
-                all_test_fun_values[
-                    function_index, n_quad_points * index + point_index
-                ] = local_test_fun_values[0, function_index, point_index]
-
-    for index in range(n_trial_indices):
-        for function_index in range(nshape_trial):
-            for point_index in range(n_quad_points):
-                all_trial_fun_values[
-                    function_index, n_quad_points * index + point_index
-                ] = local_trial_fun_values[0, function_index, point_index]
+        for trial_element_index in range(n_trial_indices):
+            trial_element = trial_indices[trial_element_index]
+            if not grids_identical or not elements_adjacent(
+                test_grid_data.elements, test_element, trial_element
+            ):
+                for test_fun_index in range(nshape_test):
+                    for trial_fun_index in range(nshape_trial):
+                        result[
+                            test_global_dofs[test_element, test_fun_index],
+                            trial_global_dofs[trial_element, trial_fun_index],
+                        ] += (
+                            local_result[
+                                test_fun_index, trial_fun_index, trial_element_index
+                            ]
+                            * test_grid_data.integration_elements[test_element]
+                            * trial_grid_data.integration_elements[trial_element]
+                        )
 
     return result
 
