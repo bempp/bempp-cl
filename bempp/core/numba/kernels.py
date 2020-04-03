@@ -36,6 +36,19 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
 
 
 @_numba_decorate
+def get_global_points(grid_data, elements, local_points):
+    """Get global points."""
+    npoints = local_points.shape[1]
+    nelements = len(elements)
+    output = _np.empty((3, nelements * npoints), dtype=grid_data.vertices.dtype)
+    for index, element in enumerate(elements):
+        output[:, npoints * index : npoints * (1 + index)] = grid_data.local2global(
+            element, local_points
+        )
+    return output
+
+
+@_numba_decorate
 def get_normals(grid_data, nrepetitions, elements, multipliers):
     """Get normals to be repeated n times per element."""
     output = _np.empty((3, nrepetitions * len(elements)), dtype=grid_data.normals.dtype)
@@ -107,13 +120,61 @@ def default_scalar_regular_kernel(
     nshape_trial,
     test_indices,
     trial_indices,
+    test_multipliers,
+    trial_multipliers,
+    test_global_dofs,
+    trial_global_dofs,
+    test_normal_multipliers,
+    trial_normal_multipliers,
     quad_points,
     quad_weights,
     kernel_evaluator,
     kernel_parameters,
+    grids_identical,
+    test_shapeset,
+    trial_shapeset,
     result,
 ):
-    pass
+    # Compute global points
+    dtype = test_grid_data.vertices.dtype
+    n_quad_points = len(quad_weights)
+    n_test_indices = len(test_indices)
+    n_trial_indices = len(trial_indices)
+
+    test_normals = get_normals(
+        test_grid_data, n_quad_points, test_indices, test_normal_multipliers
+    )
+    trial_normals = get_normals(
+        trial_grid_data, n_quad_points, trial_indices, trial_normal_multipliers
+    )
+    test_global_points = get_global_points(test_grid_data, test_indices, quad_points)
+    trial_global_points = get_global_points(trial_grid_data, trial_indices, quad_points)
+
+    local_test_fun_values = test_shapeset(quad_points)
+    local_trial_fun_values = trial_shapeset(quad_points)
+
+    all_test_fun_values = _np.empty(
+        (nshape_test, n_quad_points * n_test_indices), dtype=dtype
+    )
+    all_trial_fun_values = _np.empty(
+        (nshape_trial, n_quad_points * n_trial_indices), dtype=dtype
+    )
+
+    for index in range(n_test_indices):
+        for function_index in range(nshape_test):
+            for point_index in range(n_quad_points):
+                all_test_fun_values[
+                    function_index, n_quad_points * index + point_index
+                ] = local_test_fun_values[0, function_index, point_index]
+
+    for index in range(n_trial_indices):
+        for function_index in range(nshape_trial):
+            for point_index in range(n_quad_points):
+                all_trial_fun_values[
+                    function_index, n_quad_points * index + point_index
+                ] = local_trial_fun_values[0, function_index, point_index]
+
+    return result
 
 
 @_numba_decorate

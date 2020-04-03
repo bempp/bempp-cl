@@ -121,11 +121,19 @@ def assemble_dense(
                         1 + trial_color_index
                     ]
                 ],
+                dual_to_range.local_multipliers,
+                domain.local_multipliers,
+                dual_to_range.local2global,
+                domain.local2global,
+                dual_to_range.normal_multipliers,
+                domain.normal_multipliers,
                 quad_points.astype(data_type),
                 quad_weights.astype(data_type),
                 numba_kernel_function_regular,
                 _np.array(operator_descriptor.options),
                 grids_identical,
+                dual_to_range.shapeset.evaluate,
+                domain.shapeset.evaluate,
                 result,
             )
 
