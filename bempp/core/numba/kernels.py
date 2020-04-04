@@ -118,8 +118,8 @@ def default_scalar_regular_kernel(
     trial_grid_data,
     nshape_test,
     nshape_trial,
-    test_indices,
-    trial_indices,
+    test_elements,
+    trial_elements,
     test_multipliers,
     trial_multipliers,
     test_global_dofs,
@@ -136,25 +136,26 @@ def default_scalar_regular_kernel(
     result,
 ):
     # Compute global points
-    dtype = test_grid_data.vertices.dtype
     result_type = result.dtype
     n_quad_points = len(quad_weights)
-    n_test_indices = len(test_indices)
-    n_trial_indices = len(trial_indices)
+    n_test_elements = len(test_elements)
+    n_trial_elements = len(trial_elements)
 
     trial_normals = get_normals(
-        trial_grid_data, n_quad_points, trial_indices, trial_normal_multipliers
+        trial_grid_data, n_quad_points, trial_elements, trial_normal_multipliers
     )
-    test_global_points = get_global_points(test_grid_data, test_indices, quad_points)
-    trial_global_points = get_global_points(trial_grid_data, trial_indices, quad_points)
+    test_global_points = get_global_points(test_grid_data, test_elements, quad_points)
+    trial_global_points = get_global_points(
+        trial_grid_data, trial_elements, quad_points
+    )
 
     local_test_fun_values = test_shapeset(quad_points)
     local_trial_fun_values = trial_shapeset(quad_points)
 
-    for i in _numba.prange(n_test_indices):
-        test_element = test_indices[i]
+    for i in _numba.prange(n_test_elements):
+        test_element = test_elements[i]
         local_result = _np.zeros(
-            nshape_test, nshape_trial, n_trial_indices, dtype=result_type
+            (nshape_test, nshape_trial, n_trial_elements), dtype=result_type
         )
         test_global_points = test_grid_data.local2global(test_element, quad_points)
         test_normal = test_grid_data.normals[test_element]
@@ -169,7 +170,7 @@ def default_scalar_regular_kernel(
             )
             for test_fun_index in range(nshape_test):
                 for trial_fun_index in range(nshape_trial):
-                    for trial_element_index in range(n_trial_indices):
+                    for trial_element_index in range(n_trial_elements):
                         for trial_point_index in range(n_quad_points):
                             local_result[
                                 test_fun_index, trial_fun_index, trial_element_index
@@ -188,8 +189,8 @@ def default_scalar_regular_kernel(
                                 ]
                             )
 
-        for trial_element_index in range(n_trial_indices):
-            trial_element = trial_indices[trial_element_index]
+        for trial_element_index in range(n_trial_elements):
+            trial_element = trial_elements[trial_element_index]
             if not grids_identical or not elements_adjacent(
                 test_grid_data.elements, test_element, trial_element
             ):
@@ -215,8 +216,8 @@ def default_scalar_singular_kernel(
     test_points,
     trial_points,
     quad_weights,
-    test_indices,
-    trial_indices,
+    test_elements,
+    trial_elements,
     test_offsets,
     trial_offsets,
     weights_offsets,
@@ -233,12 +234,12 @@ def default_scalar_singular_kernel(
     """Singular evaluator."""
 
     dtype = grid_data.vertices.dtype
-    nindices = len(test_indices)
-    result = _np.zeros(nshape_test * nshape_trial * nindices, dtype=dtype)
+    nelements = len(test_elements)
+    result = _np.zeros(nshape_test * nshape_trial * nelements, dtype=dtype)
 
-    for index in _numba.prange(nindices):
-        test_element = test_indices[index]
-        trial_element = trial_indices[index]
+    for index in _numba.prange(nelements):
+        test_element = test_elements[index]
+        trial_element = trial_elements[index]
         test_offset = test_offsets[index]
         trial_offset = trial_offsets[index]
         weights_offset = weights_offsets[index]
