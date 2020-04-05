@@ -8,18 +8,10 @@ M_INV_4PI = 1.0 / (4 * _np.pi)
 
 def select_numba_kernels(operator_descriptor, mode="regular"):
     """Select the Numba kernels."""
-    assembly_functions_singular = {
-        "default_scalar": default_scalar_singular_kernel,
-    }
-    assembly_functions_regular = {
-        "default_scalar": default_scalar_regular_kernel,
-    }
-    kernel_functions_regular = {
-        "laplace_single_layer": laplace_single_layer_regular,
-    }
-    kernel_functions_singular = {
-        "laplace_single_layer": laplace_single_layer_singular,
-    }
+    assembly_functions_singular = {"default_scalar": default_scalar_singular_kernel}
+    assembly_functions_regular = {"default_scalar": default_scalar_regular_kernel}
+    kernel_functions_regular = {"laplace_single_layer": laplace_single_layer_regular}
+    kernel_functions_singular = {"laplace_single_layer": laplace_single_layer_singular}
 
     if mode == "regular":
         return (
@@ -35,7 +27,9 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
         raise ValueError("mode must be one of 'singular' or 'regular'")
 
 
-@_numba_decorate
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
 def get_global_points(grid_data, elements, local_points):
     """Get global points."""
     npoints = local_points.shape[1]
@@ -48,7 +42,9 @@ def get_global_points(grid_data, elements, local_points):
     return output
 
 
-@_numba_decorate
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
 def get_normals(grid_data, nrepetitions, elements, multipliers):
     """Get normals to be repeated n times per element."""
     output = _np.empty((3, nrepetitions * len(elements)), dtype=grid_data.normals.dtype)
@@ -62,7 +58,9 @@ def get_normals(grid_data, nrepetitions, elements, multipliers):
     return output
 
 
-@_numba_decorate
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
 def elements_adjacent(elements, index1, index2):
     """Check if two elements are adjacent."""
     return (
@@ -78,7 +76,9 @@ def elements_adjacent(elements, index1, index2):
     )
 
 
-@_numba_decorate
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
 def laplace_single_layer_regular(
     test_point, trial_points, test_normal, trial_normals, kernel_parameters
 ):
@@ -95,7 +95,9 @@ def laplace_single_layer_regular(
     return output
 
 
-@_numba_decorate
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
 def laplace_single_layer_singular(
     test_points, trial_points, test_normals, trial_normals, kernel_parameters
 ):
@@ -112,7 +114,9 @@ def laplace_single_layer_singular(
     return output
 
 
-@_numba_decorate
+@_numba.jit(
+    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
+)
 def default_scalar_regular_kernel(
     test_grid_data,
     trial_grid_data,
@@ -141,24 +145,53 @@ def default_scalar_regular_kernel(
     n_test_elements = len(test_elements)
     n_trial_elements = len(trial_elements)
 
+    local_test_fun_values = test_shapeset(quad_points)
+    local_trial_fun_values = trial_shapeset(quad_points)
     trial_normals = get_normals(
         trial_grid_data, n_quad_points, trial_elements, trial_normal_multipliers
     )
-    test_global_points = get_global_points(test_grid_data, test_elements, quad_points)
     trial_global_points = get_global_points(
         trial_grid_data, trial_elements, quad_points
     )
 
-    local_test_fun_values = test_shapeset(quad_points)
-    local_trial_fun_values = trial_shapeset(quad_points)
+    factors = _np.empty(
+        n_quad_points * n_trial_elements, dtype=trial_global_points.dtype
+    )
+    for trial_element_index in range(n_trial_elements):
+        for trial_point_index in range(n_quad_points):
+            factors[n_quad_points * trial_element_index + trial_point_index] = (
+                quad_weights[trial_point_index]
+                * trial_grid_data.integration_elements[
+                    trial_elements[trial_element_index]
+                ]
+            )
 
     for i in _numba.prange(n_test_elements):
         test_element = test_elements[i]
         local_result = _np.zeros(
-            (nshape_test, nshape_trial, n_trial_elements), dtype=result_type
+            (n_trial_elements, nshape_test, nshape_trial), dtype=result_type
         )
         test_global_points = test_grid_data.local2global(test_element, quad_points)
         test_normal = test_grid_data.normals[test_element]
+        local_factors = _np.empty(
+            n_trial_elements * n_quad_points, dtype=test_global_points.dtype
+        )
+        tmp = _np.empty(
+            n_trial_elements * n_quad_points, dtype=test_global_points.dtype
+        )
+        is_adjacent = _np.zeros(n_trial_elements, dtype=_np.bool_)
+
+        for trial_element_index in range(n_trial_elements):
+            trial_element = trial_elements[trial_element_index]
+            if grids_identical and elements_adjacent(
+                test_grid_data.elements, test_element, trial_element
+            ):
+                is_adjacent[trial_element_index] = True
+
+        for index in range(n_trial_elements * n_quad_points):
+            local_factors[index] = (
+                factors[index] * test_grid_data.integration_elements[test_element]
+            )
         for test_point_index in range(n_quad_points):
             test_global_point = test_global_points[:, test_point_index]
             kernel_values = kernel_evaluator(
@@ -168,21 +201,28 @@ def default_scalar_regular_kernel(
                 trial_normals,
                 kernel_parameters,
             )
-            for test_fun_index in range(nshape_test):
-                for trial_fun_index in range(nshape_trial):
-                    for trial_element_index in range(n_trial_elements):
-                        for trial_point_index in range(n_quad_points):
+            for index in range(n_trial_elements * n_quad_points):
+                tmp[index] = (
+                    local_factors[index]
+                    * kernel_values[index]
+                    * quad_weights[test_point_index]
+                )
+
+            for trial_element_index in range(n_trial_elements):
+                if is_adjacent[trial_element_index]:
+                    continue
+                for test_fun_index in range(nshape_test):
+                    for trial_fun_index in range(nshape_trial):
+                        for quad_point_index in range(n_quad_points):
                             local_result[
-                                test_fun_index, trial_fun_index, trial_element_index
+                                trial_element_index, test_fun_index, trial_fun_index
                             ] += (
-                                kernel_values[
+                                tmp[
                                     trial_element_index * n_quad_points
-                                    + trial_point_index
+                                    + quad_point_index
                                 ]
-                                * quad_weights[trial_point_index]
-                                * quad_weights[test_point_index]
                                 * local_trial_fun_values[
-                                    0, trial_fun_index, trial_point_index
+                                    0, trial_fun_index, quad_point_index
                                 ]
                                 * local_test_fun_values[
                                     0, test_fun_index, test_point_index
@@ -191,26 +231,19 @@ def default_scalar_regular_kernel(
 
         for trial_element_index in range(n_trial_elements):
             trial_element = trial_elements[trial_element_index]
-            if not grids_identical or not elements_adjacent(
-                test_grid_data.elements, test_element, trial_element
-            ):
-                for test_fun_index in range(nshape_test):
-                    for trial_fun_index in range(nshape_trial):
-                        result[
-                            test_global_dofs[test_element, test_fun_index],
-                            trial_global_dofs[trial_element, trial_fun_index],
-                        ] += (
-                            local_result[
-                                test_fun_index, trial_fun_index, trial_element_index
-                            ]
-                            * test_grid_data.integration_elements[test_element]
-                            * trial_grid_data.integration_elements[trial_element]
-                        )
-
-    return result
+            for test_fun_index in range(nshape_test):
+                for trial_fun_index in range(nshape_trial):
+                    result[
+                        test_global_dofs[test_element, test_fun_index],
+                        trial_global_dofs[trial_element, trial_fun_index],
+                    ] += local_result[
+                        trial_element_index, test_fun_index, trial_fun_index
+                    ]
 
 
-@_numba_decorate
+@_numba.jit(
+    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
+)
 def default_scalar_singular_kernel(
     grid_data,
     test_points,
@@ -249,10 +282,10 @@ def default_scalar_singular_kernel(
         test_global_points = grid_data.local2global(test_element, test_local_points)
         trial_global_points = grid_data.local2global(trial_element, trial_local_points)
         test_fun_values = test_shapeset(
-            test_points[:, test_offset : test_offset + npoints],
+            test_points[:, test_offset : test_offset + npoints]
         )
         trial_fun_values = trial_shapeset(
-            trial_points[:, trial_offset : trial_offset + npoints],
+            trial_points[:, trial_offset : trial_offset + npoints]
         )
         test_normals = get_normals(
             grid_data, npoints, [test_element], trial_normal_multipliers
