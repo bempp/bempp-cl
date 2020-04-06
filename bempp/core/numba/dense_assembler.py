@@ -107,38 +107,69 @@ def assemble_dense(
 
     with bempp.api.Timer() as t:
         for test_color_index in range(number_of_test_colors):
-            for trial_color_index in range(number_of_trial_colors):
-                numba_assembly_function_regular(
-                    dual_to_range.grid.data(precision),
-                    domain.grid.data(precision),
-                    nshape_test,
-                    nshape_trial,
-                    test_indices[
-                        test_color_indexptr[test_color_index] : test_color_indexptr[
-                            1 + test_color_index
-                        ]
-                    ],
-                    trial_indices[
-                        trial_color_indexptr[trial_color_index] : trial_color_indexptr[
-                            1 + trial_color_index
-                        ]
-                    ],
-                    dual_to_range.local_multipliers,
-                    domain.local_multipliers,
-                    dual_to_range.local2global,
-                    domain.local2global,
-                    dual_to_range.normal_multipliers,
-                    domain.normal_multipliers,
-                    quad_points.astype(data_type),
-                    quad_weights.astype(data_type),
-                    numba_kernel_function_regular,
-                    _np.array(operator_descriptor.options),
-                    grids_identical,
-                    dual_to_range.shapeset.evaluate,
-                    domain.shapeset.evaluate,
-                    result,
-                )
+            numba_assembly_function_regular(
+                dual_to_range.grid.data(precision),
+                domain.grid.data(precision),
+                nshape_test,
+                nshape_trial,
+                test_indices[
+                    test_color_indexptr[test_color_index] : test_color_indexptr[
+                        1 + test_color_index
+                    ]
+                ],
+                trial_indices,
+                dual_to_range.local_multipliers.astype(data_type),
+                domain.local_multipliers.astype(data_type),
+                dual_to_range.local2global,
+                domain.local2global,
+                dual_to_range.normal_multipliers,
+                domain.normal_multipliers,
+                quad_points.astype(data_type),
+                quad_weights.astype(data_type),
+                numba_kernel_function_regular,
+                _np.array(operator_descriptor.options, dtype=data_type),
+                grids_identical,
+                dual_to_range.shapeset.evaluate,
+                domain.shapeset.evaluate,
+                result,
+            )
     print(f"Numba kernel time: {t.interval}")
+
+
+    # with bempp.api.Timer() as t:
+        # for test_color_index in range(number_of_test_colors):
+            # for trial_color_index in range(number_of_trial_colors):
+                # numba_assembly_function_regular(
+                    # dual_to_range.grid.data(precision),
+                    # domain.grid.data(precision),
+                    # nshape_test,
+                    # nshape_trial,
+                    # test_indices[
+                        # test_color_indexptr[test_color_index] : test_color_indexptr[
+                            # 1 + test_color_index
+                        # ]
+                    # ],
+                    # trial_indices[
+                        # trial_color_indexptr[trial_color_index] : trial_color_indexptr[
+                            # 1 + trial_color_index
+                        # ]
+                    # ],
+                    # dual_to_range.local_multipliers.astype(data_type),
+                    # domain.local_multipliers.astype(data_type),
+                    # dual_to_range.local2global,
+                    # domain.local2global,
+                    # dual_to_range.normal_multipliers,
+                    # domain.normal_multipliers,
+                    # quad_points.astype(data_type),
+                    # quad_weights.astype(data_type),
+                    # numba_kernel_function_regular,
+                    # _np.array(operator_descriptor.options, dtype=data_type),
+                    # grids_identical,
+                    # dual_to_range.shapeset.evaluate,
+                    # domain.shapeset.evaluate,
+                    # result,
+                # )
+    # print(f"Numba kernel time: {t.interval}")
 
     if grids_identical:
         # Need to treat singular contribution

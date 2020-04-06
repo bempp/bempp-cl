@@ -140,6 +140,7 @@ def default_scalar_regular_kernel(
     result,
 ):
     # Compute global points
+    dtype = test_grid_data.vertices.dtype
     result_type = result.dtype
     n_quad_points = len(quad_weights)
     n_test_elements = len(test_elements)
@@ -211,6 +212,7 @@ def default_scalar_regular_kernel(
             for trial_element_index in range(n_trial_elements):
                 if is_adjacent[trial_element_index]:
                     continue
+                trial_element = trial_elements[trial_element_index]
                 for test_fun_index in range(nshape_test):
                     for trial_fun_index in range(nshape_trial):
                         for quad_point_index in range(n_quad_points):
@@ -236,9 +238,13 @@ def default_scalar_regular_kernel(
                     result[
                         test_global_dofs[test_element, test_fun_index],
                         trial_global_dofs[trial_element, trial_fun_index],
-                    ] += local_result[
-                        trial_element_index, test_fun_index, trial_fun_index
-                    ]
+                    ] += (
+                        local_result[
+                            trial_element_index, test_fun_index, trial_fun_index
+                        ]
+                        * test_multipliers[test_element, test_fun_index]
+                        * trial_multipliers[trial_element, trial_fun_index]
+                    )
 
 
 @_numba.jit(

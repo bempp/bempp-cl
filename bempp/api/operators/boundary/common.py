@@ -22,9 +22,10 @@ def create_operator(
 ):
     """Generic instantiation of operators."""
     from bempp.api.operators import OperatorDescriptor
+    import bempp.api
 
     if precision is None:
-        precision = "double"
+        precision = bempp.api.DEFAULT_PRECISION
 
     assembler = _assembler.AssemblerInterface(
         domain, dual_to_range, assembler, device_interface, precision, parameters

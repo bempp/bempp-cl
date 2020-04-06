@@ -90,6 +90,7 @@ def assemble_singular_part(
     kernel_parameters,
 ):
     """Actually assemble the Numba kernel."""
+    from bempp.api.utils.helpers import get_type
 
     grid = domain.grid
     grid_data = grid.data(precision)
@@ -102,6 +103,8 @@ def assemble_singular_part(
     number_of_test_shape_functions = dual_to_range.number_of_shape_functions
     number_of_trial_shape_functions = domain.number_of_shape_functions
 
+    data_type = get_type(precision).real
+
     result = numba_assembly_function(
         grid_data,
         *rule.get_arrays(precision),
@@ -112,7 +115,7 @@ def assemble_singular_part(
         dual_to_range.shapeset.evaluate,
         domain.shapeset.evaluate,
         numba_kernel_function,
-        _np.array(kernel_parameters),
+        _np.array(kernel_parameters, dtype=data_type),
     )
 
     irange = _np.arange(number_of_test_shape_functions)
