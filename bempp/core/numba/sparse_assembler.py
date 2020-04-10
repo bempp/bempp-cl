@@ -4,8 +4,8 @@ from bempp.api.assembly import assembler as _assembler
 from bempp.helpers import timeit as _timeit
 
 
-class DenseAssembler(_assembler.AssemblerBase):
-    """Implementation of a dense assembler for integral operators."""
+class SparseAssembler(_assembler.AssemblerBase):
+    """Implementation of a sparse assembler."""
 
     # pylint: disable=useless-super-delegation
     def __init__(self, domain, dual_to_range, parameters=None):
@@ -15,50 +15,64 @@ class DenseAssembler(_assembler.AssemblerBase):
     def assemble(
         self, operator_descriptor, device_interface, precision, *args, **kwargs
     ):
-        """Dense assembly of the integral operator."""
-        from bempp.api.assembly.discrete_boundary_operator import (
-            DenseDiscreteBoundaryOperator,
-        )
+        """Sparse assembly of operators."""
         from bempp.api.utils.helpers import promote_to_double_precision
+        from scipy.sparse import coo_matrix, csr_matrix
+        from bempp.api.space.space import return_compatible_representation
         from .kernels import select_numba_kernels
 
-        if (
-            self.domain.requires_dof_transformation
-            or self.dual_to_range.requires_dof_transformation
-        ):
-            raise ValueError(
-                "Spaces that require dof transformations not supported for dense assembly."
-            )
+        domain, dual_to_range = return_compatible_representation(
+            self.domain, self.dual_to_range
+        )
+        row_dof_count = dual_to_range.global_dof_count
+        col_dof_count = domain.global_dof_count
+        row_grid_dofs = dual_to_range.grid_dof_count
+        col_grid_dofs = domain.grid_dof_count
 
-        (
-            numba_assembly_function_regular,
-            numba_kernel_function_regular,
-        ) = select_numba_kernels(operator_descriptor, mode="regular")
+        if domain.grid != dual_to_range.grid:
+            raise ValueError("For sparse operators the domain and dual_to_range grids must be identical.")
 
-        (
-            numba_assembly_function_singular,
-            numba_kernel_function_singular,
-        ) = select_numba_kernels(operator_descriptor, mode="singular")
+        trial_local2global = domain.local2global.ravel()
+        test_local2global = dual_to_range.local2global.ravel()
+        trial_multipliers = domain.local_multipliers.ravel()
+        test_multipliers = dual_to_range.local_multipliers.ravel()
 
-        mat = assemble_dense(
-            self.domain,
-            self.dual_to_range,
-            self.parameters,
-            operator_descriptor,
-            numba_assembly_function_regular,
-            numba_kernel_function_regular,
-            numba_assembly_function_singular,
-            numba_kernel_function_singular,
+        numba_assembly_function, numba_kernel_function = select_numba_kernels(
+            operator_descriptor, mode="sparse"
         )
 
-        if self.parameters.assembly.always_promote_to_double:
-            mat = promote_to_double_precision(mat)
+        rows, cols, values = assemble_sparse(
+            domain.localised_space,
+            dual_to_range.localised_space,
+            self.parameters,
+            numba_assembly_function,
+            numba_kernel_function,
+            precision,
+            operator_descriptor.options,
+        )
+        global_rows = test_local2global[rows]
+        global_cols = trial_local2global[cols]
+        global_values = values * trial_multipliers[cols] * test_multipliers[rows]
 
-        return DenseDiscreteBoundaryOperator(mat)
+        if self.parameters.assembly.always_promote_to_double:
+            values = promote_to_double_precision(values)
+
+        mat = coo_matrix(
+            (global_values, (global_rows, global_cols)),
+            shape=(row_grid_dofs, col_grid_dofs),
+        ).tocsr()
+
+        if domain.requires_dof_transformation:
+            mat = mat @ domain.dof_transformation
+
+        if dual_to_range.requires_dof_transformation:
+            mat = dual_to_range.dof_transformation.T @ mat
+
+        return SparseDiscreteBoundaryOperator(mat)
 
 
 @_timeit
-def assemble_dense(
+def assemble_sparse(
     domain,
     dual_to_range,
     parameters,
@@ -70,14 +84,11 @@ def assemble_dense(
 ):
     """
     Really assemble the operator.
-    Assembles the complete operator (near-field and far-field)
-    Returns a dense matrix.
     """
+    import bempp.api
     from bempp.api.integration.triangle_gauss import rule as regular_rule
     from bempp.api import log
-    from bempp.core.numba.singular_assembler import assemble_singular_part
     from bempp.api.utils.helpers import get_type
-    import bempp.api
 
     order = parameters.quadrature.regular
     quad_points, quad_weights = regular_rule(order)
