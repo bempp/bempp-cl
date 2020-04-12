@@ -145,58 +145,58 @@ def test_laplace_single_layer_p1_cont(
     )
 
 
-# def test_laplace_double_layer_p1_cont(
-    # default_parameters, helpers, precision, device_interface
-# ):
-    # """Test dense assembler for the Laplace dlp with p1 basis."""
-    # from bempp.api import function_space
-    # from bempp.api.operators.boundary.laplace import double_layer
+def test_laplace_double_layer_p1_cont(
+    default_parameters, helpers, precision, device_interface
+):
+    """Test dense assembler for the Laplace dlp with p1 basis."""
+    from bempp.api import function_space
+    from bempp.api.operators.boundary.laplace import double_layer
 
-    # grid = helpers.load_grid("sphere")
+    grid = helpers.load_grid("sphere")
 
-    # space = function_space(grid, "P", 1)
+    space = function_space(grid, "P", 1)
 
-    # discrete_op = double_layer(
-        # space,
-        # space,
-        # space,
-        # assembler="dense",
-        # precision=precision,
-        # device_interface=device_interface,
-        # parameters=default_parameters,
-    # ).weak_form()
+    discrete_op = double_layer(
+        space,
+        space,
+        space,
+        assembler="dense",
+        precision=precision,
+        device_interface=device_interface,
+        parameters=default_parameters,
+    ).weak_form()
 
-    # expected = helpers.load_npy_data("laplace_double_layer_boundary")
-    # _np.testing.assert_allclose(
-        # discrete_op.A, expected, rtol=helpers.default_tolerance(precision)
-    # )
+    expected = helpers.load_npy_data("laplace_double_layer_boundary")
+    _np.testing.assert_allclose(
+        discrete_op.A, expected, rtol=helpers.default_tolerance(precision)
+    )
 
 
-# def test_laplace_adjoint_double_layer_p1_cont(
-    # default_parameters, helpers, precision, device_interface
-# ):
-    # """Test dense assembler for the Laplace adjoint dlp with p1 basis."""
-    # from bempp.api import function_space
-    # from bempp.api.operators.boundary.laplace import adjoint_double_layer
+def test_laplace_adjoint_double_layer_p1_cont(
+    default_parameters, helpers, precision, device_interface
+):
+    """Test dense assembler for the Laplace adjoint dlp with p1 basis."""
+    from bempp.api import function_space
+    from bempp.api.operators.boundary.laplace import adjoint_double_layer
 
-    # grid = helpers.load_grid("sphere")
+    grid = helpers.load_grid("sphere")
 
-    # space = function_space(grid, "P", 1)
+    space = function_space(grid, "P", 1)
 
-    # discrete_op = adjoint_double_layer(
-        # space,
-        # space,
-        # space,
-        # assembler="dense",
-        # precision=precision,
-        # device_interface=device_interface,
-        # parameters=default_parameters,
-    # ).weak_form()
+    discrete_op = adjoint_double_layer(
+        space,
+        space,
+        space,
+        assembler="dense",
+        precision=precision,
+        device_interface=device_interface,
+        parameters=default_parameters,
+    ).weak_form()
 
-    # expected = helpers.load_npy_data("laplace_adj_double_layer_boundary")
-    # _np.testing.assert_allclose(
-        # discrete_op.A, expected, rtol=helpers.default_tolerance(precision)
-    # )
+    expected = helpers.load_npy_data("laplace_adj_double_layer_boundary")
+    _np.testing.assert_allclose(
+        discrete_op.A, expected, rtol=helpers.default_tolerance(precision)
+    )
 
 
 # def test_laplace_hypersingular(

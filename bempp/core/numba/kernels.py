@@ -9,10 +9,21 @@ M_INV_4PI = 1.0 / (4 * _np.pi)
 def select_numba_kernels(operator_descriptor, mode="regular"):
     """Select the Numba kernels."""
     assembly_functions_singular = {"default_scalar": default_scalar_singular_kernel}
+
     assembly_functions_regular = {"default_scalar": default_scalar_regular_kernel}
+
     assembly_functions_sparse = {"default_sparse": default_sparse_kernel}
-    kernel_functions_regular = {"laplace_single_layer": laplace_single_layer_regular}
-    kernel_functions_singular = {"laplace_single_layer": laplace_single_layer_singular}
+
+    kernel_functions_regular = {"laplace_single_layer": laplace_single_layer_regular,
+                                "laplace_double_layer": laplace_double_layer_regular,
+                                "laplace_adjoint_double_layer": laplace_adjoint_double_layer_regular,
+                                }
+
+    kernel_functions_singular = {"laplace_single_layer": laplace_single_layer_singular,
+                                 "laplace_double_layer": laplace_double_layer_singular,
+                                 "laplace_adjoint_double_layer": laplace_adjoint_double_layer_singular,
+                                 }
+
     kernel_functions_sparse = {"l2_identity": l2_identity_kernel}
 
     if mode == "regular":
@@ -101,6 +112,58 @@ def laplace_single_layer_regular(
         output[j] = m_inv_4pi / _np.sqrt(output[j])
     return output
 
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
+def laplace_double_layer_regular(
+    test_point, trial_points, test_normal, trial_normals, kernel_parameters
+):
+    """Laplace double layer for regular kernels."""
+    npoints = trial_points.shape[1]
+    dtype = trial_points.dtype
+    output = _np.zeros(npoints, dtype=dtype)
+    diff = _np.empty((3, npoints), dtype=dtype)
+    dist = _np.zeros(npoints, dtype=dtype)
+    m_inv_4pi = dtype.type(M_INV_4PI)
+    for i in range(3):
+        for j in range(npoints):
+            diff[i, j] = trial_points[i, j] - test_point[i]
+            dist[j] += diff[i,j] * diff[i, j] 
+    for j in range(npoints):
+        dist[j] = _np.sqrt(dist[j])
+    for i in range(3):
+        for j in range(npoints):
+            output[j] += diff[i, j] * trial_normals[i, j]
+    for j in range(npoints):
+        output[j] *= -m_inv_4pi / (dist[j] * dist[j] * dist[j])
+    return output
+
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
+def laplace_adjoint_double_layer_regular(
+    test_point, trial_points, test_normal, trial_normals, kernel_parameters
+):
+    """Laplace adjoint double layer for regular kernels."""
+    npoints = trial_points.shape[1]
+    dtype = trial_points.dtype
+    output = _np.zeros(npoints, dtype=dtype)
+    diff = _np.empty((3, npoints), dtype=dtype)
+    dist = _np.zeros(npoints, dtype=dtype)
+    m_inv_4pi = dtype.type(M_INV_4PI)
+    for i in range(3):
+        for j in range(npoints):
+            diff[i, j] = trial_points[i, j] - test_point[i]
+            dist[j] += diff[i,j] * diff[i, j] 
+    for j in range(npoints):
+        dist[j] = _np.sqrt(dist[j])
+    for i in range(3):
+        for j in range(npoints):
+            output[j] += diff[i, j] * test_normal[i]
+    for j in range(npoints):
+        output[j] *= m_inv_4pi / (dist[j] * dist[j] * dist[j])
+    return output
+
 
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
@@ -120,6 +183,57 @@ def laplace_single_layer_singular(
         output[j] = m_inv_4pi / _np.sqrt(output[j])
     return output
 
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
+def laplace_double_layer_singular(
+    test_points, trial_points, test_normals, trial_normals, kernel_parameters
+):
+    """Laplace double layer for singular kernels."""
+    npoints = trial_points.shape[1]
+    dtype = trial_points.dtype
+    output = _np.zeros(npoints, dtype=dtype)
+    diff = _np.empty((3, npoints), dtype=dtype)
+    dist = _np.zeros(npoints, dtype=dtype)
+    m_inv_4pi = dtype.type(M_INV_4PI)
+    for i in range(3):
+        for j in range(npoints):
+            diff[i, j] = (trial_points[i, j] - test_points[i, j])
+            dist[j] += diff[i,j] * diff[i, j] 
+    for j in range(npoints):
+        dist[j] = _np.sqrt(dist[j])
+    for i in range(3):
+        for j in range(npoints):
+            output[j] += diff[i, j] * trial_normals[i, j]
+    for j in range(npoints):
+        output[j] *= -m_inv_4pi / (dist[j] * dist[j] * dist[j])
+    return output
+
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
+def laplace_adjoint_double_layer_singular(
+    test_points, trial_points, test_normals, trial_normals, kernel_parameters
+):
+    """Laplace adjoint double layer for singular kernels."""
+    npoints = trial_points.shape[1]
+    dtype = trial_points.dtype
+    output = _np.zeros(npoints, dtype=dtype)
+    diff = _np.empty((3, npoints), dtype=dtype)
+    dist = _np.zeros(npoints, dtype=dtype)
+    m_inv_4pi = dtype.type(M_INV_4PI)
+    for i in range(3):
+        for j in range(npoints):
+            diff[i, j] = (trial_points[i, j] - test_points[i, j])
+            dist[j] += diff[i,j] * diff[i, j] 
+    for j in range(npoints):
+        dist[j] = _np.sqrt(dist[j])
+    for i in range(3):
+        for j in range(npoints):
+            output[j] += diff[i, j] * test_normals[i, j]
+    for j in range(npoints):
+        output[j] *= m_inv_4pi / (dist[j] * dist[j] * dist[j])
+    return output
 
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
@@ -128,18 +242,39 @@ def l2_identity_kernel(
     grid_data,
     nshape_test,
     nshape_trial,
-    element,
+    element_index,
+    elements,
     quad_points,
     quad_weights,
     trial_normals,
     test_normals,
     test_shapeset,
     trial_shapeset,
-    result_type,
+    result,
 ):
 
     local_test_fun_values = test_shapeset(quad_points)
     local_trial_fun_values = trial_shapeset(quad_points)
+
+    nshape = nshape_test * nshape_trial
+    dimension = local_test_fun_values.shape[0]
+    n_quad_points = local_test_fun_values.shape[2]
+    element = elements[element_index]
+    integration_element = grid_data.integration_elements[element]
+
+    for test_index in range(nshape_test):
+        for trial_index in range(nshape_trial):
+            for dim_index in range(dimension):
+                for quad_index in range(n_quad_points):
+                    result[
+                        nshape * element_index + test_index * nshape_trial + trial_index
+                    ] += (
+                        local_test_fun_values[dim_index, test_index, quad_index]
+                        * local_trial_fun_values[dim_index, trial_index, quad_index]
+                        * quad_weights[quad_index]
+                        * integration_element
+                    )
+
 
 @_numba.jit(
     nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
@@ -168,22 +303,24 @@ def default_sparse_kernel(
     )
 
     nelements = len(elements)
+    nshape = nshape_test * nshape_trial
 
-    for element_index in range(nelements):
-        element = elements[element_index]
-        local_result = kernel_evaluator(
+    for element_index in _numba.prange(nelements):
+        kernel_evaluator(
             grid_data,
             nshape_test,
             nshape_trial,
-            element,
+            element_index,
+            elements,
             quad_points,
             quad_weights,
-            trial_normals[:, element_index * n_quad_points : (1 + element_index) * n_quad_points],
-            test_normals[:, element_index * n_quad_points : (1 + element_index) * n_quad_points],
+            trial_normals,
+            test_normals,
             test_shapeset,
             trial_shapeset,
-            result_type,
-            )
+            result,
+        )
+
 
 @_numba.jit(
     nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
