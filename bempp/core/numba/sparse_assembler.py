@@ -20,6 +20,7 @@ class SparseAssembler(_assembler.AssemblerBase):
         from scipy.sparse import coo_matrix, csr_matrix
         from bempp.api.space.space import return_compatible_representation
         from .kernels import select_numba_kernels
+        from bempp.api.assembly.discrete_boundary_operator import SparseDiscreteBoundaryOperator
 
         domain, dual_to_range = return_compatible_representation(
             self.domain, self.dual_to_range
@@ -45,10 +46,9 @@ class SparseAssembler(_assembler.AssemblerBase):
             domain.localised_space,
             dual_to_range.localised_space,
             self.parameters,
+            operator_descriptor,
             numba_assembly_function,
             numba_kernel_function,
-            precision,
-            operator_descriptor.options,
         )
         global_rows = test_local2global[rows]
         global_cols = trial_local2global[cols]
@@ -77,10 +77,8 @@ def assemble_sparse(
     dual_to_range,
     parameters,
     operator_descriptor,
-    numba_assembly_function_regular,
-    numba_kernel_function_regular,
-    numba_assembly_function_singular,
-    numba_kernel_function_singular,
+    numba_assembly_function,
+    numba_kernel_function,
 ):
     """
     Really assemble the operator.
@@ -93,16 +91,16 @@ def assemble_sparse(
     order = parameters.quadrature.regular
     quad_points, quad_weights = regular_rule(order)
 
-    test_indices, test_color_indexptr = dual_to_range.get_elements_by_color()
-    trial_indices, trial_color_indexptr = domain.get_elements_by_color()
-    number_of_test_colors = len(test_color_indexptr) - 1
-    number_of_trial_colors = len(trial_color_indexptr) - 1
+    support = domain.support * dual_to_range.support
 
-    rows = dual_to_range.global_dof_count
-    cols = domain.global_dof_count
+    elements = _np.flatnonzero(support)
+    number_of_elements = len(elements)
 
     nshape_test = dual_to_range.number_of_shape_functions
     nshape_trial = domain.number_of_shape_functions
+
+    rows = nshape_test * number_of_elements
+    cols = nshape_trial * number_of_elements
 
     precision = operator_descriptor.precision
 
@@ -112,102 +110,39 @@ def assemble_sparse(
     else:
         result_type = get_type(precision).real
 
-    result = _np.zeros((rows, cols), dtype=result_type)
-
-    grids_identical = domain.grid == dual_to_range.grid
+    result = _np.zeros(nshape_test * nshape_trial * number_of_elements, dtype=result_type)
 
     with bempp.api.Timer() as t:
-        for test_color_index in range(number_of_test_colors):
-            numba_assembly_function_regular(
-                dual_to_range.grid.data(precision),
+        numba_assembly_function(
                 domain.grid.data(precision),
                 nshape_test,
                 nshape_trial,
-                test_indices[
-                    test_color_indexptr[test_color_index] : test_color_indexptr[
-                        1 + test_color_index
-                    ]
-                ],
-                trial_indices,
-                dual_to_range.local_multipliers.astype(data_type),
-                domain.local_multipliers.astype(data_type),
-                dual_to_range.local2global,
-                domain.local2global,
+                elements,
+                quad_points,
+                quad_weights,
                 dual_to_range.normal_multipliers,
                 domain.normal_multipliers,
-                quad_points.astype(data_type),
-                quad_weights.astype(data_type),
-                numba_kernel_function_regular,
-                _np.array(operator_descriptor.options, dtype=data_type),
-                grids_identical,
                 dual_to_range.shapeset.evaluate,
                 domain.shapeset.evaluate,
-                result,
-            )
+                numba_kernel_function,
+                result)
     print(f"Numba kernel time: {t.interval}")
 
+    irange = _np.arange(nshape_test)
+    jrange = _np.arange(nshape_trial)
 
-    # with bempp.api.Timer() as t:
-        # for test_color_index in range(number_of_test_colors):
-            # for trial_color_index in range(number_of_trial_colors):
-                # numba_assembly_function_regular(
-                    # dual_to_range.grid.data(precision),
-                    # domain.grid.data(precision),
-                    # nshape_test,
-                    # nshape_trial,
-                    # test_indices[
-                        # test_color_indexptr[test_color_index] : test_color_indexptr[
-                            # 1 + test_color_index
-                        # ]
-                    # ],
-                    # trial_indices[
-                        # trial_color_indexptr[trial_color_index] : trial_color_indexptr[
-                            # 1 + trial_color_index
-                        # ]
-                    # ],
-                    # dual_to_range.local_multipliers.astype(data_type),
-                    # domain.local_multipliers.astype(data_type),
-                    # dual_to_range.local2global,
-                    # domain.local2global,
-                    # dual_to_range.normal_multipliers,
-                    # domain.normal_multipliers,
-                    # quad_points.astype(data_type),
-                    # quad_weights.astype(data_type),
-                    # numba_kernel_function_regular,
-                    # _np.array(operator_descriptor.options, dtype=data_type),
-                    # grids_identical,
-                    # dual_to_range.shapeset.evaluate,
-                    # domain.shapeset.evaluate,
-                    # result,
-                # )
-    # print(f"Numba kernel time: {t.interval}")
+    i_ind = _np.tile(
+        _np.repeat(irange, nshape_trial), len(elements)
+    ) + _np.repeat(
+        elements * nshape_test,
+        nshape_test * nshape_trial,
+    )
 
-    if grids_identical:
-        # Need to treat singular contribution
+    j_ind = _np.tile(
+        _np.tile(jrange, nshape_test), len(elements)
+    ) + _np.repeat(
+        elements * nshape_trial,
+        nshape_test * nshape_trial,
+    )
 
-        trial_local2global = domain.local2global.ravel()
-        test_local2global = dual_to_range.local2global.ravel()
-        trial_multipliers = domain.local_multipliers.ravel()
-        test_multipliers = dual_to_range.local_multipliers.ravel()
-
-        singular_rows, singular_cols, singular_values = assemble_singular_part(
-            domain.localised_space,
-            dual_to_range.localised_space,
-            parameters,
-            numba_assembly_function_singular,
-            numba_kernel_function_singular,
-            precision,
-            operator_descriptor.options,
-        )
-
-        rows = test_local2global[singular_rows]
-        cols = trial_local2global[singular_cols]
-        values = (
-            singular_values
-            * trial_multipliers[singular_cols]
-            * test_multipliers[singular_rows]
-        )
-
-        _np.add.at(result, (rows, cols), values)
-
-    return result
+    return i_ind, j_ind, result

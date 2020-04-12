@@ -10,8 +10,10 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
     """Select the Numba kernels."""
     assembly_functions_singular = {"default_scalar": default_scalar_singular_kernel}
     assembly_functions_regular = {"default_scalar": default_scalar_regular_kernel}
+    assembly_functions_sparse = {"default_sparse": default_sparse_kernel}
     kernel_functions_regular = {"laplace_single_layer": laplace_single_layer_regular}
     kernel_functions_singular = {"laplace_single_layer": laplace_single_layer_singular}
+    kernel_functions_sparse = {"l2_identity": l2_identity_kernel}
 
     if mode == "regular":
         return (
@@ -23,8 +25,13 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
             assembly_functions_singular[operator_descriptor.assembly_type],
             kernel_functions_singular[operator_descriptor.kernel_type],
         )
+    elif mode == "sparse":
+        return (
+            assembly_functions_sparse[operator_descriptor.assembly_type],
+            kernel_functions_sparse[operator_descriptor.kernel_type],
+        )
     else:
-        raise ValueError("mode must be one of 'singular' or 'regular'")
+        raise ValueError("mode must be one of 'singular', 'regular' or 'sparse'.")
 
 
 @_numba.jit(
@@ -113,6 +120,70 @@ def laplace_single_layer_singular(
         output[j] = m_inv_4pi / _np.sqrt(output[j])
     return output
 
+
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
+def l2_identity_kernel(
+    grid_data,
+    nshape_test,
+    nshape_trial,
+    element,
+    quad_points,
+    quad_weights,
+    trial_normals,
+    test_normals,
+    test_shapeset,
+    trial_shapeset,
+    result_type,
+):
+
+    local_test_fun_values = test_shapeset(quad_points)
+    local_trial_fun_values = trial_shapeset(quad_points)
+
+@_numba.jit(
+    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
+)
+def default_sparse_kernel(
+    grid_data,
+    nshape_test,
+    nshape_trial,
+    elements,
+    quad_points,
+    quad_weights,
+    test_normal_multipliers,
+    trial_normal_multipliers,
+    test_shapeset,
+    trial_shapeset,
+    kernel_evaluator,
+    result,
+):
+    result_type = result.dtype
+    n_quad_points = len(quad_weights)
+    trial_normals = get_normals(
+        grid_data, n_quad_points, elements, trial_normal_multipliers
+    )
+    test_normals = get_normals(
+        grid_data, n_quad_points, elements, test_normal_multipliers
+    )
+
+    nelements = len(elements)
+
+    for element_index in range(nelements):
+        element = elements[element_index]
+        local_result = kernel_evaluator(
+            grid_data,
+            nshape_test,
+            nshape_trial,
+            element,
+            quad_points,
+            quad_weights,
+            trial_normals[:, element_index * n_quad_points : (1 + element_index) * n_quad_points],
+            test_normals[:, element_index * n_quad_points : (1 + element_index) * n_quad_points],
+            test_shapeset,
+            trial_shapeset,
+            result_type,
+            )
 
 @_numba.jit(
     nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
