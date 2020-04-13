@@ -30,10 +30,6 @@ def single_layer(
             precision,
         )
 
-    options = {"KERNEL_FUNCTION": "helmholtz_single_layer", "COMPLEX_KERNEL": None}
-
-    _add_wavenumber(options, wavenumber)
-
     return _common.create_operator(
         "helmholtz_single_layer_boundary",
         domain,
@@ -41,10 +37,12 @@ def single_layer(
         dual_to_range,
         parameters,
         assembler,
-        options,
+        [_np.real(wavenumber), _np.imag(wavenumber)],
+        "helmholtz_single_layer",
         "default_scalar",
         device_interface,
         precision,
+        True,
     )
 
 

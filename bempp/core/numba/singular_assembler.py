@@ -54,10 +54,9 @@ class SingularAssembler(_assembler.AssemblerBase):
             domain.localised_space,
             dual_to_range.localised_space,
             self.parameters,
+            operator_descriptor,
             numba_assembly_function,
             numba_kernel_function,
-            precision,
-            operator_descriptor.options,
         )
         global_rows = test_local2global[rows]
         global_cols = trial_local2global[cols]
@@ -84,13 +83,16 @@ def assemble_singular_part(
     domain,
     dual_to_range,
     parameters,
+    operator_descriptor,
     numba_assembly_function,
     numba_kernel_function,
-    precision,
-    kernel_parameters,
 ):
     """Actually assemble the Numba kernel."""
     from bempp.api.utils.helpers import get_type
+
+    precision = operator_descriptor.precision
+    kernel_options = operator_descriptor.options
+    is_complex = operator_descriptor.is_complex
 
     grid = domain.grid
     grid_data = grid.data(precision)
@@ -103,11 +105,42 @@ def assemble_singular_part(
     number_of_test_shape_functions = dual_to_range.number_of_shape_functions
     number_of_trial_shape_functions = domain.number_of_shape_functions
 
-    data_type = get_type(precision).real
+    [
+        test_points,
+        trial_points,
+        quad_weights,
+        test_elements,
+        trial_elements,
+        test_offsets,
+        trial_offsets,
+        weights_offsets,
+        number_of_quad_points,
+    ] = rule.get_arrays(precision)
 
-    result = numba_assembly_function(
+    data_type = get_type(precision).real
+    if is_complex:
+        result_type = get_type(precision).complex
+    else:
+        result_type = get_type(precision).real
+
+    result = _np.zeros(
+        number_of_test_shape_functions
+        * number_of_trial_shape_functions
+        * len(test_elements),
+        dtype=result_type,
+    )
+
+    numba_assembly_function(
         grid_data,
-        *rule.get_arrays(precision),
+        test_points,
+        trial_points,
+        quad_weights,
+        test_elements,
+        trial_elements,
+        test_offsets,
+        trial_offsets,
+        weights_offsets,
+        number_of_quad_points,
         dual_to_range.normal_multipliers,
         domain.normal_multipliers,
         number_of_test_shape_functions,
@@ -115,7 +148,8 @@ def assemble_singular_part(
         dual_to_range.shapeset.evaluate,
         domain.shapeset.evaluate,
         numba_kernel_function,
-        _np.array(kernel_parameters, dtype=data_type),
+        _np.array(kernel_options, dtype=data_type),
+        result
     )
 
     irange = _np.arange(number_of_test_shape_functions)
