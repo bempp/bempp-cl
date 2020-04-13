@@ -15,7 +15,6 @@ def single_layer(
     precision=None,
 ):
     """Assemble the Helmholtz single-layer boundary operator."""
-    from bempp.api.operators import _add_wavenumber
     from .modified_helmholtz import single_layer as _modified_single_layer
 
     if _np.real(wavenumber) == 0:
@@ -57,7 +56,6 @@ def double_layer(
     precision=None,
 ):
     """Assemble the Helmholtz double-layer boundary operator."""
-    from bempp.api.operators import _add_wavenumber
     from .modified_helmholtz import double_layer as _modified_double_layer
 
     if _np.real(wavenumber) == 0:
@@ -72,10 +70,6 @@ def double_layer(
             precision,
         )
 
-    options = {"KERNEL_FUNCTION": "helmholtz_double_layer", "COMPLEX_KERNEL": None}
-
-    _add_wavenumber(options, wavenumber)
-
     return _common.create_operator(
         "helmholtz_double_layer_boundary",
         domain,
@@ -83,10 +77,12 @@ def double_layer(
         dual_to_range,
         parameters,
         assembler,
-        options,
+        [_np.real(wavenumber), _np.imag(wavenumber)],
+        "helmholtz_double_layer",
         "default_scalar",
         device_interface,
         precision,
+        True,
     )
 
 
@@ -101,7 +97,6 @@ def adjoint_double_layer(
     precision=None,
 ):
     """Assemble the Helmholtz adj. double-layer boundary operator."""
-    from bempp.api.operators import _add_wavenumber
     from .modified_helmholtz import (
         adjoint_double_layer as _modified_adjoint_double_layer,
     )
@@ -118,13 +113,6 @@ def adjoint_double_layer(
             precision,
         )
 
-    options = {
-        "KERNEL_FUNCTION": "helmholtz_adjoint_double_layer",
-        "COMPLEX_KERNEL": None,
-    }
-
-    _add_wavenumber(options, wavenumber)
-
     return _common.create_operator(
         "helmholtz_adjoint_double_layer_boundary",
         domain,
@@ -132,10 +120,12 @@ def adjoint_double_layer(
         dual_to_range,
         parameters,
         assembler,
-        options,
+        [_np.real(wavenumber), _np.imag(wavenumber)],
+        "helmholtz_adjoint_double_layer",
         "default_scalar",
         device_interface,
         precision,
+        True,
     )
 
 

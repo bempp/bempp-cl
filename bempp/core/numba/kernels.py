@@ -25,6 +25,8 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
         "laplace_double_layer": laplace_double_layer_regular,
         "laplace_adjoint_double_layer": laplace_adjoint_double_layer_regular,
         "helmholtz_single_layer": helmholtz_single_layer_regular,
+        "helmholtz_double_layer": helmholtz_double_layer_regular,
+        "helmholtz_adjoint_double_layer": helmholtz_adjoint_double_layer_regular,
     }
 
     kernel_functions_singular = {
@@ -32,6 +34,8 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
         "laplace_double_layer": laplace_double_layer_singular,
         "laplace_adjoint_double_layer": laplace_adjoint_double_layer_singular,
         "helmholtz_single_layer": helmholtz_single_layer_singular,
+        "helmholtz_double_layer": helmholtz_double_layer_singular,
+        "helmholtz_adjoint_double_layer": helmholtz_adjoint_double_layer_singular,
     }
 
     kernel_functions_sparse = {"l2_identity": l2_identity_kernel}
@@ -181,7 +185,7 @@ def laplace_adjoint_double_layer_regular(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
 )
 def laplace_single_layer_singular(
-    test_points, trial_points, test_normals, trial_normals, kernel_parameters
+    test_points, trial_points, test_normal, trial_normal, kernel_parameters
 ):
     """Laplace single layer for singular kernels."""
     npoints = trial_points.shape[1]
@@ -200,7 +204,7 @@ def laplace_single_layer_singular(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
 )
 def laplace_double_layer_singular(
-    test_points, trial_points, test_normals, trial_normals, kernel_parameters
+    test_points, trial_points, test_normal, trial_normal, kernel_parameters
 ):
     """Laplace double layer for singular kernels."""
     npoints = trial_points.shape[1]
@@ -217,7 +221,7 @@ def laplace_double_layer_singular(
         dist[j] = _np.sqrt(dist[j])
     for i in range(3):
         for j in range(npoints):
-            output[j] += diff[i, j] * trial_normals[i, j]
+            output[j] += diff[i, j] * trial_normal[i]
     for j in range(npoints):
         output[j] *= -m_inv_4pi / (dist[j] * dist[j] * dist[j])
     return output
@@ -227,7 +231,7 @@ def laplace_double_layer_singular(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
 )
 def laplace_adjoint_double_layer_singular(
-    test_points, trial_points, test_normals, trial_normals, kernel_parameters
+    test_points, trial_points, test_normal, trial_normal, kernel_parameters
 ):
     """Laplace adjoint double layer for singular kernels."""
     npoints = trial_points.shape[1]
@@ -244,7 +248,7 @@ def laplace_adjoint_double_layer_singular(
         dist[j] = _np.sqrt(dist[j])
     for i in range(3):
         for j in range(npoints):
-            output[j] += diff[i, j] * test_normals[i, j]
+            output[j] += diff[i, j] * test_normal[i]
     for j in range(npoints):
         output[j] *= m_inv_4pi / (dist[j] * dist[j] * dist[j])
     return output
@@ -261,30 +265,124 @@ def helmholtz_single_layer_regular(
     wavenumber_imag = kernel_parameters[1]
     npoints = trial_points.shape[1]
     dtype = trial_points.dtype
-    rad = _np.zeros(npoints, dtype=dtype)
+    dist = _np.zeros(npoints, dtype=dtype)
     output_real = _np.zeros(npoints, dtype=dtype)
     output_imag = _np.zeros(npoints, dtype=dtype)
     m_inv_4pi = dtype.type(M_INV_4PI)
     for i in range(3):
         for j in range(npoints):
-            rad[j] += (trial_points[i, j] - test_point[i]) ** 2
+            dist[j] += (trial_points[i, j] - test_point[i]) ** 2
     for j in range(npoints):
-        rad[j] = _np.sqrt(rad[j])
+        dist[j] = _np.sqrt(dist[j])
     for j in range(npoints):
-        output_real[j] = _np.cos(wavenumber_real * rad[j]) * m_inv_4pi / rad[j]
-        output_imag[j] = _np.sin(wavenumber_real * rad[j]) * m_inv_4pi / rad[j]
+        output_real[j] = _np.cos(wavenumber_real * dist[j]) * m_inv_4pi / dist[j]
+        output_imag[j] = _np.sin(wavenumber_real * dist[j]) * m_inv_4pi / dist[j]
     if wavenumber_imag != 0:
         for j in range(npoints):
-            output_real[j] *= _np.exp(-wavenumber_imag * rad[j])
-            output_imag[j] *= _np.exp(-wavenumber_imag * rad[j])
+            output_real[j] *= _np.exp(-wavenumber_imag * dist[j])
+            output_imag[j] *= _np.exp(-wavenumber_imag * dist[j])
     return output_real + 1j * output_imag
 
 
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
 )
+def helmholtz_double_layer_regular(
+    test_point, trial_points, test_normal, trial_normals, kernel_parameters
+):
+    """Helmholtz double layer for regular kernels."""
+    wavenumber_real = kernel_parameters[0]
+    wavenumber_imag = kernel_parameters[1]
+    npoints = trial_points.shape[1]
+    dtype = trial_points.dtype
+    factor_real = _np.empty(npoints, dtype=dtype)
+    factor_imag = _np.empty(npoints, dtype=dtype)
+    output_real = _np.empty(npoints, dtype=dtype)
+    output_imag = _np.empty(npoints, dtype=dtype)
+    diff = _np.empty((3, npoints), dtype=dtype)
+    dist = _np.zeros(npoints, dtype=dtype)
+    laplace_grad = _np.zeros(npoints, dtype=dtype)
+    m_inv_4pi = dtype.type(M_INV_4PI)
+    for i in range(3):
+        for j in range(npoints):
+            diff[i, j] = trial_points[i, j] - test_point[i]
+            dist[j] += diff[i, j] * diff[i, j]
+    for j in range(npoints):
+        dist[j] = _np.sqrt(dist[j])
+    for i in range(3):
+        for j in range(npoints):
+            laplace_grad[j] += diff[i, j] * trial_normals[i, j]
+    for j in range(npoints):
+        laplace_grad[j] *= m_inv_4pi / (dist[j] * dist[j] * dist[j])
+        factor_real[j] = _np.cos(wavenumber_real * dist[j]) * laplace_grad[j]
+        factor_imag[j] = _np.sin(wavenumber_real * dist[j]) * laplace_grad[j]
+    if wavenumber_imag != 0:
+        for j in range(npoints):
+            factor_real[j] *= _np.exp(-wavenumber_imag * dist[j])
+            factor_imag[j] *= _np.exp(-wavenumber_imag * dist[j])
+    for j in range(npoints):
+        output_real[j] = (-1 - wavenumber_imag * dist[j]) * factor_real[
+            j
+        ] - wavenumber_real * dist[j] * factor_imag[j]
+        output_imag[j] = (
+            wavenumber_real * dist[j] * factor_real[j]
+            + factor_imag[j] * (-1 - wavenumber_imag * dist[j])
+        )
+
+    return output_real + 1j * output_imag
+
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
+def helmholtz_adjoint_double_layer_regular(
+    test_point, trial_points, test_normal, trial_normals, kernel_parameters
+):
+    """Helmholtz adjoint double layer for regular kernels."""
+    wavenumber_real = kernel_parameters[0]
+    wavenumber_imag = kernel_parameters[1]
+    npoints = trial_points.shape[1]
+    dtype = trial_points.dtype
+    factor_real = _np.empty(npoints, dtype=dtype)
+    factor_imag = _np.empty(npoints, dtype=dtype)
+    output_real = _np.empty(npoints, dtype=dtype)
+    output_imag = _np.empty(npoints, dtype=dtype)
+    diff = _np.empty((3, npoints), dtype=dtype)
+    dist = _np.zeros(npoints, dtype=dtype)
+    laplace_grad = _np.zeros(npoints, dtype=dtype)
+    m_inv_4pi = dtype.type(M_INV_4PI)
+    for i in range(3):
+        for j in range(npoints):
+            diff[i, j] = test_point[i] - trial_points[i, j]
+            dist[j] += diff[i, j] * diff[i, j]
+    for j in range(npoints):
+        dist[j] = _np.sqrt(dist[j])
+    for i in range(3):
+        for j in range(npoints):
+            laplace_grad[j] += diff[i, j] * test_normal[i]
+    for j in range(npoints):
+        laplace_grad[j] *= m_inv_4pi / (dist[j] * dist[j] * dist[j])
+        factor_real[j] = _np.cos(wavenumber_real * dist[j]) * laplace_grad[j]
+        factor_imag[j] = _np.sin(wavenumber_real * dist[j]) * laplace_grad[j]
+    if wavenumber_imag != 0:
+        for j in range(npoints):
+            factor_real[j] *= _np.exp(-wavenumber_imag * dist[j])
+            factor_imag[j] *= _np.exp(-wavenumber_imag * dist[j])
+    for j in range(npoints):
+        output_real[j] = (-1 - wavenumber_imag * dist[j]) * factor_real[
+            j
+        ] - wavenumber_real * dist[j] * factor_imag[j]
+        output_imag[j] = (
+            wavenumber_real * dist[j] * factor_real[j]
+            + factor_imag[j] * (-1 - wavenumber_imag * dist[j])
+        )
+
+    return output_real + 1j * output_imag
+
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
 def helmholtz_single_layer_singular(
-    test_points, trial_points, test_normal, trial_normals, kernel_parameters
+    test_points, trial_points, test_normal, trial_normal, kernel_parameters
 ):
     """Helmholtz single layer for regular kernels."""
     wavenumber_real = kernel_parameters[0]
@@ -309,6 +407,97 @@ def helmholtz_single_layer_singular(
             output_imag[j] *= _np.exp(-wavenumber_imag * rad[j])
     return output_real + 1j * output_imag
 
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
+def helmholtz_double_layer_singular(
+    test_points, trial_points, test_normal, trial_normal, kernel_parameters
+):
+    """Helmholtz double layer for singular kernels."""
+    wavenumber_real = kernel_parameters[0]
+    wavenumber_imag = kernel_parameters[1]
+    npoints = trial_points.shape[1]
+    dtype = trial_points.dtype
+    factor_real = _np.empty(npoints, dtype=dtype)
+    factor_imag = _np.empty(npoints, dtype=dtype)
+    output_real = _np.empty(npoints, dtype=dtype)
+    output_imag = _np.empty(npoints, dtype=dtype)
+    diff = _np.empty((3, npoints), dtype=dtype)
+    dist = _np.zeros(npoints, dtype=dtype)
+    laplace_grad = _np.zeros(npoints, dtype=dtype)
+    m_inv_4pi = dtype.type(M_INV_4PI)
+    for i in range(3):
+        for j in range(npoints):
+            diff[i, j] = trial_points[i, j] - test_points[i, j]
+            dist[j] += diff[i, j] * diff[i, j]
+    for j in range(npoints):
+        dist[j] = _np.sqrt(dist[j])
+    for i in range(3):
+        for j in range(npoints):
+            laplace_grad[j] += diff[i, j] * trial_normal[i]
+    for j in range(npoints):
+        laplace_grad[j] *= m_inv_4pi / (dist[j] * dist[j] * dist[j])
+        factor_real[j] = _np.cos(wavenumber_real * dist[j]) * laplace_grad[j]
+        factor_imag[j] = _np.sin(wavenumber_real * dist[j]) * laplace_grad[j]
+    if wavenumber_imag != 0:
+        for j in range(npoints):
+            factor_real[j] *= _np.exp(-wavenumber_imag * dist[j])
+            factor_imag[j] *= _np.exp(-wavenumber_imag * dist[j])
+    for j in range(npoints):
+        output_real[j] = (-1 - wavenumber_imag * dist[j]) * factor_real[
+            j
+        ] - wavenumber_real * dist[j] * factor_imag[j]
+        output_imag[j] = (
+            wavenumber_real * dist[j] * factor_real[j]
+            + factor_imag[j] * (-1 - wavenumber_imag * dist[j])
+        )
+    return output_real + 1j * output_imag
+
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
+def helmholtz_adjoint_double_layer_singular(
+    test_points, trial_points, test_normal, trial_normal, kernel_parameters
+):
+    """Helmholtz adjoint double layer for singular kernels."""
+    wavenumber_real = kernel_parameters[0]
+    wavenumber_imag = kernel_parameters[1]
+    npoints = trial_points.shape[1]
+    dtype = trial_points.dtype
+    factor_real = _np.empty(npoints, dtype=dtype)
+    factor_imag = _np.empty(npoints, dtype=dtype)
+    output_real = _np.empty(npoints, dtype=dtype)
+    output_imag = _np.empty(npoints, dtype=dtype)
+    diff = _np.empty((3, npoints), dtype=dtype)
+    dist = _np.zeros(npoints, dtype=dtype)
+    laplace_grad = _np.zeros(npoints, dtype=dtype)
+    m_inv_4pi = dtype.type(M_INV_4PI)
+    for i in range(3):
+        for j in range(npoints):
+            diff[i, j] = test_points[i, j] - trial_points[i, j]
+            dist[j] += diff[i, j] * diff[i, j]
+    for j in range(npoints):
+        dist[j] = _np.sqrt(dist[j])
+    for i in range(3):
+        for j in range(npoints):
+            laplace_grad[j] += diff[i, j] * test_normal[i]
+    for j in range(npoints):
+        laplace_grad[j] *= m_inv_4pi / (dist[j] * dist[j] * dist[j])
+        factor_real[j] = _np.cos(wavenumber_real * dist[j]) * laplace_grad[j]
+        factor_imag[j] = _np.sin(wavenumber_real * dist[j]) * laplace_grad[j]
+    if wavenumber_imag != 0:
+        for j in range(npoints):
+            factor_real[j] *= _np.exp(-wavenumber_imag * dist[j])
+            factor_imag[j] *= _np.exp(-wavenumber_imag * dist[j])
+    for j in range(npoints):
+        output_real[j] = (-1 - wavenumber_imag * dist[j]) * factor_real[
+            j
+        ] - wavenumber_real * dist[j] * factor_imag[j]
+        output_imag[j] = (
+            wavenumber_real * dist[j] * factor_real[j]
+            + factor_imag[j] * (-1 - wavenumber_imag * dist[j])
+        )
+    return output_real + 1j * output_imag
 
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
@@ -736,17 +925,11 @@ def default_scalar_singular_kernel(
         trial_fun_values = trial_shapeset(
             trial_points[:, trial_offset : trial_offset + npoints]
         )
-        test_normals = get_normals(
-            grid_data, npoints, [test_element], test_normal_multipliers
-        )
-        trial_normals = get_normals(
-            grid_data, npoints, [trial_element], trial_normal_multipliers
-        )
         kernel_values = kernel_evaluator(
             test_global_points,
             trial_global_points,
-            test_normals,
-            trial_normals,
+            grid_data.normals[test_element] * test_normal_multipliers[test_element],
+            grid_data.normals[trial_element] * trial_normal_multipliers[trial_element],
             kernel_parameters,
         )
         for test_fun_index in range(nshape_test):
