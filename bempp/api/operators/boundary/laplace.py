@@ -97,8 +97,11 @@ def hypersingular(
         dual_to_range,
         parameters,
         assembler,
-        {"KERNEL_FUNCTION": "laplace_single_layer"},
+        [],
+        "laplace_single_layer",
         "laplace_hypersingular",
         device_interface,
         precision,
+        False,
     )
+
