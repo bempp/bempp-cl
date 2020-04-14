@@ -1035,9 +1035,9 @@ def helmholtz_hypersingular_regular(
                             ] * (
                                 curl_product[test_fun_index, trial_fun_index]
                                 - wavenumber
-                                * wavenumber
+                                * wavenumber 
                                 * local_test_fun_values[
-                                    0, test_fun_index, quad_point_index
+                                    0, test_fun_index, test_point_index
                                 ]
                                 * local_trial_fun_values[
                                     0, trial_fun_index, quad_point_index
