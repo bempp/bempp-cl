@@ -11,11 +11,13 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
     assembly_functions_singular = {
         "default_scalar": default_scalar_singular_kernel,
         "laplace_hypersingular": laplace_hypersingular_singular,
+        "helmholtz_hypersingular": helmholtz_hypersingular_singular,
     }
 
     assembly_functions_regular = {
         "default_scalar": default_scalar_regular_kernel,
         "laplace_hypersingular": laplace_hypersingular_regular,
+        "helmholtz_hypersingular": helmholtz_hypersingular_regular,
     }
 
     assembly_functions_sparse = {"default_sparse": default_sparse_kernel}
@@ -324,12 +326,12 @@ def helmholtz_double_layer_regular(
         output_real[j] = (-1 - wavenumber_imag * dist[j]) * factor_real[
             j
         ] - wavenumber_real * dist[j] * factor_imag[j]
-        output_imag[j] = (
-            wavenumber_real * dist[j] * factor_real[j]
-            + factor_imag[j] * (-1 - wavenumber_imag * dist[j])
+        output_imag[j] = wavenumber_real * dist[j] * factor_real[j] + factor_imag[j] * (
+            -1 - wavenumber_imag * dist[j]
         )
 
     return output_real + 1j * output_imag
+
 
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
@@ -371,12 +373,12 @@ def helmholtz_adjoint_double_layer_regular(
         output_real[j] = (-1 - wavenumber_imag * dist[j]) * factor_real[
             j
         ] - wavenumber_real * dist[j] * factor_imag[j]
-        output_imag[j] = (
-            wavenumber_real * dist[j] * factor_real[j]
-            + factor_imag[j] * (-1 - wavenumber_imag * dist[j])
+        output_imag[j] = wavenumber_real * dist[j] * factor_real[j] + factor_imag[j] * (
+            -1 - wavenumber_imag * dist[j]
         )
 
     return output_real + 1j * output_imag
+
 
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
@@ -406,6 +408,7 @@ def helmholtz_single_layer_singular(
             output_real[j] *= _np.exp(-wavenumber_imag * rad[j])
             output_imag[j] *= _np.exp(-wavenumber_imag * rad[j])
     return output_real + 1j * output_imag
+
 
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
@@ -447,11 +450,11 @@ def helmholtz_double_layer_singular(
         output_real[j] = (-1 - wavenumber_imag * dist[j]) * factor_real[
             j
         ] - wavenumber_real * dist[j] * factor_imag[j]
-        output_imag[j] = (
-            wavenumber_real * dist[j] * factor_real[j]
-            + factor_imag[j] * (-1 - wavenumber_imag * dist[j])
+        output_imag[j] = wavenumber_real * dist[j] * factor_real[j] + factor_imag[j] * (
+            -1 - wavenumber_imag * dist[j]
         )
     return output_real + 1j * output_imag
+
 
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
@@ -493,11 +496,11 @@ def helmholtz_adjoint_double_layer_singular(
         output_real[j] = (-1 - wavenumber_imag * dist[j]) * factor_real[
             j
         ] - wavenumber_real * dist[j] * factor_imag[j]
-        output_imag[j] = (
-            wavenumber_real * dist[j] * factor_real[j]
-            + factor_imag[j] * (-1 - wavenumber_imag * dist[j])
+        output_imag[j] = wavenumber_real * dist[j] * factor_real[j] + factor_imag[j] * (
+            -1 - wavenumber_imag * dist[j]
         )
     return output_real + 1j * output_imag
+
 
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
@@ -645,7 +648,9 @@ def default_scalar_regular_kernel(
             (n_trial_elements, nshape_test, nshape_trial), dtype=result_type
         )
         test_global_points = test_grid_data.local2global(test_element, quad_points)
-        test_normal = test_grid_data.normals[test_element]
+        test_normal = (
+            test_grid_data.normals[test_element] * test_normal_multipliers[test_element]
+        )
         local_factors = _np.empty(
             n_trial_elements * n_quad_points, dtype=test_global_points.dtype
         )
@@ -783,7 +788,7 @@ def laplace_hypersingular_regular(
                 _np.cross(
                     test_grid_data.normals[test_element], test_surface_gradients[:, i]
                 )
-                * test_multipliers[test_element]
+                * test_normal_multipliers[test_element]
             )
 
     for trial_index in range(n_trial_elements):
@@ -797,7 +802,7 @@ def laplace_hypersingular_regular(
                     trial_grid_data.normals[trial_element],
                     trial_surface_gradients[:, i],
                 )
-                * trial_multipliers[trial_element]
+                * trial_normal_multipliers[trial_element]
             )
 
     for i in _numba.prange(n_test_elements):
@@ -806,7 +811,9 @@ def laplace_hypersingular_regular(
             (n_trial_elements, nshape_test, nshape_trial), dtype=result_type
         )
         test_global_points = test_grid_data.local2global(test_element, quad_points)
-        test_normal = test_grid_data.normals[test_element]
+        test_normal = (
+            test_grid_data.normals[test_element] * test_normal_multipliers[test_element]
+        )
         local_factors = _np.empty(
             n_trial_elements * n_quad_points, dtype=test_global_points.dtype
         )
@@ -861,6 +868,181 @@ def laplace_hypersingular_regular(
                                     + quad_point_index
                                 ]
                                 * curl_product[test_fun_index, trial_fun_index]
+                            )
+
+        for trial_element_index in range(n_trial_elements):
+            trial_element = trial_elements[trial_element_index]
+            for test_fun_index in range(nshape_test):
+                for trial_fun_index in range(nshape_trial):
+                    result[
+                        test_global_dofs[test_element, test_fun_index],
+                        trial_global_dofs[trial_element, trial_fun_index],
+                    ] += (
+                        local_result[
+                            trial_element_index, test_fun_index, trial_fun_index
+                        ]
+                        * test_multipliers[test_element, test_fun_index]
+                        * trial_multipliers[trial_element, trial_fun_index]
+                    )
+
+
+@_numba.jit(
+    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
+)
+def helmholtz_hypersingular_regular(
+    test_grid_data,
+    trial_grid_data,
+    nshape_test,
+    nshape_trial,
+    test_elements,
+    trial_elements,
+    test_multipliers,
+    trial_multipliers,
+    test_global_dofs,
+    trial_global_dofs,
+    test_normal_multipliers,
+    trial_normal_multipliers,
+    quad_points,
+    quad_weights,
+    kernel_evaluator,
+    kernel_parameters,
+    grids_identical,
+    test_shapeset,
+    trial_shapeset,
+    result,
+):
+    # Compute global points
+    wavenumber = kernel_parameters[0] + 1j * kernel_parameters[1]
+    dtype = test_grid_data.vertices.dtype
+    result_type = result.dtype
+    n_quad_points = len(quad_weights)
+    n_test_elements = len(test_elements)
+    n_trial_elements = len(trial_elements)
+
+    local_test_fun_values = test_shapeset(quad_points)
+    local_trial_fun_values = trial_shapeset(quad_points)
+    trial_normals = get_normals(
+        trial_grid_data, n_quad_points, trial_elements, trial_normal_multipliers
+    )
+    trial_global_points = get_global_points(
+        trial_grid_data, trial_elements, quad_points
+    )
+
+    factors = _np.empty(
+        n_quad_points * n_trial_elements, dtype=trial_global_points.dtype
+    )
+    for trial_element_index in range(n_trial_elements):
+        for trial_point_index in range(n_quad_points):
+            factors[n_quad_points * trial_element_index + trial_point_index] = (
+                quad_weights[trial_point_index]
+                * trial_grid_data.integration_elements[
+                    trial_elements[trial_element_index]
+                ]
+            )
+
+    reference_gradient = _np.array([[-1, 1, 0], [-1, 0, 1]], dtype=dtype)
+
+    test_surface_curls_trans = _np.empty((n_test_elements, 3, 3), dtype=dtype)
+    trial_surface_curls = _np.empty((n_trial_elements, 3, 3), dtype=dtype)
+
+    for test_index in range(n_test_elements):
+        test_element = test_elements[test_index]
+        test_surface_gradients = (
+            test_grid_data.jac_inv_trans[test_element] @ reference_gradient
+        )
+        for i in range(3):
+            test_surface_curls_trans[test_index, i, :] = (
+                _np.cross(
+                    test_grid_data.normals[test_element], test_surface_gradients[:, i]
+                )
+                * test_normal_multipliers[test_element]
+            )
+
+    for trial_index in range(n_trial_elements):
+        trial_element = trial_elements[trial_index]
+        trial_surface_gradients = (
+            trial_grid_data.jac_inv_trans[trial_element] @ reference_gradient
+        )
+        for i in range(3):
+            trial_surface_curls[trial_index, :, i] = (
+                _np.cross(
+                    trial_grid_data.normals[trial_element],
+                    trial_surface_gradients[:, i],
+                )
+                * trial_normal_multipliers[trial_element]
+            )
+
+    for i in _numba.prange(n_test_elements):
+        test_element = test_elements[i]
+        local_result = _np.zeros(
+            (n_trial_elements, nshape_test, nshape_trial), dtype=result_type
+        )
+        test_global_points = test_grid_data.local2global(test_element, quad_points)
+        test_normal = (
+            test_grid_data.normals[test_element] * test_normal_multipliers[test_element]
+        )
+        local_factors = _np.empty(
+            n_trial_elements * n_quad_points, dtype=test_global_points.dtype
+        )
+        tmp = _np.empty(n_trial_elements * n_quad_points, dtype=result_type)
+        is_adjacent = _np.zeros(n_trial_elements, dtype=_np.bool_)
+
+        for trial_element_index in range(n_trial_elements):
+            trial_element = trial_elements[trial_element_index]
+            if grids_identical and elements_adjacent(
+                test_grid_data.elements, test_element, trial_element
+            ):
+                is_adjacent[trial_element_index] = True
+
+        for index in range(n_trial_elements * n_quad_points):
+            local_factors[index] = (
+                factors[index] * test_grid_data.integration_elements[test_element]
+            )
+        for test_point_index in range(n_quad_points):
+            test_global_point = test_global_points[:, test_point_index]
+            kernel_values = kernel_evaluator(
+                test_global_point,
+                trial_global_points,
+                test_normal,
+                trial_normals,
+                kernel_parameters,
+            )
+            for index in range(n_trial_elements * n_quad_points):
+                tmp[index] = kernel_values[index] * (
+                    local_factors[index] * quad_weights[test_point_index]
+                )
+
+            for trial_element_index in range(n_trial_elements):
+                if is_adjacent[trial_element_index]:
+                    continue
+                trial_element = trial_elements[trial_element_index]
+                trial_normal = (
+                    trial_grid_data.normals[trial_element]
+                    * trial_normal_multipliers[trial_element]
+                )
+                normal_prod = _np.dot(test_normal, trial_normal)
+                curl_product = (
+                    test_surface_curls_trans[i]
+                    @ trial_surface_curls[trial_element_index]
+                )
+                for test_fun_index in range(nshape_test):
+                    for trial_fun_index in range(nshape_trial):
+                        for quad_point_index in range(n_quad_points):
+                            local_result[
+                                trial_element_index, test_fun_index, trial_fun_index
+                            ] += tmp[
+                                trial_element_index * n_quad_points + quad_point_index
+                            ] * (
+                                curl_product[test_fun_index, trial_fun_index]
+                                - wavenumber
+                                * wavenumber
+                                * local_test_fun_values[
+                                    0, test_fun_index, quad_point_index
+                                ]
+                                * local_trial_fun_values[
+                                    0, trial_fun_index, quad_point_index
+                                ]
+                                * normal_prod
                             )
 
         for trial_element_index in range(n_trial_elements):
@@ -1058,4 +1240,120 @@ def laplace_hypersingular_singular(
                     grid_data.integration_elements[test_element]
                     * grid_data.integration_elements[trial_element]
                     * surface_curl_products[test_fun_index, trial_fun_index]
+                )
+
+
+@_numba.jit(
+    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
+)
+def helmholtz_hypersingular_singular(
+    grid_data,
+    test_points,
+    trial_points,
+    quad_weights,
+    test_elements,
+    trial_elements,
+    test_offsets,
+    trial_offsets,
+    weights_offsets,
+    number_of_quad_points,
+    test_normal_multipliers,
+    trial_normal_multipliers,
+    nshape_test,
+    nshape_trial,
+    test_shapeset,
+    trial_shapeset,
+    kernel_evaluator,
+    kernel_parameters,
+    result,
+):
+    """Singular evaluator."""
+
+    dtype = grid_data.vertices.dtype
+    nelements = len(test_elements)
+
+    reference_gradient = _np.array([[-1, 1, 0], [-1, 0, 1]], dtype=dtype)
+
+    for index in _numba.prange(nelements):
+        wavenumber = kernel_parameters[0] + 1j * kernel_parameters[1]
+        test_element = test_elements[index]
+        trial_element = trial_elements[index]
+        test_offset = test_offsets[index]
+        trial_offset = trial_offsets[index]
+        weights_offset = weights_offsets[index]
+        npoints = number_of_quad_points[index]
+        test_local_points = test_points[:, test_offset : test_offset + npoints]
+        trial_local_points = trial_points[:, trial_offset : trial_offset + npoints]
+        test_global_points = grid_data.local2global(test_element, test_local_points)
+        trial_global_points = grid_data.local2global(trial_element, trial_local_points)
+        test_fun_values = test_shapeset(
+            test_points[:, test_offset : test_offset + npoints]
+        )
+        trial_fun_values = trial_shapeset(
+            trial_points[:, trial_offset : trial_offset + npoints]
+        )
+
+        test_surface_gradient = (
+            grid_data.jac_inv_trans[test_element] @ reference_gradient
+        )
+        trial_surface_gradient = (
+            grid_data.jac_inv_trans[trial_element] @ reference_gradient
+        )
+
+        test_normal = (
+            grid_data.normals[test_element] * test_normal_multipliers[test_element]
+        )
+        trial_normal = (
+            grid_data.normals[trial_element] * trial_normal_multipliers[trial_element]
+        )
+
+        normal_product = _np.dot(test_normal, trial_normal)
+
+        test_surface_curl_trans = _np.empty((3, 3), dtype=dtype)
+        trial_surface_curl = _np.empty((3, 3), dtype=dtype)
+
+        for fun_index in range(3):
+            test_surface_curl_trans[fun_index, :] = _np.cross(
+                test_normal, test_surface_gradient[:, fun_index]
+            )
+            trial_surface_curl[:, fun_index] = _np.cross(
+                trial_normal, trial_surface_gradient[:, fun_index]
+            )
+
+        surface_curl_products = test_surface_curl_trans @ trial_surface_curl
+
+        kernel_values = kernel_evaluator(
+            test_global_points,
+            trial_global_points,
+            test_normal,
+            trial_normal,
+            kernel_parameters,
+        )
+
+        for test_fun_index in range(nshape_test):
+            for trial_fun_index in range(nshape_trial):
+                for point_index in range(npoints):
+                    result[
+                        nshape_trial * nshape_test * index
+                        + test_fun_index * nshape_trial
+                        + trial_fun_index
+                    ] += (
+                        kernel_values[point_index]
+                        * (
+                            surface_curl_products[test_fun_index, trial_fun_index]
+                            - wavenumber
+                            * wavenumber
+                            * test_fun_values[0, test_fun_index, point_index]
+                            * trial_fun_values[0, trial_fun_index, point_index]
+                            * normal_product
+                        )
+                        * quad_weights[weights_offset + point_index]
+                    )
+                result[
+                    nshape_trial * nshape_test * index
+                    + test_fun_index * nshape_trial
+                    + trial_fun_index
+                ] *= (
+                    grid_data.integration_elements[test_element]
+                    * grid_data.integration_elements[trial_element]
                 )

@@ -155,10 +155,6 @@ def hypersingular(
             precision,
         )
 
-    options = {"KERNEL_FUNCTION": "helmholtz_single_layer", "COMPLEX_KERNEL": None}
-
-    _add_wavenumber(options, wavenumber)
-
     return _common.create_operator(
         "helmholtz_hypersingular_boundary",
         domain,
@@ -166,11 +162,14 @@ def hypersingular(
         dual_to_range,
         parameters,
         assembler,
-        options,
+        [_np.real(wavenumber), _np.imag(wavenumber)],
+        "helmholtz_single_layer",
         "helmholtz_hypersingular",
         device_interface,
         precision,
+        True,
     )
+
 
 
 def multitrace_operator(
