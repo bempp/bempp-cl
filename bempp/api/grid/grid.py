@@ -79,6 +79,8 @@ class Grid(object):
             self._centroids,
             self._domain_indices,
             self._vertex_on_boundary,
+            self._element_neighbors.indices,
+            self._element_neighbors.indexptr
         )
 
         self._grid_data_single = GridDataFloat(
@@ -95,6 +97,8 @@ class Grid(object):
             self._centroids.astype("float32"),
             self._domain_indices,
             self._vertex_on_boundary,
+            self._element_neighbors.indices,
+            self._element_neighbors.indexptr
         )
 
         self._is_scattered = False
@@ -656,6 +660,8 @@ class Grid(object):
         ("centroids", _numba.float64[:, :]),
         ("domain_indices", _numba.uint32[:]),
         ("vertex_on_boundary", _numba.boolean[:]),
+        ("element_neighbor_indices", _numba.uint32[:]),
+        ("element_neighbor_indexptr", _numba.uint32[:])
     ]
 )
 class GridDataDouble(object):
@@ -676,6 +682,8 @@ class GridDataDouble(object):
         centroids,
         domain_indices,
         vertex_on_boundary,
+        element_neighbor_indices,
+        element_neighbor_indexptr
     ):
 
         self.vertices = vertices
@@ -691,6 +699,8 @@ class GridDataDouble(object):
         self.centroids = centroids
         self.domain_indices = domain_indices
         self.vertex_on_boundary = vertex_on_boundary
+        self.element_neighbor_indices = element_neighbor_indices
+        self.element_neighbor_indexptr = element_neighbor_indexptr
 
     def local2global(self, elem_index, local_coords):
         """
@@ -716,6 +726,8 @@ class GridDataDouble(object):
         ("centroids", _numba.float32[:, :]),
         ("domain_indices", _numba.uint32[:]),
         ("vertex_on_boundary", _numba.boolean[:]),
+        ("element_neighbor_indices", _numba.uint32[:]),
+        ("element_neighbor_indexptr", _numba.uint32[:])
     ]
 )
 class GridDataFloat(object):
@@ -736,6 +748,8 @@ class GridDataFloat(object):
         centroids,
         domain_indices,
         vertex_on_boundary,
+        element_neighbor_indices,
+        element_neighbor_indexptr
     ):
 
         self.vertices = vertices
@@ -751,6 +765,8 @@ class GridDataFloat(object):
         self.centroids = centroids
         self.domain_indices = domain_indices
         self.vertex_on_boundary = vertex_on_boundary
+        self.element_neighbor_indices = element_neighbor_indices
+        self.element_neighbor_indexptr = element_neighbor_indexptr
 
     def local2global(self, elem_index, local_coords):
         """
