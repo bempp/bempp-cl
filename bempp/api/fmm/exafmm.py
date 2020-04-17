@@ -102,9 +102,6 @@ class Exafmm(object):
         mat = _np.empty(shape, dtype="float64")
         ident = _np.eye(shape[1], dtype='float64')
     
-        from IPython import embed
-        embed()
-
         for index in range(shape[1]):
             mat[:, index] = self._evaluate_exafmm(ident[:, index])[:, 0]
 

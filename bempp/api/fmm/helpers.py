@@ -5,7 +5,7 @@ M_INV_4PI = 1.0 / (4 * _np.pi)
 
 
 @_numba.jit(
-nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
 )
 def laplace_kernel(target_points, source_points, kernel_parameters, dtype, result_type):
     """Evaluate the laplace kernel."""
@@ -73,7 +73,7 @@ def get_local_interaction_matrix(
 
 
 @_numba.jit(
-nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
+    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
 )
 def get_local_interaction_matrix_impl(
     grid_data, local_points, kernel_function, kernel_parameters, dtype, result_type
@@ -121,19 +121,29 @@ def get_local_interaction_matrix_impl(
         )
 
         local_count = 4 * npoints * npoints * neighbor_indexptr[target_element]
-        for source_element_index in range(nneighbors):
-            source_element = neighbor_indices[
-                neighbor_indexptr[target_element] + source_element_index
-            ]
-            for target_point_index in range(npoints):
+        for target_point_index in range(npoints):
+            for source_element_index in range(nneighbors):
+                source_element = neighbor_indices[
+                    neighbor_indexptr[target_element] + source_element_index
+                ]
                 for source_point_index in range(npoints):
                     for i in range(4):
-                        data[local_count] = interactions[4 * target_point_index * npoints + 4 * source_point_index + i]
+                        data[local_count] = interactions[
+                            4 * target_point_index * nneighbors * npoints
+                            + 4 * source_element_index * npoints
+                            + 4 * source_point_index + i
+                        ]
                         iind[local_count] = (
                             4 * (npoints * target_element + target_point_index) + i
                         )
-                        jind[local_count] = npoints * source_element + source_point_index
+                        jind[local_count] = (
+                            npoints * source_element + source_point_index
+                        )
                         local_count += 1
+
+            # if source_element == 0 and target_element == 0:
+                # from IPython import embed
+                # embed()
 
     return data, iind, jind
 
@@ -150,7 +160,7 @@ def map_space_to_points(space, local_points, weights, return_transpose=False):
     number_of_vertices = number_of_local_points * grid.number_of_elements
 
     data, global_indices, vertex_indices = map_space_to_points_impl(
-        grid.data('double'),
+        grid.data("double"),
         space.localised_space.local2global,
         space.localised_space.local_multipliers,
         space.localised_space.normal_multipliers,
@@ -265,4 +275,3 @@ def grid_to_points(grid_data, local_points):
             + grid_data.jacobians[elem].dot(local_points)
         ).T
     return points
-
