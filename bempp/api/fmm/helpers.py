@@ -47,7 +47,7 @@ def get_local_interaction_matrix(
 ):
 
     from bempp.api.utils.helpers import get_type
-    from scipy.sparse import coo_matrix
+    from scipy.sparse import csr_matrix
 
     npoints = local_points.shape[1]
 
@@ -57,7 +57,7 @@ def get_local_interaction_matrix(
     else:
         result_type = dtype
 
-    data, iind, jind = get_local_interaction_matrix_impl(
+    data, indices, indexptr = get_local_interaction_matrix_impl(
         grid.data(precision),
         local_points.astype(dtype),
         kernel_function,
@@ -69,7 +69,7 @@ def get_local_interaction_matrix(
     rows = 4 * npoints * grid.number_of_elements
     cols = npoints * grid.number_of_elements
 
-    return coo_matrix((data, (iind, jind)), shape=(rows, cols)).tocsr()
+    return csr_matrix((data, indices, indexptr), shape=(rows, cols))
 
 
 @_numba.jit(
@@ -85,8 +85,9 @@ def get_local_interaction_matrix_impl(
     neighbor_indexptr = grid_data.element_neighbor_indexptr
 
     data = _np.zeros(4 * npoints * npoints * len(neighbor_indices), dtype=result_type)
-    iind = _np.zeros(4 * npoints * npoints * len(neighbor_indices), dtype=_np.uint32)
-    jind = _np.zeros(4 * npoints * npoints * len(neighbor_indices), dtype=_np.uint32)
+    indexptr = _np.zeros(4 * npoints * nelements + 1, dtype=_np.uint32)
+    indices = _np.zeros(4 * npoints * npoints * len(neighbor_indices), dtype=_np.uint32)
+    indexptr[-1] = 4 * npoints * npoints * len(neighbor_indices)
 
     global_points = _np.zeros((nelements, 3, npoints), dtype=dtype)
 
@@ -100,14 +101,17 @@ def get_local_interaction_matrix_impl(
         nneighbors = (
             neighbor_indexptr[1 + target_element] - neighbor_indexptr[target_element]
         )
-        source_elements = neighbor_indices[
-            neighbor_indexptr[target_element] : neighbor_indexptr[1 + target_element]
-        ]
+        source_elements = _np.sort(
+            neighbor_indices[
+                neighbor_indexptr[target_element] : neighbor_indexptr[
+                    1 + target_element
+                ]
+            ]
+        )
+
         local_source_points = _np.empty((3, npoints * nneighbors), dtype=dtype)
         for source_element_index in range(nneighbors):
-            source_element = neighbor_indices[
-                neighbor_indexptr[target_element] + source_element_index
-            ]
+            source_element = source_elements[source_element_index]
             local_source_points[
                 :, npoints * source_element_index : npoints * (1 + source_element_index)
             ] = global_points[source_element, :, :]
@@ -122,30 +126,26 @@ def get_local_interaction_matrix_impl(
 
         local_count = 4 * npoints * npoints * neighbor_indexptr[target_element]
         for target_point_index in range(npoints):
-            for source_element_index in range(nneighbors):
-                source_element = neighbor_indices[
-                    neighbor_indexptr[target_element] + source_element_index
-                ]
-                for source_point_index in range(npoints):
-                    for i in range(4):
+            for i in range(4):
+                indexptr[
+                    4 * npoints * target_element + 4 * target_point_index + i
+                ] = local_count
+                for source_element_index in range(nneighbors):
+                    source_element = source_elements[source_element_index]
+                    for source_point_index in range(npoints):
                         data[local_count] = interactions[
                             4 * target_point_index * nneighbors * npoints
                             + 4 * source_element_index * npoints
-                            + 4 * source_point_index + i
+                            + 4 * source_point_index
+                            + i
                         ]
-                        iind[local_count] = (
-                            4 * (npoints * target_element + target_point_index) + i
-                        )
-                        jind[local_count] = (
+                        indices[local_count] = (
                             npoints * source_element + source_point_index
                         )
                         local_count += 1
 
-            # if source_element == 0 and target_element == 0:
-                # from IPython import embed
-                # embed()
 
-    return data, iind, jind
+    return data, indices, indexptr
 
 
 def map_space_to_points(space, local_points, weights, return_transpose=False):

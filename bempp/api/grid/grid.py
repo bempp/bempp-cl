@@ -80,7 +80,7 @@ class Grid(object):
             self._domain_indices,
             self._vertex_on_boundary,
             self._element_neighbors.indices,
-            self._element_neighbors.indexptr
+            self._element_neighbors.indexptr,
         )
 
         self._grid_data_single = GridDataFloat(
@@ -98,7 +98,7 @@ class Grid(object):
             self._domain_indices,
             self._vertex_on_boundary,
             self._element_neighbors.indices,
-            self._element_neighbors.indexptr
+            self._element_neighbors.indexptr,
         )
 
         self._is_scattered = False
@@ -397,6 +397,42 @@ class Grid(object):
 
         return iterator
 
+    def map_to_point_cloud(self, order=None, local_points=None, precision="double"):
+        """
+        Return a point cloud representation of the grid on quadratur points.
+
+        Return a representation of the grid as a point cloud using points on
+        each element either defined through a triangle Gauss qudrature order
+        or by directly specifying an array of local points.
+
+        Parameters
+        ----------
+        order : Integer
+            Optional parameter. Specify a quadrature order for the point
+            cloud generation.
+        local_points: Numpy array
+            A 2 x N array of N points in local reference coordinates that specify
+            the points to use for each triangle.
+        precision: String
+            Either 'single' or 'double'.
+
+        If neither order nor local_points is specified the quadrature order is
+        obtained from the global parameters.
+
+        Returns a M x 3 array of M points that represent the grid on the specified
+        points.
+
+        """
+        import bempp.api
+        from bempp.api.integration.triangle_gauss import rule
+
+        if local_points is None:
+            if order is None:
+                order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
+            local_points, _ = rule(order)
+
+        return grid_to_points(self.data("double"), local_points)
+
     def refine(self):
         """Return a new grid with all elements refined."""
 
@@ -661,7 +697,7 @@ class Grid(object):
         ("domain_indices", _numba.uint32[:]),
         ("vertex_on_boundary", _numba.boolean[:]),
         ("element_neighbor_indices", _numba.uint32[:]),
-        ("element_neighbor_indexptr", _numba.uint32[:])
+        ("element_neighbor_indexptr", _numba.uint32[:]),
     ]
 )
 class GridDataDouble(object):
@@ -683,7 +719,7 @@ class GridDataDouble(object):
         domain_indices,
         vertex_on_boundary,
         element_neighbor_indices,
-        element_neighbor_indexptr
+        element_neighbor_indexptr,
     ):
 
         self.vertices = vertices
@@ -727,7 +763,7 @@ class GridDataDouble(object):
         ("domain_indices", _numba.uint32[:]),
         ("vertex_on_boundary", _numba.boolean[:]),
         ("element_neighbor_indices", _numba.uint32[:]),
-        ("element_neighbor_indexptr", _numba.uint32[:])
+        ("element_neighbor_indexptr", _numba.uint32[:]),
     ]
 )
 class GridDataFloat(object):
@@ -749,7 +785,7 @@ class GridDataFloat(object):
         domain_indices,
         vertex_on_boundary,
         element_neighbor_indices,
-        element_neighbor_indexptr
+        element_neighbor_indexptr,
     ):
 
         self.vertices = vertices
@@ -1496,3 +1532,36 @@ def _grid_scatter_worker(grid_id, array_proxies):
         log(f"Copied grid with id {grid_id} to worker {pool.get_id()}", "debug")
     else:
         log(f"Use cached grid with id {grid_id} on worker {pool.get_id()}", "debug")
+
+
+@_numba.njit
+def grid_to_points(grid_data, local_points):
+    """
+    Map a grid to an array of points.
+
+    Returns a (N, 3) point array that stores the global vertices
+    associated with the local points in each triangle.
+    Points are stored in consecutive order for each element 
+    in the support_elements list. Hence, the returned array is of the form
+    [ v_1^1, v_2^1, ..., v_M^1, v_1^2, v_2^2, ...], where
+    v_i^j is the ith point in the jth element in
+    the support_elements list.
+
+    Parameters
+    ----------
+    grid_data : GridData
+        A Bempp GridData object.
+    local_points : np.ndarray
+        (2, M) array of local coordinates.
+    """
+    number_of_elements = grid_data.elements.shape[1]
+    number_of_points = local_points.shape[1]
+
+    points = _np.empty((number_of_points * number_of_elements, 3), dtype=_np.float64)
+
+    for elem in range(number_of_elements):
+        points[number_of_points * elem : number_of_points * (1 + elem), :] = (
+            _np.expand_dims(grid_data.vertices[:, grid_data.elements[0, elem]], 1)
+            + grid_data.jacobians[elem].dot(local_points)
+        ).T
+    return points

@@ -134,21 +134,28 @@ def set_logging_level(level):
 
 # pylint: disable=too-few-public-methods
 class Timer:
-    """Context manager to measure time in BEM++."""
+    """Context manager to measure time in Bempp."""
 
-    def __init__(self):
+    def __init__(self, enable_log=True, message="Starting operation", level="timing"):
         """Constructor."""
         self.start = 0
         self.end = 0
         self.interval = 0
+        self.enable_log = enable_log
+        self.level = level
+        self.message = message
 
     def __enter__(self):
+        if self.enable_log:
+            log(self.message, level=self.level)
         self.start = _time.time()
         return self
 
     def __exit__(self, *args):
         self.end = _time.time()
         self.interval = self.end - self.start
+        if self.enable_log:
+            log(f"Time for operation: {self.interval}", level=self.level)
 
 
 def test(precision="double", vectorization="auto"):

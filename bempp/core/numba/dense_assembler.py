@@ -105,7 +105,7 @@ def assemble_dense(
 
     grids_identical = domain.grid == dual_to_range.grid
 
-    with bempp.api.Timer() as t:
+    with bempp.api.Timer(message="Start Numba dense assembler."):
         for test_color_index in range(number_of_test_colors):
             numba_assembly_function_regular(
                 dual_to_range.grid.data(precision),
@@ -133,7 +133,6 @@ def assemble_dense(
                 domain.shapeset.evaluate,
                 result,
             )
-    print(f"Numba kernel time: {t.interval}")
 
     if grids_identical:
         # Need to treat singular contribution
