@@ -3,21 +3,31 @@ import numpy as _np
 
 
 class ExafmmInstance(object):
-    """Evaluate an Fmm instance."""
+    """Evaluate an Exafmm instance."""
 
     def __init__(
         self,
         source_points,
         target_points,
-        quadrature_order,
         mode,
-        kernel_parameters,
+        wavenumber=None,
         depth=4,
         expansion_order=5,
         ncrit=400,
         precision="double",
+        singular_correction=None,
+        source_normals=None,
+        target_normals=None,
     ):
         """Instantiate an Exafmm session."""
+        import bempp.api
+
+        self._singular_correction = singular_correction
+        self._source_normals = source_normals
+        self._target_normals = target_normals
+
+        self._source_points = source_points
+        self._target_points = target_points
 
         with bempp.api.Timer(message="Initialising Exafmm."):
 
@@ -47,7 +57,7 @@ class ExafmmInstance(object):
                 targets = exafmm.helmholtz.init_targets(target_points)
 
                 self._fmm = exafmm.helmholtz.HelmholtzFMM(
-                    expansion_order, ncrit, depth, kernel_parameters[0]
+                    expansion_order, ncrit, depth, wavenumber
                 )
                 self._tree = exafmm.helmholtz.setup(sources, targets, self._fmm, False)
 
@@ -63,11 +73,183 @@ class ExafmmInstance(object):
                 targets = exafmm.modified_helmholtz.init_targets(target_points)
 
                 self._fmm = exafmm.modified_helmholtz.ModifiedHelmholtzFMM(
-                    expansion_order, ncrit, depth, kernel_parameters[0]
+                    expansion_order, ncrit, depth, wavenumber
                 )
                 self._tree = exafmm.modified_helmholtz.setup(
                     sources, targets, self._fmm, False
                 )
+
+    @property
+    def number_of_source_points(self):
+        """Return number of source points."""
+        return len(self._source_points)
+
+    @property
+    def number_of_target_points(self):
+        """Return number of target points."""
+        return len(self._target_points)
+
+    def evaluate(
+        self, vec, return_mode="function_values", apply_singular_correction=True
+    ):
+        """Evalute the Fmm."""
+        import bempp.api
+
+        with bempp.api.Timer(message="Evaluating Fmm."):
+            self._module.update_charges(self._tree, vec)
+            self._module.clear_values(self._tree)
+
+            result = self._module.evaluate(self._tree, self._fmm)
+
+            if apply_singular_correction and self._singular_correction is not None:
+                result -= (self._singular_correction @ vec).reshape([-1, 4])
+
+            if return_mode == "function_values":
+                return result[:, 0]
+            elif return_mode == "target_gradient":
+                return result[:, 1:]
+            elif return_mode == "source_gradient":
+                return -result[:, 1:]
+            elif return_mode == "target_normal_derivative":
+                return np.sum(self._target_normals * result[:, 1:], axis=1)
+            elif return_mode == "source_normal_derivative":
+                return np.sum(-self._source_normals * result[:, 1:], axis=1)
+
+    @classmethod
+    def from_grid(
+        cls,
+        source_grid,
+        mode,
+        wavenumber=None,
+        quadrature_order=None,
+        target_grid=None,
+        depth=4,
+        expansion_order=5,
+        ncrit=400,
+        precision="double",
+    ):
+        """
+        Initialise an Exafmm instance from a given source and target grid.
+
+        Parameters
+        ----------
+        source_grid : Grid object
+            Grid for the source points.
+        mode: string
+            Fmm mode. One of 'laplace', 'helmholtz', or 'modified_helmholtz'
+        wavenumber : real number
+            For Helmholtz or modified Helmholtz the wavenumber.
+        quadrature_order : integeger
+            Quadrature order for converting grid to Fmm evaluation points.
+            If None is specified, use the value provided by
+            bempp.api.GLOBAL_PARAMETERS.quadrature.regular
+        target_grid : Grid object
+            An optional target grid. If not provided the source and target
+            grid are assumed to be identical.
+        depth: integer
+            Depth of the Fmm tree.
+        expansion_order : integer
+            Expansion order for the Fmm.
+        ncrit : integer
+            Maximum number of leaf points per box (currently not used).
+        precision : string
+            Either 'single' or 'double'. Currently, the Fmm is always
+            executed in double precision.
+        """
+        import bempp.api
+        from bempp.api.integration.triangle_gauss import rule
+        from bempp.api.fmm.helpers import get_local_interaction_matrix
+        import numpy as np
+
+        if quadrature_order is None:
+            quadrature_order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
+
+        local_points, weights = rule(quadrature_order)
+        npoints = len(weights)
+
+        if target_grid is None:
+            target_grid = source_grid
+
+        source_points = source_grid.map_to_point_cloud(
+            quadrature_order, precision=precision
+        )
+
+        # Compute source normals
+
+        source_normals = np.empty(
+            (npoints * source_grid.number_of_elements, 3), dtype="float64"
+        )
+        for element in range(source_grid.number_of_elements):
+            for n in range(npoints):
+                source_normals[npoints * element + n, :] = source_grid.normals[element]
+
+        if target_grid != source_grid:
+            target_points = target_grid.map_to_point_cloud(
+                quadrature_order, precision=precision
+            )
+            target_normals = np.empty(
+                (npoints * target_grid.number_of_elements, 3), dtype="float64"
+            )
+            for element in range(target_grid.number_of_elements):
+                for n in range(npoints):
+                    target_normals[npoints * element + n, :] = target_grid.normals[
+                        element
+                    ]
+        else:
+            target_points = source_points
+            target_normals = source_normals
+
+        singular_correction = None
+
+        if target_grid == source_grid:
+            # Require singular correction terms.
+
+            if mode == "laplace":
+                from bempp.api.fmm.helpers import laplace_kernel
+
+                singular_correction = get_local_interaction_matrix(
+                    source_grid,
+                    local_points,
+                    laplace_kernel,
+                    np.array([], dtype="float64"),
+                    precision,
+                    False,
+                )
+            elif mode == "helmholtz":
+                from bempp.api.fmm.helpers import helmholtz_kernel
+
+                singular_correction = get_local_interaction_matrix(
+                    source_grid,
+                    local_points,
+                    helmholtz_kernel,
+                    np.array([wavenumber], dtype="float64"),
+                    precision,
+                    False,
+                )
+            elif mode == "modified_helmholtz":
+                from bempp.api.fmm.helpers import modified_helmholtz_kernel
+
+                singular_correction = get_local_interaction_matrix(
+                    source_grid,
+                    local_points,
+                    modified_helmholtz_kernel,
+                    np.array([wavenumber], dtype="float64"),
+                    precision,
+                    False,
+                )
+        return cls(
+            source_points,
+            target_points,
+            mode,
+            wavenumber=wavenumber,
+            depth=depth,
+            expansion_order=expansion_order,
+            ncrit=ncrit,
+            precision=precision,
+            singular_correction=singular_correction,
+            source_normals=source_normals,
+            target_normals=target_normals,
+        )
 
 
 class Exafmm(object):
