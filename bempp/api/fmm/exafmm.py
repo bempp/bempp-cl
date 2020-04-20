@@ -2,8 +2,8 @@
 import numpy as _np
 
 
-class ExafmmInstance(object):
-    """Evaluate an Exafmm instance."""
+class ExafmmInterface(object):
+    """Interface to Exafmm."""
 
     def __init__(
         self,
@@ -139,7 +139,7 @@ class ExafmmInstance(object):
             Fmm mode. One of 'laplace', 'helmholtz', or 'modified_helmholtz'
         wavenumber : real number
             For Helmholtz or modified Helmholtz the wavenumber.
-        quadrature_order : integeger
+        quadrature_order : integer
             Quadrature order for converting grid to Fmm evaluation points.
             If None is specified, use the value provided by
             bempp.api.GLOBAL_PARAMETERS.quadrature.regular

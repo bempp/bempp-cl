@@ -42,6 +42,7 @@ def single_layer(
         device_interface,
         precision,
         True,
+        "function_values",
     )
 
 
@@ -83,6 +84,7 @@ def double_layer(
         device_interface,
         precision,
         True,
+        "source_gradient"
     )
 
 
@@ -126,6 +128,7 @@ def adjoint_double_layer(
         device_interface,
         precision,
         True,
+        "target_gradient",
     )
 
 
@@ -168,6 +171,7 @@ def hypersingular(
         device_interface,
         precision,
         True,
+        "function_values"
     )
 
 
