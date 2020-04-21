@@ -33,7 +33,7 @@ def create_operator(
         singular_part = create_operator(
                 identifier, domain, range_, dual_to_range, parameters, 'only_singular_part',
                 operator_options, kernel_type, assembly_type, device_interface, precision,
-                is_complex)
+                is_complex, kernel_mode)
     else:
         singular_part = None
 

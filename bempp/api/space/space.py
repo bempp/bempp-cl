@@ -774,10 +774,10 @@ def map_space_to_points(space, quadrature_order=None, return_transpose=False):
 
     grid = space.grid
 
-    if order is None:
-        order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
+    if quadrature_order is None:
+        quadrature_order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
 
-    local_points, weights = rule(order)
+    local_points, weights = rule(quadrature_order)
 
     number_of_local_points = local_points.shape[1]
     nshape_funs = space.number_of_shape_functions

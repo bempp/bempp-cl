@@ -26,8 +26,13 @@ class FmmAssembler(_assembler.AssemblerBase):
 
         self._source_map = domain.map_to_points(parameters.quadrature.regular)
         self._target_map = dual_to_range.map_to_points(
-            parameters.quadrature.regular, return_tranpose=True
+            parameters.quadrature.regular, return_transpose=True
         )
+
+        self.dtype = None
+        self._evaluator = None
+        self.shape = (dual_to_range.global_dof_count, domain.global_dof_count)
+
 
     def assemble(
         self, operator_descriptor, device_interface, precision, *args, **kwargs
@@ -35,14 +40,14 @@ class FmmAssembler(_assembler.AssemblerBase):
         """Actually assemble."""
         from bempp.api.space.space import return_compatible_representation
         from bempp.api.assembly.discrete_boundary_operator import (
-            BoundaryOperatorWithAssembler,
+            GenericDiscreteBoundaryOperator,
         )
 
         actual_domain, actual_dual_to_range = return_compatible_representation(
             self.domain, self.dual_to_range
         )
 
-        self._evaluator = select_evaluator(
+        self._evaluator = create_evaluator(
             operator_descriptor,
             self._fmm_interface,
             actual_domain,
@@ -50,7 +55,14 @@ class FmmAssembler(_assembler.AssemblerBase):
             self.parameters,
         )
 
-    def matvec(x):
+        if operator_descriptor.is_complex:
+            self.dtype = 'complex128'
+        else:
+            self.dtype = 'float64'
+
+        return GenericDiscreteBoundaryOperator(self)
+
+    def matvec(self, x):
         """Perform a matvec."""
 
         ndim = len(x.shape)
@@ -66,3 +78,24 @@ class FmmAssembler(_assembler.AssemblerBase):
             return result
         else:
             return result.reshape([-1, 1])
+
+
+def make_default_scalar(operator_descriptor, fmm_interface, domain, dual_to_range):
+    """Create an evaluator for standard scalar operators."""
+    import bempp.api
+
+    source_map = domain.map_to_points(bempp.api.GLOBAL_PARAMETERS.quadrature.regular)
+    target_map = dual_to_range.map_to_points(
+        bempp.api.GLOBAL_PARAMETERS.quadrature.regular, return_transpose=True
+    )
+
+    singular_part = operator_descriptor.singular_part.weak_form().A
+    kernel_mode = operator_descriptor.kernel_mode
+
+    def evaluate(x):
+        """Actually evaluate."""
+        x_transformed = source_map @ x
+        fmm_res = fmm_interface.evaluate(x_transformed, kernel_mode=kernel_mode)
+        return target_map @ fmm_res + singular_part @ x
+
+    return evaluate

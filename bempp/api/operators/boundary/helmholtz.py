@@ -84,7 +84,7 @@ def double_layer(
         device_interface,
         precision,
         True,
-        "source_gradient"
+        "source_normal_derivative"
     )
 
 
@@ -128,7 +128,7 @@ def adjoint_double_layer(
         device_interface,
         precision,
         True,
-        "target_gradient",
+        "target_normal_derivative",
     )
 
 

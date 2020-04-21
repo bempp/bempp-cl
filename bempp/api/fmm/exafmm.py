@@ -90,7 +90,7 @@ class ExafmmInterface(object):
         return len(self._target_points)
 
     def evaluate(
-        self, vec, return_mode="function_values", apply_singular_correction=True
+        self, vec, kernel_mode="function_values", apply_singular_correction=True
     ):
         """Evalute the Fmm."""
         import bempp.api
@@ -104,16 +104,16 @@ class ExafmmInterface(object):
             if apply_singular_correction and self._singular_correction is not None:
                 result -= (self._singular_correction @ vec).reshape([-1, 4])
 
-            if return_mode == "function_values":
+            if kernel_mode == "function_values":
                 return result[:, 0]
-            elif return_mode == "target_gradient":
+            elif kernel_mode == "target_gradient":
                 return result[:, 1:]
-            elif return_mode == "source_gradient":
+            elif kernel_mode == "source_gradient":
                 return -result[:, 1:]
-            elif return_mode == "target_normal_derivative":
-                return np.sum(self._target_normals * result[:, 1:], axis=1)
-            elif return_mode == "source_normal_derivative":
-                return np.sum(-self._source_normals * result[:, 1:], axis=1)
+            elif kernel_mode == "target_normal_derivative":
+                return _np.sum(self._target_normals * result[:, 1:], axis=1)
+            elif kernel_mode == "source_normal_derivative":
+                return _np.sum(-self._source_normals * result[:, 1:], axis=1)
 
     @classmethod
     def from_grid(
