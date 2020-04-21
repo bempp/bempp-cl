@@ -79,8 +79,12 @@ class FmmAssembler(_assembler.AssemblerBase):
             return result.reshape([-1, 1])
 
 def make_default_scalar(operator_descriptor, fmm_interface, domain, dual_to_range):
-    """Create an evaluator for double layer operators."""
+    """Create an evaluator for scalar operators."""
     import bempp.api
+    from bempp.api.integration.triangle_gauss import get_number_of_quad_points
+
+    npoints = get_number_of_quad_points(
+            bempp.api.GLOBAL_PARAMETERS.quadrature.regular)
 
     source_map = domain.map_to_points(bempp.api.GLOBAL_PARAMETERS.quadrature.regular)
     target_map = dual_to_range.map_to_points(
@@ -89,12 +93,19 @@ def make_default_scalar(operator_descriptor, fmm_interface, domain, dual_to_rang
 
     singular_part = operator_descriptor.singular_part.weak_form().A
 
-    source_normals = np.empty(
-        (npoints * source_grid.number_of_elements, 3), dtype="float64"
-    )
-    for element in range(source_grid.number_of_elements):
-        for n in range(npoints):
-            source_normals[npoints * element + n, :] = source_grid.normals[element]
+    source_normals = get_normals(domain, npoints)
+    target_normals = get_normals(dual_to_range, npoints)
+
+
+    if "single" in operator_descriptor.identifier:
+        mode = "single"
+    elif "adjoint_double" in operator_descriptor.identifier:
+        mode = "adjoint_double"
+    elif "double" in operator_descriptor.identifier:
+        mode = "double"
+    else:
+        raise ValueError("Could not recognise identifier string.")
+
 
     def evaluate(x):
         """Actually evaluate."""
@@ -103,4 +114,17 @@ def make_default_scalar(operator_descriptor, fmm_interface, domain, dual_to_rang
         return target_map @ fmm_res + singular_part @ x
 
     return evaluate
+
+def get_normals(space, npoints):
+    """Get the normal vectors on the quadrature points."""
+    grid = space.grid
+    number_of_elements = grid.number_of_elements
+
+    normals = np.empty(
+        (npoints * number_of_elements, 3), dtype="float64"
+    )
+    for element in range(number_of_elements):
+        for n in range(npoints):
+            normals[npoints * element + n, :] = grid.normals[element] * space.normal_multipliers[element]
+    return normals
 
