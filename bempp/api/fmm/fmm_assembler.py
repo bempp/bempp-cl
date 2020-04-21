@@ -33,7 +33,6 @@ class FmmAssembler(_assembler.AssemblerBase):
         self._evaluator = None
         self.shape = (dual_to_range.global_dof_count, domain.global_dof_count)
 
-
     def assemble(
         self, operator_descriptor, device_interface, precision, *args, **kwargs
     ):
@@ -56,9 +55,9 @@ class FmmAssembler(_assembler.AssemblerBase):
         )
 
         if operator_descriptor.is_complex:
-            self.dtype = 'complex128'
+            self.dtype = "complex128"
         else:
-            self.dtype = 'float64'
+            self.dtype = "float64"
 
         return GenericDiscreteBoundaryOperator(self)
 
@@ -79,9 +78,8 @@ class FmmAssembler(_assembler.AssemblerBase):
         else:
             return result.reshape([-1, 1])
 
-
 def make_default_scalar(operator_descriptor, fmm_interface, domain, dual_to_range):
-    """Create an evaluator for standard scalar operators."""
+    """Create an evaluator for double layer operators."""
     import bempp.api
 
     source_map = domain.map_to_points(bempp.api.GLOBAL_PARAMETERS.quadrature.regular)
@@ -90,7 +88,13 @@ def make_default_scalar(operator_descriptor, fmm_interface, domain, dual_to_rang
     )
 
     singular_part = operator_descriptor.singular_part.weak_form().A
-    kernel_mode = operator_descriptor.kernel_mode
+
+    source_normals = np.empty(
+        (npoints * source_grid.number_of_elements, 3), dtype="float64"
+    )
+    for element in range(source_grid.number_of_elements):
+        for n in range(npoints):
+            source_normals[npoints * element + n, :] = source_grid.normals[element]
 
     def evaluate(x):
         """Actually evaluate."""
@@ -99,3 +103,4 @@ def make_default_scalar(operator_descriptor, fmm_interface, domain, dual_to_rang
         return target_map @ fmm_res + singular_part @ x
 
     return evaluate
+

@@ -42,7 +42,6 @@ def single_layer(
         device_interface,
         precision,
         True,
-        "function_values",
     )
 
 
@@ -84,7 +83,6 @@ def double_layer(
         device_interface,
         precision,
         True,
-        "source_normal_derivative"
     )
 
 
@@ -128,7 +126,6 @@ def adjoint_double_layer(
         device_interface,
         precision,
         True,
-        "target_normal_derivative",
     )
 
 
@@ -171,7 +168,6 @@ def hypersingular(
         device_interface,
         precision,
         True,
-        "function_values"
     )
 
 

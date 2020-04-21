@@ -16,15 +16,11 @@ class ExafmmInterface(object):
         ncrit=400,
         precision="double",
         singular_correction=None,
-        source_normals=None,
-        target_normals=None,
     ):
         """Instantiate an Exafmm session."""
         import bempp.api
 
         self._singular_correction = singular_correction
-        self._source_normals = source_normals
-        self._target_normals = target_normals
 
         self._source_points = source_points
         self._target_points = target_points
@@ -90,7 +86,7 @@ class ExafmmInterface(object):
         return len(self._target_points)
 
     def evaluate(
-        self, vec, kernel_mode="function_values", apply_singular_correction=True
+        self, vec, apply_singular_correction=True
     ):
         """Evalute the Fmm."""
         import bempp.api
@@ -104,16 +100,7 @@ class ExafmmInterface(object):
             if apply_singular_correction and self._singular_correction is not None:
                 result -= (self._singular_correction @ vec).reshape([-1, 4])
 
-            if kernel_mode == "function_values":
-                return result[:, 0]
-            elif kernel_mode == "target_gradient":
-                return result[:, 1:]
-            elif kernel_mode == "source_gradient":
-                return -result[:, 1:]
-            elif kernel_mode == "target_normal_derivative":
-                return _np.sum(self._target_normals * result[:, 1:], axis=1)
-            elif kernel_mode == "source_normal_derivative":
-                return _np.sum(-self._source_normals * result[:, 1:], axis=1)
+            return result
 
     @classmethod
     def from_grid(
@@ -174,30 +161,12 @@ class ExafmmInterface(object):
             quadrature_order, precision=precision
         )
 
-        # Compute source normals
-
-        source_normals = np.empty(
-            (npoints * source_grid.number_of_elements, 3), dtype="float64"
-        )
-        for element in range(source_grid.number_of_elements):
-            for n in range(npoints):
-                source_normals[npoints * element + n, :] = source_grid.normals[element]
-
         if target_grid != source_grid:
             target_points = target_grid.map_to_point_cloud(
                 quadrature_order, precision=precision
             )
-            target_normals = np.empty(
-                (npoints * target_grid.number_of_elements, 3), dtype="float64"
-            )
-            for element in range(target_grid.number_of_elements):
-                for n in range(npoints):
-                    target_normals[npoints * element + n, :] = target_grid.normals[
-                        element
-                    ]
         else:
             target_points = source_points
-            target_normals = source_normals
 
         singular_correction = None
 
@@ -247,8 +216,6 @@ class ExafmmInterface(object):
             ncrit=ncrit,
             precision=precision,
             singular_correction=singular_correction,
-            source_normals=source_normals,
-            target_normals=target_normals,
         )
 
 
