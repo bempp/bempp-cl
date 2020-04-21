@@ -8,6 +8,7 @@ def _create_assembler(
     from bempp.core.numba.singular_assembler import SingularAssembler
     from bempp.core.numba.dense_assembler import DenseAssembler
     from bempp.core.numba.sparse_assembler import SparseAssembler
+    from bempp.api.fmm.fmm_assembler import FmmAssembler
 
     # from bempp.core.dense_assembler import DenseAssembler
     # from bempp.core.sparse_assembler import SparseAssembler
@@ -22,10 +23,12 @@ def _create_assembler(
         return DenseAssembler(domain, dual_to_range, parameters)
     if identifier == "sparse":
         return SparseAssembler(domain, dual_to_range, parameters)
-    if identifier == "dense_evaluator":
-        return DenseEvaluatorAssembler(domain, dual_to_range, parameters)
-    if identifier == "multitrace_evaluator":
-        return DenseMultitraceEvaluatorAssembler(domain, dual_to_range, parameters)
+    if identifier == "fmm":
+        return FmmAssembler(domain, dual_to_range, parameters)
+    # if identifier == "dense_evaluator":
+        # return DenseEvaluatorAssembler(domain, dual_to_range, parameters)
+    # if identifier == "multitrace_evaluator":
+        # return DenseMultitraceEvaluatorAssembler(domain, dual_to_range, parameters)
 
 
 class AssemblerInterface(object):

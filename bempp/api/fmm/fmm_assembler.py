@@ -1,8 +1,46 @@
 """Implementation of an FMM Assembler."""
-
 from bempp.api.assembly import assembler as _assembler
 import numba as _numba
 import numpy as _np
+
+_FMM_CACHE = {}
+
+
+def get_mode_from_operator_identifier(identifier):
+    """Get the Fmm mode from the operator identifier."""
+
+    descriptor = identifier.split("_")[0]
+
+    if descriptor == "laplace":
+        return "laplace"
+    elif descriptor == "helmholtz":
+        return "helmholtz"
+    elif descriptor == "modified":
+        return "modified_helmholtz"
+    else:
+        raise ValueError("Unknown identifier string.")
+
+def get_fmm_interface(domain, dual_to_range, mode, wavenumber):
+    """Get an Fmm instance."""
+    import bempp.api
+
+    global _FMM_CACHE
+
+    key = (domain.grid.id, dual_to_range.grid.id, mode, wavenumber)
+
+    interface = _FMM_CACHE.get(key, None)
+
+    if interface is None:
+        from bempp.api.fmm.exafmm import ExafmmInterface
+
+        interface = ExafmmInterface.from_grid(
+            domain.grid, mode, wavenumber=wavenumber, target_grid=dual_to_range.grid
+        )
+        _FMM_CACHE[key] = interface
+    else:
+        bempp.api.log("Using cached Fmm Interface.", level="debug")
+
+    return interface
 
 
 def create_evaluator(
@@ -24,11 +62,9 @@ class FmmAssembler(_assembler.AssemblerBase):
     """Assembler for Fmm."""
 
     # pylint: disable=useless-super-delegation
-    def __init__(self, domain, dual_to_range, parameters, fmm_interface):
+    def __init__(self, domain, dual_to_range, parameters):
         """Create an Fmm assembler instance."""
         super().__init__(domain, dual_to_range, parameters)
-
-        self._fmm_interface = fmm_interface
 
         self._source_map = domain.map_to_points(parameters.quadrature.regular)
         self._target_map = dual_to_range.map_to_points(
@@ -52,9 +88,21 @@ class FmmAssembler(_assembler.AssemblerBase):
             self.domain, self.dual_to_range
         )
 
+        mode = get_mode_from_operator_identifier(operator_descriptor.identifier)
+        if mode == "laplace":
+            wavenumber = None
+        else:
+            wavenumber = operator_descriptor.options[0]
+
+        fmm_interface = get_fmm_interface(
+                actual_domain,
+                actual_dual_to_range,
+                mode,
+                wavenumber)
+
         self._evaluator = create_evaluator(
             operator_descriptor,
-            self._fmm_interface,
+            fmm_interface,
             actual_domain,
             actual_dual_to_range,
             self.parameters,

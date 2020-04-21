@@ -108,11 +108,7 @@ class ExafmmInterface(object):
         source_grid,
         mode,
         wavenumber=None,
-        quadrature_order=None,
         target_grid=None,
-        depth=4,
-        expansion_order=5,
-        ncrit=400,
         precision="double",
     ):
         """
@@ -126,19 +122,9 @@ class ExafmmInterface(object):
             Fmm mode. One of 'laplace', 'helmholtz', or 'modified_helmholtz'
         wavenumber : real number
             For Helmholtz or modified Helmholtz the wavenumber.
-        quadrature_order : integer
-            Quadrature order for converting grid to Fmm evaluation points.
-            If None is specified, use the value provided by
-            bempp.api.GLOBAL_PARAMETERS.quadrature.regular
         target_grid : Grid object
             An optional target grid. If not provided the source and target
             grid are assumed to be identical.
-        depth: integer
-            Depth of the Fmm tree.
-        expansion_order : integer
-            Expansion order for the Fmm.
-        ncrit : integer
-            Maximum number of leaf points per box (currently not used).
         precision : string
             Either 'single' or 'double'. Currently, the Fmm is always
             executed in double precision.
@@ -148,8 +134,7 @@ class ExafmmInterface(object):
         from bempp.api.fmm.helpers import get_local_interaction_matrix
         import numpy as np
 
-        if quadrature_order is None:
-            quadrature_order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
+        quadrature_order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
 
         local_points, weights = rule(quadrature_order)
         npoints = len(weights)
@@ -211,9 +196,9 @@ class ExafmmInterface(object):
             target_points,
             mode,
             wavenumber=wavenumber,
-            depth=depth,
-            expansion_order=expansion_order,
-            ncrit=ncrit,
+            depth=bempp.api.GLOBAL_PARAMETERS.fmm.depth,
+            expansion_order=bempp.api.GLOBAL_PARAMETERS.fmm.expansion_order,
+            ncrit=bempp.api.GLOBAL_PARAMETERS.fmm.ncrit,
             precision=precision,
             singular_correction=singular_correction,
         )
