@@ -8,7 +8,7 @@ M_INV_4PI = 1.0 / (4 * _np.pi)
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
 )
 def laplace_kernel(target_points, source_points, kernel_parameters, dtype, result_type):
-    """Evaluate the laplace kernel."""
+    """Evaluate the Laplace kernel."""
 
     ntargets = target_points.shape[1]
     nsources = source_points.shape[1]
@@ -40,6 +40,62 @@ def laplace_kernel(target_points, source_points, kernel_parameters, dtype, resul
                     interactions[target_point_index * 4 * nsources + 4 * j + i] = 0
 
     return interactions
+
+
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
+def helmholtz_kernel(
+    target_points, source_points, kernel_parameters, dtype, result_type
+):
+    """Evaluate the Laplace kernel."""
+
+    ntargets = target_points.shape[1]
+    nsources = source_points.shape[1]
+    m_inv_4pi = dtype.type(M_INV_4PI)
+
+    wavenumber = kernel_parameters[0]
+
+    tmp_real = _np.empty(nsources, dtype=dtype)
+    tmp_imag = _np.empty(nsources, dtype=dtype)
+    interactions_real = _np.empty(4 * ntargets * nsources, dtype=dtype)
+    interactions_imag = _np.empty(4 * ntargets * nsources, dtype=dtype)
+    diff = _np.zeros((3, nsources), dtype=dtype)
+    for target_point_index in range(ntargets):
+        dist = _np.zeros(nsources, dtype=dtype)
+        for i in range(3):
+            for j in range(nsources):
+                diff[i, j] = target_points[i, target_point_index] - source_points[i, j]
+                dist[j] += diff[i, j] * diff[i, j]
+        for j in range(nsources):
+            dist[j] = _np.sqrt(dist[j])
+        for j in range(nsources):
+            tmp_real[j] = m_inv_4pi * _np.cos(wavenumber * dist[j]) / dist[j]
+            tmp_imag[j] = m_inv_4pi * _np.sin(wavenumber * dist[j]) / dist[j]
+        for j in range(nsources):
+            interactions_real[target_point_index * 4 * nsources + 4 * j] = tmp_real[j]
+            interactions_imag[target_point_index * 4 * nsources + 4 * j] = tmp_imag[j]
+        for i in range(3):
+            for j in range(nsources):
+                interactions_real[target_point_index * 4 * nsources + 4 * j + 1 + i] = (
+                    (-tmp_real[j] - wavenumber * dist[j] * tmp_imag[j])
+                    / (dist[j] * dist[j])
+                    * diff[i, j]
+                )
+                interactions_imag[target_point_index * 4 * nsources + 4 * j + 1 + i] = (
+                    (-tmp_imag[j] + wavenumber * dist[j] * tmp_real[j])
+                    / (dist[j] * dist[j])
+                    * diff[i, j]
+                )
+
+        # Now fix zero distance case
+        for j in range(nsources):
+            if dist[j] == 0:
+                for i in range(4):
+                    interactions_real[target_point_index * 4 * nsources + 4 * j + i] = 0
+                    interactions_imag[target_point_index * 4 * nsources + 4 * j + i] = 0
+
+    return interactions_real + 1j * interactions_imag
 
 
 def get_local_interaction_matrix(
@@ -143,7 +199,6 @@ def get_local_interaction_matrix_impl(
                             npoints * source_element + source_point_index
                         )
                         local_count += 1
-
 
     return data, indices, indexptr
 

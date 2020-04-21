@@ -38,13 +38,13 @@ class ExafmmInterface(object):
 
                 targets = exafmm.laplace.init_targets(target_points)
 
-                self._fmm = exafmm.laplace.LaplaceFMM(expansion_order, ncrit, depth)
-                self._tree = exafmm.laplace.setup(sources, targets, self._fmm, False)
+                self._fmm = exafmm.laplace.LaplaceFmm(expansion_order, ncrit, depth)
+                self._tree = exafmm.laplace.setup(sources, targets, self._fmm)
 
             elif mode == "helmholtz":
                 import exafmm.helmholtz
 
-                self._module = exafmm.laplace
+                self._module = exafmm.helmholtz
 
                 sources = exafmm.helmholtz.init_sources(
                     source_points, _np.zeros(len(source_points), dtype=_np.float64)
@@ -52,10 +52,10 @@ class ExafmmInterface(object):
 
                 targets = exafmm.helmholtz.init_targets(target_points)
 
-                self._fmm = exafmm.helmholtz.HelmholtzFMM(
+                self._fmm = exafmm.helmholtz.HelmholtzFmm(
                     expansion_order, ncrit, depth, wavenumber
                 )
-                self._tree = exafmm.helmholtz.setup(sources, targets, self._fmm, False)
+                self._tree = exafmm.helmholtz.setup(sources, targets, self._fmm)
 
             elif mode == "modified_helmholtz":
                 import exafmm.modified_helmholtz
@@ -68,11 +68,11 @@ class ExafmmInterface(object):
 
                 targets = exafmm.modified_helmholtz.init_targets(target_points)
 
-                self._fmm = exafmm.modified_helmholtz.ModifiedHelmholtzFMM(
+                self._fmm = exafmm.modified_helmholtz.ModifiedHelmholtzFmm(
                     expansion_order, ncrit, depth, wavenumber
                 )
                 self._tree = exafmm.modified_helmholtz.setup(
-                    sources, targets, self._fmm, False
+                    sources, targets, self._fmm
                 )
 
     @property
@@ -178,7 +178,7 @@ class ExafmmInterface(object):
                     helmholtz_kernel,
                     np.array([wavenumber], dtype="float64"),
                     precision,
-                    False,
+                    True
                 )
             elif mode == "modified_helmholtz":
                 from bempp.api.fmm.helpers import modified_helmholtz_kernel
