@@ -26,7 +26,6 @@ class SingularAssembler(_assembler.AssemblerBase):
         from bempp.api.utils.helpers import promote_to_double_precision
         from scipy.sparse import coo_matrix, csr_matrix
         from bempp.api.space.space import return_compatible_representation
-        from .kernels import select_numba_kernels
 
         domain, dual_to_range = return_compatible_representation(
             self.domain, self.dual_to_range
@@ -46,17 +45,12 @@ class SingularAssembler(_assembler.AssemblerBase):
         trial_multipliers = domain.local_multipliers.ravel()
         test_multipliers = dual_to_range.local_multipliers.ravel()
 
-        numba_assembly_function, numba_kernel_function = select_numba_kernels(
-            operator_descriptor, mode="singular"
-        )
-
         rows, cols, values = assemble_singular_part(
             domain.localised_space,
             dual_to_range.localised_space,
             self.parameters,
             operator_descriptor,
-            numba_assembly_function,
-            numba_kernel_function,
+            device_interface,
         )
         global_rows = test_local2global[rows]
         global_cols = trial_local2global[cols]
@@ -80,22 +74,18 @@ class SingularAssembler(_assembler.AssemblerBase):
 
 
 def assemble_singular_part(
-    domain,
-    dual_to_range,
-    parameters,
-    operator_descriptor,
-    numba_assembly_function,
-    numba_kernel_function,
+    domain, dual_to_range, parameters, operator_descriptor, device_interface
 ):
     """Actually assemble the Numba kernel."""
     from bempp.api.utils.helpers import get_type
+    from bempp.core.dispatcher import singular_assembler_dispatcher
+    import bempp.api
 
     precision = operator_descriptor.precision
     kernel_options = operator_descriptor.options
     is_complex = operator_descriptor.is_complex
 
     grid = domain.grid
-    grid_data = grid.data(precision)
     order = parameters.quadrature.singular
 
     rule = _SingularQuadratureRuleInterfaceGalerkin(
@@ -130,27 +120,29 @@ def assemble_singular_part(
         dtype=result_type,
     )
 
-    numba_assembly_function(
-        grid_data,
-        test_points,
-        trial_points,
-        quad_weights,
-        test_elements,
-        trial_elements,
-        test_offsets,
-        trial_offsets,
-        weights_offsets,
-        number_of_quad_points,
-        dual_to_range.normal_multipliers,
-        domain.normal_multipliers,
-        number_of_test_shape_functions,
-        number_of_trial_shape_functions,
-        dual_to_range.shapeset.evaluate,
-        domain.shapeset.evaluate,
-        numba_kernel_function,
-        _np.array(kernel_options, dtype=data_type),
-        result
-    )
+    with bempp.api.Timer(
+        message=(
+            f"Singular assembler:{operator_descriptor.identifier}:{device_interface}"
+        )
+    ):
+        singular_assembler_dispatcher(
+            device_interface,
+            operator_descriptor,
+            grid,
+            domain,
+            dual_to_range,
+            test_points,
+            trial_points,
+            quad_weights,
+            test_elements,
+            trial_elements,
+            test_offsets,
+            trial_offsets,
+            weights_offsets,
+            number_of_quad_points,
+            kernel_options,
+            result,
+        )
 
     irange = _np.arange(number_of_test_shape_functions)
     jrange = _np.arange(number_of_trial_shape_functions)

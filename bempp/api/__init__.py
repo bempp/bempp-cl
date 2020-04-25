@@ -136,7 +136,7 @@ def set_logging_level(level):
 class Timer:
     """Context manager to measure time in Bempp."""
 
-    def __init__(self, enable_log=True, message="Starting operation", level="timing"):
+    def __init__(self, enable_log=True, message="", level="timing"):
         """Constructor."""
         self.start = 0
         self.end = 0
@@ -147,7 +147,7 @@ class Timer:
 
     def __enter__(self):
         if self.enable_log:
-            log(self.message, level=self.level)
+            log("Start operation: " + self.message, level=self.level)
         self.start = _time.time()
         return self
 
@@ -155,7 +155,7 @@ class Timer:
         self.end = _time.time()
         self.interval = self.end - self.start
         if self.enable_log:
-            log(f"Time for operation: {self.interval}", level=self.level)
+            log("Finished Operation: " + self.message + f": {self.interval}s", level=self.level)
 
 
 def test(precision="double", vectorization="auto"):
@@ -246,7 +246,7 @@ __version__ = _get_version()
 PLOT_BACKEND = "jupyter_notebook"
 USE_JIT = True
 
-DEFAULT_DEVICE = "numba"
+DEFAULT_DEVICE_INTERFACE = "numba"
 DEFAULT_PRECISION = "double"
 
 ALL = -1  # Useful global identifier

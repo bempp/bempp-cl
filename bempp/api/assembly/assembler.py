@@ -2,18 +2,20 @@
 
 
 def _create_assembler(
-    domain, dual_to_range, identifier, parameters, device_interface="numba"
+    domain, dual_to_range, identifier, parameters, device_interface=None,
 ):
     """Create assembler based on string."""
-    from bempp.core.numba.singular_assembler import SingularAssembler
-    from bempp.core.numba.dense_assembler import DenseAssembler
-    from bempp.core.numba.sparse_assembler import SparseAssembler
-    from bempp.api.fmm.fmm_assembler import FmmAssembler
+    from bempp.core.singular_assembler import SingularAssembler
+    #from bempp.core.numba.dense_assembler import DenseAssembler
+    #from bempp.core.numba.sparse_assembler import SparseAssembler
+    #from bempp.api.fmm.fmm_assembler import FmmAssembler
 
     # from bempp.core.dense_assembler import DenseAssembler
     # from bempp.core.sparse_assembler import SparseAssembler
     # from bempp.core.dense_evaluator import DenseEvaluatorAssembler
     # from bempp.core.dense_multitrace_evaluator import DenseMultitraceEvaluatorAssembler
+
+
 
     if identifier == "only_singular_part":
         return SingularAssembler(domain, dual_to_range, parameters)
@@ -25,6 +27,8 @@ def _create_assembler(
         return SparseAssembler(domain, dual_to_range, parameters)
     if identifier == "fmm":
         return FmmAssembler(domain, dual_to_range, parameters)
+    else:
+        raise ValueError("Unknown assembler type.")
     # if identifier == "dense_evaluator":
         # return DenseEvaluatorAssembler(domain, dual_to_range, parameters)
     # if identifier == "multitrace_evaluator":
@@ -44,6 +48,7 @@ class AssemblerInterface(object):
         parameters=None,
     ):
         """Initialize assembler based on assembler_type string."""
+        import bempp.api
         import bempp.api as _api
 
         self._domain = domain
@@ -51,6 +56,9 @@ class AssemblerInterface(object):
         self._parameters = _api.assign_parameters(parameters)
         self._device_interface = device_interface
         self._precision = precision
+
+        if self._device_interface is None:
+            self._device_interface = bempp.api.DEFAULT_DEVICE_INTERFACE
 
         if not isinstance(assembler, str):
             self._implementation = assembler
