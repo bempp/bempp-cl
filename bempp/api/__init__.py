@@ -248,5 +248,7 @@ USE_JIT = True
 
 DEFAULT_DEVICE_INTERFACE = "numba"
 DEFAULT_PRECISION = "double"
+VECTORIZATION_MODE = 'auto'
+
 
 ALL = -1  # Useful global identifier
