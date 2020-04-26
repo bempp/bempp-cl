@@ -19,3 +19,22 @@ def singular_assembler_dispatcher(device_interface, *args):
     else:
 
         raise ValueError("Unknown assembler.")
+
+def dense_assembler_dispatcher(device_interface, *args):
+
+
+    interface_type = device_interface.split("_")[0]
+
+    if interface_type == "opencl":
+        from bempp.core.opencl_assemblers import dense_assembler
+
+        dense_assembler(device_interface, *args)
+
+    elif interface_type == "numba":
+        from bempp.core.numba_assemblers import dense_assembler
+
+        dense_assembler(device_interface, *args)
+
+    else:
+
+        raise ValueError("Unknown assembler.")
