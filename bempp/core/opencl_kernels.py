@@ -100,12 +100,17 @@ def get_kernel_from_operator_descriptor(
     precision = operator_descriptor.precision
     assembly_function, kernel_name = select_cl_kernel(operator_descriptor, mode=mode)
 
+    vec_length = get_vector_width(precision)
+    vec_string = get_vec_string(precision)
+
     if not mode == "singular":
-        if force_novec:
+        if force_novec or vec_length == 1:
             assembly_function += "_novec"
         else:
-            assembly_function += get_vec_string(precision)
+            assembly_function += "_vec"
     options["KERNEL_FUNCTION"] = kernel_name
+    options["VEC_LENGTH"] = vec_length
+    options["VEC_STRING"] = vec_string
     return build_program(assembly_function, options, precision)
 
 
@@ -125,7 +130,7 @@ def get_vec_string(precision):
     """Return vectorisation string."""
     import bempp.api
 
-    vec_strings = {1: "_novec", 4: "_vec4", 8: "_vec8", 16: "_vec16"}
+    vec_strings = {1: "novec", 4: "vec4", 8: "vec8", 16: "vec16"}
 
     return vec_strings[get_vector_width(precision)]
 
