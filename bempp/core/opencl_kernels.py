@@ -11,14 +11,14 @@ _DEFAULT_DEVICE = None
 _DEFAULT_CONTEXT = None
 
 
-def select_cl_kernel(operator_descriptor, mode="singular"):
+def select_cl_kernel(operator_descriptor, mode):
     """Select OpenCL kernel."""
 
-    singular_assemblers = {
-        "default_scalar": "evaluate_dense_singular",
-    }
+    singular_assemblers = {"default_scalar": "evaluate_dense_singular"}
 
-    singular_kernels = {
+    regular_assemblers = {"default_scalar": "evaluate_dense_regular"}
+
+    kernels = {
         "laplace_single_layer": "laplace_single_layer",
         "laplace_double_layer": "laplace_double_layer",
         "laplace_adjoint_double_layer": "laplace_adjoint_double_layer",
@@ -30,7 +30,13 @@ def select_cl_kernel(operator_descriptor, mode="singular"):
     if mode == "singular":
         return (
             singular_assemblers[operator_descriptor.assembly_type],
-            singular_kernels[operator_descriptor.kernel_type],
+            kernels[operator_descriptor.kernel_type],
+        )
+
+    elif mode == "regular":
+        return (
+            regular_assemblers[operator_descriptor.assembly_type],
+            kernels[operator_descriptor.kernel_type],
         )
 
 
@@ -86,28 +92,42 @@ def build_program(assembly_function, options, precision):
     )
 
 
-def get_kernel_from_operator_descriptor(operator_descriptor, options, mode):
+def get_kernel_from_operator_descriptor(
+    operator_descriptor, options, mode, force_novec=False
+):
     """Return compiled kernel from operator descriptor."""
 
     precision = operator_descriptor.precision
     assembly_function, kernel_name = select_cl_kernel(operator_descriptor, mode=mode)
 
-    if not mode == 'singular':
-        assembly_function += get_vec_string(precision)
+    if not mode == "singular":
+        if force_novec:
+            assembly_function += "_novec"
+        else:
+            assembly_function += get_vec_string(precision)
     options["KERNEL_FUNCTION"] = kernel_name
     return build_program(assembly_function, options, precision)
+
+
+def get_vector_width(precision):
+    """Return vector width."""
+    import bempp.api
+
+    mode_to_length = {"novec": 1, "vec4": 4, "vec8": 8, "vec16": 16}
+
+    if bempp.api.VECTORIZATION_MODE == "auto":
+        return get_native_vector_width(default_device(), precision)
+    else:
+        return mode_to_length[bempp.api.VECTORIZATION_MODE]
 
 
 def get_vec_string(precision):
     """Return vectorisation string."""
     import bempp.api
 
-    vec_modes = {1: "_novec", 4: "_vec4", 8: "_vec8", 16: "_vec16"}
+    vec_strings = {1: "_novec", 4: "_vec4", 8: "_vec8", 16: "_vec16"}
 
-    if bempp.api.VECTORIZATION_MODE == "auto":
-        return vec_modes[get_native_vector_width(precision)]
-    else:
-        return bempp.api.VECTORIZATION_MODE
+    return vec_strings[get_vector_width(precision)]
 
 
 def default_device():

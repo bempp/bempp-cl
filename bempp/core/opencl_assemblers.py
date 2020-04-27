@@ -127,3 +127,67 @@ def singular_assembler(
             g_times_l=True,
         )
         _cl.enqueue_copy(queue, result, result_buffer)
+
+
+def dense_assembler(
+    device_interface, operator_descriptor, domain, dual_to_range, parameters, result
+):
+    """Assemble dense with OpenCL."""
+    from bempp.api.integration.triangle_gauss import rule
+    from bempp.api.utils.helpers import get_type
+    from bempp.core.opencl_kernels import get_kernel_from_operator_descriptor
+    from bempp.core.opencl_kernels import default_context, default_device
+
+    mf = _cl.mem_flags
+    ctx = default_context()
+    device = default_device()
+
+    precision = operator_descriptor.precision
+    dtype = get_type(precision).real
+
+    quad_points, quad_weights = rule(parameters.quadrature.regular)
+
+    test_indices, test_color_indexptr = dual_to_range.get_elements_by_color()
+    trial_indices, trial_color_indexptr = domain.get_elements_by_color()
+
+    options = {
+            "NUMBER_OF_QUAD_POINTS": len(quad_weights),
+            "TEST": dual_to_range.shapeset.identifier,
+            "TRIAL": domain.shapeset.identifier,
+            "TRIAL_NUMBER_OF_ELEMENTS": domain.number_of_support_elements,
+            "TEST_NUMBER_OF_ELEMENTS": dual_to_range.number_of_support_elements,
+            "NUMBER_OF_TEST_SHAPE_FUNCTIONS": dual_to_range.number_of_shape_functions,
+            "NUMBER_OF_TRIAL_SHAPE_FUNCTIONS": domain.number_of_shape_functions,
+            }
+
+    if operator_descriptor.is_complex:
+        options["COMPLEX_KERNEL"] = None
+
+    main_kernel = get_kernel_from_operator_descriptor(
+        operator_descriptor, options, "regular"
+    )
+    remainder_kernel = get_kernel_from_operator_descriptor(
+        operator_descriptor, options, "regular", force_novec=True
+    )
+
+    test_indices_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=test_indices)
+    trial_indices_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=trial_indices)
+
+    test_normals_buffer = _cl.Buffer(
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=dual_to_range.normal_multipliers
+    )
+    trial_normals_buffer = _cl.Buffer(
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=domain.normal_multipliers
+    )
+    test_grid_buffer = _cl.Buffer(
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=dual_to_range.grid.as_array.astype(dtype)
+    )
+    trial_grid_buffer = _cl.Buffer(
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=domain.grid.as_array.astype(dtype)
+
+    test_elements_buffer = _cl.Buffer(
+        ctx, mf.READ_ONLY | mf.COPY_HOST_TR, hostbuf=dual_to_range.grid.elements.ravel(order='F')
+
+    trial_elements_buffer = _cl.Buffer(
+        ctx, mf.READ_ONLY | mf.COPY_HOST_TR, hostbuf=domain.grid.elements.ravel(order='F')
+
