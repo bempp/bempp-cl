@@ -20,6 +20,7 @@ def get_mode_from_operator_identifier(identifier):
     else:
         raise ValueError("Unknown identifier string.")
 
+
 def get_fmm_interface(domain, dual_to_range, mode, wavenumber):
     """Get an Fmm instance."""
     import bempp.api
@@ -95,10 +96,8 @@ class FmmAssembler(_assembler.AssemblerBase):
             wavenumber = operator_descriptor.options[0]
 
         fmm_interface = get_fmm_interface(
-                actual_domain,
-                actual_dual_to_range,
-                mode,
-                wavenumber)
+            actual_domain, actual_dual_to_range, mode, wavenumber
+        )
 
         self._evaluator = create_evaluator(
             operator_descriptor,
@@ -164,7 +163,7 @@ def make_scalar_hypersingular(
         )
 
     def evaluate_laplace_hypersingular(x):
-        """Evaluate the laplace hypersingular kernel."""
+        """Evaluate the Laplace hypersingular kernel."""
 
         fmm_res0 = (
             target_curls_trans[0] @ fmm_interface.evaluate(source_curls[0] @ x)[:, 0]
@@ -178,8 +177,46 @@ def make_scalar_hypersingular(
 
         return fmm_res0 + fmm_res1 + fmm_res2 + singular_part @ x
 
+    def evaluate_helmholtz_hypersingular(x):
+        """Evaluate the Helmholtz hypersingular kernel."""
+
+        wavenumber = operator_descriptor.options[0]
+        x_transformed = source_map @ x
+
+        fmm_res0 = (
+            target_curls_trans[0] @ fmm_interface.evaluate(source_curls[0] @ x)[:, 0]
+        )
+        fmm_res1 = (
+            target_curls_trans[1] @ fmm_interface.evaluate(source_curls[1] @ x)[:, 0]
+        )
+        fmm_res2 = (
+            target_curls_trans[2] @ fmm_interface.evaluate(source_curls[2] @ x)[:, 0]
+        )
+
+        first_part = fmm_res0 + fmm_res1 + fmm_res2
+
+        fmm_n1 = (
+            target_normals[:, 0]
+            * fmm_interface.evaluate(source_normals[:, 0] * x_transformed)[:, 0]
+        )
+        fmm_n2 = (
+            target_normals[:, 1]
+            * fmm_interface.evaluate(source_normals[:, 1] * x_transformed)[:, 0]
+        )
+        fmm_n3 = (
+            target_normals[:, 2]
+            * fmm_interface.evaluate(source_normals[:, 2] * x_transformed)[:, 0]
+        )
+
+        second_part = target_map @ (fmm_n1 + fmm_n2 + fmm_n3)
+
+        return first_part - wavenumber * wavenumber * second_part + singular_part @ x
+
     if operator_descriptor.identifier == "laplace_hypersingular_boundary":
         return evaluate_laplace_hypersingular
+
+    if operator_descriptor.identifier == "helmholtz_hypersingular_boundary":
+        return evaluate_helmholtz_hypersingular
 
 
 def make_default_scalar(operator_descriptor, fmm_interface, domain, dual_to_range):

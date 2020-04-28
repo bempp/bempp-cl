@@ -7,9 +7,9 @@ def _create_assembler(
     """Create assembler based on string."""
     from bempp.core.singular_assembler import SingularAssembler
     from bempp.core.dense_assembler import DenseAssembler
+    from bempp.api.fmm.fmm_assembler import FmmAssembler
     #from bempp.core.numba.dense_assembler import DenseAssembler
     #from bempp.core.numba.sparse_assembler import SparseAssembler
-    #from bempp.api.fmm.fmm_assembler import FmmAssembler
 
     # from bempp.core.dense_assembler import DenseAssembler
     # from bempp.core.sparse_assembler import SparseAssembler
