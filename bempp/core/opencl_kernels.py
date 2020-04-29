@@ -14,7 +14,10 @@ _DEFAULT_CONTEXT = None
 def select_cl_kernel(operator_descriptor, mode):
     """Select OpenCL kernel."""
 
-    singular_assemblers = {"default_scalar": "evaluate_dense_singular"}
+    singular_assemblers = {
+            "default_scalar": "evaluate_dense_singular",
+            "laplace_hypersingular": "evaluate_dense_laplace_hypersingular_singular"
+            }
 
     regular_assemblers = {"default_scalar": "evaluate_dense_regular"}
 
