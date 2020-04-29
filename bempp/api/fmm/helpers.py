@@ -45,6 +45,50 @@ def laplace_kernel(target_points, source_points, kernel_parameters, dtype, resul
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
 )
+def modified_helmholtz_kernel(
+    target_points, source_points, kernel_parameters, dtype, result_type
+):
+    """Evaluate the modified Helmholtz kernel."""
+
+    ntargets = target_points.shape[1]
+    nsources = source_points.shape[1]
+    m_inv_4pi = dtype.type(M_INV_4PI)
+
+    interactions = _np.empty(4 * ntargets * nsources, dtype=result_type)
+    diff = _np.zeros((3, nsources), dtype=dtype)
+    for target_point_index in range(ntargets):
+        dist = _np.zeros(nsources, dtype=dtype)
+        for i in range(3):
+            for j in range(nsources):
+                diff[i, j] = target_points[i, target_point_index] - source_points[i, j]
+                dist[j] += diff[i, j] * diff[i, j]
+        for j in range(nsources):
+            dist[j] = _np.sqrt(dist[j])
+        for j in range(nsources):
+            interactions[target_point_index * 4 * nsources + 4 * j] = (
+                m_inv_4pi * _np.exp(-kernel_parameters[0] * dist[j]) / dist[j]
+            )
+        for i in range(3):
+            for j in range(nsources):
+                interactions[target_point_index * 4 * nsources + 4 * j + 1 + i] = (
+                    (-kernel_parameters[0] * dist[j] - 1)
+                    * diff[i, j]
+                    * _np.exp(-kernel_parameters[0] * dist[j])
+                    * m_inv_4pi
+                    / (dist[j] * dist[j] * dist[j])
+                )
+        # Now fix zero distance case
+        for j in range(nsources):
+            if dist[j] == 0:
+                for i in range(4):
+                    interactions[target_point_index * 4 * nsources + 4 * j + i] = 0
+
+    return interactions
+
+
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
 def helmholtz_kernel(
     target_points, source_points, kernel_parameters, dtype, result_type
 ):
