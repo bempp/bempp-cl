@@ -246,7 +246,7 @@ class GridFunction(object):
 
             _project_function(
                 fun,
-                comp_dual.grid.data,
+                comp_dual.grid.data('double'),
                 comp_dual.support_elements,
                 comp_dual.local2global,
                 comp_dual.local_multipliers,

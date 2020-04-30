@@ -19,7 +19,7 @@ class SparseAssembler(_assembler.AssemblerBase):
         from bempp.api.utils.helpers import promote_to_double_precision
         from scipy.sparse import coo_matrix, csr_matrix
         from bempp.api.space.space import return_compatible_representation
-        from .kernels import select_numba_kernels
+        from .numba_kernels import select_numba_kernels
         from bempp.api.assembly.discrete_boundary_operator import SparseDiscreteBoundaryOperator
 
         domain, dual_to_range = return_compatible_representation(

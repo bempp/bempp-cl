@@ -9,7 +9,7 @@ def _create_assembler(
     from bempp.core.dense_assembler import DenseAssembler
     from bempp.api.fmm.fmm_assembler import FmmAssembler
     #from bempp.core.numba.dense_assembler import DenseAssembler
-    #from bempp.core.numba.sparse_assembler import SparseAssembler
+    from bempp.core.sparse_assembler import SparseAssembler
 
     # from bempp.core.dense_assembler import DenseAssembler
     # from bempp.core.sparse_assembler import SparseAssembler
