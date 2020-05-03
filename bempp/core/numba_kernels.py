@@ -21,6 +21,7 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
         "helmholtz_hypersingular": helmholtz_hypersingular_regular,
         "modified_helmholtz_hypersingular": modified_helmholtz_hypersingular_regular,
     }
+    assembly_function_potential = {"default_scalar": default_scalar_potential_kernel}
 
     assembly_functions_sparse = {"default_sparse": default_sparse_kernel}
 
@@ -65,8 +66,13 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
             assembly_functions_sparse[operator_descriptor.assembly_type],
             kernel_functions_sparse[operator_descriptor.kernel_type],
         )
+    elif mode == "potential":
+        return (
+            assembly_function_potential[operator_descriptor.assembly_type],
+            kernel_functions_regular[operator_descriptor.kernel_type],
+        )
     else:
-        raise ValueError("mode must be one of 'singular', 'regular' or 'sparse'.")
+        raise ValueError("Unknown mode.")
 
 
 @_numba.jit(
@@ -633,6 +639,7 @@ def modified_helmholtz_double_layer_singular(
         )
     return output
 
+
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
 )
@@ -669,6 +676,7 @@ def modified_helmholtz_adjoint_double_layer_regular(
         )
     return output
 
+
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
 )
@@ -704,7 +712,6 @@ def modified_helmholtz_adjoint_double_layer_singular(
             / (dist[j] * dist[j] * dist[j])
         )
     return output
-
 
 
 @_numba.jit(
@@ -1440,6 +1447,7 @@ def modified_helmholtz_hypersingular_regular(
                         * trial_multipliers[trial_element, trial_fun_index]
                     )
 
+
 @_numba.jit(
     nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
 )
@@ -1852,3 +1860,43 @@ def modified_helmholtz_hypersingular_singular(
                     grid_data.integration_elements[test_element]
                     * grid_data.integration_elements[trial_element]
                 )
+
+
+@_numba.jit(
+    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
+)
+def default_scalar_potential_kernel(
+    dtype,
+    result_type,
+    kernel_dimension,
+    points,
+    x,
+    grid_data,
+    quad_points,
+    weights,
+    number_of_shape_functions,
+    shapeset_evaluate,
+    kernel_function,
+    normal_multipliers,
+    support_elements,
+):
+    """Implement a scalar potential kernel."""
+
+    result = _np.zeros((kernel_dimension, points.shape[1]), dtype=result_type)
+    n_support_elements = len(support_elements)
+    number_of_quad_points = len(quad_points)
+
+    global_points = _np.zeros(
+        (3, number_of_quad_points * n_support_elements), dtype=dtype
+    )
+
+    for element_index, element in support_elements:
+        global_points[
+            :,
+            number_of_quad_points
+            * element_index : number_of_quad_points
+            * (1 + element_index),
+        ] = grid_data.local2global(element, quad_points)
+
+    return result
+

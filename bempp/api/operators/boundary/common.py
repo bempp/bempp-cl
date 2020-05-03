@@ -27,12 +27,22 @@ def create_operator(
     if precision is None:
         precision = bempp.api.DEFAULT_PRECISION
 
-    if assembler != 'only_singular_part':
+    if assembler != "only_singular_part":
         # Add operator for singular part assembly. Needed for certain fast methods.
         singular_part = create_operator(
-                identifier, domain, range_, dual_to_range, parameters, 'only_singular_part',
-                operator_options, kernel_type, assembly_type, device_interface, precision,
-                is_complex)
+            identifier,
+            domain,
+            range_,
+            dual_to_range,
+            parameters,
+            "only_singular_part",
+            operator_options,
+            kernel_type,
+            assembly_type,
+            device_interface,
+            precision,
+            is_complex,
+        )
     else:
         singular_part = None
 
@@ -40,8 +50,17 @@ def create_operator(
         domain, dual_to_range, assembler, device_interface, precision, parameters
     )
 
+    kernel_dimension = 1
+
     descriptor = OperatorDescriptor(
-        identifier, operator_options, kernel_type, assembly_type, precision, is_complex, singular_part, 
+        identifier,
+        operator_options,
+        kernel_type,
+        assembly_type,
+        precision,
+        is_complex,
+        singular_part,
+        kernel_dimension,
     )
     return _boundary_operator.BoundaryOperatorWithAssembler(
         domain, range_, dual_to_range, assembler, descriptor

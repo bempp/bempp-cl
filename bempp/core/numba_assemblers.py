@@ -25,9 +25,8 @@ def singular_assembler(
     from bempp.core.numba_kernels import select_numba_kernels
 
     numba_assembly_function, numba_kernel_function = select_numba_kernels(
-            operator_descriptor, mode="singular"
-            )
-
+        operator_descriptor, mode="singular"
+    )
 
     precision = operator_descriptor.precision
     dtype = get_type(precision).real
@@ -51,16 +50,13 @@ def singular_assembler(
         domain.shapeset.evaluate,
         numba_kernel_function,
         _np.array(kernel_options, dtype=dtype),
-        result
+        result,
     )
 
+
 def dense_assembler(
-        device_interface,
-        operator_descriptor,
-        domain,
-        dual_to_range,
-        parameters,
-        result):
+    device_interface, operator_descriptor, domain, dual_to_range, parameters, result
+):
     """Numba based dense assembler."""
     import bempp.api
     from bempp.core.numba_kernels import select_numba_kernels
@@ -117,4 +113,50 @@ def dense_assembler(
             dual_to_range.shapeset.evaluate,
             domain.shapeset.evaluate,
             result,
+        )
+
+
+def potential_assembler(
+    device_interface, space, operator_descriptor, points, parameters
+):
+    """Return an evaluator function to evaluate a potential."""
+    from bempp.core.numba_kernels import select_numba_kernels
+    from bempp.api.integration.triangle_gauss import rule
+    from bempp.api.utils.helpers import get_type
+
+    (numba_assembly_function, numba_kernel_function_regular) = select_numba_kernels(
+        operator_descriptor, mode="potential"
+    )
+
+    quad_points, quad_weights = rule(parameters.quadrature.regular)
+
+    precision = operator_descriptor.precision
+
+    dtype = get_type(precision).real
+
+    if operator_descriptor.is_complex:
+        result_type = get_type(precision).complex
+    else:
+        result_type = dtype
+
+    points_transformed = points.astype(dtype)
+    grid_data = space.grid.data(precision)
+
+    def evaluator(x):
+        """Actually evaluate the potential."""
+
+        return numba_assembly_function(
+            dtype,
+            result_type,
+            kernel_dimension,
+            points_transformed,
+            x.astype(result_type),
+            grid_data,
+            quad_points.astype(precision),
+            weights.astype(precision),
+            space.number_of_shape_functions,
+            space.shapeset.evaluate,
+            numba_kernel_function_regular,
+            space.normal_multipliers,
+            space.support_elements,
         )

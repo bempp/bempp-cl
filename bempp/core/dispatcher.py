@@ -21,7 +21,7 @@ def singular_assembler_dispatcher(device_interface, *args):
         raise ValueError("Unknown assembler.")
 
 def dense_assembler_dispatcher(device_interface, *args):
-
+    """Dispatcher for dense assemblers."""
 
     interface_type = device_interface.split("_")[0]
 
@@ -38,3 +38,14 @@ def dense_assembler_dispatcher(device_interface, *args):
     else:
 
         raise ValueError("Unknown assembler.")
+
+def potential_dispatcher(device_interface, *args):
+    """Potential assembler dispatcher."""
+
+    interface_type = device_interface.split("_")[0]
+
+    if interface_type == "numba":
+        from bempp.core.numba_assemblers import potential_assembler
+
+        return potential_assembler(device_interface, *args)
+

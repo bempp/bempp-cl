@@ -2,21 +2,20 @@
 
 
 def _create_assembler(
-    domain, dual_to_range, identifier, parameters, device_interface=None,
+    domain, dual_to_range, identifier, parameters, device_interface=None
 ):
     """Create assembler based on string."""
     from bempp.core.singular_assembler import SingularAssembler
     from bempp.core.dense_assembler import DenseAssembler
     from bempp.api.fmm.fmm_assembler import FmmAssembler
-    #from bempp.core.numba.dense_assembler import DenseAssembler
+
+    # from bempp.core.numba.dense_assembler import DenseAssembler
     from bempp.core.sparse_assembler import SparseAssembler
 
     # from bempp.core.dense_assembler import DenseAssembler
     # from bempp.core.sparse_assembler import SparseAssembler
     # from bempp.core.dense_evaluator import DenseEvaluatorAssembler
     # from bempp.core.dense_multitrace_evaluator import DenseMultitraceEvaluatorAssembler
-
-
 
     if identifier == "only_singular_part":
         return SingularAssembler(domain, dual_to_range, parameters)
@@ -31,9 +30,9 @@ def _create_assembler(
     else:
         raise ValueError("Unknown assembler type.")
     # if identifier == "dense_evaluator":
-        # return DenseEvaluatorAssembler(domain, dual_to_range, parameters)
+    # return DenseEvaluatorAssembler(domain, dual_to_range, parameters)
     # if identifier == "multitrace_evaluator":
-        # return DenseMultitraceEvaluatorAssembler(domain, dual_to_range, parameters)
+    # return DenseMultitraceEvaluatorAssembler(domain, dual_to_range, parameters)
 
 
 class AssemblerInterface(object):
@@ -90,7 +89,7 @@ class AssemblerInterface(object):
             self._device_interface,
             self._precision,
             *args,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -123,3 +122,49 @@ class AssemblerBase(object):
     def assemble(self, operator_descriptor, *args, **kwargs):
         """Assemble the operator."""
         raise NotImplementedError("Needs to be implemented by derived class.")
+
+
+class PotentialAssembler(object):
+    """Base class for potential assemblers."""
+
+    def __init__(
+        self,
+        space,
+        points,
+        operator_descriptor,
+        device_interface,
+        assembler,
+        parameters,
+    ):
+        """Interface for potential operators."""
+
+        self.space = space
+        self.points = points
+        self.kernel_dimension = operator_descriptor.kernel_dimension
+
+        self._implementation = select_potential_implementation(
+            space, points, operator_descriptor, device_interface, assembler, parameters
+        )
+
+    def evaluate(self, x):
+        """Evaluate the potential."""
+
+        return self._implementation.evaluate(x)
+
+
+def select_potential_implementation(
+    space, points, operator_descriptor, device_interface, assembler, parameters
+):
+    """Select a potential operator implementation."""
+    import bempp.api
+
+    parameters = bempp.api.assign_parameters(parameters)
+
+    if assembler == "dense":
+        from bempp.core.dense_potential_assembler import DensePotentialAssembler
+
+        return DensePotentialAssembler(
+            space, operator_descriptor, points, device_interface, parameters
+        )
+    else:
+        raise ValueError(f"Unknown potential assembler: {assembler}")
