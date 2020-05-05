@@ -1873,10 +1873,11 @@ def default_scalar_potential_kernel(
     x,
     grid_data,
     quad_points,
-    weights,
+    quad_weights,
     number_of_shape_functions,
     shapeset_evaluate,
     kernel_function,
+    kernel_parameters,
     normal_multipliers,
     support_elements,
 ):
@@ -1884,13 +1885,16 @@ def default_scalar_potential_kernel(
 
     result = _np.zeros((kernel_dimension, points.shape[1]), dtype=result_type)
     n_support_elements = len(support_elements)
-    number_of_quad_points = len(quad_points)
+    number_of_quad_points = len(quad_weights)
+    number_of_points = points.shape[1]
 
     global_points = _np.zeros(
         (3, number_of_quad_points * n_support_elements), dtype=dtype
     )
 
-    for element_index, element in support_elements:
+    tmp = _np.zeros(number_of_quad_points * n_support_elements, dtype=result_type)
+
+    for element_index, element in enumerate(support_elements):
         global_points[
             :,
             number_of_quad_points
@@ -1898,5 +1902,39 @@ def default_scalar_potential_kernel(
             * (1 + element_index),
         ] = grid_data.local2global(element, quad_points)
 
-    return result
+    normals = get_normals(
+        grid_data, number_of_quad_points, support_elements, normal_multipliers
+    )
 
+    fun_values = shapeset_evaluate(quad_points)
+
+    test_normal = _np.array(
+        [0.0, 0.0, 0.0], dtype=dtype
+    )  # Just need a dummy test normal
+
+    for element_index, element in enumerate(support_elements):
+        for quad_point_index in range(number_of_quad_points):
+            for fun_index in range(number_of_shape_functions):
+                tmp[number_of_quad_points * element_index + quad_point_index] += (
+                    grid_data.integration_elements[element]
+                    * quad_weights[quad_point_index]
+                    * fun_values[0, fun_index, quad_point_index]
+                    * x[number_of_shape_functions * element + fun_index]
+                )
+
+    for point_index in range(number_of_points):
+        test_point = points[:, point_index]
+
+        kernel_values = _np.atleast_2d(
+            kernel_function(
+                test_point, global_points, test_normal, normals, kernel_parameters
+            )
+        )
+
+        for dim in range(kernel_dimension):
+            point_result = result_type.type(0)
+            for trial_index in range(number_of_quad_points * n_support_elements):
+                point_result += kernel_values[dim, trial_index] * tmp[trial_index]
+            result[dim, point_index] = point_result
+
+    return result

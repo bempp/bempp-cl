@@ -141,6 +141,7 @@ class PotentialAssembler(object):
         self.space = space
         self.points = points
         self.kernel_dimension = operator_descriptor.kernel_dimension
+        self._is_complex = operator_descriptor.is_complex
 
         self._implementation = select_potential_implementation(
             space, points, operator_descriptor, device_interface, assembler, parameters
@@ -148,8 +149,15 @@ class PotentialAssembler(object):
 
     def evaluate(self, x):
         """Evaluate the potential."""
+        import numpy as np
 
-        return self._implementation.evaluate(x)
+        if not self._is_complex:
+            if np.iscomplexobj(x):
+                return self._implementation.evaluate(np.real(x)) + 1j * self._implementation.evaluate(np.imag(x))
+            else:
+                return self._implementation.evaluate(x)
+        else:
+            return self._implementation.evaluate(x)
 
 
 def select_potential_implementation(
@@ -159,6 +167,8 @@ def select_potential_implementation(
     import bempp.api
 
     parameters = bempp.api.assign_parameters(parameters)
+    if device_interface is None:
+        device_interface = bempp.api.DEFAULT_DEVICE_INTERFACE
 
     if assembler == "dense":
         from bempp.core.dense_potential_assembler import DensePotentialAssembler

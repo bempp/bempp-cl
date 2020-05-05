@@ -132,15 +132,19 @@ def potential_assembler(
 
     precision = operator_descriptor.precision
 
-    dtype = get_type(precision).real
+    dtype = _np.dtype(get_type(precision).real)
 
     if operator_descriptor.is_complex:
-        result_type = get_type(precision).complex
+        result_type = _np.dtype(get_type(precision).complex)
     else:
         result_type = dtype
 
+    kernel_dimension = operator_descriptor.kernel_dimension
+
     points_transformed = points.astype(dtype)
     grid_data = space.grid.data(precision)
+
+    kernel_parameters = _np.array(operator_descriptor.options, dtype=dtype)
 
     def evaluator(x):
         """Actually evaluate the potential."""
@@ -153,10 +157,13 @@ def potential_assembler(
             x.astype(result_type),
             grid_data,
             quad_points.astype(precision),
-            weights.astype(precision),
+            quad_weights.astype(precision),
             space.number_of_shape_functions,
             space.shapeset.evaluate,
             numba_kernel_function_regular,
+            kernel_parameters,
             space.normal_multipliers,
             space.support_elements,
         )
+
+    return evaluator

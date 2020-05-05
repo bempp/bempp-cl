@@ -33,7 +33,7 @@ class DensePotentialAssembler(object):
             x_transformed = self.space.map_to_full_grid @ (
                 self.space.dof_transformation @ x
             )
-            result = implementation(x)
+            result = implementation(x_transformed)
             return result.reshape([kernel_dimension, -1], order="F")
 
         self._evaluator = potential_evaluator
