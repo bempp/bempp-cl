@@ -16,7 +16,7 @@ jobs:
 #          name: Flake8 checks
       - restore_cache:
           keys:
-            - bempp-conda-{{ checksum environment.yml }}
+            - bempp-conda-{{ checksum "environment.yml" }}
       - run:
           command: |
             if [[ ! -d /home/circleci/miniconda ]]; then
@@ -31,10 +31,9 @@ jobs:
             conda activate bempp
           name: Install miniconda and create bempp environment
       - save_cache:
-          key: bempp-conda-{{ checksum environment.yml }}
+          key: bempp-conda-{{ checksum "environment.yml" }}
           paths:
             - ~/miniconda
-            - ~/miniconda3/envs/bempp
       - run:
           command: |
             source ~/miniconda/bin/activate root
