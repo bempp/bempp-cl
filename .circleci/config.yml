@@ -2,6 +2,7 @@ version: 2.1
 
 orbs:
   python: circleci/python@0.2.1
+  conda: deepgenomics/conda@25.0.0
 
 jobs:
   build-and-test:
