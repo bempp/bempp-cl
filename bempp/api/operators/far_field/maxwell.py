@@ -28,6 +28,7 @@ def electric_field(
         )
     )
 
+
 def magnetic_field(
     space, points, wavenumber, parameters=None, device_interface=None, precision=None
 ):

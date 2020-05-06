@@ -2,7 +2,6 @@
 from bempp.api.assembly import assembler as _assembler
 from bempp.api.assembly import boundary_operator as _boundary_operator
 from bempp.api.assembly import blocked_operator as _blocked_operator
-import numpy as _np
 
 
 # pylint: disable=too-many-arguments
@@ -53,7 +52,6 @@ def create_multitrace_operator(
     precision,
 ):
     """Generic instantiation of operators."""
-    from bempp.api.operators import OperatorDescriptor
     from bempp.api.operators import MultitraceOperatorDescriptor
     from bempp.api import default_device
     from bempp.api import get_precision
@@ -73,7 +71,7 @@ def create_multitrace_operator(
         operator_options,
         multitrace_kernel,
         singular_contribution
-   )
+    )
     return _blocked_operator.MultitraceOperatorFromAssembler(
         domain, range_, dual_to_range, assembler, descriptor
     )

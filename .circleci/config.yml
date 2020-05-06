@@ -8,12 +8,14 @@ jobs:
     executor: python/default
     steps:
       - checkout
+      - python/load-cache
       - run:
           command: pip3 install flake8
           name: Install flake8
-#      - run:
-#          command: python3 -m flake8 bempp --exclude=__init__.py
-#          name: Flake8 checks
+      - python/save-cache
+      - run:
+          command: python3 -m flake8 bempp --exclude=__init__.py
+          name: Flake8 checks
       - restore_cache:
           keys:
             - bempp-conda-{{ checksum "environment.yml" }}

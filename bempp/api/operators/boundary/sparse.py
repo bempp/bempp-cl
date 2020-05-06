@@ -209,7 +209,7 @@ def sigma_identity(
     precision=None,
 ):
     """
-    Evaluate the sigma identity operator. 
+    Evaluate the sigma identity operator.
 
     For Galerkin methods this operator is equivalent to .5 * identity. For
     collocation methods the value may differ from .5 on piecewise smooth

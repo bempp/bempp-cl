@@ -22,7 +22,7 @@ def test_p1_trace():
 
     for cell in bempp_space.grid.entity_iterator(0):
         mid = cell.geometry.centroid
-        bempp_val = bempp_fun.evaluate(cell.index, np.array([[1/3], [1/3]]))
+        bempp_val = bempp_fun.evaluate(cell.index, np.array([[1 / 3], [1 / 3]]))
 
         fenics_val = np.zeros(1)
         fenics_fun.eval(fenics_val, mid)
@@ -49,7 +49,7 @@ def test_nc1_trace():
     for cell in bempp_space.grid.entity_iterator(0):
         mid = cell.geometry.centroid
         normal = cell.geometry.normal
-        bempp_val = bempp_fun.evaluate(cell.index, np.array([[1/3], [1/3]]))
+        bempp_val = bempp_fun.evaluate(cell.index, np.array([[1 / 3], [1 / 3]]))
 
         fenics_val = np.zeros(3)
         fenics_fun.eval(fenics_val, mid)

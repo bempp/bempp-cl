@@ -6,8 +6,6 @@
 import numpy as _np
 import pytest
 
-import bempp.api
-
 pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
 
@@ -15,7 +13,6 @@ def test_maxwell_electric_field_sphere(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Maxwell electric field on sphere."""
-    from bempp.api import get_precision
     from bempp.api import function_space
     from bempp.api.operators.boundary.maxwell import electric_field
 
@@ -45,11 +42,11 @@ def test_maxwell_electric_field_sphere(
     expected = helpers.load_npy_data("maxwell_electric_field_boundary")
     _np.testing.assert_allclose(discrete_op.A, expected, rtol=rtol, atol=atol)
 
+
 def test_maxwell_electric_field_bc_sphere(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Maxwell electric field on sphere with BC basis."""
-    from bempp.api import get_precision
     from bempp.api import function_space
     from bempp.api.operators.boundary.maxwell import electric_field
 
@@ -81,18 +78,17 @@ def test_maxwell_electric_field_bc_sphere(
         rtol = 1e-10
         atol = 1e-14
 
-
     mat = helpers.load_npy_data("maxwell_electric_field_boundary_bc")
 
     expected = mat @ vec
 
     _np.testing.assert_allclose(actual, expected, rtol=rtol, atol=atol)
 
+
 def test_maxwell_electric_field_rbc_bc_sphere(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Maxwell electric field on sphere with RBC/BC basis."""
-    from bempp.api import get_precision
     from bempp.api import function_space
     from bempp.api.operators.boundary.maxwell import electric_field
 
@@ -130,11 +126,11 @@ def test_maxwell_electric_field_rbc_bc_sphere(
 
     _np.testing.assert_allclose(actual, expected, rtol=rtol, atol=atol)
 
+
 def test_maxwell_electric_field_complex_sphere(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Maxwell electric field on sphere with complex wavenumber."""
-    from bempp.api import get_precision
     from bempp.api import function_space
     from bempp.api.operators.boundary.maxwell import electric_field
 
@@ -169,7 +165,6 @@ def test_maxwell_electric_field_screen(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Maxwell electric field on sphere."""
-    from bempp.api import get_precision
     from bempp.api import function_space
     from bempp.api.operators.boundary.maxwell import electric_field
 
@@ -204,7 +199,6 @@ def test_maxwell_magnetic_field_sphere(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Maxwell magnetic field on sphere."""
-    from bempp.api import get_precision
     from bempp.api import function_space
     from bempp.api.operators.boundary.maxwell import magnetic_field
 
@@ -239,7 +233,6 @@ def test_maxwell_magnetic_field_complex_sphere(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Maxwell magnetic field on sphere with complex wavenumber."""
-    from bempp.api import get_precision
     from bempp.api import function_space
     from bempp.api.operators.boundary.maxwell import magnetic_field
 
@@ -274,7 +267,6 @@ def test_maxwell_electric_field_sphere_evaluator(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Maxwell electric field evaluator on sphere."""
-    from bempp.api import get_precision
     from bempp.api import function_space
     from bempp.api.operators.boundary.maxwell import electric_field
 
@@ -322,7 +314,6 @@ def test_maxwell_magnetic_field_sphere_evaluator(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Maxwell magnetic field evaluator on sphere."""
-    from bempp.api import get_precision
     from bempp.api import function_space
     from bempp.api.operators.boundary.maxwell import magnetic_field
 
@@ -370,7 +361,6 @@ def test_maxwell_electric_field_complex_sphere_evaluator(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Maxwell electric field evaluator on sphere with complex wavenumber."""
-    from bempp.api import get_precision
     from bempp.api import function_space
     from bempp.api.operators.boundary.maxwell import electric_field
 
@@ -418,7 +408,6 @@ def test_maxwell_magnetic_field_complex_sphere_evaluator(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Maxwell magnetic field evaluator on sphere with complex wavenumber."""
-    from bempp.api import get_precision
     from bempp.api import function_space
     from bempp.api.operators.boundary.maxwell import magnetic_field
 
@@ -466,7 +455,6 @@ def test_maxwell_magnetic_field_complex_sphere_evaluator(
     # default_parameters, helpers, device_interface, precision
 # ):
     # """Test Maxwell magnetic field on sphere."""
-    # from bempp.api import get_precision
     # from bempp.api import function_space
     # from bempp.api.shapes import regular_sphere
     # from bempp.api.operators.boundary.maxwell import electric_field, magnetic_field
@@ -525,7 +513,6 @@ def test_maxwell_magnetic_field_complex_sphere_evaluator(
     # default_parameters, helpers, device_interface, precision
 # ):
     # """Test Maxwell magnetic field on sphere."""
-    # from bempp.api import get_precision
     # from bempp.api import function_space
     # from bempp.api.shapes import regular_sphere
     # from bempp.api.operators.boundary.maxwell import electric_field, magnetic_field
@@ -632,7 +619,6 @@ def test_maxwell_magnetic_field_complex_sphere_evaluator(
     # default_parameters, helpers, device_interface, precision
 # ):
     # """Test Maxwell multitrace on sphere with complex wavenumber."""
-    # from bempp.api import get_precision
     # from bempp.api import function_space
     # from bempp.api.shapes import regular_sphere
     # from bempp.api.operators.boundary.maxwell import electric_field, magnetic_field
@@ -691,7 +677,6 @@ def test_maxwell_magnetic_field_complex_sphere_evaluator(
     # default_parameters, helpers, device_interface, precision
 # ):
     # """Test Maxwell transmission operator on sphere with complex wavenumber.."""
-    # from bempp.api import get_precision
     # from bempp.api import function_space
     # from bempp.api.shapes import regular_sphere
     # from bempp.api.operators.boundary.maxwell import electric_field, magnetic_field
@@ -798,7 +783,6 @@ def test_maxwell_magnetic_field_complex_sphere_evaluator(
     # default_parameters, helpers, device_interface, precision
 # ):
     # """Test Maxwell multitrace operator on a subgrid."""
-    # from bempp.api import get_precision
     # from bempp.api import function_space
     # from bempp.api.shapes import regular_sphere
     # from bempp.api.operators.boundary.maxwell import electric_field, magnetic_field
@@ -883,7 +867,6 @@ def test_maxwell_magnetic_field_complex_sphere_evaluator(
 # ):
     # """Test standard evaluators on subgrids of a skeleton with junctions."""
     # import bempp.api
-    # from bempp.api import get_precision
     # from bempp.api import function_space
     # from bempp.api.shapes import multitrace_cube
     # from bempp.api.grid.grid import grid_from_segments

@@ -33,19 +33,21 @@ def device_interface():
 def set_device_options(request):
     """Set device options."""
     vec_mode = request.config.getoption("--vec")
-    if not vec_mode in ["auto", "novec", "vec4", "vec8", "vec16"]:
+    if vec_mode not in ["auto", "novec", "vec4", "vec8", "vec16"]:
         raise ValueError(
             "vec must be one of: 'auto', 'novec', 'vec4', 'vec8', 'vec16'"
         )
     bempp.api.VECTORIZATION = vec_mode
 
+
 @pytest.fixture()
 def precision(request):
     """Return precision."""
     value = request.config.getoption("--precision")
-    if not value in ['single', 'double']:
+    if value not in ['single', 'double']:
         raise ValueError("precision must be one of: 'single', 'double'")
     return value
+
 
 @pytest.fixture
 def two_element_grid():
@@ -68,8 +70,6 @@ def small_sphere(helpers):
 @pytest.fixture
 def default_parameters():
     """Return a default parameters object."""
-    import bempp.api
-
     from bempp.api.utils.parameters import DefaultParameters
 
     parameters = DefaultParameters()
@@ -142,4 +142,3 @@ class Helpers(object):
             return 5E-4
         if precision == 'double':
             return 1E-10
-

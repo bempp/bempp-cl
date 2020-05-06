@@ -2,6 +2,7 @@
 
 # pylint: disable=invalid-name
 
+
 def compute_lu_factors(A):
     """
     Precompute the LU factors of a dense operator A.
@@ -12,8 +13,9 @@ def compute_lu_factors(A):
     not recomputed at each call to lu.
 
     """
+    from bempp.api import as_matrix
     from scipy.linalg import lu_factor
-    return lu_factor(bempp.api.as_matrix(A.weak_form()))
+    return lu_factor(as_matrix(A.weak_form()))
 
 
 def lu(A, b, lu_factor=None):
@@ -35,14 +37,13 @@ def lu(A, b, lu_factor=None):
          obtained by the scipy method scipy.linalg.lu_factor
 
     """
-    from bempp.api import GridFunction, as_matrix
+    from bempp.api import GridFunction
     from scipy.linalg import solve, lu_solve
     from bempp.api.assembly.blocked_operator import BlockedOperatorBase
     from bempp.api.assembly.blocked_operator import projections_from_grid_functions_list
     from bempp.api.assembly.blocked_operator import grid_function_list_from_coefficients
 
     if isinstance(A, BlockedOperatorBase):
-        blocked = True
         vec = projections_from_grid_functions_list(b, A.dual_to_range_spaces)
         if lu_factor is not None:
             sol = lu_solve(lu_factor, vec)
@@ -58,4 +59,3 @@ def lu(A, b, lu_factor=None):
             mat = A.weak_form().A
             sol = solve(mat, vec)
         return GridFunction(A.domain, coefficients=sol)
-

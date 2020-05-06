@@ -27,7 +27,7 @@ def single_layer(
         "default_scalar",
         device_interface,
         precision,
-    )  
+    )
 
 
 def double_layer(
@@ -55,7 +55,7 @@ def double_layer(
         "default_scalar",
         device_interface,
         precision,
-    )  
+    )
 
 
 def adjoint_double_layer(

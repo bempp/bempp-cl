@@ -41,6 +41,7 @@ def test_maxwell_electric_far_field(
 
     _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
 
+
 def test_maxwell_magnetic_far_field(
     default_parameters, helpers, device_interface, precision
 ):
@@ -71,12 +72,12 @@ def test_maxwell_magnetic_far_field(
 
     _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
 
+
 def test_maxwell_far_field_segments(
         default_parameters, helpers, device_interface, precision):
     """Test Maxwell far field on segments."""
     import bempp.api
     from bempp.api import function_space
-    from bempp.api import GridFunction
     from bempp.api.operators.far_field.maxwell import electric_field
     from bempp.api.operators.far_field.maxwell import magnetic_field
     from bempp.api.grid.grid import grid_from_segments
@@ -95,9 +96,9 @@ def test_maxwell_far_field_segments(
             new_grid = grid_from_segments(grid, seglist)
 
             coeffs = rand.rand(new_grid.number_of_edges)
-            
+
             space1 = function_space(grid, "RWG", 0, segments=seglist, swapped_normals=swapped_normals,
-                include_boundary_dofs=True)
+                                    include_boundary_dofs=True)
             space2 = function_space(new_grid, "RWG", 0, swapped_normals=swapped_normals)
 
             fun1 = bempp.api.GridFunction(space1, coefficients=coeffs)
@@ -110,15 +111,13 @@ def test_maxwell_far_field_segments(
                 actual, expected, rtol=helpers.default_tolerance(precision)
             )
 
+
 def test_maxwell_far_field_complex_coeffs(
         default_parameters, helpers, device_interface, precision):
     """Test Maxwell far field ops with complex coefficients."""
     import bempp.api
-    from bempp.api import function_space
-    from bempp.api import GridFunction
     from bempp.api.operators.far_field.maxwell import electric_field
     from bempp.api.operators.far_field.maxwell import magnetic_field
-    from bempp.api.grid.grid import grid_from_segments
 
     grid = bempp.api.shapes.regular_sphere(3)
 
@@ -148,14 +147,11 @@ def test_maxwell_far_field_complex_coeffs(
         )
 
 
-    
-
 def test_maxwell_far_field_segments_complex_coeffs(
         default_parameters, helpers, device_interface, precision):
     """Test Maxwell potentials on segments with complex coeffs."""
     import bempp.api
     from bempp.api import function_space
-    from bempp.api import GridFunction
     from bempp.api.operators.far_field.maxwell import electric_field
     from bempp.api.operators.far_field.maxwell import magnetic_field
     from bempp.api.grid.grid import grid_from_segments
@@ -175,9 +171,9 @@ def test_maxwell_far_field_segments_complex_coeffs(
             new_grid = grid_from_segments(grid, seglist)
 
             coeffs = rand.rand(new_grid.number_of_edges) + 1j * rand.rand(new_grid.number_of_edges)
-            
+
             space1 = function_space(grid, "RWG", 0, segments=seglist, swapped_normals=swapped_normals,
-                include_boundary_dofs=True)
+                                    include_boundary_dofs=True)
             space2 = function_space(new_grid, "RWG", 0, swapped_normals=swapped_normals)
 
             fun1 = bempp.api.GridFunction(space1, coefficients=coeffs)

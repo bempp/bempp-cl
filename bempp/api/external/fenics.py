@@ -164,7 +164,7 @@ def nc1_tangential_trace(fenics_space):
     face_count = grid.entity_count(0)
 
     dof_to_vertices_map = np.zeros((edge_count, 2), dtype=np.int64)
-    dof_to_face_map = [None]*edge_count
+    dof_to_face_map = [None] * edge_count
 
     for element in grid.entity_iterator(0):
         g_d = space.local2global[element.index]
@@ -255,7 +255,7 @@ def nc1_tangential_trace(fenics_space):
 
         v1 = v_list[dof_to_vertices_map[i][0]]
         v2 = v_list[dof_to_vertices_map[i][1]]
-        midpoint = (v1.geometry.corners+v2.geometry.corners)/2
+        midpoint = (v1.geometry.corners + v2.geometry.corners) / 2
 
         face = dof_to_face_map[i]
         fenics_values = np.zeros(3)
@@ -267,7 +267,7 @@ def nc1_tangential_trace(fenics_space):
         cross = np.cross(fenics_values, normal)
         k = np.argmax(np.abs(cross))
 
-        trace_matrix[i, j] = cross[k]/bempp_values[k, 0]
+        trace_matrix[i, j] = cross[k] / bempp_values[k, 0]
 
     # Now return everything
     return space, trace_matrix
