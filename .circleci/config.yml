@@ -8,7 +8,6 @@ jobs:
     executor: python/default
     steps:
       - checkout
-      - python/load-cache
       - run:
           command: |
             if [[ ! -d /home/circleci/miniconda ]]; then
@@ -24,7 +23,6 @@ jobs:
       - run:
           command: pip3 install flake8 pytest
           name: Install flake8 and pytest
-      - python/save-cache
 #      - run:
 #          command: python3 -m flake8 bempp --exclude=__init__.py
 #          name: Flake8 checks
