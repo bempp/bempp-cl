@@ -15,9 +15,9 @@ jobs:
           command: pip3 install flake8 pytest
           name: Install flake8 and pytest
       - python/save-cache
-      - run:
-          command: python3 -m flake8 bempp --exclude=__init__.py
-          name: Flake8 checks
+#      - run:
+#          command: python3 -m flake8 bempp --exclude=__init__.py
+#          name: Flake8 checks
       - run:
           command: pip3 install . --user -v
           name: Install Bempp-cl
