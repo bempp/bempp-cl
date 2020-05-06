@@ -14,9 +14,6 @@ jobs:
       - run:
           command: python3 -m flake8 bempp
           name: Flake8 checks
-      - restore_cache:
-          keys:
-            - bempp-conda-{{ checksum "environment.yml" }}
       - run:
           command: |
             if [[ ! -d /home/circleci/miniconda ]]; then
@@ -25,15 +22,24 @@ jobs:
             else
                 echo "Using cached miniconda";
             fi
+          name: Install miniconda
+      - restore_cache:
+          keys:
+            - bempp-conda-{{ checksum "environment.yml" }}
+      - run:
+          command: |
             source ~/miniconda/bin/activate root
-            conda update conda
-            conda env create -f environment.yml
-            conda activate bempp
-          name: Install miniconda and create bempp environment
+                conda update conda
+            if [[ ! -d /home/circleci/miniconda/envs/bempp ]]; then
+                conda env create -f environment.yml
+            else
+                conda update bempp
+            fi
+          name: Create bempp environment
       - save_cache:
           key: bempp-conda-{{ checksum "environment.yml" }}
           paths:
-            - ~/miniconda
+            - ~/miniconda/envs/bempp
       - run:
           command: |
             source ~/miniconda/bin/activate root
