@@ -1,0 +1,13 @@
+fenics-dijitso
+fenics-dolfin
+fenics-ffc
+fenics-fiat
+fenics-ufl
+numpy
+scipy
+mpi4py
+petsc4py
+meshio==3.2.12
+pyqt5-sip==4.19.18
+pyqtwebengine==5.12.1
+
