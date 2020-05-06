@@ -151,8 +151,8 @@ def visualize_with_gmsh(obj, mode='element', transformation=None):
     if isinstance(obj, Grid):
         export(outfile.name, grid=obj)
     elif isinstance(obj, GridFunction):
-        export(outfile.name, grid_function=obj, 
-                transformation=transformation, data_type=mode)
+        export(outfile.name, grid_function=obj,
+               transformation=transformation, data_type=mode)
     outfile.close()
 
     subprocess.Popen([GMSH_PATH, outfile.name])
