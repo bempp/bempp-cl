@@ -2,12 +2,31 @@
 version: 2.1
 # Use a package of configuration called an orb.
 orbs:
-  # Declare a dependency on the welcome-orb
-  welcome: circleci/welcome-orb@0.4.1
-# Orchestrate or schedule a set of jobs
+  python: circleci/python@0.2.1
+
+jobs:
+  build-and-test:
+    executor: python/default
+    steps:
+      - checkout
+      - python/load-cache
+      - python/install-deps
+      - run:
+          command: pip3 install flake8 pytest
+          name: Install flake8 and pytest
+      - python/save-cache
+      - run:
+          command: python3 -m flake8 bempp --exclude=__init__.py
+          name: Flake8 checks
+      - run:
+          command: pip3 install . --user -v
+          name: Install Bempp-cl
+      - run:
+          command: python3 -m pytest bempp/
+          name: Run tests
+
+
 workflows:
-  # Name the workflow "welcome"
-  welcome:
-    # Run the welcome/run job in its own container
+  main:
     jobs:
-      - welcome/run
+      - build-and-test
