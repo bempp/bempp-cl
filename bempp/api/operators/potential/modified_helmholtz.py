@@ -4,6 +4,7 @@
 def single_layer(
     space,
     points,
+    omega,
     parameters=None,
     assembler="dense",
     device_interface=None,
@@ -15,12 +16,15 @@ def single_layer(
     from bempp.api.assembly.potential_operator import PotentialOperator
     from bempp.api.assembly.assembler import PotentialAssembler
 
+    if _np.imag(omega) != 0:
+        raise ValueError("'omega' must be real.")
+
     if precision is None:
         precision = bempp.api.DEFAULT_PRECISION
 
     operator_descriptor = OperatorDescriptor(
         "modified_helmholtz_single_layer_potential",  # Identifier
-        [],  # Options
+        [omega],  # Options
         "modified_helmholtz_single_layer",  # Kernel type
         "default_scalar",  # Assembly type
         precision,  # Precision
@@ -39,6 +43,7 @@ def single_layer(
 def double_layer(
     space,
     points,
+    omega,
     parameters=None,
     assembler="dense",
     device_interface=None,
@@ -50,12 +55,15 @@ def double_layer(
     from bempp.api.assembly.potential_operator import PotentialOperator
     from bempp.api.assembly.assembler import PotentialAssembler
 
+    if _np.imag(omega) != 0:
+        raise ValueError("'omega' must be real.")
+
     if precision is None:
         precision = bempp.api.DEFAULT_PRECISION
 
     operator_descriptor = OperatorDescriptor(
         "modified_helmholtz_double_layer_potential",  # Identifier
-        [],  # Options
+        [omega],  # Options
         "modified_helmholtz_double_layer",  # Kernel type
         "default_scalar",  # Assembly type
         precision,  # Precision

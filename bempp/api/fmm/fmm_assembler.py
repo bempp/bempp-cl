@@ -4,6 +4,7 @@ import numba as _numba
 import numpy as _np
 
 _FMM_CACHE = {}
+_FMM_POTENTIAL_CACHE = {}
 
 
 def get_mode_from_operator_identifier(identifier):
@@ -44,6 +45,38 @@ def get_fmm_interface(domain, dual_to_range, mode, wavenumber):
     return interface
 
 
+def get_fmm_potential_interface(space, points, mode, wavenumber):
+    import bempp.api
+
+    global _FMM_POTENTIAL_CACHE
+
+    points_hash = hash(points.data.tobytes())
+
+    key = (space.grid.id, points_hash, mode, wavenumber)
+
+    interface = _FMM_POTENTIAL_CACHE.get(key, None)
+
+    if interface is None:
+        from bempp.api.fmm.exafmm import ExafmmInterface
+
+        quadrature_order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
+
+        interface = ExafmmInterface(
+            space.grid.map_to_point_cloud(quadrature_order, precision="double"),
+            points.T,
+            mode,
+            wavenumber,
+            bempp.api.GLOBAL_PARAMETERS.fmm.depth,
+            bempp.api.GLOBAL_PARAMETERS.fmm.expansion_order,
+            bempp.api.GLOBAL_PARAMETERS.fmm.ncrit,
+        )
+        _FMM_POTENTIAL_CACHE[key] = interface
+    else:
+        bempp.api.log("Using cached Fmm Interface.", level="debug")
+
+    return interface
+
+
 def create_evaluator(
     operator_descriptor, fmm_interface, domain, dual_to_range, parameters
 ):
@@ -59,6 +92,42 @@ def create_evaluator(
         )
 
 
+def create_potential_evaluator(operator_descriptor, fmm_interface, space, parameters):
+    """Select an Fmm Potential Evaluator."""
+
+    if operator_descriptor.assembly_type == "default_scalar":
+        return make_default_scalar_potential(operator_descriptor, fmm_interface, space)
+    else:
+        raise ValueError("Unknown descriptor.")
+
+
+class FmmPotentialAssembler(object):
+    """Potential assembler for FMM."""
+
+    def __init__(
+        self, space, operator_descriptor, points, device_interface, parameters
+    ):
+        """Initialise FMM Potential Assembler."""
+
+        mode = get_mode_from_operator_identifier(operator_descriptor.identifier)
+
+        if mode == "laplace":
+            wavenumber = None
+        else:
+            wavenumber = operator_descriptor.options[0]
+
+        fmm_potential_interface = get_fmm_potential_interface(
+            space, points, mode, wavenumber
+        )
+        self._evaluator = create_potential_evaluator(
+            operator_descriptor, fmm_potential_interface, space, parameters
+        )
+
+    def evaluate(self, x):
+        """Actually evaluate the potential."""
+        return self._evaluator(x)
+
+
 class FmmAssembler(_assembler.AssemblerBase):
     """Assembler for Fmm."""
 
@@ -67,10 +136,10 @@ class FmmAssembler(_assembler.AssemblerBase):
         """Create an Fmm assembler instance."""
         super().__init__(domain, dual_to_range, parameters)
 
-        self._source_map = domain.map_to_points(parameters.quadrature.regular)
-        self._target_map = dual_to_range.map_to_points(
-            parameters.quadrature.regular, return_transpose=True
-        )
+        # self._source_map = domain.map_to_points(parameters.quadrature.regular)
+        # self._target_map = dual_to_range.map_to_points(
+        # parameters.quadrature.regular, return_transpose=True
+        # )
 
         self.dtype = None
         self._evaluator = None
@@ -211,7 +280,6 @@ def make_scalar_hypersingular(
         second_part = target_map @ (fmm_n1 + fmm_n2 + fmm_n3)
 
         return first_part - wavenumber * wavenumber * second_part + singular_part @ x
-
 
     def evaluate_modified_helmholtz_hypersingular(x):
         """Evaluate the modified Helmholtz hypersingular kernel."""
@@ -423,3 +491,33 @@ def compute_p1_curl_transformation_impl(
                 jind[index] = 3 * element_index + function_index
 
     return (data, iind, jind)
+
+
+def make_default_scalar_potential(operator_descriptor, fmm_interface, space):
+    """Make a scalar potential operator."""
+    import bempp.api
+    from bempp.api.integration.triangle_gauss import get_number_of_quad_points
+
+    npoints = get_number_of_quad_points(bempp.api.GLOBAL_PARAMETERS.quadrature.regular)
+    source_map = space.map_to_points(bempp.api.GLOBAL_PARAMETERS.quadrature.regular)
+    source_normals = get_normals(space, npoints)
+
+    def evaluate_single_layer(x):
+        """Evaluate the single-layer operator."""
+        return fmm_interface.evaluate(source_map @ x)[:, 0].reshape([1, -1])
+
+    def evaluate_double_layer(x):
+        """Evaluate the double-layer operator."""
+        x_transformed = source_map @ x
+        
+        fmm0 = fmm_interface.evaluate(source_normals[:, 0] * x_transformed)[:, 1]
+        fmm1 = fmm_interface.evaluate(source_normals[:, 1] * x_transformed)[:, 2]
+        fmm2 = fmm_interface.evaluate(source_normals[:, 2] * x_transformed)[:, 3]
+
+        return -(fmm0 + fmm1 + fmm2)
+
+    if "single" in operator_descriptor.identifier:
+        return evaluate_single_layer
+    elif "double" in operator_descriptor.identifier:
+        return evaluate_double_layer
+

@@ -1922,7 +1922,7 @@ def default_scalar_potential_kernel(
                     * x[number_of_shape_functions * element + fun_index]
                 )
 
-    for point_index in range(number_of_points):
+    for point_index in _numba.prange(number_of_points):
         test_point = points[:, point_index]
 
         kernel_values = _np.atleast_2d(

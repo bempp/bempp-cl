@@ -75,6 +75,7 @@ class ExafmmInterface(object):
                     sources, targets, self._fmm
                 )
 
+
     @property
     def number_of_source_points(self):
         """Return number of source points."""
@@ -101,6 +102,20 @@ class ExafmmInterface(object):
                 result -= (self._singular_correction @ vec).reshape([-1, 4])
 
             return result
+
+    def as_matrix(self):
+        """Return matrix representation of Fmm."""
+        import numpy as np
+
+        ident = np.identity(self.number_of_source_points)
+
+        res = np.zeros((self.number_of_target_points, self.number_of_source_points), dtype='float64')
+
+        for index in range(self.number_of_source_points):
+            res[:, index] = self.evaluate(ident[:, index])[:, 0]
+
+        return res
+
 
     @classmethod
     def from_grid(

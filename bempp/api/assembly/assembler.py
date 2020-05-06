@@ -153,7 +153,9 @@ class PotentialAssembler(object):
 
         if not self._is_complex:
             if np.iscomplexobj(x):
-                return self._implementation.evaluate(np.real(x)) + 1j * self._implementation.evaluate(np.imag(x))
+                return self._implementation.evaluate(
+                    np.real(x)
+                ) + 1j * self._implementation.evaluate(np.imag(x))
             else:
                 return self._implementation.evaluate(x)
         else:
@@ -174,6 +176,12 @@ def select_potential_implementation(
         from bempp.core.dense_potential_assembler import DensePotentialAssembler
 
         return DensePotentialAssembler(
+            space, operator_descriptor, points, device_interface, parameters
+        )
+    elif assembler == "fmm":
+        from bempp.api.fmm.fmm_assembler import FmmPotentialAssembler
+
+        return FmmPotentialAssembler(
             space, operator_descriptor, points, device_interface, parameters
         )
     else:
