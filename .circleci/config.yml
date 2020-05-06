@@ -10,7 +10,6 @@ jobs:
     steps:
       - checkout
       - python/load-cache
-      - install-conda
       - run:
           command: pip3 install flake8 pytest
           name: Install flake8 and pytest
@@ -19,7 +18,7 @@ jobs:
 #          command: python3 -m flake8 bempp --exclude=__init__.py
 #          name: Flake8 checks
       - run:
-          command: pip3 install . --user -v
+          command: conda install .
           name: Install Bempp-cl
       - run:
           command: python3 -m pytest bempp/
