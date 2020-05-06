@@ -8,13 +8,11 @@ jobs:
     executor: python/default
     steps:
       - checkout
-      - python/load-cache
       - run:
           command: pip3 install flake8
           name: Install flake8
-      - python/save-cache
       - run:
-          command: python3 -m flake8 bempp --exclude=__init__.py
+          command: python3 -m flake8 bempp
           name: Flake8 checks
       - restore_cache:
           keys:
