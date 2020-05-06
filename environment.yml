@@ -37,6 +37,7 @@ dependencies:
   - glib=2.58.3=py37h6f030ca_1002
   - gmp=6.1.2=hf484d3e_1000
   - gmpy2=2.1.0b1=py37h04dde30_0
+  - gmsh
   - gst-plugins-base=1.14.5=h0935bb2_0
   - gstreamer=1.14.5=h36ae1b5_0
   - hdf5=1.10.5=mpi_mpich_ha7d0aea_1003
