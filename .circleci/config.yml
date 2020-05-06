@@ -44,3 +44,8 @@ jobs:
 #            conda install -y numpy=$NUMPY_VERSION
 #            python --version
 #            python -c "import numpy; print(numpy.__version__)"
+
+workflows:
+  main:
+    jobs:
+      - build-and-test
