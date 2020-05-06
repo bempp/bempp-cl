@@ -10,7 +10,7 @@ jobs:
     steps:
       - checkout
       - python/load-cache
-      - python/install-conda
+      - install-conda
       - run:
           command: pip3 install flake8 pytest
           name: Install flake8 and pytest
