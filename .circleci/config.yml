@@ -11,11 +11,16 @@ jobs:
       - python/load-cache
       - run:
           command: |
-            sudo apt install python3-numpy python3-scipy python3-numba
-            sudo apt install python3-pyopencl
-            sudo apt install python-dolfin
-            pip3 install meshio==3.2.12 pyqt5-sip==4.19.18 pyqtwebengine==5.12.1
-          name: Install dependencies
+            if [[ ! -d /home/circleci/miniconda ]]; then
+                wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
+                bash miniconda.sh -b -f -p /home/circleci/miniconda;
+            else
+                echo "Using cached miniconda";
+            fi
+            source ~/miniconda/bin/activate root
+            conda env create -f environment.yml
+            conda activate bempp
+          name: Install miniconda
       - run:
           command: pip3 install flake8 pytest
           name: Install flake8 and pytest
@@ -23,9 +28,6 @@ jobs:
 #      - run:
 #          command: python3 -m flake8 bempp --exclude=__init__.py
 #          name: Flake8 checks
-      - run:
-          command: pip3 install . --user -v
-          name: Install
       - run:
           command: python3 -m pytest bempp
           name: Run tests
