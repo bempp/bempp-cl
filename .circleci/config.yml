@@ -9,6 +9,12 @@ jobs:
     steps:
       - checkout
       - run:
+          command: pip3 install flake8
+          name: Install flake8
+      - run:
+          command: python3 -m flake8 bempp --exclude=__init__.py
+          name: Flake8 checks
+      - run:
           command: |
             if [[ ! -d /home/circleci/miniconda ]]; then
                 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
@@ -19,15 +25,12 @@ jobs:
             source ~/miniconda/bin/activate root
             conda env create -f environment.yml
             conda activate bempp
-          name: Install miniconda
+          name: Install miniconda and create bempp environment
       - run:
-          command: pip3 install flake8 pytest
-          name: Install flake8 and pytest
-#      - run:
-#          command: python3 -m flake8 bempp --exclude=__init__.py
-#          name: Flake8 checks
-      - run:
-          command: python3 -m pytest bempp
+          command: |
+            source ~/miniconda/bin/activate root
+            conda activate bempp
+            python3 -m pytest bempp
           name: Run tests
 
 
