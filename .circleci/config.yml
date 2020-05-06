@@ -32,8 +32,6 @@ jobs:
                 conda update conda
             if [[ ! -d /home/circleci/miniconda/envs/bempp ]]; then
                 conda env create -f environment.yml
-            else
-                conda update bempp
             fi
           name: Create bempp environment
       - save_cache:
