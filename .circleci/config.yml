@@ -9,7 +9,13 @@ jobs:
     steps:
       - checkout
       - python/load-cache
-      - python/install-deps
+      - run:
+          command: |
+            sudo apt install python3-numpy python3-scipy python3-numba
+            sudo apt install python3-pyopencl
+            sudo apt install python-dolfin
+            pip3 install meshio==3.2.12 pyqt5-sip==4.19.18 pyqtwebengine==5.12.1
+          name: Install dependencies
       - run:
           command: pip3 install flake8 pytest
           name: Install flake8 and pytest
