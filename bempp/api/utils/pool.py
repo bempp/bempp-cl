@@ -21,7 +21,6 @@ def worker(in_queue, out_queue, worker_id, nworkers, buf, log, log_level):
     from bempp.api.utils import pool
     import traceback
 
-
     pool._MY_ID = worker_id
     pool._NWORKERS = nworkers
     pool._BUFFER = buf
@@ -66,7 +65,7 @@ def as_array(dtype, offset, shape):
         The type of the array
     offset : int
         Start index in buffer
-    nitems : int 
+    nitems : int
         Number of items of type dtype
 
     """
@@ -104,7 +103,7 @@ def from_buffer(arrays):
     Retrieve arrays from buffer.
     arrays is a list of tuples
     [(dtype1, shape1), (dtype2, shape2), ...],
-    where dtype is the type of the array and shape 
+    where dtype is the type of the array and shape
     is a shape tuple.
 
     """
@@ -153,7 +152,6 @@ class Pool(object):
         from bempp.api.utils import pool
         from bempp.api.utils.pool import worker
 
-        from multiprocessing import SimpleQueue
         from multiprocessing import get_context
 
         self._nworkers = nworkers
@@ -205,7 +203,6 @@ class Pool(object):
         """Shutdown all workers."""
         for index in range(self._nworkers):
             self._senders[index].put(None)
-        result = [self._receivers[index].get() for index in range(self._nworkers)]
         for worker in self._workers:
             worker.join()
 
@@ -261,8 +258,6 @@ def get_id():
 
 def remove_key(key):
     """Remove data from pool."""
-    from bempp.api.utils import pool
-
     execute(_remove_key_worker, key)
 
 
@@ -288,7 +283,7 @@ def create_device_pool(
 ):
     """
     Create a pool based on a given platform identifer.
-    
+
     identifier : string
         A unique identifier that is part of the platform name.
         Used to find the correct platform.
@@ -315,7 +310,7 @@ def create_device_pool(
 
     bempp.api.log(f"Creating pool for Platform: {ctx.platform_name}")
 
-    if not precision in [None, "single", "double"]:
+    if precision not in [None, "single", "double"]:
         raise ValueError(
             f"'precision' is {precision}. Allowed values are: 'single', 'double'"
         )
@@ -337,9 +332,7 @@ def create_device_pool(
 
 def create_pool(nworkers, buffer_size=100, log=False, log_level="info"):
     """Create a pool."""
-
     from bempp.api.utils import pool
-    import multiprocessing as mp
 
     pool._POOL = Pool(nworkers, buffer_size=buffer_size, log=log, log_level=log_level)
     pool._NWORKERS = nworkers
@@ -352,15 +345,11 @@ def nworkers():
 
 def map(fun, args):
     """Corresponds to multiprocessing map."""
-    from bempp.api.utils import pool
-
     return _POOL.map(fun, args)
 
 
 def starmap(fun, args):
     """Corresponds to multiprocessing map."""
-    from bempp.api.utils import pool
-
     return _POOL.starmap(fun, args)
 
 
@@ -375,7 +364,8 @@ def execute(fun, *args):
 
 def _assign_ids(nworkers):
     """Assign pool ids."""
-    map(_assign_ids_worker, zip(range(nworkers), nworkers * [nworkers]))
+    raise NotImplementedError()  # _assign_ids_worker is not defined
+    # map(_assign_ids_worker, zip(range(nworkers), nworkers * [nworkers]))
 
 
 def shutdown():
@@ -386,7 +376,6 @@ def shutdown():
     pool._POOL = None
     pool._NWORKERS = False
     pool._USE_THREADS = None
-
 
 
 def _execute_function_without_arguments(fun):
@@ -403,7 +392,6 @@ def _remove_key_worker(key):
 def _init_device_worker(identifier, precision):
     """Worker to initialise device."""
     import bempp.api
-    from bempp.api.utils import pool
     from bempp.api.utils.pool import get_id
     from bempp.core.cl_helpers import get_context_by_name
 

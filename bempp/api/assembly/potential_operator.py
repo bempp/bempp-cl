@@ -63,7 +63,6 @@ class PotentialOperator(object):
         else:
             return NotImplemented
 
-
     def __neg__(self):
 
         return self.__mul__(-1.0)
@@ -124,6 +123,7 @@ class _ScaledPotentialOperator(PotentialOperator):
     def evaluation_points(self):
         """Return the evaluation points."""
         return self._op.points
+
 
 class _SumPotentialOperator(PotentialOperator):
     """Sum of two potential operators. """

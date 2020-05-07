@@ -7,6 +7,7 @@ import pytest
 
 pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
+
 def test_rwg_barycentric(helpers, precision):
     """Test B-RWG space."""
     import bempp.api
@@ -25,5 +26,4 @@ def test_rwg_barycentric(helpers, precision):
     fun_bary = bempp.api.GridFunction(space_bary, coefficients=coeffs)
 
     assert math.isclose(fun.l2_norm(), fun_bary.l2_norm(),
-            rel_tol=helpers.default_tolerance(precision))
-
+                        rel_tol=helpers.default_tolerance(precision))

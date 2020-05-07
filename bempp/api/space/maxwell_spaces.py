@@ -12,7 +12,7 @@ def rwg0_function_space(
     include_boundary_dofs=False,
 ):
     """Define a space of RWG functions of order 0"""
-    from .space import SpaceBuilder, _process_segments, invert_local2global
+    from .space import SpaceBuilder, _process_segments
     from bempp.api.utils.helpers import serialise_list_of_lists
 
     support, normal_multipliers = _process_segments(
@@ -50,8 +50,7 @@ def rwg0_function_space(
 
 def rwg0_barycentric_function_space(coarse_space):
     """Define a space of RWG functions of order 0 over a barycentric grid."""
-    from .space import SpaceBuilder, _process_segments, invert_local2global
-    from bempp.api.utils.helpers import serialise_list_of_lists
+    from .space import SpaceBuilder
     from scipy.sparse import coo_matrix
 
     number_of_support_elements = coarse_space.number_of_support_elements
@@ -152,7 +151,7 @@ def snc0_function_space(
     include_boundary_dofs=False,
 ):
     """Define a space of SNC functions of order 0"""
-    from .space import SpaceBuilder, _process_segments, invert_local2global
+    from .space import SpaceBuilder, _process_segments
     from bempp.api.utils.helpers import serialise_list_of_lists
 
     support, normal_multipliers = _process_segments(
@@ -190,8 +189,7 @@ def snc0_function_space(
 
 def snc0_barycentric_function_space(coarse_space):
     """Define a space of SNC functions of order 0 over a barycentric grid."""
-    from .space import SpaceBuilder, invert_local2global
-    from bempp.api.utils.helpers import serialise_list_of_lists
+    from .space import SpaceBuilder
     from scipy.sparse import coo_matrix
 
     number_of_support_elements = coarse_space.number_of_support_elements
@@ -286,8 +284,7 @@ def snc0_barycentric_function_space(coarse_space):
 
 def bc_function_space(grid, support_elements=None, segments=None, swapped_normals=None):
     """Define a space of BC functions."""
-    import bempp.api
-    from .space import SpaceBuilder, invert_local2global
+    from .space import SpaceBuilder
     from bempp.api.grid.grid import enumerate_vertex_adjacent_elements
     from scipy.sparse import coo_matrix
 
@@ -306,7 +303,6 @@ def bc_function_space(grid, support_elements=None, segments=None, swapped_normal
 
     support = _np.zeros(bary_grid.number_of_elements, dtype=_np.bool)
     support[bary_support_elements] = True
-
 
     bary_vertex_to_edge = enumerate_vertex_adjacent_elements(
         bary_grid, bary_support_elements
@@ -363,10 +359,10 @@ def bc_function_space(grid, support_elements=None, segments=None, swapped_normal
         .build()
     )
 
+
 def rbc_function_space(grid, support_elements=None, segments=None, swapped_normals=None):
     """Define a space of RBC functions."""
-    import bempp.api
-    from .space import SpaceBuilder, invert_local2global
+    from .space import SpaceBuilder
     from bempp.api.grid.grid import enumerate_vertex_adjacent_elements
     from scipy.sparse import coo_matrix
 
@@ -385,7 +381,6 @@ def rbc_function_space(grid, support_elements=None, segments=None, swapped_norma
 
     support = _np.zeros(bary_grid.number_of_elements, dtype=_np.bool)
     support[bary_support_elements] = True
-
 
     bary_vertex_to_edge = enumerate_vertex_adjacent_elements(
         bary_grid, bary_support_elements
@@ -442,6 +437,7 @@ def rbc_function_space(grid, support_elements=None, segments=None, swapped_norma
         .build()
     )
 
+
 def generate_bc_map(
     coarse_grid_data,
     bary_grid_data,
@@ -457,9 +453,8 @@ def generate_bc_map(
     def find_position(value, array):
         """
         Find first occurence of element in array.
-        
-        Return -1 if value not found 
-        
+
+        Return -1 if value not found
         """
         for ind, current_value in enumerate(array):
             if value == current_value:

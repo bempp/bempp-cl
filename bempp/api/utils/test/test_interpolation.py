@@ -1,7 +1,6 @@
 """Unit tests for the interpolation module."""
 
 import numpy as np
-import pytest
 
 from bempp.api.utils import interpolation
 

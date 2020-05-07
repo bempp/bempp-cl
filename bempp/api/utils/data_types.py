@@ -2,6 +2,7 @@
 
 import numpy as _np
 
+
 def check_type(name, default='float64'):
     """ Try to convert input into a numpy.dtype object """
 
