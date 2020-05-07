@@ -136,7 +136,6 @@ class DeviceInterface(object):
         else:
             raise ValueError("Unknown device type.")
 
-
     def native_vector_width(self, precision):
         """Return native vector width for 'single' and 'double'."""
         if precision == "single":
@@ -598,7 +597,7 @@ def default_device():
     global _DEFAULT_CONTEXT
 
     if _DEFAULT_DEVICE is None:
-        if not "PYOPENCL_CTX" in os.environ:
+        if "PYOPENCL_CTX" not in os.environ:
             pair = find_cpu_driver()
             if pair is not None:
                 _DEFAULT_CONTEXT = pair[0]
@@ -613,13 +612,14 @@ def default_device():
 
     return _DEFAULT_DEVICE
 
+
 def find_cpu_driver():
     """Find the first available CPU OpenCL driver."""
 
     for platform in _cl.get_platforms():
         ctx = Context(_cl.Context(
             dev_type=_cl.device_type.ALL,
-	    properties=[(_cl.context_properties.PLATFORM, platform)]))
+            properties=[(_cl.context_properties.PLATFORM, platform)]))
         for device in ctx.devices:
             if device.type == 'cpu':
                 return ctx, device
@@ -628,8 +628,6 @@ def find_cpu_driver():
 
 def default_context():
     """Return default context."""
-    import bempp.api
-
     # pylint: disable=W0603
     global _DEFAULT_CONTEXT
 
@@ -663,7 +661,7 @@ def set_default_device(platform_index, device_index):
     vector_width_double = _DEFAULT_DEVICE.native_vector_width("double")
 
     bempp.api.log(
-            f"Default device: {_DEFAULT_DEVICE.name}. "
+        f"Default device: {_DEFAULT_DEVICE.name}. "
         + f"Device Type: {_DEFAULT_DEVICE.type}. "
         + f"Native vector width: {vector_width_single} (single) / "
         + f"{vector_width_double} (double)."
@@ -695,6 +693,7 @@ def show_available_platforms_and_devices():
                 + device.get_info(_cl.device_info.NAME)
             )
 
+
 def get_context_by_name(identifier):
     """Return context whose name contains the given identifier."""
 
@@ -702,11 +701,10 @@ def get_context_by_name(identifier):
     for index, platform in enumerate(platforms):
         if identifier in platform.name:
             ctx = Context(
-                    _cl.Context(
-                        dev_type=_cl.device_type.ALL,
-                        properties=[(_cl.context_properties.PLATFORM, platform)]
-                        )
-                    )
+                _cl.Context(
+                    dev_type=_cl.device_type.ALL,
+                    properties=[(_cl.context_properties.PLATFORM, platform)]
+                )
+            )
             return ctx, index
     raise ValueError(f"No context found whose name contains {identifier}")
-                

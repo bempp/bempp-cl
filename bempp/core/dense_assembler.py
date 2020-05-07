@@ -18,13 +18,11 @@ class DenseAssembler(_assembler.AssemblerBase):
         self, operator_descriptor, device_interface, precision, *args, **kwargs
     ):
         """Dense assembly of the integral operator."""
-        from bempp.api.assembly.discrete_boundary_operator import (
-            DenseDiscreteBoundaryOperator,
-        )
+        from bempp.api.assembly.discrete_boundary_operator import DenseDiscreteBoundaryOperator
         from bempp.api.utils.helpers import promote_to_double_precision
         from .dense_assembly_helpers import choose_source_name
 
-        ### Check if we can use the simple assember
+        # Check if we can use the simple assember
 
         mat = None
 
@@ -118,7 +116,6 @@ def assemble_dense(
         ), "debug"
     )
 
-
     main_source = _cl_helpers.kernel_source_from_identifier(
         source_name + collocation_string + "_regular" + vec_extension, options
     )
@@ -155,7 +152,7 @@ def assemble_dense(
         domain.normal_multipliers, device_interface, dtype=_np.int32, access_mode="read_only"
     )
 
-    runtime = kernel_helpers.run_chunked_kernel(
+    kernel_helpers.run_chunked_kernel(
         main_kernel,
         remainder_kernel,
         device_interface,
@@ -170,7 +167,7 @@ def assemble_dense(
         parameters,
         chunks=(test_color_indexptr, trial_color_indexptr),
     )
-    #log("Regular kernel runtime [ms]: {0}".format(runtime), "timing")
+    # log("Regular kernel runtime [ms]: {0}".format(runtime), "timing")
 
     regular_result = buffers[-4].get_host_copy(device_interface)
 
@@ -286,11 +283,11 @@ def _prepare_buffers(
     if use_collocation:
 
         collocation_points = _cl_helpers.DeviceBuffer.from_array(
-                dual_to_range.collocation_points,
-                device_interface,
-                dtype=dtype,
-                access_mode="read_only",
-                order="F"
+            dual_to_range.collocation_points,
+            device_interface,
+            dtype=dtype,
+            access_mode="read_only",
+            order="F"
         )
 
     test_grid_buffer = test_grid.push_to_device(device_interface, precision).buffer

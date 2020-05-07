@@ -58,8 +58,8 @@ def run_2d_kernel(
     """Run a kernel vectorised over the second dimension."""
 
     if vec_length == 1:
-        ## Use the workgroup multiple suggested by OpenCL runtime
-        ## This is always entered on GPUs as vec_length is then 1
+        # Use the workgroup multiple suggested by OpenCL runtime
+        # This is always entered on GPUs as vec_length is then 1
 
         workgroup_multiple = main_kernel.optimal_workgroup_multiple(device_interface)
         workgroup_size = (
@@ -91,8 +91,8 @@ def run_2d_kernel(
             events.append(event2)
         return events
 
-    ## Split the computation into chunks according to
-    ## CPU vectorization level
+    # Split the computation into chunks according to
+    # CPU vectorization level
 
     main_chunk, remaining_chunk = closest_multiple_to_number(dims[1], vec_length)
 
