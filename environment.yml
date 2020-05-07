@@ -12,6 +12,7 @@ dependencies:
   - mpich>=3.2.1
   - numba>=0.46.0
   - numpy>=1.16.5
+  - pip>=19.3.1
   - plotly>=4.3.0
   - pocl>=1.4
   - pyopencl>=2019.1.2
