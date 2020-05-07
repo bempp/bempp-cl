@@ -11,9 +11,9 @@ jobs:
       - run:
           command: pip3 install flake8
           name: Install flake8
-      - run:
-          command: python3 -m flake8 bempp
-          name: Flake8 checks
+#      - run:
+#          command: python3 -m flake8 bempp
+#          name: Flake8 checks
       - run:
           command: |
             if [[ ! -d /home/circleci/miniconda ]]; then
