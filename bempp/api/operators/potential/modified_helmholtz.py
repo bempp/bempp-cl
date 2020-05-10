@@ -1,5 +1,5 @@
 """Modified Helmholtz potential operators."""
-
+import numpy as _np
 
 def single_layer(
     space,
