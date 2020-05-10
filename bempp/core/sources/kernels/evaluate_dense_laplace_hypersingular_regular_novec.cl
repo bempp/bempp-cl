@@ -3,7 +3,7 @@
 #include "bempp_spaces.h"
 #include "kernels.h"
 
-__kernel void evaluate_dense_laplace_hypersingular_regular(
+__kernel void kernel_function(
     __global uint* testIndices, __global uint* trialIndices,
     __global int *testNormalSigns, __global int *trialNormalSigns,
     __global REALTYPE* testGrid, __global REALTYPE* trialGrid,
@@ -12,6 +12,7 @@ __kernel void evaluate_dense_laplace_hypersingular_regular(
     __global REALTYPE* testLocalMultipliers,
     __global REALTYPE* trialLocalMultipliers, __constant REALTYPE* quadPoints,
     __constant REALTYPE* quadWeights, __global REALTYPE* globalResult,
+    __global REALTYPE* kernel_parameters,
     int nTest, int nTrial, char gridsAreDisjoint) {
   /* Variable declarations */
 
@@ -133,7 +134,7 @@ __kernel void evaluate_dense_laplace_hypersingular_regular(
       trialPoint = (REALTYPE2)(quadPoints[2 * trialQuadIndex], quadPoints[2 * trialQuadIndex + 1]);
       trialGlobalPoint = getGlobalPoint(trialCorners, &trialPoint);
       KERNEL(novec)
-      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal,
+      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernel_parameters,
        &kernelValue);
       tempResult += quadWeights[trialQuadIndex] * kernelValue;
     }

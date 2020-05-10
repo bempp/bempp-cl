@@ -19,7 +19,10 @@ def select_cl_kernel(operator_descriptor, mode):
             "laplace_hypersingular": "evaluate_dense_laplace_hypersingular_singular"
             }
 
-    regular_assemblers = {"default_scalar": "evaluate_dense_regular"}
+    regular_assemblers = {
+            "default_scalar": "evaluate_dense_regular",
+            "laplace_hypersingular": "evaluate_dense_laplace_hypersingular_regular",
+            }
 
     kernels = {
         "laplace_single_layer": "laplace_single_layer",
@@ -28,6 +31,7 @@ def select_cl_kernel(operator_descriptor, mode):
         "helmholtz_single_layer": "helmholtz_single_layer",
         "helmholtz_double_layer": "helmholtz_double_layer",
         "helmholtz_adjoint_double_layer": "helmholtz_adjoint_double_layer",
+        "laplace_hypersingular": "laplace_single_layer",
     }
 
     if mode == "singular":

@@ -3,8 +3,8 @@
 #include "bempp_spaces.h"
 #include "kernels.h"
 
-__kernel __attribute__((vec_type_hint(REALTYPE4))) __kernel void
-evaluate_dense_laplace_hypersingular_regular(
+__kernel __attribute__((vec_type_hint(REALTYPEVEC))) __kernel void
+kernel_function(
     __global uint* testIndices, __global uint* trialIndices,
     __global int *testNormalSigns, __global int *trialNormalSigns,
     __global REALTYPE* testGrid, __global REALTYPE* trialGrid,
@@ -13,6 +13,7 @@ evaluate_dense_laplace_hypersingular_regular(
     __global REALTYPE* testLocalMultipliers,
     __global REALTYPE* trialLocalMultipliers, __constant REALTYPE* quadPoints,
     __constant REALTYPE* quadWeights, __global REALTYPE* globalResult,
+    __global REALTYPE* kernel_parameters,
     int nTest, int nTrial, char gridsAreDisjoint) {
   /* Variable declarations */
 
@@ -20,10 +21,8 @@ evaluate_dense_laplace_hypersingular_regular(
   size_t offset = get_global_offset(1);
 
   size_t testIndex = testIndices[gid[0]];
-  size_t trialIndex[4] = {trialIndices[offset + 4 * (gid[1] - offset) + 0],
-                          trialIndices[offset + 4 * (gid[1] - offset) + 1],
-                          trialIndices[offset + 4 * (gid[1] - offset) + 2],
-                          trialIndices[offset + 4 * (gid[1] - offset) + 3]};
+  /* Macro to assign trial indices to new array trialIndex[VEC_LENGTH] */
+  DEFINE_TRIAL_INDICES_REGULAR_ASSEMBLY
 
   size_t testQuadIndex;
   size_t trialQuadIndex;
@@ -34,72 +33,72 @@ evaluate_dense_laplace_hypersingular_regular(
   size_t globalColIndex;
 
   REALTYPE3 testGlobalPoint;
-  REALTYPE4 trialGlobalPoint[3];
+  REALTYPEVEC trialGlobalPoint[3];
 
   REALTYPE3 testCorners[3];
-  REALTYPE4 trialCorners[3][3];
+  REALTYPEVEC trialCorners[3][3];
 
   uint testElement[3];
-  uint trialElement[4][3];
+  uint trialElement[VEC_LENGTH][3];
 
   uint myTestLocal2Global[NUMBER_OF_TEST_SHAPE_FUNCTIONS];
-  uint myTrialLocal2Global[4][NUMBER_OF_TRIAL_SHAPE_FUNCTIONS];
+  uint myTrialLocal2Global[VEC_LENGTH][NUMBER_OF_TRIAL_SHAPE_FUNCTIONS];
 
   REALTYPE myTestLocalMultipliers[NUMBER_OF_TEST_SHAPE_FUNCTIONS];
-  REALTYPE myTrialLocalMultipliers[4][NUMBER_OF_TRIAL_SHAPE_FUNCTIONS];
+  REALTYPE myTrialLocalMultipliers[VEC_LENGTH][NUMBER_OF_TRIAL_SHAPE_FUNCTIONS];
 
   REALTYPE3 testJac[2];
-  REALTYPE4 trialJac[2][3];
+  REALTYPEVEC trialJac[2][3];
 
   REALTYPE3 testNormal;
-  REALTYPE4 trialNormal[3];
+  REALTYPEVEC trialNormal[3];
 
   REALTYPE2 testPoint;
   REALTYPE2 trialPoint;
 
   REALTYPE testIntElem;
-  REALTYPE4 trialIntElem;
+  REALTYPEVEC trialIntElem;
 
   REALTYPE testInv[2][2];
-  REALTYPE4 trialInv[2][2];
+  REALTYPEVEC trialInv[2][2];
 
-  REALTYPE4 trialCurl[3][3];
+  REALTYPEVEC trialCurl[3][3];
   REALTYPE3 testCurl[3];
 
-  REALTYPE4 basisProduct[3][3];
+  REALTYPEVEC basisProduct[3][3];
 
-  REALTYPE4 trialInvBasis[2][3];
-  REALTYPE4 trialElementGradient[3][3];
+  REALTYPEVEC trialInvBasis[2][3];
+  REALTYPEVEC trialElementGradient[3][3];
 
-  REALTYPE4 kernelValue;
-  REALTYPE4 tempResult;
-  REALTYPE4 shapeIntegral;
+  REALTYPEVEC kernelValue;
+  REALTYPEVEC tempResult;
+  REALTYPEVEC shapeIntegral;
 
   getCorners(testGrid, testIndex, testCorners);
-  getCornersVec4(trialGrid, trialIndex, trialCorners);
+  getCornersVec(trialGrid, trialIndex, trialCorners);
 
   getElement(testConnectivity, testIndex, testElement);
-  getElementVec4(trialConnectivity, trialIndex, trialElement);
+  getElementVec(trialConnectivity, trialIndex, trialElement);
 
   getLocal2Global(testLocal2Global, testIndex, myTestLocal2Global,
                   NUMBER_OF_TEST_SHAPE_FUNCTIONS);
-  getLocal2GlobalVec4(trialLocal2Global, trialIndex, &myTrialLocal2Global[0][0],
+  getLocal2GlobalVec(trialLocal2Global, trialIndex, &myTrialLocal2Global[0][0],
                       NUMBER_OF_TRIAL_SHAPE_FUNCTIONS);
 
   getLocalMultipliers(testLocalMultipliers, testIndex, myTestLocalMultipliers,
                       NUMBER_OF_TEST_SHAPE_FUNCTIONS);
-  getLocalMultipliersVec4(trialLocalMultipliers, trialIndex,
+  getLocalMultipliersVec(trialLocalMultipliers, trialIndex,
                           &myTrialLocalMultipliers[0][0],
                           NUMBER_OF_TRIAL_SHAPE_FUNCTIONS);
 
   getJacobian(testCorners, testJac);
-  getJacobianVec4(trialCorners, trialJac);
+  getJacobianVec(trialCorners, trialJac);
 
   getNormalAndIntegrationElement(testJac, &testNormal, &testIntElem);
-  getNormalAndIntegrationElementVec4(trialJac, trialNormal, &trialIntElem);
+  getNormalAndIntegrationElementVec(trialJac, trialNormal, &trialIntElem);
 
   updateNormals(testIndex, testNormalSigns, &testNormal);
-  updateNormalsVec4(trialIndex, trialNormalSigns, trialNormal);
+  updateNormalsVec(trialIndex, trialNormalSigns, trialNormal);
 
   testInv[0][0] = dot(testJac[1], testJac[1]);
   testInv[1][1] = dot(testJac[0], testJac[0]);
@@ -166,9 +165,9 @@ evaluate_dense_laplace_hypersingular_regular(
     for (trialQuadIndex = 0; trialQuadIndex < NUMBER_OF_QUAD_POINTS;
          ++trialQuadIndex) {
       trialPoint = (REALTYPE2)(quadPoints[2 * trialQuadIndex], quadPoints[2 * trialQuadIndex + 1]);
-      getGlobalPointVec4(trialCorners, &trialPoint, trialGlobalPoint);
-      KERNEL(vec4)
-      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal,
+      getGlobalPointVec(trialCorners, &trialPoint, trialGlobalPoint);
+      KERNEL(VEC_STRING)
+      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernel_parameters,
        &kernelValue);
       tempResult += quadWeights[trialQuadIndex] * kernelValue;
     }
@@ -186,7 +185,7 @@ evaluate_dense_laplace_hypersingular_regular(
     for (j = 0; j < NUMBER_OF_TRIAL_SHAPE_FUNCTIONS; ++j)
       basisProduct[i][j] *= shapeIntegral;
 
-  for (int vecIndex = 0; vecIndex < 4; ++vecIndex)
+  for (int vecIndex = 0; vecIndex < VEC_LENGTH; ++vecIndex)
     if (!elementsAreAdjacent(testElement, trialElement[vecIndex],
                              gridsAreDisjoint)) {
       for (i = 0; i < NUMBER_OF_TEST_SHAPE_FUNCTIONS; ++i)

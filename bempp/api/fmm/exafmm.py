@@ -1,6 +1,17 @@
 """Main interface class to ExaFMM."""
 import numpy as _np
+import atexit as _atexit
 
+FMM_TMP_DIR = None
+
+@_atexit.register
+def cleanup_fmm_tmp():
+    """Clean up the FMM tmp directory."""
+    from pathlib import Path
+
+    if FMM_TMP_DIR is not None:
+        for tmp_file in Path(FMM_TMP_DIR).glob("*.tmp"):
+            tmp_file.unlink()
 
 class ExafmmInterface(object):
     """Interface to Exafmm."""
@@ -19,7 +30,30 @@ class ExafmmInterface(object):
     ):
         """Instantiate an Exafmm session."""
         import bempp.api
+        import os
+        from bempp.api.utils.helpers import create_unique_id
 
+        global FMM_TMP_DIR
+
+        if FMM_TMP_DIR is None:
+            FMM_TMP_DIR = os.path.join(os.getcwd(), ".exafmm")
+            if not os.path.isdir(FMM_TMP_DIR):
+                try:
+                    os.mkdir(FMM_TMP_DIR)
+                except:
+                    raise FileExistsError(
+                        f"A file with the name {FMM_TMP_DIR} exists. Please delete it."
+                    )
+
+        for _ in range(10):
+            tmp_name = create_unique_id() + ".tmp"
+            fname = os.path.join(FMM_TMP_DIR, tmp_name)
+            if not os.path.exists(fname):
+                break
+        else:
+            raise FileExistsError("Could not create temporary filename for Exafmm.")
+
+        self._fname = fname
         self._singular_correction = singular_correction
 
         self._source_points = source_points
@@ -38,7 +72,9 @@ class ExafmmInterface(object):
 
                 targets = exafmm.laplace.init_targets(target_points)
 
-                self._fmm = exafmm.laplace.LaplaceFmm(expansion_order, ncrit, depth)
+                self._fmm = exafmm.laplace.LaplaceFmm(
+                    expansion_order, ncrit, depth, filename=fname
+                )
                 self._tree = exafmm.laplace.setup(sources, targets, self._fmm)
 
             elif mode == "helmholtz":
@@ -53,7 +89,7 @@ class ExafmmInterface(object):
                 targets = exafmm.helmholtz.init_targets(target_points)
 
                 self._fmm = exafmm.helmholtz.HelmholtzFmm(
-                    expansion_order, ncrit, depth, wavenumber
+                    expansion_order, ncrit, depth, wavenumber, filename=fname
                 )
                 self._tree = exafmm.helmholtz.setup(sources, targets, self._fmm)
 
@@ -69,12 +105,11 @@ class ExafmmInterface(object):
                 targets = exafmm.modified_helmholtz.init_targets(target_points)
 
                 self._fmm = exafmm.modified_helmholtz.ModifiedHelmholtzFmm(
-                    expansion_order, ncrit, depth, wavenumber
+                    expansion_order, ncrit, depth, wavenumber, filename=fname
                 )
                 self._tree = exafmm.modified_helmholtz.setup(
                     sources, targets, self._fmm
                 )
-
 
     @property
     def number_of_source_points(self):
@@ -86,9 +121,7 @@ class ExafmmInterface(object):
         """Return number of target points."""
         return len(self._target_points)
 
-    def evaluate(
-        self, vec, apply_singular_correction=True
-    ):
+    def evaluate(self, vec, apply_singular_correction=True):
         """Evalute the Fmm."""
         import bempp.api
 
@@ -109,22 +142,19 @@ class ExafmmInterface(object):
 
         ident = np.identity(self.number_of_source_points)
 
-        res = np.zeros((self.number_of_target_points, self.number_of_source_points), dtype='float64')
+        res = np.zeros(
+            (self.number_of_target_points, self.number_of_source_points),
+            dtype="float64",
+        )
 
         for index in range(self.number_of_source_points):
             res[:, index] = self.evaluate(ident[:, index])[:, 0]
 
         return res
 
-
     @classmethod
     def from_grid(
-        cls,
-        source_grid,
-        mode,
-        wavenumber=None,
-        target_grid=None,
-        precision="double",
+        cls, source_grid, mode, wavenumber=None, target_grid=None, precision="double"
     ):
         """
         Initialise an Exafmm instance from a given source and target grid.
@@ -193,7 +223,7 @@ class ExafmmInterface(object):
                     helmholtz_kernel,
                     np.array([wavenumber], dtype="float64"),
                     precision,
-                    True
+                    True,
                 )
             elif mode == "modified_helmholtz":
                 from bempp.api.fmm.helpers import modified_helmholtz_kernel
@@ -217,5 +247,4 @@ class ExafmmInterface(object):
             precision=precision,
             singular_correction=singular_correction,
         )
-
 
