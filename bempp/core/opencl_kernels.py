@@ -16,12 +16,16 @@ def select_cl_kernel(operator_descriptor, mode):
 
     singular_assemblers = {
             "default_scalar": "evaluate_dense_singular",
-            "laplace_hypersingular": "evaluate_dense_laplace_hypersingular_singular"
+            "laplace_hypersingular": "evaluate_dense_laplace_hypersingular_singular",
+            "helmholtz_hypersingular": "evaluate_dense_helmholtz_hypersingular_singular",
+            "modified_helmholtz_hypersingular": "evaluate_dense_helmholtz_hypersingular_singular",
             }
 
     regular_assemblers = {
             "default_scalar": "evaluate_dense_regular",
             "laplace_hypersingular": "evaluate_dense_laplace_hypersingular_regular",
+            "helmholtz_hypersingular": "evaluate_dense_helmholtz_hypersingular_regular",
+            "modified_helmholtz_hypersingular": "evaluate_dense_helmholtz_hypersingular_regular",
             }
 
     kernels = {
@@ -31,7 +35,9 @@ def select_cl_kernel(operator_descriptor, mode):
         "helmholtz_single_layer": "helmholtz_single_layer",
         "helmholtz_double_layer": "helmholtz_double_layer",
         "helmholtz_adjoint_double_layer": "helmholtz_adjoint_double_layer",
-        "laplace_hypersingular": "laplace_single_layer",
+        "modified_helmholtz_single_layer": "modified_helmholtz_real_single_layer",
+        "modified_helmholtz_double_layer": "modified_helmholtz_real_double_layer",
+        "modified_helmholtz_adjoint_double_layer": "modified_helmholtz_real_adjoint_double_layer",
     }
 
     if mode == "singular":
