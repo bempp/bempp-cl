@@ -16,9 +16,7 @@ class DiagonalAssembler(_assembler.AssemblerBase):
         self, operator_descriptor, device_interface, precision, *args, **kwargs
     ):
         """Diagonal assembly of the integral operator."""
-        from bempp.api.assembly.discrete_boundary_operator import (
-            DiagonalDiscreteBoundaryOperator,
-        )
+        from bempp.api.assembly.discrete_boundary_operator import DiagonalOperator
         from bempp.api.utils.helpers import promote_to_double_precision
 
         if (
@@ -29,82 +27,146 @@ class DiagonalAssembler(_assembler.AssemblerBase):
                 "Spaces that require dof transformations not supported for diagonal assembly."
             )
 
+        if self.domain != self.dual_to_range:
+            raise ValueError(
+                "Only identical spaces currently supported for diagonal assembly."
+            )
 
-        mat = assemble_dense(
-            self.domain,
-            self.dual_to_range,
-            self.parameters,
-            operator_descriptor,
-            device_interface,
+        if (
+            self.domain.identifier == self.dual_to_range.identifier
+            and self.dual_to_range.identifier == "p1_continuous"
+        ) or (
+            self.domain.identifier == self.dual_to_range.identifier
+            and self.dual_to_range.identifier == "p0_discontinuous"
+        ):
+            values = operator_descriptor.singular_part.weak_form().A.diagonal()
+        else:
+            raise ValueError(
+                "Only spaces of type 'p0_discontinuous' or 'p1_continuous' supported for diagonal assembly."
+            )
+
+        return DiagonalOperator(
+            values,
+            shape=(self.dual_to_range.global_dof_count, self.domain.global_dof_count),
         )
 
-        if self.parameters.assembly.always_promote_to_double:
-            mat = promote_to_double_precision(mat)
+        # values = assemble_diagonal(
+        # self.domain,
+        # self.dual_to_range,
+        # self.parameters,
+        # operator_descriptor,
+        # device_interface,
+        # )
 
-        return DenseDiscreteBoundaryOperator(mat)
+        # if self.parameters.assembly.always_promote_to_double:
+        # values = promote_to_double_precision(values)
+
+        # return DiagonalOperator(
+        # values,
+        # shape=(self.dual_to_range.global_dof_count, self.domain.global_dof_count),
+        # )
 
 
-def assemble_dense(
-    domain, dual_to_range, parameters, operator_descriptor, device_interface
-):
-    """Assembles the operator and returns a dense matrix."""
-    import bempp.api
-    from bempp.api.utils.helpers import get_type
-    from bempp.core.dispatcher import dense_assembler_dispatcher
-    from bempp.core.singular_assembler import assemble_singular_part
+# def assemble_diagonal(
+# domain, dual_to_range, parameters, operator_descriptor, device_interface
+# ):
+# """Assembles the diagonal of the operator."""
+# import bempp.api
+# from bempp.api.utils.helpers import get_type
+# from bempp.core.singular_assembler import assemble_singular_part
+# from bempp.api.integration.triangle_gauss import rule
+# from bempp.core.numba_kernels import select_numba_kernels
 
-    precision = operator_descriptor.precision
+# precision = operator_descriptor.precision
 
-    rows = dual_to_range.global_dof_count
-    cols = domain.global_dof_count
+# rows = dual_to_range.global_dof_count
+# cols = domain.global_dof_count
 
-    if operator_descriptor.is_complex:
-        result_type = get_type(precision).complex
-    else:
-        result_type = get_type(precision).real
+# nvalues = _np.min([rows, cols])
 
-    result = _np.zeros((rows, cols), dtype=result_type)
+# if operator_descriptor.is_complex:
+# result_type = "complex128"
+# else:
+# result_type = "float64"
 
-    with bempp.api.Timer(
-        message=f"Regular assembler:{operator_descriptor.identifier}:{device_interface}"
-    ):
-        dense_assembler_dispatcher(
-            device_interface,
-            operator_descriptor,
-            domain,
-            dual_to_range,
-            parameters,
-            result,
-        )
+# result = _np.zeros((1, nvalues), dtype=result_type)
 
-    grids_identical = domain.grid == dual_to_range.grid
+# quad_points, quad_weights = rule(parameters.quadrature.regular)
 
-    if grids_identical:
+# (numba_assembly_function, numba_kernel_function) = select_numba_kernels(
+# operator_descriptor, mode="regular"
+# )
 
-        trial_local2global = domain.local2global.ravel()
-        test_local2global = dual_to_range.local2global.ravel()
-        trial_multipliers = domain.local_multipliers.ravel()
-        test_multipliers = dual_to_range.local_multipliers.ravel()
+# test_grid_data = dual_to_range.grid.data("double")
+# trial_grid_data = domain.grid.data("double")
+# kernel_parameters = _np.array(operator_descriptor.options, dtype="float64")
 
-        singular_rows, singular_cols, singular_values = assemble_singular_part(
-            domain.localised_space,
-            dual_to_range.localised_space,
-            parameters,
-            operator_descriptor,
-            device_interface,
-        )
+# grids_identical = dual_to_range.grid == domain.grid
 
-        rows = test_local2global[singular_rows]
-        cols = trial_local2global[singular_cols]
-        values = (
-            singular_values
-            * trial_multipliers[singular_cols]
-            * test_multipliers[singular_rows]
-        )
+# with bempp.api.Timer(
+# message=f"Diagonal assembler:{operator_descriptor.identifier}:{device_interface}"
+# ):
+# # We need to copy them as we adapt the local2global arrays in each step.
+# local2global_test = _np.zeros_like(dual_to_range.local2global)
+# local2global_trial = _np.zeros_like(domain.local2global)
+# multipliers_test = _np.zeros_like(dual_to_range.local_multipliers)
+# multipliers_trial = _np.zeros_like(domain.local_multipliers)
 
-        _np.add.at(result, (rows, cols), values)
+# for global_dof_index in range(nvalues):
+# # Go through each global dof and assemble the associated local dofs.
+# test_support = []
+# trial_support = []
+# dofs_test = dual_to_range.global2local[global_dof_index]
+# dofs_trial = domain.global2local[global_dof_index]
+# # The following shifts the global dofs to sum into (0, global_dof_index)
+# for test_elem, dof in dofs_test:
+# test_support.append(test_elem)
+# local2global_test[test_elem] = 0
+# multipliers_test[test_elem][:] = 0
+# multipliers_test[test_elem][dof] = dual_to_range.local2global[
+# test_elem
+# ][dof]
+# for trial_elem, dof in dofs_trial:
+# trial_support.append(trial_elem)
+# local2global_trial[trial_elem][:] = 0
+# local2global_trial[trial_elem][dof] = global_dof_index
+# multipliers_trial[trial_elem][:] = 0
+# multipliers_trial[trial_elem][dof] = domain.local2global[
+# trial_elem
+# ][dof]
+# test_support = _np.array(test_support, dtype="uint32")
+# trial_support = _np.array(trial_support, dtype="uint32")
 
-    return result
+# numba_assembly_function(
+# test_grid_data,
+# trial_grid_data,
+# dual_to_range.number_of_shape_functions,
+# domain.number_of_shape_functions,
+# test_support,
+# trial_support,
+# multipliers_test,
+# multipliers_trial,
+# local2global_test,
+# local2global_trial,
+# dual_to_range.normal_multipliers,
+# domain.normal_multipliers,
+# quad_points,
+# quad_weights,
+# numba_kernel_function,
+# kernel_parameters,
+# grids_identical,
+# dual_to_range.shapeset.evaluate,
+# domain.shapeset.evaluate,
+# result,
+# )
+
+# if grids_identical:
+# singular_part = (
+# operator_descriptor.singular_part.weak_form().A.diagonal()
+# )
+# result += singular_part
+
+# return result
 
 
 # @_timeit

@@ -7,6 +7,7 @@ def _create_assembler(
     """Create assembler based on string."""
     from bempp.core.singular_assembler import SingularAssembler
     from bempp.core.dense_assembler import DenseAssembler
+    from bempp.core.diagonal_assembler import DiagonalAssembler
     from bempp.api.fmm.fmm_assembler import FmmAssembler
 
     # from bempp.core.numba.dense_assembler import DenseAssembler
@@ -19,6 +20,8 @@ def _create_assembler(
 
     if identifier == "only_singular_part":
         return SingularAssembler(domain, dual_to_range, parameters)
+    if identifier == "only_diagonal_part":
+        return DiagonalAssembler(domain, dual_to_range, parameters)
     if identifier == "dense":
         return DenseAssembler(domain, dual_to_range, parameters)
     if identifier == "default_nonlocal":

@@ -235,18 +235,23 @@ class DiagonalOperator(_DiscreteOperatorBase):
 
     """
 
-    def __init__(self, values):
+    def __init__(self, values, shape=None):
         """Constructor. Should not be called by the user."""
         self._values = values.ravel()
-        super().__init__(values.dtype, (len(values), len(values)))
+        if shape is None:
+            shape = (len(values), len(values))
+        super().__init__(values.dtype, shape)
 
     def _matvec(self, x):
 
-        shape = x.shape
+        vec_shape = x.shape
 
-        return (self._values * x.ravel()).reshape(shape)
+        return (self._values * x.ravel()).reshape(vec_shape)
 
     def __add__(self, other):
+
+        if self.shape != other.shape:
+            raise ValueError(f"Incompatible dimensions: {self.shape} != {other.shape}")
         if isinstance(other, DiagonalOperator):
             return DiagonalOperator(self.A + other.A)
         else:
@@ -259,9 +264,6 @@ class DiagonalOperator(_DiscreteOperatorBase):
         return self.dot(other)
 
     def dot(self, other):
-        """Form the product with another object."""
-        if isinstance(other, DiagonalOperator):
-            return DiagonalOperator(self.A * other.A)
         if _np.isscalar(other):
             if self.A.dtype in ['float32', 'complex64']:
                 # Necessary to ensure that scalar multiplication does not change

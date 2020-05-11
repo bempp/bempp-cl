@@ -731,8 +731,8 @@ class FunctionSpace(object):
         self._sorted_indices, self._indexptr = sorted_indices, indexptr
 
     def __eq__(self, other):
-        """Check if spaces are compatible."""
-        return check_if_compatible(self, other)
+        """Check if spaces are identical."""
+        return self.id == other.id
 
 
 def return_compatible_representation(*args):
