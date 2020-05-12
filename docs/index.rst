@@ -5,6 +5,6 @@ Welcome to the auto-generated documentation for Bempp. You may find the (reader 
 Bempp is split into a user interface (`bempp.api`_) and a fast computational core (`bempp.core`_). The full documentation of each of these is included here.
 
 .. _bempp.com: http://www.bempp.com
-.. _bempp.api: /docs/bempp/api
-.. _bempp.core: /docs/bempp/core
+.. _bempp.api: docs/bempp/api
+.. _bempp.core: docs/bempp/core
 
