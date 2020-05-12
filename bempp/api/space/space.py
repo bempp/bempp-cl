@@ -50,7 +50,9 @@ def function_space(
                 grid, support_elements, segments, swapped_normals
             )
         if degree == 1:
-            raise ValueError("Requested space not implemented yet.")
+            space = scalar_dual_spaces.dual1_function_space(
+                grid, support_elements, segments, swapped_normals
+            )
 
     if kind == "RWG":
         if degree == 0:
