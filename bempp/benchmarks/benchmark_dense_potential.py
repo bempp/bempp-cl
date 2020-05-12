@@ -6,6 +6,7 @@ import bempp.api
 
 PYTESTMARK = pytest.mark.usefixtures("default_parameters", "helpers")
 
+
 # pylint: disable=C0103
 def laplace_potential_dense_large_p0_benchmark(benchmark, default_parameters):
     """Benchmark for Laplace potential evaluation on large sphere"""

@@ -1,8 +1,5 @@
 """Generic access to spaces."""
 
-import abc as _abc
-from collections import namedtuple as _namedtuple
-
 import numpy as _np
 import numba as _numba
 
@@ -18,7 +15,6 @@ def function_space(
     **kwargs,
 ):
     """Initialize a function space."""
-    from bempp.api.utils.helpers import create_unique_id
     from bempp.api.utils import pool
 
     from . import scalar_spaces
@@ -320,7 +316,6 @@ class FunctionSpace(object):
 
         from .shapesets import Shapeset
         from scipy.sparse import coo_matrix
-        from scipy.sparse import identity
         from bempp.api.utils.helpers import create_unique_id
 
         self._grid = grid
@@ -607,11 +602,10 @@ class FunctionSpace(object):
     def evaluate(self, element_index, local_coordinates):
         """
         Evaluate the basis on an element.
-        
-        Returns an array of the form 
+
+        Returns an array of the form
         (codomain_dimension, number_of_shape_functions, number_of_eval_points)
         that contains the basis functions evaluated at the given points.
-        
         """
         return self.numba_evaluate(
             element_index,
@@ -824,8 +818,6 @@ def make_localised_space(space):
     )
 
     global2local_map = invert_local2global(local2global_map, local_multipliers)
-
-    global_dof_count = local_size * support_size
 
     return (
         SpaceBuilder(space.grid)

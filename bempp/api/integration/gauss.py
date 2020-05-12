@@ -31,10 +31,10 @@
 
 import numpy as _np
 
-#! index after which the points and weights for a certain rule are found
+# index after which the points and weights for a certain rule are found
 # inline unsigned int g1Daddress(const unsigned int g) { return (g - 1) * g / 2; }
 
-#! gauss points for 1D quadrature
+# gauss points for 1D quadrature
 coords = _np.array(
     [
         # Coordinates for 1-point rule
@@ -535,7 +535,7 @@ coords = _np.array(
     ]
 )
 
-#! weights for 1D quadrature
+# weights for 1D quadrature
 weights = _np.array(
     [
         # Weights for 1-point rule

@@ -1,5 +1,4 @@
 """Helmholtz far-field operators."""
-import numpy as _np
 
 
 def single_layer(

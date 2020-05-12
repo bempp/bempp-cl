@@ -25,7 +25,7 @@ class _DiscreteOperatorBase(_LinearOperator):
 
     def __neg__(self):
         """Negation."""
-        return _ScaledLinearOperator(self, -1)
+        return _ScaledDiscreteOperator(self, -1)
 
     def __sub__(self, other):
         """Subtraction."""
@@ -40,7 +40,7 @@ class _DiscreteOperatorBase(_LinearOperator):
             return _ScaledDiscreteOperator(self, other)
         else:
             return super().dot(other)
-        
+
     def __mul__(self, other):
         """Product with other objects."""
         return self.dot(other)
@@ -51,6 +51,7 @@ class _DiscreteOperatorBase(_LinearOperator):
             return _ScaledDiscreteOperator(self, other)
         else:
             return NotImplemented
+
 
 class _ScaledDiscreteOperator(_DiscreteOperatorBase):
     """Return a scaled operator."""
@@ -70,6 +71,7 @@ class _ScaledDiscreteOperator(_DiscreteOperatorBase):
         """Return matrix."""
 
         return self._alpha * self._op.A
+
 
 class _SumDiscreteOperator(_DiscreteOperatorBase):
     """Return a sum operator."""
@@ -99,6 +101,7 @@ class _SumDiscreteOperator(_DiscreteOperatorBase):
 
         return res1 + res2
 
+
 class _ProductDiscreteOperator(_DiscreteOperatorBase):
     """Product of two operators."""
 
@@ -127,6 +130,7 @@ class _ProductDiscreteOperator(_DiscreteOperatorBase):
 
         return res1 @ res2
 
+
 class GenericDiscreteBoundaryOperator(_DiscreteOperatorBase):
     """Discrete boundary operator that implements a matvec routine."""
 
@@ -154,6 +158,7 @@ class GenericDiscreteBoundaryOperator(_DiscreteOperatorBase):
         """Convert to dense."""
         return self @ _np.eye(self.shape[1])
 
+
 class DenseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     """
     Main class for the discrete form of dense nonlocal operators.
@@ -173,7 +178,7 @@ class DenseDiscreteBoundaryOperator(_DiscreteOperatorBase):
 
         if _np.iscomplexobj(x) and not _np.iscomplexobj(self.A):
             return self.A.dot(_np.real(x).astype(self.dtype)) + \
-                    1j * self.A.dot(_np.imag(x).astype(self.dtype))
+                1j * self.A.dot(_np.imag(x).astype(self.dtype))
         return self.A.dot(x.astype(self.dtype))
 
     def __add__(self, other):
@@ -351,7 +356,7 @@ class ZeroDiscreteBoundaryOperator(_DiscreteOperatorBase):
         )
 
     def _matmat(self, x):
-            return _np.zeros((self.shape[0], x.shape[1]), dtype="float64")
+        return _np.zeros((self.shape[0], x.shape[1]), dtype="float64")
 
 
 class DiscreteRankOneOperator(_DiscreteOperatorBase):
@@ -428,7 +433,7 @@ def as_matrix(operator):
     """
     from numpy import eye
 
-    if hasattr(operator, A):
+    if hasattr(operator, "A"):
         return operator.A
 
     cols = operator.shape[1]
@@ -462,9 +467,6 @@ class _Solver(object):  # pylint: disable=too-few-public-methods
         self._shape = (mat.shape[1], mat.shape[0])
         self._dtype = mat.dtype
 
-        import time
-        import bempp.api
-
         use_mkl_pardiso = False
 
         # pylint: disable=bare-except
@@ -480,8 +482,6 @@ class _Solver(object):  # pylint: disable=too-few-public-methods
             solver_interface = splu
             actual_mat = mat
 
-
-        start_time = time.time()
         if mat.shape[0] == mat.shape[1]:
             # Square matrix case
             solver = solver_interface(actual_mat)
@@ -504,8 +504,6 @@ class _Solver(object):  # pylint: disable=too-few-public-methods
                 solver = solver_interface((mat * mat_hermitian).tocsc())
             self._solve_fun = lambda x: mat_hermitian * solver.solve(x)
 
-        end_time = time.time()
-
     @_timeit
     def solve(self, rhs):
         """Solve with right-hand side mat."""
@@ -524,6 +522,7 @@ class _Solver(object):  # pylint: disable=too-few-public-methods
     def dtype(self):
         """Return the dtype."""
         return self._dtype
+
 
 def _get_dense(A, B):
     """
@@ -544,11 +543,10 @@ def _get_dense(A, B):
 
     if a_is_sparse and b_is_sparse:
         return A, B
-    
+
     if a_is_sparse:
         A = A.todense()
     if b_is_sparse:
         B = B.todense()
 
     return A, B
-

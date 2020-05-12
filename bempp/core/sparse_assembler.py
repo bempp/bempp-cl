@@ -25,7 +25,7 @@ class SparseAssembler(_assembler.AssemblerBase):
         from scipy.sparse import coo_matrix
 
         domain, dual_to_range = return_compatible_representation(
-                self.domain, self.dual_to_range)
+            self.domain, self.dual_to_range)
 
         trial_local2global = domain.local2global.ravel()
         test_local2global = dual_to_range.local2global.ravel()
@@ -60,6 +60,7 @@ class SparseAssembler(_assembler.AssemblerBase):
             mat = dual_to_range.dof_transformation.T @ mat
 
         return SparseDiscreteBoundaryOperator(mat)
+
 
 def assemble_sparse(
     domain, dual_to_range, parameters, operator_descriptor, device_interface, precision
@@ -170,7 +171,7 @@ def _prepare_buffers(
     elements = _np.flatnonzero(domain.support * dual_to_range.support).astype("uint32")
 
     elements_buffer = _cl_helpers.DeviceBuffer.from_array(
-            elements, device_interface, dtype=_np.uint32, access_mode='read_only')
+        elements, device_interface, dtype=_np.uint32, access_mode='read_only')
 
     number_of_elements = len(elements)
 
@@ -195,8 +196,6 @@ def _prepare_buffers(
     trial_normal_signs_buffer = _cl_helpers.DeviceBuffer.from_array(
         domain.normal_multipliers, device_interface, dtype=_np.int32, access_mode="read_only"
     )
-
-
 
     buffers = [
         grid_buffer,

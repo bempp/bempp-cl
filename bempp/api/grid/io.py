@@ -136,7 +136,7 @@ def export(
         unique_dom_indices = set(grid.domain_indices)
         unique_geom_indices = range(1, 1 + len(unique_dom_indices))
         geom_indices_map = dict(zip(unique_dom_indices, unique_geom_indices))
-        geom_indices = _np.array([geom_indices_map[dom_index] for dom_index in grid.domain_indices], dtype='int32')    
+        geom_indices = _np.array([geom_indices_map[dom_index] for dom_index in grid.domain_indices], dtype='int32')
         cell_data["gmsh:geometrical"] = geom_indices.reshape((1, -1))
     else:
         cell_data["domain_index"] = grid.domain_indices.astype("int32").reshape((-1, 1))
@@ -149,7 +149,6 @@ def export(
         cell_data=cell_data,
         file_format=file_format,
     )
-
 
 
 def _transform_array(a, mode=None):

@@ -83,7 +83,7 @@ class Grid(object):
         if scatter and pool.is_initialised() and not pool.is_worker():
             self._scatter()
         if not pool.is_worker():
-            log( 
+            log(
                 (
                     f"Created grid with id {self.id}. Elements: {self.number_of_elements}. "
                     + f"Edges: {self.number_of_edges}. Vertices: {self.number_of_vertices}"
@@ -137,9 +137,9 @@ class Grid(object):
         """
         Return named tuple (indices, indexptr)
 
-        The neighbors of element i are given as 
+        The neighbors of element i are given as
         element_neighbors.indices[
-            element_neighbors.indptr[i] : element_neighbors.indptr[i +1]]. 
+            element_neighbors.indptr[i] : element_neighbors.indptr[i +1]].
         Note that the element i is contained in the list of neighbors.
 
         """
@@ -316,7 +316,7 @@ class Grid(object):
         )
 
         pool.execute(_grid_scatter_worker, self.id, array_proxies)
-        self._is_scattered=True
+        self._is_scattered = True
 
     def entity_count(self, codim):
         """Return the number of entities of given codimension."""
@@ -417,7 +417,7 @@ class Grid(object):
         The property as_array is used to create a representation
         of the grid, which is pushed onto a given device.
         The method returns a DeviceGridInterface object. If
-        the grid with the given precision is already in the context, 
+        the grid with the given precision is already in the context,
         an existing DeviceGridInterface instance is returned to avoid
         multiple copies of the grid in the same context.
         """
@@ -1114,7 +1114,6 @@ def grid_from_segments(grid, segments):
     """Return new grid from segments of existing grid."""
 
     element_in_new_grid = _np.zeros(grid.number_of_elements, dtype=_np.bool)
-    vertices_in_new_grid = _np.zeros(grid.number_of_vertices, dtype=_np.bool)
 
     for elem in range(grid.number_of_elements):
         if grid.domain_indices[elem] in segments:
@@ -1277,7 +1276,7 @@ def union(grids, domain_indices=None, swapped_normals=None):
 def enumerate_vertex_adjacent_elements(grid, support_elements):
     """
     Enumerate in anti-clockwise order all elements adjacent to all vertices in support.
-    
+
     Returns a list [neighbors_0, neighbors_1, ...], where neighbors_i is a list
     [(elem_index, local_ind1, local_ind2), ...] of tuples, where elem_index is an
     element in the support that as connected with vertex i. local_ind1 and local_ind2 are
@@ -1302,7 +1301,6 @@ def enumerate_vertex_adjacent_elements(grid, support_elements):
         # Swap the edges in each element so
         # that they have edges in anti-clockwise order
         locally_sorted_neighbors = []
-        count = 0
         while neighbors:
             # Take first element in list
             elem1 = neighbors.pop()
@@ -1376,8 +1374,6 @@ def _numba_enumerate_edges(elements, edge_tuple_to_index):
     two nodes associated with the jth edge.
 
     """
-    not_found = -1
-
     edges = []
 
     number_of_elements = elements.shape[1]
@@ -1389,7 +1385,7 @@ def _numba_enumerate_edges(elements, edge_tuple_to_index):
         elem = elements[:, elem_index]
         for local_index in range(3):
             edge_tuple = _vertices_from_edge_index(elem, local_index)
-            if not edge_tuple in edge_tuple_to_index:
+            if edge_tuple not in edge_tuple_to_index:
                 edge_index = number_of_edges
                 edge_tuple_to_index[edge_tuple] = edge_index
                 edges.append(edge_tuple)
@@ -1409,7 +1405,8 @@ def _grid_scatter_worker(grid_id, array_proxies):
 
     vertices, elements, domain_indices = pool.from_buffer(array_proxies)
 
-    if not pool.has_key(grid_id):
+    # if not pool.has_key(grid_id):
+    if grid_id not in pool:
         pool.insert_data(
             grid_id,
             Grid(vertices.copy(), elements.copy(), domain_indices.copy(), grid_id),

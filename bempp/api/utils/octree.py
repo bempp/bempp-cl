@@ -122,7 +122,7 @@ class Octree(object):
         """
         Return an index ptr to the near field nodes.
 
-        Returns an array index_ptr, such that 
+        Returns an array index_ptr, such that
         self.near_field_nodes[index_ptr[j]:index_ptr[j+1]]
         contains the near field nodes for all nodes in level j.
         There are 27 entries for each near field node. The
@@ -163,7 +163,7 @@ class Octree(object):
     def node_bounds(self, morton_index, level):
         """
         Return the lower/upper bound of a node by Morton index.
-        
+
         The method returns a tuple (lbound, ubound) which define
         the lower and upper corners of a node given by its Morton index.
         """
@@ -241,9 +241,8 @@ class Octree(object):
 
 
         Each node can have at most 27 near field nodes (including
-        the node itself). If a near field node does not exist or is empty 
+        the node itself). If a near field node does not exist or is empty
         then the value -1 is stored, otherwise the node number.
-        
         """
 
         self._near_field_nodes = _np.empty(27 * len(self._level_nodes), _np.int32)

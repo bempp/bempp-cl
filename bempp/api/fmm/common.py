@@ -1,5 +1,4 @@
 """Common FMM routines."""
-import abc as _abc
 import numpy as _np
 import numba as _numba
 
@@ -38,13 +37,11 @@ class LeafNode(object):
 
 def map_space_to_points(space, local_points, weights, mode, return_transpose=False):
     """Return mapper from grid coeffs to point evaluations."""
-    import bempp.api
     from scipy.sparse import coo_matrix
     from scipy.sparse.linalg import aslinearoperator
 
     grid = space.grid
     number_of_local_points = local_points.shape[1]
-    nshape_funs = space.number_of_shape_functions
     number_of_vertices = number_of_local_points * grid.number_of_elements
 
     data, global_indices, vertex_indices = map_space_to_points_impl(
@@ -205,7 +202,7 @@ def grid_to_points(grid, local_points):
 
     Returns a (N, 3) point array that stores the global vertices
     associated with the local points in each triangle.
-    Points are stored in consecutive order for each element 
+    Points are stored in consecutive order for each element
     in the support_elements list. Hence, the returned array is of the form
     [ v_1^1, v_2^1, ..., v_M^1, v_1^2, v_2^2, ...], where
     v_i^j is the ith point in the jth element in
@@ -230,6 +227,7 @@ def grid_to_points(grid, local_points):
 
     return grid_to_points_impl(grid.data, local_points)
 
+
 @_numba.njit
 def grid_to_points_impl(
         grid_data, local_points):
@@ -241,7 +239,6 @@ def grid_to_points_impl(
 
     for elem in range(number_of_elements):
         points[number_of_points * elem : number_of_points * (1 + elem), :] = (
-                _np.expand_dims(grid_data.vertices[:, grid_data.elements[0, elem]], 1) +
-                grid_data.jacobians[elem].dot(local_points)).T
+            _np.expand_dims(grid_data.vertices[:, grid_data.elements[0, elem]], 1) +
+            grid_data.jacobians[elem].dot(local_points)).T
     return points
-

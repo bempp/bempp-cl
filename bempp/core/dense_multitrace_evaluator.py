@@ -54,18 +54,11 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
         self, operator_descriptor, device_interface, precision, *args, **kwargs
     ):
         """Prepares the evaluator and returns itself."""
-        from bempp.api.assembly.discrete_boundary_operator import (
-            GenericDiscreteBoundaryOperator,
-        )
+        from bempp.api.assembly.discrete_boundary_operator import GenericDiscreteBoundaryOperator
         from bempp.api.assembly.blocked_operator import BlockedDiscreteOperator
-        from bempp.api.assembly.discrete_boundary_operator import (
-            SparseDiscreteBoundaryOperator,
-        )
+        from bempp.api.assembly.discrete_boundary_operator import SparseDiscreteBoundaryOperator
 
-        from bempp.api.utils.helpers import promote_to_double_precision
-        from .dense_assembly_helpers import (
-            choose_source_name_dense_multitrace_evaluator,
-        )
+        from .dense_assembly_helpers import choose_source_name_dense_multitrace_evaluator
 
         from bempp.api.integration.triangle_gauss import rule
         from bempp.core import kernel_helpers
@@ -303,7 +296,7 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
         ).buffer
 
         input_buffer = _cl_helpers.DeviceBuffer(
-            trial_nshape_fun0 * self.domain[0].grid.number_of_elements + 
+            trial_nshape_fun0 * self.domain[0].grid.number_of_elements +
             trial_nshape_fun1 * self.domain[1].grid.number_of_elements,
             result_type,
             device_interface.context,
@@ -360,7 +353,6 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
 
     def matvec(self, x):
         """Evaluate the product with a vector."""
-        from bempp.core import kernel_helpers
         from bempp.api import log
 
         with self._input_buffer.host_array(self._device_interface, "write") as array:
@@ -403,8 +395,6 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
             event.wait()
             runtime += event.runtime()
 
-            
-
         if self._remainder_size > 0:
 
             event = self._remainder_kernel.run(
@@ -429,4 +419,3 @@ class DenseMultitraceEvaluatorAssembler(_assembler.AssemblerBase):
             return _np.expand_dims(result, 1) + self._singular_contribution @ x
         else:
             return result + self._singular_contribution @ x
-

@@ -200,7 +200,6 @@ class Exafmm(object):
         import bempp.api
         from bempp.api.operators.boundary.laplace import single_layer
         from bempp.core.near_field_assembler import NearFieldAssembler
-        from scipy.sparse.linalg import aslinearoperator
 
         with bempp.api.Timer() as t:
             near_field_op = NearFieldAssembler(
@@ -269,6 +268,3 @@ def compute_max_level(domain, dual_to_range):
     max_level = int(_np.log2(radius) - _np.log2(1.2 * hmax))
 
     return max_level
-
-
-

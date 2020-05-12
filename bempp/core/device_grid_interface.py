@@ -1,6 +1,7 @@
 """Provide an interface between a grid and a device."""
 import numpy as _np
 
+
 class DeviceGridInterface(object):
     """Administrates grid data on a given device."""
 
@@ -17,10 +18,10 @@ class DeviceGridInterface(object):
         )
 
         self._elements_buffer = DeviceBuffer.from_array(
-                grid.elements, device_interface, dtype=_np.uint32,
-                access_mode="read_only",
-                order="F",
-                )
+            grid.elements, device_interface, dtype=_np.uint32,
+            access_mode="read_only",
+            order="F",
+        )
 
     @property
     def grid(self):

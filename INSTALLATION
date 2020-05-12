@@ -5,7 +5,7 @@ numpy, scipy, numba, pytest, pyopencl, meshio, plotly, jupyter.
 The easiest installation is through conda. The bempp directory contains
 a file environment.yaml. Simply run
 
->> conda env create -f environment.yaml
+>> conda env create -f environment.yml
 
 and a complete conda environment called bempp is setup. Once it is created
 change into the environment with 

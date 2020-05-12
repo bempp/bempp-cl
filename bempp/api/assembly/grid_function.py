@@ -4,8 +4,6 @@
 import numba as _numba
 import numpy as _np
 
-from bempp.api.grid.grid import GridData as _GridData
-
 
 def real_callable(f):
     """Wrap function as a real Numba callable."""
@@ -418,7 +416,7 @@ class GridFunction(object):
     def plot(self, mode="element", transformation=None):
         """
         Plot the grid function.
-        
+
         Attributes
         ----------
         mode : string
@@ -428,16 +426,15 @@ class GridFunction(object):
             chosen (default: 'element')
         transformation : string or object
             One of 'real', 'imag', 'abs', 'log_abs' or
-            'abs_squared' or a callable object. 
+            'abs_squared' or a callable object.
             Describes the data transformation
             before plotting. For functions with vector values
             only 'abs', 'log_abs' or 'abs_squared' are allowed.
             If a callable object is given this is applied instead.
             It is important that the callable returns numpy arrays
             with the same number of dimensions as before.
-        
+
         """
-        import bempp.api
         from bempp.api.external.viewers import visualize
 
         visualize(self, mode, transformation)
@@ -467,10 +464,9 @@ class GridFunction(object):
     def evaluate_on_vertices(self):
         """
         Evaluate the grid function on all vertices.
-        
+
         If a function is discontinuous across elements a weighted average
         of the element values at the vertices is taken.
-        
         """
         grid = self.space.grid
         local_coordinates = _np.array([[0, 1, 0], [0, 0, 1]], dtype="float64")
@@ -494,7 +490,7 @@ class GridFunction(object):
                 values[:, index] += local_values[:, i] * element_area
 
         values[:, vertex_used] /= vertex_areas[vertex_used]
-        return values 
+        return values
 
     def integrate(self):
         """Integrate grid function over a grid."""
@@ -519,7 +515,6 @@ class GridFunction(object):
 
     def l2_norm(self):
         """L^2 norm of the function"""
-        import bempp.api
         import numpy as np
 
         # L2-Norm on the whole space
@@ -632,10 +627,6 @@ def _integrate(
     number_of_shape_functions,
 ):
     """Integrate a grid function over a grid."""
-    number_of_elements = grid_data.elements.shape[1]
-    npoints = points.shape[1]
-    global_points = _np.empty((3, npoints), dtype=_np.float64)
-
     result = _np.zeros(codomain_dimension, dtype=coefficients.dtype)
 
     for index in support_elements:
@@ -683,7 +674,6 @@ def _project_function(
 ):
     """Project a Numba callable onto a grid."""
 
-    number_of_elements = grid_data.elements.shape[1]
     npoints = points.shape[1]
     global_points = _np.empty((3, npoints), dtype=_np.float64)
     fvalues = _np.empty((codomain_dimension, npoints), dtype=projections.dtype)

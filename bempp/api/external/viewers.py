@@ -18,7 +18,7 @@ def visualize(obj, mode="node", transformation=None):
         grid functions.
     transformation : string or object
         One of 'real', 'imag', 'abs', 'log_abs' or
-        'abs_squared' or a callable object. 
+        'abs_squared' or a callable object.
         Describes the data transformation
         before plotting. For functions with vector values
         only 'abs', 'log_abs' or 'abs_squared' are allowed.
@@ -114,6 +114,7 @@ def visualize_with_jupyter_notebook(obj, mode="element", transformation=None):
         fig['layout']['scene'].update(go.layout.Scene(aspectmode='data'))
         plotly.offline.iplot(fig)
 
+
 def visualize_with_gmsh(obj, mode='element', transformation=None):
     """
     View a grid or grid function with Gmsh
@@ -139,12 +140,10 @@ def visualize_with_gmsh(obj, mode='element', transformation=None):
     import subprocess
     from bempp.api import export, GMSH_PATH, TMP_PATH, GridFunction
     from bempp.api.grid.grid import Grid
-    import numpy as np
 
     if GMSH_PATH is None:
         print("Gmsh not available for visualization.")
         return None
-
 
     outfile = tempfile.NamedTemporaryFile(
         suffix=".msh", dir=TMP_PATH, delete=False)
@@ -156,6 +155,7 @@ def visualize_with_gmsh(obj, mode='element', transformation=None):
     outfile.close()
 
     subprocess.Popen([GMSH_PATH, outfile.name])
+
 
 def visualize_with_paraview(obj, mode='element', transformation=None):
     """
@@ -180,12 +180,10 @@ def visualize_with_paraview(obj, mode='element', transformation=None):
     """
     import tempfile
     import subprocess
-    from bempp.api import export, GMSH_PATH, TMP_PATH, GridFunction
+    from bempp.api import export, TMP_PATH, GridFunction
     from bempp.api.grid.grid import Grid
-    import numpy as np
     from bempp.api.utils import which
     import os
-
 
     if os.name == "nt":
         pview = which("paraview.exe")
@@ -194,19 +192,20 @@ def visualize_with_paraview(obj, mode='element', transformation=None):
 
     if pview is None:
         raise EnvironmentError(
-                "Could not find Paraview." +
-                "Interactive plotting with Paraview not available.")
+            "Could not find Paraview." +
+            "Interactive plotting with Paraview not available.")
 
     outfile = tempfile.NamedTemporaryFile(
         suffix=".vtu", dir=TMP_PATH, delete=False)
     if isinstance(obj, Grid):
         export(outfile.name, grid=obj)
     elif isinstance(obj, GridFunction):
-        export(outfile.name, grid_function=obj, 
-                transformation=transformation, data_type=mode)
+        export(outfile.name, grid_function=obj,
+               transformation=transformation, data_type=mode)
     outfile.close()
 
     subprocess.Popen([pview, outfile.name])
+
 
 def enable_gmsh_viewer():
     """Change plotting default to Gmsh."""
@@ -227,4 +226,3 @@ def enable_jupyter_viewer():
     import bempp.api
 
     bempp.api.PLOT_BACKEND = "jupyter_notebook"
-

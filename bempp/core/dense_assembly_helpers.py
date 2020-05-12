@@ -17,6 +17,7 @@ def choose_source_name(compute_kernel):
 
     raise ValueError("Unknown compute kernel identifier.")
 
+
 def choose_source_name_dense_evaluator(compute_kernel):
     """Choose source name from identifier."""
 
@@ -32,6 +33,7 @@ def choose_source_name_dense_evaluator(compute_kernel):
         return "evaluate_dense_vector_helmholtz_hypersingular"
 
     raise ValueError("Unknown compute kernel identifier.")
+
 
 def choose_source_name_dense_multitrace_evaluator(compute_kernel):
     """Choose source name from identifier."""

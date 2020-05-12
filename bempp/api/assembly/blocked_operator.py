@@ -1,7 +1,6 @@
 """Definition of blocked operator structures."""
 
 import numpy as _np
-from scipy.sparse.linalg.interface import LinearOperator as _LinearOperator
 from bempp.api.assembly.discrete_boundary_operator import _DiscreteOperatorBase
 
 
@@ -524,8 +523,6 @@ class GeneralizedDiscreteBlockedOperator(_DiscreteOperatorBase):
 
         self._operators = operators
 
-        row_dimensions = []
-
         shape = [0, 0]
         # Get column dimension
         for elem in operators[0]:
@@ -644,7 +641,6 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
         if not self._fill_complete():
             raise ValueError("Each row and column must contain at least one operator.")
 
-
         for i in range(rows):
             for j in range(cols):
                 if self._operators[i, j] is None:
@@ -653,7 +649,6 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
                     )
 
         shape = (_np.sum(self._rows), _np.sum(self._cols))
-
 
         dtype = "float32"
         for obj in self._operators.ravel():

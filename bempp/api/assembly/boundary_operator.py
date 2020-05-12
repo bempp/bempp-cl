@@ -6,8 +6,6 @@ class BoundaryOperator(object):
 
     def __init__(self, domain, range_, dual_to_range, parameters):
         """Constructor should only be called through derived class."""
-        from bempp.api.utils.helpers import assign_parameters
-
         self._domain = domain
         self._range = range_
         self._dual_to_range = dual_to_range
@@ -273,7 +271,7 @@ class MultiplicationOperator(BoundaryOperator):
 
         This class initializes a multiplication operator mult from a given
         grid function g, such that the result h = mult @ f for a given
-        grid function f is the result of projecting g * f onto the 
+        grid function f is the result of projecting g * f onto the
         space `dual_to_range`.
 
         The number of components of the shapesets of grid_function.space,
@@ -338,7 +336,6 @@ class MultiplicationOperator(BoundaryOperator):
         import numpy as _np
 
         points, weights = rule(self._parameters.quadrature.regular)
-        npoints = len(weights)
 
         comp_trial, comp_test, comp_fun = return_compatible_representation(
             self.domain, self.dual_to_range, self._grid_fun.space
