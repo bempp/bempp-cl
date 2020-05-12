@@ -95,7 +95,6 @@ class DensePotentialAssembler(object):
     def evaluate(self, coefficients):
         """Evaluate the potential for given coefficients."""
         from bempp.api.integration.triangle_gauss import rule as regular_rule
-        from bempp.api import log
         from bempp.core import kernel_helpers
 
         localised_space = self.space.localised_space

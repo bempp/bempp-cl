@@ -2,6 +2,7 @@
 
 import numpy as _np
 
+
 def get_gmsh_file():
     """
     Create a new temporary gmsh file.
@@ -27,6 +28,7 @@ def __generate_grid_from_gmsh_string(gmsh_string):
     """Return a grid from a string containing a gmsh mesh"""
     import os
     import tempfile
+    import bempp.api
 
     if bempp.api.mpi_rank == 0:
         # First create the grid.
@@ -75,6 +77,7 @@ def __generate_grid_from_geo_string(geo_string):
     os.remove(msh_name)
     return grid
 
+
 def screen(corners, h=.1):
     """
     Creates a screen.
@@ -86,7 +89,7 @@ def screen(corners, h=.1):
     h : float
         A floating point number specifying the grid size.
 
-    Output 
+    Output
     -------
     grid : bempp.Grid
         A structured grid.
@@ -110,7 +113,6 @@ def screen(corners, h=.1):
     Mesh.Algorithm = 6;
     """
     return __generate_grid_from_geo_string(stub)
-
 
 
 def regular_sphere(refine_level):
@@ -142,87 +144,13 @@ def regular_sphere(refine_level):
     return Grid(spheres["v" + str(refine_level)], spheres["e" + str(refine_level)])
 
 
-def cube(length=1, origin=(0, 0, 0), h=0.1):
-    """
-    Return a cube mesh.
-
-    Parameters
-    ----------
-    length : float
-        Side length of the cube.
-    origin : tuple
-        Coordinates of the origin (bottom left corner)
-    h : float
-        Element size.
-
-    """
-    cube_stub = """
-    Point(1) = {orig0,orig1,orig2,cl};
-    Point(2) = {orig0+l,orig1,orig2,cl};
-    Point(3) = {orig0+l,orig1+l,orig2,cl};
-    Point(4) = {orig0,orig1+l,orig2,cl};
-    Point(5) = {orig0,orig1,orig2+l,cl};
-    Point(6) = {orig0+l,orig1,orig2+l,cl};
-    Point(7) = {orig0+l,orig1+l,orig2+l,cl};
-    Point(8) = {orig0,orig1+l,orig2+l,cl};
-
-    Line(1) = {1,2};
-    Line(2) = {2,3};
-    Line(3) = {3,4};
-    Line(4) = {4,1};
-    Line(5) = {1,5};
-    Line(6) = {2,6};
-    Line(7) = {3,7};
-    Line(8) = {4,8};
-    Line(9) = {5,6};
-    Line(10) = {6,7};
-    Line(11) = {7,8};
-    Line(12) = {8,5};
-
-    Line Loop(1) = {-1,-4,-3,-2};
-    Line Loop(2) = {1,6,-9,-5};
-    Line Loop(3) = {2,7,-10,-6};
-    Line Loop(4) = {3,8,-11,-7};
-    Line Loop(5) = {4,5,-12,-8};
-    Line Loop(6) = {9,10,11,12};
-
-    Plane Surface(1) = {1};
-    Plane Surface(2) = {2};
-    Plane Surface(3) = {3};
-    Plane Surface(4) = {4};
-    Plane Surface(5) = {5};
-    Plane Surface(6) = {6};
-
-    Physical Surface(1) = {1};
-    Physical Surface(2) = {2};
-    Physical Surface(3) = {3};
-    Physical Surface(4) = {4};
-    Physical Surface(5) = {5};
-    Physical Surface(6) = {6};
-
-    Surface Loop (1) = {1,2,3,4,5,6};
-
-    Volume (1) = {1};
-
-    Mesh.Algorithm = 6;
-    """
-
-    cube_geometry = (
-        "l = " + str(length) + ";\n" +
-        "orig0 = " + str(origin[0]) + ";\n" +
-        "orig1 = " + str(origin[1]) + ";\n" +
-        "orig2 = " + str(origin[2]) + ";\n" +
-        "cl = " + str(h) + ";\n" + cube_stub)
-
-    return __generate_grid_from_geo_string(cube_geometry)
-
 def multitrace_cube(h=.1):
     """
     Definitition of a cube with an interface at z=.5.
 
     The normal direction at the interface shows into the
     positive z-direction and has the domain index
-    and has the domain index 11. The lower half of the cube 
+    and has the domain index 11. The lower half of the cube
     is given through the segments [1, 2, 3, 4, 5, 6]. The
     top half of the cube is defined by the segments
     [6, 7, 8, 9, 10, 11]. For the upper half the normal
@@ -298,6 +226,7 @@ def multitrace_cube(h=.1):
     geometry = ("cl = " + str(h) + ";\n" + stub)
     return __generate_grid_from_geo_string(geometry)
 
+
 def reference_triangle():
     """Return a grid consisting of only the reference triangle."""
     from bempp.api.grid.grid import Grid
@@ -306,11 +235,12 @@ def reference_triangle():
         [0, 0, 0],
         [1, 0, 0],
         [0, 1, 0]
-        ]).T
-    
+    ]).T
+
     elements = _np.array([[0, 1, 2]]).T
 
-    return Grid(vertices, elements) 
+    return Grid(vertices, elements)
+
 
 def ellipsoid(r1=1, r2=1, r3=1, origin=(0, 0, 0), h=0.1):
     """
@@ -388,6 +318,7 @@ def ellipsoid(r1=1, r2=1, r3=1, origin=(0, 0, 0), h=0.1):
         "cl = " + str(h) + ";\n" + stub)
 
     return __generate_grid_from_geo_string(geometry)
+
 
 def sphere(r=1, origin=(0, 0, 0), h=0.1):
     """
@@ -540,7 +471,7 @@ def reentrant_cube(h=0.1, refinement_factor=0.2):
     return __generate_grid_from_geo_string(reentrant_cube_geometry)
 
 
-def cuboid(length=(1,1,1), origin=(0, 0, 0), h=0.1):
+def cuboid(length=(1, 1, 1), origin=(0, 0, 0), h=0.1):
     """
     Return a cuboid mesh.
 
@@ -631,7 +562,7 @@ def cube(length=1, origin=(0, 0, 0), h=0.1):
         Element size.
 
     """
-    return cuboid((length,length,length), origin, h)
+    return cuboid((length, length, length), origin, h)
 
 
 def almond(h=0.01):
@@ -715,7 +646,7 @@ lc_fact = 1.0;
 t_fact = 0.1;
 
 For j In {1:9}
-	Call QuarterEllipse2;
+    Call QuarterEllipse2;
         t_fact += 0.1;
 EndFor
 

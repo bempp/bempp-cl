@@ -446,6 +446,13 @@ def test_laplace_double_layer_evaluator(
     actual = discrete_op @ x
     expected = mat @ x
 
+    if precision == "single":
+        tol = 2e-4
+    else:
+        tol = 1e-12
+
+    _np.testing.assert_allclose(actual, expected, rtol=tol)
+
 
 def test_laplace_adjoint_double_layer_evaluator(
     default_parameters, helpers, precision, device_interface
@@ -484,6 +491,13 @@ def test_laplace_adjoint_double_layer_evaluator(
     actual = discrete_op @ x
     expected = mat @ x
 
+    if precision == "single":
+        tol = 2e-4
+    else:
+        tol = 1e-12
+
+    _np.testing.assert_allclose(actual, expected, rtol=tol)
+
 
 def test_laplace_hypersingular_evaluator(
     default_parameters, helpers, precision, device_interface
@@ -521,3 +535,10 @@ def test_laplace_hypersingular_evaluator(
 
     actual = discrete_op @ x
     expected = mat @ x
+
+    if precision == "single":
+        tol = 2e-4
+    else:
+        tol = 1e-12
+
+    _np.testing.assert_allclose(actual, expected, rtol=tol)

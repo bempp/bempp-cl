@@ -2,11 +2,13 @@
 
 import numpy as _np
 
+
 def create_unique_id():
     """Create a unique id."""
     from uuid import uuid4
 
     return str(uuid4())
+
 
 def align_array(arr, dtype, order):
     """
@@ -54,6 +56,7 @@ def promote_to_double_precision(array):
         return array.astype("complex128", copy=False)
     return array
 
+
 def serialise_list_of_lists(array):
     """
     Serialises a list of lists (or other iterable).
@@ -88,12 +91,9 @@ class MemProfiler:
         self.interval = 0
 
     def __enter__(self):
-        import gc
         self.start = self._process.memory_info()[0]
         return self
 
     def __exit__(self, *args):
-        import gc
         self.end = self._process.memory_info()[0]
         self.interval = self.end - self.start
-

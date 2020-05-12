@@ -1,7 +1,7 @@
 import numpy as _np
-import numba as _numba
 
 from .scalar_spaces import p1_continuous_function_space, _numba_p0_surface_gradient
+
 
 def dual0_function_space(grid, support_elements=None, segments=None, swapped_normals=None):
     """Define a space of DP0 functions on the dual grid."""
@@ -67,6 +67,7 @@ def dual0_function_space(grid, support_elements=None, segments=None, swapped_nor
         .build()
     )
 
+
 def generate_dual0_map(
     coarse_grid_data,
     bary_grid_data,
@@ -84,8 +85,8 @@ def generate_dual0_map(
         for face, vertex in local_dofs:
             coarse_dofs.append(global_dof_index)
             coarse_dofs.append(global_dof_index)
-            bary_dofs.append(6*face+(2*vertex-1)%6)
-            bary_dofs.append(6*face+2*vertex)
+            bary_dofs.append(6 * face + (2 * vertex - 1) % 6)
+            bary_dofs.append(6 * face + 2 * vertex)
 
     nentries = len(bary_dofs)
 

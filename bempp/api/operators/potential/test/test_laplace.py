@@ -206,7 +206,7 @@ def test_laplace_p1_segments(default_parameters, helpers, device_interface, prec
         actual, expected, rtol=helpers.default_tolerance(precision)
     )
 
-    
+
 def test_laplace_p1_segments_complex_coeffs(default_parameters, helpers, device_interface, precision):
     """Test P1 potential evaluation on segments with complex coeffs."""
 

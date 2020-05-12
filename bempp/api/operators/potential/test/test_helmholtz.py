@@ -122,7 +122,6 @@ def test_helmholtz_potentials_segments(
     """Test Helmholtz potentials on segments."""
     import bempp.api
     from bempp.api import function_space
-    from bempp.api import GridFunction
     from bempp.api.operators.potential.helmholtz import single_layer
     from bempp.api.operators.potential.helmholtz import double_layer
     from bempp.api.grid.grid import grid_from_segments
@@ -168,7 +167,6 @@ def test_helmholtz_potentials_segments_complex_coeffs(
     """Test Helmholtz potentials on segments with complex coeffs."""
     import bempp.api
     from bempp.api import function_space
-    from bempp.api import GridFunction
     from bempp.api.operators.potential.helmholtz import single_layer
     from bempp.api.operators.potential.helmholtz import double_layer
     from bempp.api.grid.grid import grid_from_segments

@@ -137,7 +137,7 @@ points_address = _np.array(
     ]
 )
 
-#! give number of points for each order
+# give number of points for each order
 points_per_order = _np.array(
     [
         # order of complete polynomial:

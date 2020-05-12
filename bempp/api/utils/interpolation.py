@@ -66,7 +66,7 @@ def chebychev_nodes_and_weights_second_kind(order):
     of the associated interpolation polynomial via barycentric
     interpolation. For the Chebychev nodes of the second kind
     it holds that w_j = (-1)^j * d_j with d_j = 1/2 for j = 0
-    or j = order and d_j = 1 otherwise.   
+    or j = order and d_j = 1 otherwise.
     """
     if order == 0:
         return _np.array([0.0]), _np.array([1.0])
@@ -92,11 +92,10 @@ def evaluate_kernel_on_interpolation_points(
 ):
     """
     Return a kernel evaluation on Chebychev points.
-    
-    
-    This routine supports the evaluation of Laplace and 
-    Helmholtz kernels of the form k(x, y) on 3d Tensor grids. 
-    It returns a matrix (k(x,_i, y_j)), where the x_i 
+
+    This routine supports the evaluation of Laplace and
+    Helmholtz kernels of the form k(x, y) on 3d Tensor grids.
+    It returns a matrix (k(x,_i, y_j)), where the x_i
     are points in the box defined by lboundx and uboundx and
     y_i are points in the box defined by lboundy and uboundy.
 
@@ -160,8 +159,6 @@ def evaluate_kernel_on_interpolation_points(
 
     if kernel_type == "helmholtz":
         dtype = cl_helpers.get_type(precision).complex
-
-    device = cl_helpers.get_type(precision)
 
     result = cl_helpers.DeviceBuffer(
         (nnodes ** 3, nnodes ** 3),
@@ -234,7 +231,7 @@ def chebychev_tensor_points_3d(lbound, ubound, nodes):
 def evaluate_interp_polynomial(nodes, weights, values, evaluation_points):
     """
     Evaluate an interpolation polynomial.
-    
+
     This function uses barycentric evaluation for
     stability. The data values are assumed to be real.
     """
@@ -263,7 +260,7 @@ def evaluate_tensor_interp_polynomial(nodes, weights, values, evaluation_points)
 
     This function evaluates a tensor chebychev basis with
     specified weights at a given set of evaluation points.
-    
+
     Attributes
     ----------
     nodes : Numpy array

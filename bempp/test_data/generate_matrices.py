@@ -41,6 +41,7 @@ rbc = bempp.api.function_space(grid, "RBC", 0)
 rwg_structured = bempp.api.function_space(grid_structured, "RWG", 0)
 snc_structured = bempp.api.function_space(grid_structured, "SNC", 0)
 
+
 def generate_bem_matrix(dual_to_range, domain, fname, operator, wavenumber=None):
     """Generate test matrix."""
     print("Generating " + fname)
@@ -93,6 +94,7 @@ def generate_potential(domain, fname, operator, wavenumber=None):
 
     if REGENERATE or not os.path.exists(fname + '.npz'):
         np.savez(fname, result=result, points=points, vec=vec)
+
 
 def generate_far_field(domain, fname, operator, wavenumber=None):
     """Generate far-field data."""
@@ -470,7 +472,7 @@ generate_potential(
     wavenumber_complex,
 )
 
-
+# Start far field
 
 generate_far_field(
     p1,
@@ -525,4 +527,3 @@ generate_far_field(
     bempp.api.operators.far_field.maxwell.magnetic_field,
     wavenumber_complex,
 )
-

@@ -41,13 +41,9 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
     ):
         """The assembler calls the assembler instances for each device."""
         from bempp.core.singular_assembler import SingularAssembler
-        from bempp.core.cl_helpers import get_context_by_name
         from bempp.api.utils import pool
-        from bempp.api.assembly.discrete_boundary_operator import (
-            GenericDiscreteBoundaryOperator,
-        )
+        from bempp.api.assembly.discrete_boundary_operator import GenericDiscreteBoundaryOperator
         from bempp.api.space.space import return_compatible_representation
-        import multiprocessing as mp
 
         if pool.is_initialised():
             self._ndevices = pool.number_of_workers()
@@ -87,14 +83,13 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
             )
         else:
             self._assembler_instance = DenseEvaluatorMultiprocessingInstance(
-                    self.dual_to_range,
-                    self.domain,
-                    chunks[0],
-                    self._parameters.quadrature.regular,
-                    operator_descriptor,
-                    precision,
-                    device_interface=device_interface)
-
+                self.dual_to_range,
+                self.domain,
+                chunks[0],
+                self._parameters.quadrature.regular,
+                operator_descriptor,
+                precision,
+                device_interface=device_interface)
 
         return GenericDiscreteBoundaryOperator(self)
 
@@ -111,7 +106,6 @@ class DenseEvaluatorAssembler(_assembler.AssemblerBase):
             result = sum(pool.starmap(_worker, zip(self._worker_ids, self._ndevices * [transformed_vec])))
         else:
             result = self._assembler_instance.compute(transformed_vec)
-
 
         result = self._actual_dual_to_range.dof_transformation.T @ (
             self._actual_dual_to_range.map_to_localised_space.T @ result
@@ -149,12 +143,10 @@ class DenseEvaluatorMultiprocessingInstance(object):
         if precision is None:
             precision = self._device_interface.default_precision
 
-
         if pool.is_worker():
             test_space = pool.get_data(test_space)
             trial_space = pool.get_data(trial_space)
             pool.insert_data(self._id, self)
-
 
         actual_trial_space, actual_test_space = return_compatible_representation(
             trial_space, test_space
@@ -181,10 +173,7 @@ class DenseEvaluatorMultiprocessingInstance(object):
         self._precision = precision
         self._grids_disjoint = actual_test_space.grid != actual_trial_space.grid
 
-
-
         self.compile_kernel()
-
 
     @property
     def id(self):
@@ -200,7 +189,6 @@ class DenseEvaluatorMultiprocessingInstance(object):
 
         quad_points, quad_weights = rule(self._number_of_quad_points)
         domain_support_size = len(self._chunk)
-        dual_to_range_support_size = len(self._test_support_elements)
         shape = (
             self._number_of_test_shape_functions * self._test_elements.shape[1],
             self._number_of_trial_shape_functions * self._trial_elements.shape[1],
@@ -390,9 +378,6 @@ class DenseEvaluatorMultiprocessingInstance(object):
 
     def compute(self, x):
         """Evaluate the product with a vector."""
-        from bempp.core import kernel_helpers
-        from bempp.api import log
-
         with self._input_buffer.host_array(self._device_interface, "write") as array:
             array[:] = x
 
@@ -444,7 +429,6 @@ def _prepare_evaluator(
     kernel_options,
 ):
     """Initialize the worker."""
-    import bempp.api
     from bempp.api.utils import pool
     from bempp.core import dense_evaluator
 

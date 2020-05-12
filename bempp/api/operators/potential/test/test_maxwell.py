@@ -104,6 +104,7 @@ def test_maxwell_electric_field_potential_bc(
 
     _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
 
+
 def test_maxwell_magnetic_field_potential_rwg(
     default_parameters, helpers, device_interface, precision
 ):
@@ -165,12 +166,12 @@ def test_maxwell_magnetic_field_potential_complex(
 
     _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
 
+
 def test_maxwell_potentials_segments(
         default_parameters, helpers, device_interface, precision):
     """Test Maxwell potentials on segments."""
     import bempp.api
     from bempp.api import function_space
-    from bempp.api import GridFunction
     from bempp.api.operators.potential.maxwell import electric_field
     from bempp.api.operators.potential.maxwell import magnetic_field
     from bempp.api.grid.grid import grid_from_segments
@@ -187,9 +188,9 @@ def test_maxwell_potentials_segments(
             new_grid = grid_from_segments(grid, seglist)
 
             coeffs = rand.rand(new_grid.number_of_edges)
-            
+
             space1 = function_space(grid, "RWG", 0, segments=seglist, swapped_normals=swapped_normals,
-                include_boundary_dofs=True)
+                                    include_boundary_dofs=True)
             space2 = function_space(new_grid, "RWG", 0, swapped_normals=swapped_normals)
 
             points = _np.array([2.3, 1.3, 1.5]).reshape(3, 1) + rand.rand(3, 5)
@@ -203,12 +204,12 @@ def test_maxwell_potentials_segments(
                 actual, expected, rtol=helpers.default_tolerance(precision)
             )
 
+
 def test_maxwell_potentials_segments_complex_coeffs(
         default_parameters, helpers, device_interface, precision):
     """Test Maxwell potentials on segments with complex coeffs."""
     import bempp.api
     from bempp.api import function_space
-    from bempp.api import GridFunction
     from bempp.api.operators.potential.maxwell import electric_field
     from bempp.api.operators.potential.maxwell import magnetic_field
     from bempp.api.grid.grid import grid_from_segments
@@ -225,9 +226,9 @@ def test_maxwell_potentials_segments_complex_coeffs(
             new_grid = grid_from_segments(grid, seglist)
 
             coeffs = rand.rand(new_grid.number_of_edges) + 1j * rand.rand(new_grid.number_of_edges)
-            
+
             space1 = function_space(grid, "RWG", 0, segments=seglist, swapped_normals=swapped_normals,
-                include_boundary_dofs=True)
+                                    include_boundary_dofs=True)
             space2 = function_space(new_grid, "RWG", 0, swapped_normals=swapped_normals)
 
             points = _np.array([2.3, 1.3, 1.5]).reshape(3, 1) + rand.rand(3, 5)

@@ -6,6 +6,7 @@ import bempp.api
 
 PYTESTMARK = pytest.mark.usefixtures("default_parameters", "helpers")
 
+
 # pylint: disable=C0103
 def laplace_single_layer_dense_benchmark(benchmark, default_parameters):
     """Benchmark for Laplace assembly on a small sphere"""

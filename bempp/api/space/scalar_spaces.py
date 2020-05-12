@@ -11,7 +11,7 @@ def p0_discontinuous_function_space(
     grid, support_elements=None, segments=None, swapped_normals=None
 ):
     """Define a space of piecewise constant functions."""
-    from .space import SpaceBuilder, _process_segments, invert_local2global
+    from .space import SpaceBuilder, _process_segments
 
     support, normal_multipliers = _process_segments(
         grid, support_elements, segments, swapped_normals
@@ -51,7 +51,7 @@ def p1_discontinuous_function_space(
 ):
     """Define a discontinuous space of piecewise linear functions."""
 
-    from .space import SpaceBuilder, _process_segments, invert_local2global
+    from .space import SpaceBuilder, _process_segments
 
     support, normal_multipliers = _process_segments(
         grid, support_elements, segments, swapped_normals
@@ -92,17 +92,11 @@ def p1_continuous_function_space(
     ensure_global_continuity=False,
 ):
     """Define a space of continuous piecewise linear functions."""
-    import bempp.api
-    from .space import SpaceBuilder, _process_segments, invert_local2global
-    from bempp.api.utils.helpers import serialise_list_of_lists
+    from .space import SpaceBuilder, _process_segments
 
-    number_of_elements = grid.number_of_elements
     support, normal_multipliers = _process_segments(
         grid, support_elements, segments, swapped_normals
     )
-
-    elements_in_support = _np.flatnonzero(support)
-    support_size = len(elements_in_support)
 
     # Create list of vertex neighbors. Needed for dofmap computation
 
@@ -122,7 +116,6 @@ def p1_continuous_function_space(
         vertex_neighbors,
         index_ptr,
     )
-
 
     return (
         SpaceBuilder(grid)

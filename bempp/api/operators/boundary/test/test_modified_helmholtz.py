@@ -10,6 +10,7 @@ pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
 OMEGA = 2.5
 
+
 def test_modified_helmholtz_single_layer(
     default_parameters, helpers, precision, device_interface
 ):
@@ -168,6 +169,7 @@ def test_modified_helmholtz_single_layer_evaluator(
 
     _np.testing.assert_allclose(actual, expected, rtol=tol)
 
+
 def test_modified_helmholtz_double_layer_evaluator(
     default_parameters, helpers, precision, device_interface
 ):
@@ -258,6 +260,7 @@ def test_modified_helmholtz_adj_double_layer_evaluator(
         tol = 1e-12
 
     _np.testing.assert_allclose(actual, expected, rtol=tol)
+
 
 def test_modified_helmholtz_hypersingular_evaluator(
     default_parameters, helpers, precision, device_interface

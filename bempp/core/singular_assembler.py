@@ -11,6 +11,7 @@ from bempp.helpers import timeit as _timeit
 WORKGROUP_SIZE_COLLOCATION = 4
 WORKGROUP_SIZE_GALERKIN = 16
 
+
 class SingularAssembler(_assembler.AssemblerBase):
     """Assembler for the singular part of boundary integral operators."""
 
@@ -31,13 +32,12 @@ class SingularAssembler(_assembler.AssemblerBase):
         from bempp.api.space.space import return_compatible_representation
         from .dense_assembly_helpers import choose_source_name
 
-
         domain, dual_to_range = return_compatible_representation(
-                self.domain, self.dual_to_range)
+            self.domain, self.dual_to_range)
 
         row_dof_count = dual_to_range.global_dof_count
         col_dof_count = domain.global_dof_count
-        
+
         row_grid_dofs = dual_to_range.grid_dof_count
         col_grid_dofs = domain.grid_dof_count
 
@@ -105,7 +105,6 @@ def assemble_singular_part(
 
     """
     import bempp.core.cl_helpers as cl_helpers
-    import bempp.api
 
     if domain.grid != dual_to_range.grid:
         raise ValueError("domain and dual_to_range must live on the same grid.")
@@ -186,11 +185,11 @@ def assemble_singular_part(
 
     if use_collocation:
         collocation_points = cl_helpers.DeviceBuffer.from_array(
-                dual_to_range.collocation_points,
-                device_interface,
-                dtype=cl_helpers.get_type(precision).real,
-                access_mode="read_only",
-                order="F"
+            dual_to_range.collocation_points,
+            device_interface,
+            dtype=cl_helpers.get_type(precision).real,
+            access_mode="read_only",
+            order="F"
         )
 
         all_buffers = [
@@ -222,7 +221,7 @@ def assemble_singular_part(
 
     event.wait()
 
-    #bempp.api.log("Singular kernel runtime [ms]: {0}".format(event.runtime()), "timing")
+    # bempp.api.log("Singular kernel runtime [ms]: {0}".format(event.runtime()), "timing")
 
     irange = _np.arange(number_of_test_shape_functions)
     jrange = _np.arange(number_of_trial_shape_functions)
@@ -648,7 +647,6 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
         return test_offsets, trial_offsets, weights_offsets
 
 
-
 class _SingularQuadratureRuleInterfaceCollocation(object):
     """Interface for a singular quadrature rule."""
 
@@ -673,7 +671,6 @@ class _SingularQuadratureRuleInterfaceCollocation(object):
 
         # test_support and trial_support are boolean arrays.
         # * operation corresponds to and op between the arrays.
-
 
         self._index_count["all"] = (
             self._index_count["coincident"]
@@ -777,14 +774,13 @@ class _SingularQuadratureRuleInterfaceCollocation(object):
 
         return device_buffers
 
-
     def _vectorize_indices(self):
         """Return vector of test and trial indices for sing. integration."""
         test_indices = _np.empty(self.index_count["all"], dtype="uint32")
         trial_indices = _np.empty(self.index_count["all"], dtype="uint32")
 
         for array in [test_indices, trial_indices]:
-            array[: ] = self._coincident_indices
+            array[:] = self._coincident_indices
 
         return test_indices, trial_indices
 
@@ -811,7 +807,6 @@ class _SingularQuadratureRuleInterfaceCollocation(object):
         """Vectorize the offsets."""
 
         trial_offsets = _np.zeros(self.index_count['all'], dtype='uint32')
-        weights_offsets = _np.zeros(self.index_count['all'], dtype='uint32') 
-
+        weights_offsets = _np.zeros(self.index_count['all'], dtype='uint32')
 
         return trial_offsets, weights_offsets
