@@ -14,7 +14,7 @@ def test_barycentric(space_info, helpers, precision):
     import bempp.api
     import math
 
-    grid = bempp.api.shapes.regular_sphere(3)
+    grid = bempp.api.shapes.regular_sphere(2)
     space = bempp.api.function_space(grid, space_info[0], space_info[1],
                                      include_boundary_dofs=True)
     space_bary = space.barycentric_representation()
