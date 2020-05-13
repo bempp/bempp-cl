@@ -1,16 +1,22 @@
 import numpy as _np
+from bempp.api import log
 
 from .scalar_spaces import (p1_continuous_function_space, p0_discontinuous_function_space,
                             _numba_p0_surface_gradient, _numba_p1_surface_gradient)
 
 
-def dual0_function_space(grid, support_elements=None, segments=None, swapped_normals=None):
+def dual0_function_space(grid, support_elements=None, segments=None, swapped_normals=None,
+                         include_boundary_dofs=False, truncate_functions_at_boundary=False):
     """Define a space of DP0 functions on the dual grid."""
     from .space import SpaceBuilder, invert_local2global
     from scipy.sparse import coo_matrix
 
+    if truncate_functions_at_boundary:
+        raise NotImpementedError()
+
     coarse_space = p1_continuous_function_space(
-        grid, support_elements, segments, swapped_normals
+        grid, support_elements, segments, swapped_normals,
+        include_boundary_dofs=include_boundary_dofs
     )
 
     number_of_support_elements = coarse_space.number_of_support_elements
@@ -102,7 +108,8 @@ def generate_dual0_map(
     return np_coarse_dofs, np_bary_dofs, np_values
 
 
-def dual1_function_space(grid, support_elements=None, segments=None, swapped_normals=None):
+def dual1_function_space(grid, support_elements=None, segments=None, swapped_normals=None,
+                         include_boundary_dofs=None, truncate_functions_at_boundary=False):
     """Define a space of DP1 functions on the dual grid."""
     from .space import SpaceBuilder, invert_local2global
     from scipy.sparse import coo_matrix
@@ -112,6 +119,11 @@ def dual1_function_space(grid, support_elements=None, segments=None, swapped_nor
     if support_elements is not None:
         raise NotImplementedError()
     if swapped_normals is not None:
+        raise NotImplementedError()
+
+    if include_boundary_dofs is not None:
+        log("Setting include_boundary_dofs has no effect on this space type.", "warning")
+    if truncate_functions_at_boundary:
         raise NotImplementedError()
 
     coarse_space = p0_discontinuous_function_space(

@@ -159,7 +159,7 @@ def test_laplace_p1_segments(default_parameters, helpers, device_interface, prec
         1,
         segments=[4, 5, 6],
         include_boundary_dofs=True,
-        ensure_global_continuity=True,
+        truncate_functions_at_boundary=False,
     )
     seg_all = function_space(grid, "DP", 1)
 
@@ -223,7 +223,7 @@ def test_laplace_p1_segments_complex_coeffs(default_parameters, helpers, device_
         1,
         segments=[4, 5, 6],
         include_boundary_dofs=True,
-        ensure_global_continuity=True,
+        truncate_functions_at_boundary=False,
     )
     seg_all = function_space(grid, "DP", 1)
 

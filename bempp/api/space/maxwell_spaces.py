@@ -2,6 +2,7 @@
 
 import numpy as _np
 import numba as _numba
+from bempp.api import log
 
 
 def rwg0_function_space(
@@ -10,10 +11,14 @@ def rwg0_function_space(
     segments=None,
     swapped_normals=None,
     include_boundary_dofs=False,
+    truncate_functions_at_boundary=None
 ):
     """Define a space of RWG functions of order 0"""
     from .space import SpaceBuilder, _process_segments
     from bempp.api.utils.helpers import serialise_list_of_lists
+
+    if truncate_functions_at_boundary is not None:
+        log("Setting truncate_functions_at_boundary has no effect on this space type.", "warning")
 
     support, normal_multipliers = _process_segments(
         grid, support_elements, segments, swapped_normals
@@ -149,11 +154,14 @@ def snc0_function_space(
     segments=None,
     swapped_normals=None,
     include_boundary_dofs=False,
+    truncate_functions_at_boundary=None
 ):
     """Define a space of SNC functions of order 0"""
     from .space import SpaceBuilder, _process_segments
     from bempp.api.utils.helpers import serialise_list_of_lists
 
+    if truncate_functions_at_boundary is not None:
+        log("Setting truncate_functions_at_boundary has no effect on this space type.", "warning")
     support, normal_multipliers = _process_segments(
         grid, support_elements, segments, swapped_normals
     )
@@ -282,11 +290,19 @@ def snc0_barycentric_function_space(coarse_space):
     )
 
 
-def bc_function_space(grid, support_elements=None, segments=None, swapped_normals=None):
+def bc_function_space(
+    grid, support_elements=None, segments=None, swapped_normals=None,
+    include_boundary_dofs=None, truncate_functions_at_boundary=None
+):
     """Define a space of BC functions."""
     from .space import SpaceBuilder
     from bempp.api.grid.grid import enumerate_vertex_adjacent_elements
     from scipy.sparse import coo_matrix
+
+    if include_boundary_dofs is not None:
+        log("Setting include_boundary_dofs has no effect on this space type.", "warning")
+    if truncate_functions_at_boundary is not None:
+        log("Setting truncate_functions_at_boundary has no effect on this space type.", "warning")
 
     coarse_space = rwg0_function_space(
         grid, support_elements, segments, swapped_normals
@@ -360,11 +376,20 @@ def bc_function_space(grid, support_elements=None, segments=None, swapped_normal
     )
 
 
-def rbc_function_space(grid, support_elements=None, segments=None, swapped_normals=None):
+def rbc_function_space(
+    grid, support_elements=None, segments=None, swapped_normals=None,
+    include_boundary_dofs=None, truncate_functions_at_boundary=None
+
+):
     """Define a space of RBC functions."""
     from .space import SpaceBuilder
     from bempp.api.grid.grid import enumerate_vertex_adjacent_elements
     from scipy.sparse import coo_matrix
+
+    if include_boundary_dofs is not None:
+        log("Setting include_boundary_dofs has no effect on this space type.", "warning")
+    if truncate_functions_at_boundary is not None:
+        log("Setting truncate_functions_at_boundary has no effect on this space type.", "warning")
 
     coarse_space = rwg0_function_space(
         grid, support_elements, segments, swapped_normals

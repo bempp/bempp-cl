@@ -8,77 +8,82 @@ def function_space(
     grid,
     kind,
     degree,
-    support_elements=None,
-    segments=None,
-    swapped_normals=None,
     scatter=True,
-    **kwargs,
+    **kwargs
 ):
-    """Initialize a function space."""
+    """
+    Initialize a function space.
+
+    Parameters
+    ----------
+    grid : bempp.Grid
+        The grid that the space is defined on.
+    kind : str
+        The space type
+    degree : int
+        The polynomial degree of the space
+    support_elements : np.array
+        The element indices of elements that make up the part
+        of the mesh on which the space is defined.
+    segments : list
+        The segment numbers of the part of the mesh on which the space is defined.
+    swapped_normals : bool
+        TODO
+    scatter : bool
+        TODO
+    include_boundary_dofs : bool
+        Should degrees of freedom on the boundary of the grid segments be included?
+    truncate_functions_at_boundary : bool
+        Should basis functions be truncated at the boundary? If this is set to true,
+        continuous spaces will no longer be continuous at the boundary.
+    """
     from bempp.api.utils import pool
 
     from . import scalar_spaces
     from . import scalar_dual_spaces
     from . import maxwell_spaces
 
-    space = None
+    space_f = None
 
-    if _np.count_nonzero([support_elements, segments]) > 1:
-        raise ValueError(
-            "Only one of 'support_elements' and 'segments' must be nonzero."
-        )
+    if "support_elements" in kwargs and "segments" in kwargs:
+        raise ValueError("Only one of 'support_elements' and 'segments' must be nonzero.")
 
     if kind == "DP":
         if degree == 0:
-            space = scalar_spaces.p0_discontinuous_function_space(
-                grid, support_elements, segments, swapped_normals
-            )
+            space_f = scalar_spaces.p0_discontinuous_function_space
         if degree == 1:
-            space = scalar_spaces.p1_discontinuous_function_space(
-                grid, support_elements, segments, swapped_normals
-            )
+            space_f = scalar_spaces.p1_discontinuous_function_space
 
     if kind == "P":
         if degree == 1:
-            space = scalar_spaces.p1_continuous_function_space(
-                grid, support_elements, segments, swapped_normals, **kwargs
-            )
+            space_f = scalar_spaces.p1_continuous_function_space
 
     if kind == "DUAL":
         if degree == 0:
-            space = scalar_dual_spaces.dual0_function_space(
-                grid, support_elements, segments, swapped_normals
-            )
+            space_f = scalar_dual_spaces.dual0_function_space
         if degree == 1:
-            space = scalar_dual_spaces.dual1_function_space(
-                grid, support_elements, segments, swapped_normals
-            )
+            space_f = scalar_dual_spaces.dual1_function_space
 
     if kind == "RWG":
         if degree == 0:
-            space = maxwell_spaces.rwg0_function_space(
-                grid, support_elements, segments, swapped_normals, **kwargs
-            )
+            space_f = maxwell_spaces.rwg0_function_space
 
     if kind == "SNC":
         if degree == 0:
-            space = maxwell_spaces.snc0_function_space(
-                grid, support_elements, segments, swapped_normals, **kwargs
-            )
+            space_f = maxwell_spaces.snc0_function_space
 
     if kind == "BC":
         if degree == 0:
-            space = maxwell_spaces.bc_function_space(
-                grid, support_elements, segments, swapped_normals, **kwargs
-            )
+            space_f = maxwell_spaces.bc_function_space
 
     if kind == "RBC":
         if degree == 0:
-            space = maxwell_spaces.rbc_function_space(
-                grid, support_elements, segments, swapped_normals, **kwargs
-            )
-    if space is None:
+            space_f = maxwell_spaces.rbc_function_space
+
+    if space_f is None:
         raise ValueError("Requested space not implemented.")
+
+    space = space_f(grid, **kwargs)
 
     if scatter and pool.is_initialised() and not pool.is_worker():
         pool.execute(
@@ -87,9 +92,6 @@ def function_space(
             space.id,
             kind,
             degree,
-            support_elements,
-            segments,
-            swapped_normals,
             kwargs,
         )
         space._is_scattered = True
@@ -845,10 +847,7 @@ def _space_scatter_worker(
     space_id,
     kind,
     degree,
-    support_elements,
-    segments,
-    swapped_normals,
-    keyword_args,
+    kwargs,
 ):
     import bempp.api
     from bempp.api.utils import pool
@@ -858,10 +857,7 @@ def _space_scatter_worker(
         grid,
         kind,
         degree,
-        support_elements=support_elements,
-        segments=segments,
-        swapped_normals=swapped_normals,
-        **keyword_args,
+        **kwargs,
     )
     space._set_id(space_id)
     pool.insert_data(space_id, space)
