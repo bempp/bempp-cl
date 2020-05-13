@@ -82,7 +82,7 @@ def test_helmholtz_far_field_segments(
     from bempp.api.operators.far_field.helmholtz import double_layer
     from bempp.api.grid.grid import grid_from_segments
 
-    grid = bempp.api.shapes.multitrace_cube()
+    grid = bempp.api.shapes.multitrace_cube(h=0.2)
 
     seglists = [[1, 2, 3, 4, 5, 6], [6, 7, 8, 9, 10, 11]]
     swapped_normal_lists = [{}, {6}]
@@ -119,7 +119,7 @@ def test_helmholtz_far_field_complex_coeffs(
     from bempp.api.operators.far_field.helmholtz import single_layer
     from bempp.api.operators.far_field.helmholtz import double_layer
 
-    grid = bempp.api.shapes.regular_sphere(3)
+    grid = bempp.api.shapes.regular_sphere(2)
 
     space = bempp.api.function_space(grid, "P", 1)
 
@@ -156,7 +156,7 @@ def test_helmholtz_far_field_segments_complex_coeffs(
     from bempp.api.operators.far_field.helmholtz import double_layer
     from bempp.api.grid.grid import grid_from_segments
 
-    grid = bempp.api.shapes.multitrace_cube()
+    grid = bempp.api.shapes.multitrace_cube(h=0.2)
 
     seglists = [[1, 2, 3, 4, 5, 6], [6, 7, 8, 9, 10, 11]]
     swapped_normal_lists = [{}, {6}]
