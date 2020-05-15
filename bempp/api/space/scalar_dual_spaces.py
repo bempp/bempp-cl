@@ -6,17 +6,15 @@ from .scalar_spaces import (p1_continuous_function_space, p0_discontinuous_funct
 
 
 def dual0_function_space(grid, support_elements=None, segments=None, swapped_normals=None,
-                         include_boundary_dofs=False, truncate_functions_at_boundary=False):
+                         include_boundary_dofs=False, truncate_functions_at_segment_edge=False):
     """Define a space of DP0 functions on the dual grid."""
     from .space import SpaceBuilder, invert_local2global
     from scipy.sparse import coo_matrix
 
-    if truncate_functions_at_boundary:
-        raise NotImpementedError()
-
     coarse_space = p1_continuous_function_space(
         grid, support_elements, segments, swapped_normals,
-        include_boundary_dofs=include_boundary_dofs
+        include_boundary_dofs=include_boundary_dofs,
+        truncate_functions_at_segment_edge=truncate_functions_at_segment_edge
     )
 
     number_of_support_elements = coarse_space.number_of_support_elements
@@ -41,12 +39,31 @@ def dual0_function_space(grid, support_elements=None, segments=None, swapped_nor
     local_multipliers[support] = 1
     global2local = invert_local2global(local2global, local_multipliers)
 
-    coarse_dofs, bary_dofs, values = generate_dual0_map(
-        grid.data,
-        bary_grid.data,
-        coarse_space.global_dof_count,
-        coarse_space.global2local
-    )
+    _bary_dofs = []
+    _coarse_dofs = []
+
+    support_numbers = {j:i for i,j in enumerate(coarse_space.support_elements)}
+
+    for global_dof_index in range(coarse_space.global_dof_count):
+        local_dofs = coarse_space.global2local[global_dof_index]
+
+        for face, vertex in local_dofs:
+            if support[face] or not truncate_functions_at_segment_edge:
+                face_n = support_numbers[face]
+                _coarse_dofs.append(global_dof_index)
+                _coarse_dofs.append(global_dof_index)
+                _bary_dofs.append(6 * face_n + (2 * vertex - 1) % 6)
+                _bary_dofs.append(6 * face_n + 2 * vertex)
+
+    nentries = len(_bary_dofs)
+
+    coarse_dofs = _np.zeros(nentries, dtype=_np.uint32)
+    coarse_dofs[:] = _coarse_dofs
+
+    bary_dofs = _np.zeros(nentries, dtype=_np.uint32)
+    bary_dofs[:] = _bary_dofs
+
+    values = _np.ones(nentries, dtype=_np.float64)
 
     dof_transformation = coo_matrix(
         (values, (bary_dofs, coarse_dofs)),
@@ -75,55 +92,15 @@ def dual0_function_space(grid, support_elements=None, segments=None, swapped_nor
     )
 
 
-def generate_dual0_map(
-    coarse_grid_data,
-    bary_grid_data,
-    global_dof_count,
-    global2local
-):
-    """Generate the DUAL0 map."""
-
-    bary_dofs = []
-    coarse_dofs = []
-
-    for global_dof_index in range(global_dof_count):
-        local_dofs = global2local[global_dof_index]
-
-        for face, vertex in local_dofs:
-            coarse_dofs.append(global_dof_index)
-            coarse_dofs.append(global_dof_index)
-            bary_dofs.append(6 * face + (2 * vertex - 1) % 6)
-            bary_dofs.append(6 * face + 2 * vertex)
-
-    nentries = len(bary_dofs)
-
-    np_coarse_dofs = _np.zeros(nentries, dtype=_np.uint32)
-    np_coarse_dofs[:] = coarse_dofs
-
-    np_bary_dofs = _np.zeros(nentries, dtype=_np.uint32)
-    np_bary_dofs[:] = bary_dofs
-
-    np_values = _np.ones(nentries, dtype=_np.float64)
-
-    return np_coarse_dofs, np_bary_dofs, np_values
-
-
 def dual1_function_space(grid, support_elements=None, segments=None, swapped_normals=None,
-                         include_boundary_dofs=None, truncate_functions_at_boundary=False):
+                         include_boundary_dofs=None, truncate_functions_at_segment_edge=False):
     """Define a space of DP1 functions on the dual grid."""
     from .space import SpaceBuilder, invert_local2global
     from scipy.sparse import coo_matrix
 
-    if segments is not None:
-        raise NotImplementedError()
-    if support_elements is not None:
-        raise NotImplementedError()
-    if swapped_normals is not None:
-        raise NotImplementedError()
-
     if include_boundary_dofs is not None:
         log("Setting include_boundary_dofs has no effect on this space type.", "warning")
-    if truncate_functions_at_boundary:
+    if truncate_functions_at_segment_edge:
         raise NotImplementedError()
 
     coarse_space = p0_discontinuous_function_space(
