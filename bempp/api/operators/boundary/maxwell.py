@@ -15,29 +15,22 @@ def electric_field(
     precision=None,
 ):
     """Assemble the electric field boundary operator."""
-    from bempp.api.operators import _add_wavenumber
-
-    if not (domain.identifier == "rwg0" and dual_to_range.identifier == "snc0"):
-        raise ValueError(
-            "Operator only defined for domain = 'rwg' and 'dual_to_range = 'snc"
-        )
-
-    options = {"KERNEL_FUNCTION": "helmholtz_single_layer", "COMPLEX_KERNEL": None}
-
-    _add_wavenumber(options, wavenumber)
 
     return _common.create_operator(
-        "maxwell_electric_field_boundary",
+        "electric_field_boundary",
         domain,
         range_,
         dual_to_range,
         parameters,
         assembler,
-        options,
-        "maxwell_electric_field",
+        [_np.real(wavenumber), _np.imag(wavenumber)],
+        "helmholtz_single_layer",
+        "default_scalar",
         device_interface,
         precision,
+        True,
     )
+
 
 
 def magnetic_field(
