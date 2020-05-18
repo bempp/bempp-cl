@@ -42,7 +42,7 @@ def dual0_function_space(grid, support_elements=None, segments=None, swapped_nor
     _bary_dofs = []
     _coarse_dofs = []
 
-    support_numbers = {j:i for i,j in enumerate(coarse_space.support_elements)}
+    support_numbers = {j: i for i, j in enumerate(coarse_space.support_elements)}
 
     for global_dof_index in range(coarse_space.global_dof_count):
         local_dofs = coarse_space.global2local[global_dof_index]
@@ -100,18 +100,92 @@ def dual1_function_space(grid, support_elements=None, segments=None, swapped_nor
 
     if include_boundary_dofs is not None:
         log("Setting include_boundary_dofs has no effect on this space type.", "warning")
-    if truncate_functions_at_segment_edge:
-        raise NotImplementedError()
 
     coarse_space = p0_discontinuous_function_space(
         grid, support_elements, segments, swapped_normals
     )
 
+    coarse_support = _np.zeros(grid.number_of_elements, dtype=_np.bool)
+    support_elements = [i for i in coarse_space.support_elements]
+    coarse_support[support_elements] = True
+
+    _values = []
+    _bary_dofs = []
+    _coarse_dofs = []
+
+    support_numbers = {j: i for i, j in enumerate(support_elements)}
+
+    for global_dof_index in range(coarse_space.global_dof_count):
+        local_dofs = coarse_space.global2local[global_dof_index]
+        element_index = local_dofs[0][0]
+
+        # 1 at barycentre of the triangle
+        if coarse_support[element_index] or not truncate_functions_at_segment_edge:
+            if element_index not in support_numbers:
+                support_numbers[element_index] = len(support_elements)
+                support_elements.append(element_index)
+                coarse_support[element_index] = True
+            face_n = support_numbers[element_index]
+            for n in [1, 5, 7, 11, 13, 17]:
+                _bary_dofs.append(6 * 3 * face_n + n)
+                _coarse_dofs.append(global_dof_index)
+                _values.append(1)
+        # 1/2 at the centre of each edge
+        for e in range(3):
+            edge = coarse_space.grid.element_edges[e][element_index]
+            for neighbour in coarse_space.grid.edge_neighbors[edge]:
+                if coarse_support[neighbour] or not truncate_functions_at_segment_edge:
+                    if neighbour not in support_numbers:
+                        support_numbers[neighbour] = len(support_elements)
+                        support_elements.append(neighbour)
+                        coarse_support[neighbour] = True
+                    face_n = support_numbers[neighbour]
+                    for i, dofs in enumerate([[1, 5], [13, 17], [7, 11]]):
+                        if coarse_space.grid.element_edges[i][neighbour] == edge:
+                            for n in dofs:
+                                _bary_dofs.append(6 * 3 * face_n + n)
+                                _coarse_dofs.append(global_dof_index)
+                                _values.append(0.5)
+                            break
+        # 1/num_coarse_triangles_at_vertex at each vertex
+        for v in range(3):
+            vertex = coarse_space.grid.elements[v][element_index]
+            start = coarse_space.grid.vertex_neighbors.indexptr[vertex]
+            end = coarse_space.grid.vertex_neighbors.indexptr[vertex + 1]
+            neighbour_count = end - start
+            neighbours = coarse_space.grid.vertex_neighbors.indices[start:end]
+            for neighbour in neighbours:
+                if coarse_support[neighbour] or not truncate_functions_at_segment_edge:
+                    if neighbour not in support_numbers:
+                        support_numbers[neighbour] = len(support_elements)
+                        support_elements.append(neighbour)
+                        coarse_support[neighbour] = True
+                    face_n = support_numbers[neighbour]
+                    for i, dofs in enumerate([[0, 15], [3, 6], [9, 12]]):
+                        if coarse_space.grid.elements[i][neighbour] == vertex:
+                            for n in dofs:
+                                _bary_dofs.append(6 * 3 * face_n + n)
+                                _coarse_dofs.append(global_dof_index)
+                                _values.append(1 / neighbour_count)
+                            break
+
+    nentries = len(_bary_dofs)
+
+    coarse_dofs = _np.zeros(nentries, dtype=_np.uint32)
+    coarse_dofs[:] = _coarse_dofs
+
+    bary_dofs = _np.zeros(nentries, dtype=_np.uint32)
+    bary_dofs[:] = _bary_dofs
+
+    values = _np.ones(nentries, dtype=_np.float64)
+
     bary_grid = grid.barycentric_refinement
 
-    number_of_support_elements = coarse_space.number_of_support_elements
+    number_of_support_elements = len(support_elements)
 
-    bary_support_elements = 6 * _np.repeat(coarse_space.support_elements, 6) + _np.tile(
+    coarse_elements = _np.array(support_elements, dtype=_np.uint32)
+
+    bary_support_elements = 6 * _np.repeat(coarse_elements, 6) + _np.tile(
         _np.arange(6), number_of_support_elements
     )
 
@@ -129,51 +203,6 @@ def dual1_function_space(grid, support_elements=None, segments=None, swapped_nor
 
     local_multipliers[support] = 1
     global2local = invert_local2global(local2global, local_multipliers)
-
-    faces_by_vertex = [[] for i in grid.entity_iterator(2)]
-    faces_by_edge = [[] for i in grid.entity_iterator(1)]
-
-    for index, element in enumerate(grid.entity_iterator(0)):
-        for vertex in element.sub_entity_iterator(2):
-            faces_by_vertex[vertex.index].append(index)
-        for edge in element.sub_entity_iterator(1):
-            faces_by_edge[edge.index].append(index)
-
-    num_entries = (2 * sum(len(i) ** 2 for i in faces_by_edge)
-                   + 2 * sum(len(i) ** 2 for i in faces_by_vertex)
-                   + 6 * grid.entity_count(0))
-
-    values = _np.empty(num_entries, dtype=_np.uint32)
-    bary_dofs = _np.empty(num_entries, dtype=_np.uint32)
-    coarse_dofs = _np.empty(num_entries, dtype=_np.float64)
-
-    bary_dof = 0
-    entry = 0
-    for index, element in enumerate(grid.entity_iterator(0)):
-        for n in [1, 5, 7, 11, 13, 17]:
-            bary_dofs[entry] = bary_dof + n
-            coarse_dofs[entry] = index
-            values[entry] = 1
-            entry += 1
-        for vertex, dofs in zip(element.sub_entity_iterator(2),
-                                [[0, 3], [6, 9], [12, 15]]):
-            for coarse_dof in faces_by_vertex[vertex.index]:
-                for n in dofs:
-                    bary_dofs[entry] = bary_dof + n
-                    coarse_dofs[entry] = coarse_dof
-                    values[entry] = 1 / len(faces_by_vertex[vertex.index])
-                    entry += 1
-        for edge, dofs in zip(element.sub_entity_iterator(1),
-                              [[4, 8], [2, 16], [10, 14]]):
-            for coarse_dof in faces_by_edge[edge.index]:
-                for n in dofs:
-                    bary_dofs[entry] = bary_dof + n
-                    coarse_dofs[entry] = coarse_dof
-                    values[entry] = 0.5
-                    entry += 1
-        bary_dof += 18
-
-    assert entry == num_entries
 
     dof_transformation = coo_matrix(
         (values, (bary_dofs, coarse_dofs)),

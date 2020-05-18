@@ -98,7 +98,7 @@ def test_p1_extended_segment():
         1,
         segments=[1],
         include_boundary_dofs=True,
-        truncate_functions_at_boundary=False,
+        truncate_functions_at_segment_edge=False,
     )
 
     eligible_index_pairs = set()
