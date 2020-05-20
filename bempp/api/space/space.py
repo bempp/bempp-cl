@@ -33,7 +33,7 @@ def function_space(
         TODO
     include_boundary_dofs : bool
         Should degrees of freedom on the boundary of the grid segments be included?
-    truncate_functions_at_segment_edge : bool
+    truncate_at_segment_edge : bool
         Should basis functions be truncated at the edge of the grid segment? If this is set to true,
         continuous spaces will no longer be continuous across the segment edge.
     """

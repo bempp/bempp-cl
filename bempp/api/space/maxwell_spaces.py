@@ -11,14 +11,14 @@ def rwg0_function_space(
     segments=None,
     swapped_normals=None,
     include_boundary_dofs=False,
-    truncate_functions_at_segment_edge=None
+    truncate_at_segment_edge=None
 ):
     """Define a space of RWG functions of order 0"""
     from .space import SpaceBuilder, _process_segments
     from bempp.api.utils.helpers import serialise_list_of_lists
 
-    if truncate_functions_at_segment_edge is not None:
-        log("Setting truncate_functions_at_segment_edge has no effect on this space type.", "warning")
+    if truncate_at_segment_edge is not None:
+        log("Setting truncate_at_segment_edge has no effect on this space type.", "warning")
 
     support, normal_multipliers = _process_segments(
         grid, support_elements, segments, swapped_normals
@@ -154,14 +154,14 @@ def snc0_function_space(
     segments=None,
     swapped_normals=None,
     include_boundary_dofs=False,
-    truncate_functions_at_segment_edge=None
+    truncate_at_segment_edge=None
 ):
     """Define a space of SNC functions of order 0"""
     from .space import SpaceBuilder, _process_segments
     from bempp.api.utils.helpers import serialise_list_of_lists
 
-    if truncate_functions_at_segment_edge is not None:
-        log("Setting truncate_functions_at_segment_edge has no effect on this space type.", "warning")
+    if truncate_at_segment_edge is not None:
+        log("Setting truncate_at_segment_edge has no effect on this space type.", "warning")
     support, normal_multipliers = _process_segments(
         grid, support_elements, segments, swapped_normals
     )
@@ -292,7 +292,7 @@ def snc0_barycentric_function_space(coarse_space):
 
 def bc_function_space(
     grid, support_elements=None, segments=None, swapped_normals=None,
-    include_boundary_dofs=None, truncate_functions_at_segment_edge=None
+    include_boundary_dofs=None, truncate_at_segment_edge=None
 ):
     """Define a space of BC functions."""
     from .space import SpaceBuilder
@@ -301,8 +301,8 @@ def bc_function_space(
 
     if include_boundary_dofs is not None:
         log("Setting include_boundary_dofs has no effect on this space type.", "warning")
-    if truncate_functions_at_segment_edge is not None:
-        log("Setting truncate_functions_at_segment_edge has no effect on this space type.", "warning")
+    if truncate_at_segment_edge is not None:
+        log("Setting truncate_at_segment_edge has no effect on this space type.", "warning")
 
     coarse_space = rwg0_function_space(
         grid, support_elements, segments, swapped_normals
@@ -378,7 +378,7 @@ def bc_function_space(
 
 def rbc_function_space(
     grid, support_elements=None, segments=None, swapped_normals=None,
-    include_boundary_dofs=None, truncate_functions_at_segment_edge=None
+    include_boundary_dofs=None, truncate_at_segment_edge=None
 
 ):
     """Define a space of RBC functions."""
@@ -388,8 +388,8 @@ def rbc_function_space(
 
     if include_boundary_dofs is not None:
         log("Setting include_boundary_dofs has no effect on this space type.", "warning")
-    if truncate_functions_at_segment_edge is not None:
-        log("Setting truncate_functions_at_segment_edge has no effect on this space type.", "warning")
+    if truncate_at_segment_edge is not None:
+        log("Setting truncate_at_segment_edge has no effect on this space type.", "warning")
 
     coarse_space = rwg0_function_space(
         grid, support_elements, segments, swapped_normals

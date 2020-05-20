@@ -10,15 +10,15 @@ from bempp.api import log
 @_timeit
 def p0_discontinuous_function_space(
     grid, support_elements=None, segments=None, swapped_normals=None,
-    include_boundary_dofs=None, truncate_functions_at_segment_edge=None
+    include_boundary_dofs=None, truncate_at_segment_edge=None
 ):
     """Define a space of piecewise constant functions."""
     from .space import SpaceBuilder, _process_segments
 
     if include_boundary_dofs is not None:
         log("Setting include_boundary_dofs has no effect on this space type.", "warning")
-    if truncate_functions_at_segment_edge is not None:
-        log("Setting truncate_functions_at_segment_edge has no effect on this space type.", "warning")
+    if truncate_at_segment_edge is not None:
+        log("Setting truncate_at_segment_edge has no effect on this space type.", "warning")
 
     support, normal_multipliers = _process_segments(
         grid, support_elements, segments, swapped_normals
@@ -116,15 +116,15 @@ def p0_barycentric_discontinuous_function_space(coarse_space):
 @_timeit
 def p1_discontinuous_function_space(
     grid, support_elements=None, segments=None, swapped_normals=None,
-    include_boundary_dofs=None, truncate_functions_at_segment_edge=None
+    include_boundary_dofs=None, truncate_at_segment_edge=None
 ):
     """Define a discontinuous space of piecewise linear functions."""
     from .space import SpaceBuilder, _process_segments
 
     if include_boundary_dofs is not None:
         log("Setting include_boundary_dofs has no effect on this space type.", "warning")
-    if truncate_functions_at_segment_edge is not None:
-        log("Setting truncate_functions_at_segment_edge has no effect on this space type.", "warning")
+    if truncate_at_segment_edge is not None:
+        log("Setting truncate_at_segment_edge has no effect on this space type.", "warning")
 
     support, normal_multipliers = _process_segments(
         grid, support_elements, segments, swapped_normals
@@ -162,7 +162,7 @@ def p1_continuous_function_space(
     segments=None,
     swapped_normals=None,
     include_boundary_dofs=False,
-    truncate_functions_at_segment_edge=True,
+    truncate_at_segment_edge=True,
 ):
     """Define a space of continuous piecewise linear functions."""
     from .space import SpaceBuilder, _process_segments
@@ -185,7 +185,7 @@ def p1_continuous_function_space(
         grid.data,
         support,
         include_boundary_dofs,
-        truncate_functions_at_segment_edge,
+        truncate_at_segment_edge,
         vertex_neighbors,
         index_ptr,
     )
@@ -327,7 +327,7 @@ def _compute_p1_dof_map(
     grid_data,
     support,
     include_boundary_dofs,
-    truncate_functions_at_segment_edge,
+    truncate_at_segment_edge,
     vertex_neighbors,
     index_ptr,
 ):
@@ -364,7 +364,7 @@ def _compute_p1_dof_map(
                 vertex_is_dof[vertex] = True
             if (
                 len(non_support_neighbors) > 0
-                and not truncate_functions_at_segment_edge
+                and not truncate_at_segment_edge
                 and include_boundary_dofs
             ):
                 for en in non_support_neighbors:

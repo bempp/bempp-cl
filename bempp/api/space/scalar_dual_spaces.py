@@ -6,7 +6,7 @@ from .scalar_spaces import (p1_continuous_function_space, p0_discontinuous_funct
 
 
 def dual0_function_space(grid, support_elements=None, segments=None, swapped_normals=None,
-                         include_boundary_dofs=False, truncate_functions_at_segment_edge=False):
+                         include_boundary_dofs=False, truncate_at_segment_edge=False):
     """Define a space of DP0 functions on the dual grid."""
     from .space import SpaceBuilder, invert_local2global
     from scipy.sparse import coo_matrix
@@ -14,7 +14,7 @@ def dual0_function_space(grid, support_elements=None, segments=None, swapped_nor
     coarse_space = p1_continuous_function_space(
         grid, support_elements, segments, swapped_normals,
         include_boundary_dofs=include_boundary_dofs,
-        truncate_functions_at_segment_edge=truncate_functions_at_segment_edge
+        truncate_at_segment_edge=truncate_at_segment_edge
     )
 
     number_of_support_elements = coarse_space.number_of_support_elements
@@ -48,7 +48,7 @@ def dual0_function_space(grid, support_elements=None, segments=None, swapped_nor
         local_dofs = coarse_space.global2local[global_dof_index]
 
         for face, vertex in local_dofs:
-            if support[face] or not truncate_functions_at_segment_edge:
+            if support[face] or not truncate_at_segment_edge:
                 face_n = support_numbers[face]
                 _coarse_dofs.append(global_dof_index)
                 _coarse_dofs.append(global_dof_index)
@@ -93,7 +93,7 @@ def dual0_function_space(grid, support_elements=None, segments=None, swapped_nor
 
 
 def dual1_function_space(grid, support_elements=None, segments=None, swapped_normals=None,
-                         include_boundary_dofs=None, truncate_functions_at_segment_edge=False):
+                         include_boundary_dofs=None, truncate_at_segment_edge=False):
     """Define a space of DP1 functions on the dual grid."""
     from .space import SpaceBuilder, invert_local2global
     from scipy.sparse import coo_matrix
@@ -120,7 +120,7 @@ def dual1_function_space(grid, support_elements=None, segments=None, swapped_nor
         element_index = local_dofs[0][0]
 
         # 1 at barycentre of the triangle
-        if coarse_support[element_index] or not truncate_functions_at_segment_edge:
+        if coarse_support[element_index] or not truncate_at_segment_edge:
             if element_index not in support_numbers:
                 support_numbers[element_index] = len(support_elements)
                 support_elements.append(element_index)
@@ -134,7 +134,7 @@ def dual1_function_space(grid, support_elements=None, segments=None, swapped_nor
         for e in range(3):
             edge = coarse_space.grid.element_edges[e][element_index]
             for neighbour in coarse_space.grid.edge_neighbors[edge]:
-                if coarse_support[neighbour] or not truncate_functions_at_segment_edge:
+                if coarse_support[neighbour] or not truncate_at_segment_edge:
                     if neighbour not in support_numbers:
                         support_numbers[neighbour] = len(support_elements)
                         support_elements.append(neighbour)
@@ -155,7 +155,7 @@ def dual1_function_space(grid, support_elements=None, segments=None, swapped_nor
             neighbour_count = end - start
             neighbours = coarse_space.grid.vertex_neighbors.indices[start:end]
             for neighbour in neighbours:
-                if coarse_support[neighbour] or not truncate_functions_at_segment_edge:
+                if coarse_support[neighbour] or not truncate_at_segment_edge:
                     if neighbour not in support_numbers:
                         support_numbers[neighbour] = len(support_elements)
                         support_elements.append(neighbour)

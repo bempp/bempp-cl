@@ -23,14 +23,14 @@ def test_segments_space_with_boundary_dofs(space_info):
     space1 = bempp.api.function_space(
         grid, space_info[0], space_info[1], segments=[1],
         include_boundary_dofs=True,
-        truncate_functions_at_segment_edge=True
+        truncate_at_segment_edge=True
     )
     fun1 = bempp.api.GridFunction(space1, coefficients=_np.ones(space1.global_dof_count))
 
     space2 = bempp.api.function_space(
         grid, space_info[0], space_info[1], segments=[1],
         include_boundary_dofs=True,
-        truncate_functions_at_segment_edge=False
+        truncate_at_segment_edge=False
     )
     fun2 = bempp.api.GridFunction(space2, coefficients=_np.ones(space2.global_dof_count))
 
@@ -56,14 +56,14 @@ def test_segments_space_without_boundary_dofs(space_info, helpers, precision):
     space1 = bempp.api.function_space(
         grid, space_info[0], space_info[1], segments=[1],
         include_boundary_dofs=True,
-        truncate_functions_at_segment_edge=True
+        truncate_at_segment_edge=True
     )
     fun1 = bempp.api.GridFunction(space1, coefficients=_np.ones(space1.global_dof_count))
 
     space2 = bempp.api.function_space(
         grid, space_info[0], space_info[1], segments=[1],
         include_boundary_dofs=True,
-        truncate_functions_at_segment_edge=False
+        truncate_at_segment_edge=False
     )
     fun2 = bempp.api.GridFunction(space2, coefficients=_np.ones(space2.global_dof_count))
 
@@ -80,14 +80,14 @@ def test_segments_space_without_boundary_dofs(space_info, helpers, precision):
     space1 = bempp.api.function_space(
         grid, space_info[0], space_info[1], segments=[1],
         include_boundary_dofs=True,
-        truncate_functions_at_segment_edge=True
+        truncate_at_segment_edge=True
     )
     fun1 = bempp.api.GridFunction(space1, coefficients=_np.ones(space1.global_dof_count))
 
     space2 = bempp.api.function_space(
         grid, space_info[0], space_info[1], segments=[1],
         include_boundary_dofs=True,
-        truncate_functions_at_segment_edge=False
+        truncate_at_segment_edge=False
     )
     fun2 = bempp.api.GridFunction(space2, coefficients=_np.ones(space2.global_dof_count))
 
@@ -109,21 +109,21 @@ def test_segments_dual1_space(space_info, helpers, precision):
     space0 = bempp.api.function_space(
         grid, space_info[0], space_info[1], segments=[1],
         include_boundary_dofs=False,
-        truncate_functions_at_segment_edge=False
+        truncate_at_segment_edge=False
     )
     fun0 = bempp.api.GridFunction(space0, coefficients=_np.ones(space0.global_dof_count))
 
     space1 = bempp.api.function_space(
         grid, space_info[0], space_info[1], segments=[1],
         include_boundary_dofs=True,
-        truncate_functions_at_segment_edge=True
+        truncate_at_segment_edge=True
     )
     fun1 = bempp.api.GridFunction(space1, coefficients=_np.ones(space1.global_dof_count))
 
     space2 = bempp.api.function_space(
         grid, space_info[0], space_info[1], segments=[1],
         include_boundary_dofs=True,
-        truncate_functions_at_segment_edge=False
+        truncate_at_segment_edge=False
     )
     fun2 = bempp.api.GridFunction(space2, coefficients=_np.ones(space2.global_dof_count))
 
