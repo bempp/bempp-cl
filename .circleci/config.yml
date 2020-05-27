@@ -39,6 +39,12 @@ jobs:
           paths:
             - ~/miniconda/envs/bempp
       - run:
+          command: !
+            source ~/miniconda/bin/activate root
+            conda activate bempp
+            jupyter kernelspec list
+          name: Examine conda environment
+      - run:
           command: |
             source ~/miniconda/bin/activate root
             conda activate bempp
