@@ -44,6 +44,13 @@ jobs:
             conda activate bempp
             python3 -m pytest --durations=50 bempp
           name: Run tests
+      - run:
+          command: |
+            source ~/miniconda/bin/activate root
+            conda activate bempp
+            export PYTHONPATH="$(pwd):$PYTHONPATH"
+            python3 -m pytest --durations=50 notebooks/test_notebooks.py
+          name: Run example notebooks
 
 
 workflows:
