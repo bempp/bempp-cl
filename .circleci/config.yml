@@ -16,11 +16,6 @@ jobs:
           name: Flake8 checks
       - run:
           command: |
-            jupyter nbconvert notebooks/*/*.ipynb --to script
-            python3 -m flake8 notebooks
-          name: Run flake8 on example notebooks
-      - run:
-          command: |
             if [[ ! -d /home/circleci/miniconda ]]; then
                 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
                 bash miniconda.sh -b -f -p /home/circleci/miniconda;
@@ -43,6 +38,13 @@ jobs:
           key: bempp-conda-{{ checksum "environment.yml" }}
           paths:
             - ~/miniconda/envs/bempp
+      - run:
+          command: |
+            source ~/miniconda/bin/activate root
+            conda activate bempp
+            jupyter nbconvert notebooks/*/*.ipynb --to script
+            python3 -m flake8 notebooks
+          name: Run flake8 on example notebooks
       - run:
           command: |
             source ~/miniconda/bin/activate root
