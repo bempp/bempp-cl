@@ -115,3 +115,6 @@ venv.bak/
 
 #VS Code
 .vscode/
+
+# Ignore notebook output
+notebooks/laplace/mixed_dirichlet_neumann_laplace_solution.msh
