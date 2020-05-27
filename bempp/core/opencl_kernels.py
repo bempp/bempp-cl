@@ -15,18 +15,22 @@ def select_cl_kernel(operator_descriptor, mode):
     """Select OpenCL kernel."""
 
     singular_assemblers = {
-            "default_scalar": "evaluate_dense_singular",
-            "laplace_hypersingular": "evaluate_dense_laplace_hypersingular_singular",
-            "helmholtz_hypersingular": "evaluate_dense_helmholtz_hypersingular_singular",
-            "modified_helmholtz_hypersingular": "evaluate_dense_helmholtz_hypersingular_singular",
-            }
+        "default_scalar": "evaluate_dense_singular",
+        "laplace_hypersingular": "evaluate_dense_laplace_hypersingular_singular",
+        "helmholtz_hypersingular": "evaluate_dense_helmholtz_hypersingular_singular",
+        "modified_helmholtz_hypersingular": "evaluate_dense_helmholtz_hypersingular_singular",
+    }
 
     regular_assemblers = {
-            "default_scalar": "evaluate_dense_regular",
-            "laplace_hypersingular": "evaluate_dense_laplace_hypersingular_regular",
-            "helmholtz_hypersingular": "evaluate_dense_helmholtz_hypersingular_regular",
-            "modified_helmholtz_hypersingular": "evaluate_dense_helmholtz_hypersingular_regular",
-            }
+        "default_scalar": "evaluate_dense_regular",
+        "laplace_hypersingular": "evaluate_dense_laplace_hypersingular_regular",
+        "helmholtz_hypersingular": "evaluate_dense_helmholtz_hypersingular_regular",
+        "modified_helmholtz_hypersingular": "evaluate_dense_helmholtz_hypersingular_regular",
+    }
+
+    potential_assemblers = {
+        "default_scalar": "evaluate_scalar_potential",
+    }
 
     kernels = {
         "laplace_single_layer": "laplace_single_layer",
@@ -51,6 +55,11 @@ def select_cl_kernel(operator_descriptor, mode):
             regular_assemblers[operator_descriptor.assembly_type],
             kernels[operator_descriptor.kernel_type],
         )
+    elif mode == "potential":
+        return (
+            potential_assemblers[operator_descriptor.assembly_type],
+            kernels[operator_descriptor.kernel_type]
+            )
 
 
 def get_kernel_compile_options(options, precision):
@@ -125,6 +134,18 @@ def get_kernel_from_operator_descriptor(
     options["VEC_LENGTH"] = vec_length
     options["VEC_STRING"] = vec_string
     return build_program(assembly_function, options, precision)
+
+def get_kernel_from_name(
+    name, options, precision="double"
+):
+    """Return compiled kernel from name."""
+
+    vec_length = get_vector_width(precision)
+    vec_string = get_vec_string(precision)
+
+    options["VEC_LENGTH"] = vec_length
+    options["VEC_STRING"] = vec_string
+    return build_program(name, options, precision)
 
 
 def get_vector_width(precision):

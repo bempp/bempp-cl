@@ -48,4 +48,8 @@ def potential_dispatcher(device_interface, *args):
         from bempp.core.numba_assemblers import potential_assembler
 
         return potential_assembler(device_interface, *args)
+    elif interface_type == "opencl":
+        from bempp.core.opencl_assemblers import potential_assembler
+
+        return potential_assembler(device_interface, *args)
 

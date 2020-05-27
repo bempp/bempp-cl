@@ -3,6 +3,7 @@ import numpy as _np
 import pyopencl as _cl
 
 WORKGROUP_SIZE_GALERKIN = 16
+WORKGROUP_SIZE_POTENTIAL = 128
 
 
 def singular_assembler(
@@ -323,3 +324,204 @@ def dense_assembler(
                     queue, test_offset, trial_offset, n_test_indices, n_trial_indices
                 )
         _cl.enqueue_copy(queue, result, result_buffer)
+
+
+def potential_assembler(
+    device_interface, space, operator_descriptor, points, parameters
+):
+    """Assemble dense with OpenCL."""
+    from bempp.api.integration.triangle_gauss import rule
+    from bempp.api.utils.helpers import get_type
+    from bempp.core.opencl_kernels import get_kernel_from_name
+    from bempp.core.opencl_kernels import get_kernel_from_operator_descriptor
+    from bempp.core.opencl_kernels import (
+        default_context,
+        default_device,
+        get_vector_width,
+        build_program,
+    )
+
+    mf = _cl.mem_flags
+    ctx = default_context()
+    device = default_device()
+
+    quad_points, quad_weights = rule(parameters.quadrature.regular)
+
+    precision = operator_descriptor.precision
+    dtype = get_type(precision).real
+    kernel_options = operator_descriptor.options
+    kernel_dimension = operator_descriptor.kernel_dimension
+
+    if operator_descriptor.is_complex:
+        result_type = _np.dtype(get_type(precision).complex)
+    else:
+        result_type = dtype
+        
+    indices = space.support_elements
+    nelements = len(indices)
+    vector_width = get_vector_width(precision)
+    npoints = points.shape[1]
+    remainder_size = nelements % vector_width
+    main_size = nelements - remainder_size
+
+
+
+    main_kernel = None
+    remainder_kernel = None
+    sum_kernel = None
+
+    options = {
+        "NUMBER_OF_QUAD_POINTS": len(quad_weights),
+        "TRIAL": space.shapeset.identifier,
+        "TRIAL_NUMBER_OF_ELEfMENTS": space.number_of_support_elements,
+        "NUMBER_OF_TRIAL_SHAPE_FUNCTIONS": space.number_of_shape_functions,
+        "WORKGROUP_SIZE": WORKGROUP_SIZE_POTENTIAL // vector_width,
+    }
+
+    if operator_descriptor.is_complex:
+        options["COMPLEX_KERNEL"] = None
+
+    if main_size > 0:
+        main_kernel = get_kernel_from_operator_descriptor(
+            operator_descriptor, options, "potential"
+        )
+        sum_kernel = get_kernel_from_name("sum_for_potential_novec", options, precision)
+
+    if remainder_size > 0:
+        options["WORKGROUP_SIZE"] = remainder_size
+        remainder_kernel = get_kernel_from_operator_descriptor(
+            operator_descriptor, options, "potential", force_novec=True
+        )
+
+    indices_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=indices)
+
+    normals_buffer = _cl.Buffer(
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=space.normal_multipliers
+    )
+    grid_buffer = _cl.Buffer(
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=space.grid.as_array.astype(dtype),
+    )
+
+    elements_buffer = _cl.Buffer(
+        ctx,
+        mf.READ_ONLY | mf.COPY_HOST_PTR,
+        hostbuf=space.grid.elements.ravel(order="F"),
+    )
+
+    quad_points_buffer = _cl.Buffer(
+        ctx,
+        mf.READ_ONLY | mf.COPY_HOST_PTR,
+        hostbuf=quad_points.ravel(order="F").astype(dtype),
+    )
+
+    quad_weights_buffer = _cl.Buffer(
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=quad_weights.astype(dtype)
+    )
+
+    result_buffer = _cl.Buffer(
+        ctx, mf.READ_WRITE, size=result_type.itemsize * kernel_dimension * npoints,
+    )
+
+    coefficients_buffer = _cl.Buffer(
+        ctx, mf.READ_ONLY, size=result_type.itemsize * space.grid_dof_count
+    )
+
+    sum_buffer = _cl.Buffer(
+        ctx,
+        mf.READ_WRITE,
+        size=result_type.itemsize * npoints * (nelements // WORKGROUP_SIZE_POTENTIAL),
+    )
+
+    if main_size > 0:
+        sum_size = (
+            kernel_dimension
+            * npoints
+            * (nelements // WORKGROUP_SIZE_POTENTIAL)
+            * result_type.itemsize
+        )
+        sum_buffer = _cl.Buffer(ctx, mf.READ_WRITE, size=sum_size,)
+
+    if not kernel_options:
+        kernel_options = [0.0]
+
+    kernel_options_array = _np.array(kernel_options, dtype=dtype)
+
+    kernel_options_buffer = _cl.Buffer(
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=kernel_options_array
+    )
+
+    buffers = [
+        grid_buffer,
+        indices_buffer,
+        normals_buffer,
+        points_buffer,
+        coefficients_buffer,
+        quad_points_buffer,
+        quad_weights_buffer,
+        result_buffer,
+        kernel_options_buffer,
+    ]
+
+    def evaluator(x):
+        """Evaluate a potential."""
+        result = _np.empty(kernel_dimension * npoints, dtype=result_type)
+        with _cl.CommandQueue(ctx, device=device) as queue:
+            _cl.enqueue_copy(queue, coefficients_buffer, x.astype(result_type))
+            _cl.enqueue_fill_buffer(
+                queue,
+                result_buffer,
+                0,
+                0,
+                kernel_dimension * npoints * result_type.itemsize,
+            )
+            _cl.enqueue_fill_buffer(
+                queue,
+                sum_buffer,
+                0,
+                0,
+                sum_size,
+            )
+            if main_size > 0:
+                _cl.enqueue_full_buffer(queue, sum_buffer, 0, 0, sum_size)
+                main_kernel(
+                    queue,
+                    (npoints, main_size // vector_width),
+                    (1, WORKGROUP_SIZE_POTENTIAL // vector_width),
+                    grid_buffer,
+                    indices_buffer,
+                    normals_buffer,
+                    points_buffer,
+                    coefficients_buffer,
+                    quad_points_buffer,
+                    quad_weights_buffer,
+                    sum_buffer,
+                    kernel_options_buffer,
+                )
+                sum_kernel(
+                    queue,
+                    (kernel_dimension * npoints,),
+                    (1,),
+                    sum_buffer,
+                    result_buffer,
+                    _np.uint32(nelements // WORKGROUP_SIZE_POTENTIAL),
+                )
+
+            if remainder_size > 0:
+                remainder_kernel(
+                    queue,
+                    (npoints, remainder_size),
+                    (1, 1),
+                    grid_buffer,
+                    indices_buffer,
+                    normals_buffer,
+                    points_buffer,
+                    coefficients_buffer,
+                    quad_points_buffer,
+                    quad_weights_buffer,
+                    result_buffer,
+                    kernel_options_buffer,
+            )
+
+            _cl.enqueue.copy(queue, result, result_buffer)
+        return result
+            

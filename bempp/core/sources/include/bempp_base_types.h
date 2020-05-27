@@ -110,4 +110,8 @@ typedef struct Geometry
                            trialIndices[offset + 16 * (gid[1] - offset) + 15]};
 #endif
 
+#ifndef REALTYPEVEC
+#define REALTYPEVEC REALTYPE4
+#endif
+
 #endif
