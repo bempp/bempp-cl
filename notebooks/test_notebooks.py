@@ -4,11 +4,13 @@ import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 
 # Get all the noteboooks in each folder
-# Notebooks with names starting large_ contain very large problems so are skipped
+# Notebooks in this list will be skipped as the problems are very large
+large_problems = ["maxwell_dielectric.ipynb", "reentrant_cube_capacity.ipynb"]
+
 notebooks = []
 for dir in ["laplace", "helmholtz", "maxwell"]:
     for i in os.listdir(os.path.join("notebooks", dir)):
-        if i.endswith(".ipynb") and not i.startswith("large_"):
+        if i.endswith(".ipynb") and i not in large_problems:
             notebooks.append((os.path.join("notebooks", dir), i))
 
 kernel = "python3"
