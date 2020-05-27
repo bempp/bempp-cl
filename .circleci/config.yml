@@ -42,14 +42,14 @@ jobs:
           command: |
             source ~/miniconda/bin/activate root
             conda activate bempp
-            python3 -m pytest --durations=50 bempp
-          name: Run tests
+            KERNEL_NAME=bempp python3 -m pytest --durations=50 notebooks/test_notebooks.py
+          name: Test example notebooks
       - run:
           command: |
             source ~/miniconda/bin/activate root
             conda activate bempp
-            python3 -m pytest --durations=50 notebooks/test_notebooks.py
-          name: Test example notebooks
+            python3 -m pytest --durations=50 bempp
+          name: Run tests
 
 
 workflows:
