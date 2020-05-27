@@ -64,11 +64,11 @@ def function_space(
         if degree == 1:
             space_f = scalar_dual_spaces.dual1_function_space
 
-    if kind == "RWG":
+    if kind == "RWG" or kind == "RT":
         if degree == 0:
             space_f = maxwell_spaces.rwg0_function_space
 
-    if kind == "SNC":
+    if kind == "SNC" or kind == "NC":
         if degree == 0:
             space_f = maxwell_spaces.snc0_function_space
 
