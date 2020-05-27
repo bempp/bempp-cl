@@ -42,7 +42,7 @@ jobs:
           command: |
             source ~/miniconda/bin/activate root
             conda activate bempp
-            jupyter nbconvert notebooks/*/*.ipynb --to script
+            jupyter nbconvert notebooks/*/*.ipynb --to python --TemplateExporter.exclude_markdown=True --TemplateExporter.exclude_output_prompt=True --TemplateExporter.exclude_input_prompt=True
             python3 -m flake8 notebooks
           name: Run flake8 on example notebooks
       - run:
