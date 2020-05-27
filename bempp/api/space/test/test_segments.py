@@ -110,7 +110,7 @@ def test_segments_dual1_space(space_info, helpers, precision):
 
 
 @pytest.mark.parametrize('space_info', [("BC", 0), ("RBC", 0)])
-def test_segments_dual1_space(space_info, helpers, precision):
+def test_segments_bc_space(space_info, helpers, precision):
     """Test spaces on segments."""
     import bempp.api
 
