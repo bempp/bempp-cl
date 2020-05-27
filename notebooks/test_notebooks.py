@@ -3,10 +3,12 @@ import pytest
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 
+# Get all the noteboooks in each folder
+# Notebooks with names starting large_ contain very large problems so are skipped
 notebooks = []
 for dir in ["laplace", "helmholtz", "maxwell"]:
     for i in os.listdir(os.path.join("notebooks", dir)):
-        if i.endswith(".ipynb"):
+        if i.endswith(".ipynb") and not i.startswith("large_"):
             notebooks.append((os.path.join("notebooks", dir), i))
 
 kernel = "python3"
