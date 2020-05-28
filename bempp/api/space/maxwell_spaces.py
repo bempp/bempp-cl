@@ -10,7 +10,7 @@ def rwg0_function_space(
     segments=None,
     swapped_normals=None,
     include_boundary_dofs=False,
-    truncate_at_segment_edge=False
+    truncate_at_segment_edge=True
 ):
     """Define a space of RWG functions of order 0"""
     from .space import SpaceBuilder, _process_segments
@@ -151,7 +151,7 @@ def snc0_function_space(
     segments=None,
     swapped_normals=None,
     include_boundary_dofs=False,
-    truncate_at_segment_edge=False
+    truncate_at_segment_edge=True
 ):
     """Define a space of SNC functions of order 0"""
     from .space import SpaceBuilder, _process_segments
@@ -288,7 +288,7 @@ def snc0_barycentric_function_space(coarse_space):
 
 def bc_function_space(
     grid, support_elements=None, segments=None, swapped_normals=None,
-    include_boundary_dofs=False, truncate_at_segment_edge=False
+    include_boundary_dofs=False, truncate_at_segment_edge=True
 ):
     """Define a space of BC functions."""
     from .space import SpaceBuilder
@@ -329,7 +329,7 @@ def bc_function_space(
 
 def rbc_function_space(
     grid, support_elements=None, segments=None, swapped_normals=None,
-    include_boundary_dofs=False, truncate_at_segment_edge=False
+    include_boundary_dofs=False, truncate_at_segment_edge=True
 ):
     """Define a space of RBC functions."""
     from .space import SpaceBuilder
@@ -582,73 +582,72 @@ def _compute_rwg0_space_data(
     local_multipliers = _np.zeros((number_of_elements, 3), dtype=_np.float64)
     edge_dofs = -_np.ones(number_of_edges, dtype=_np.int32)
 
-    delete_from_support = []
-    add_to_support = []
+    dof_count = 0
+    for element in _np.flatnonzero(support):
+        has_dof = False
+        for local_index in range(3):
+            edge_index = element_edges[local_index, element]
+            if edge_dofs[edge_index] != -1:
+                has_dof = True
+            else:
+                current_neighbors = edge_neighbors[
+                    edge_neighbors_ptr[edge_index] : edge_neighbors_ptr[1 + edge_index]
+                ]
+                supported_neighbors = len([e for e in current_neighbors if support[e]])
+                if supported_neighbors == 2:
+                    if edge_dofs[edge_index]:
+                        edge_dofs[edge_index] = dof_count
+                        dof_count += 1
+                    has_dof = True
+                if supported_neighbors == 1 and include_boundary_dofs:
+                    if edge_dofs[edge_index]:
+                        edge_dofs[edge_index] = dof_count
+                        dof_count += 1
+                    has_dof = True
+                    if not truncate_at_segment_edge:
+                        for cell in current_neighbors:
+                            # Add the element to the support
+                            support[cell] = True
+        if not has_dof:
+            # If the element has no DOFs, remove it from support
+            support[element] = False
 
-    count = 0
-    for element_index in range(number_of_elements):
-        if not support[element_index] and truncate_at_segment_edge:
-            continue
+    for element_index in _np.flatnonzero(support):
         dofmap = -_np.ones(3, dtype=_np.int32)
         for local_index in range(3):
             edge_index = element_edges[local_index, element_index]
-            current_neighbors = edge_neighbors[
-                edge_neighbors_ptr[edge_index] : edge_neighbors_ptr[1 + edge_index]
-            ]
-            supported_neighbors = len([e for e in current_neighbors if support[e]])
+            if edge_dofs[edge_index] != -1:
+                dofmap[local_index] = edge_dofs[edge_index]
 
-            if supported_neighbors == 0:
-                # DOF is not in the segment, so skip
-                continue
-            if supported_neighbors == 1 and not include_boundary_dofs:
-                # DOF is on the boundary, so skip
-                continue
+                current_neighbors = edge_neighbors[
+                    edge_neighbors_ptr[edge_index] : edge_neighbors_ptr[1 + edge_index]
+                ]
+                supported_neighbors = len([e for e in current_neighbors if support[e]])
 
-            if not support[element_index]:
-                add_to_support.append(element_index)
+                if supported_neighbors == 1:
+                    local_multipliers[element_index, local_index] = 1
+                else:
+                    # Assign 1 or -1 depending on element index
+                    local_multipliers[element_index, local_index] = (
+                        1 if element_index == min(current_neighbors) else -1
+                    )
 
-            # Assign 1 or -1 depending on element index
-            local_multipliers[element_index, local_index] = (
-                1 if element_index == min(current_neighbors) else -1
-            )
-            if edge_dofs[edge_index] == -1:
-                edge_dofs[edge_index] = count
-                count += 1
-            dofmap[local_index] = edge_dofs[edge_index]
+        # For every zero local multiplier assign an existing global dof
+        # in this element. This does not change the result as zero multipliers
+        # do not contribute. But it allows us not to have to distinguish between
+        # existing and non existing dofs later on.
+        first_nonzero = 0
+        for local_index in range(3):
+            if local_multipliers[element_index, local_index] != 0:
+                first_nonzero = local_index
+                break
 
-        # Check if no dof was assigned to element. In that case the element
-        # needs to be deleted from the support.
-        all_not_assigned = True
-        for dof in dofmap:
-            if dof != -1:
-                all_not_assigned = False
+        for local_index in range(3):
+            if local_multipliers[element_index, local_index] == 0:
+                dofmap[local_index] = first_nonzero
+        local2global_map[element_index, :] = dofmap
 
-        if all_not_assigned:
-            delete_from_support.append(element_index)
-            local_multipliers[element_index, :] = 0
-            local2global_map[element_index, :] = 0
-        else:
-            # For every zero local multiplier assign an existing global dof
-            # in this element. This does not change the result as zero multipliers
-            # do not contribute. But it allows us not to have to distinguish between
-            # existing and non existing dofs later on.
-            first_nonzero = 0
-            for local_index in range(3):
-                if local_multipliers[element_index, local_index] != 0:
-                    first_nonzero = local_index
-                    break
-
-            for local_index in range(3):
-                if local_multipliers[element_index, local_index] == 0:
-                    dofmap[local_index] = first_nonzero
-            local2global_map[element_index, :] = dofmap
-
-    for elem in delete_from_support:
-        support[elem] = False
-    for elem in add_to_support:
-        support[elem] = True
-
-    return count, support, local2global_map, local_multipliers
+    return dof_count, support, local2global_map, local_multipliers
 
 
 @_numba.njit(cache=True)
