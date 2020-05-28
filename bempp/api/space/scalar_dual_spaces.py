@@ -106,46 +106,68 @@ def dual1_function_space(grid, support_elements=None, segments=None, swapped_nor
     )
 
     coarse_support = _np.zeros(grid.number_of_elements, dtype=_np.bool)
-    support_elements = [i for i in coarse_space.support_elements]
-    coarse_support[support_elements] = True
+    coarse_support[coarse_space.support_elements] = True
 
-    _values = []
-    _bary_dofs = []
-    _coarse_dofs = []
-
-    support_numbers = {j: i for i, j in enumerate(support_elements)}
-
+    nentries = 0
     for global_dof_index in range(coarse_space.global_dof_count):
         local_dofs = coarse_space.global2local[global_dof_index]
         element_index = local_dofs[0][0]
 
         # 1 at barycentre of the triangle
-        if coarse_support[element_index] or not truncate_at_segment_edge:
-            if element_index not in support_numbers:
-                support_numbers[element_index] = len(support_elements)
-                support_elements.append(element_index)
-                coarse_support[element_index] = True
-            face_n = support_numbers[element_index]
-            for n in [1, 5, 7, 11, 13, 17]:
-                _bary_dofs.append(6 * 3 * face_n + n)
-                _coarse_dofs.append(global_dof_index)
-                _values.append(1)
+        nentries += 6
         # 1/2 at the centre of each edge
         for e in range(3):
             edge = coarse_space.grid.element_edges[e][element_index]
             for neighbour in coarse_space.grid.edge_neighbors[edge]:
-                if coarse_support[neighbour] or not truncate_at_segment_edge:
-                    if neighbour not in support_numbers:
-                        support_numbers[neighbour] = len(support_elements)
-                        support_elements.append(neighbour)
-                        coarse_support[neighbour] = True
+                if not truncate_at_segment_edge:
+                    coarse_support[neighbour] = True
+                if coarse_support[neighbour]:
+                    nentries += 2
+        # 1/num_coarse_triangles_at_vertex at each vertex
+        for v in range(3):
+            vertex = coarse_space.grid.elements[v][element_index]
+            start = coarse_space.grid.vertex_neighbors.indexptr[vertex]
+            end = coarse_space.grid.vertex_neighbors.indexptr[vertex + 1]
+            neighbours = coarse_space.grid.vertex_neighbors.indices[start:end]
+            for neighbour in neighbours:
+                if not truncate_at_segment_edge:
+                    coarse_support[neighbour] = True
+                if coarse_support[neighbour]:
+                    nentries += 2
+
+    support_elements = [i for i, j in enumerate(coarse_support) if j]
+    support_numbers = {j: i for i, j in enumerate(support_elements)}
+
+    coarse_dofs = _np.zeros(nentries, dtype=_np.uint32)
+    bary_dofs = _np.zeros(nentries, dtype=_np.uint32)
+    values = _np.zeros(nentries, dtype=_np.float64)
+
+    count = 0
+    for global_dof_index in range(coarse_space.global_dof_count):
+        local_dofs = coarse_space.global2local[global_dof_index]
+        element_index = local_dofs[0][0]
+
+        # 1 at barycentre of the triangle
+        if coarse_support[element_index]:
+            face_n = support_numbers[element_index]
+            for n in [1, 5, 7, 11, 13, 17]:
+                bary_dofs[count] = 6 * 3 * face_n + n
+                coarse_dofs[count] = global_dof_index
+                values[count] = 1
+                count += 1
+        # 1/2 at the centre of each edge
+        for e in range(3):
+            edge = coarse_space.grid.element_edges[e][element_index]
+            for neighbour in coarse_space.grid.edge_neighbors[edge]:
+                if coarse_support[neighbour]:
                     face_n = support_numbers[neighbour]
                     for i, dofs in enumerate([[1, 5], [13, 17], [7, 11]]):
                         if coarse_space.grid.element_edges[i][neighbour] == edge:
                             for n in dofs:
-                                _bary_dofs.append(6 * 3 * face_n + n)
-                                _coarse_dofs.append(global_dof_index)
-                                _values.append(0.5)
+                                bary_dofs[count] = 6 * 3 * face_n + n
+                                coarse_dofs[count] = global_dof_index
+                                values[count] = 0.5
+                                count += 1
                             break
         # 1/num_coarse_triangles_at_vertex at each vertex
         for v in range(3):
@@ -155,29 +177,16 @@ def dual1_function_space(grid, support_elements=None, segments=None, swapped_nor
             neighbour_count = end - start
             neighbours = coarse_space.grid.vertex_neighbors.indices[start:end]
             for neighbour in neighbours:
-                if coarse_support[neighbour] or not truncate_at_segment_edge:
-                    if neighbour not in support_numbers:
-                        support_numbers[neighbour] = len(support_elements)
-                        support_elements.append(neighbour)
-                        coarse_support[neighbour] = True
+                if coarse_support[neighbour]:
                     face_n = support_numbers[neighbour]
                     for i, dofs in enumerate([[0, 15], [3, 6], [9, 12]]):
                         if coarse_space.grid.elements[i][neighbour] == vertex:
                             for n in dofs:
-                                _bary_dofs.append(6 * 3 * face_n + n)
-                                _coarse_dofs.append(global_dof_index)
-                                _values.append(1 / neighbour_count)
+                                bary_dofs[count] = 6 * 3 * face_n + n
+                                coarse_dofs[count] = global_dof_index
+                                values[count] = 1 / neighbour_count
+                                count += 1
                             break
-
-    nentries = len(_bary_dofs)
-
-    coarse_dofs = _np.zeros(nentries, dtype=_np.uint32)
-    coarse_dofs[:] = _coarse_dofs
-
-    bary_dofs = _np.zeros(nentries, dtype=_np.uint32)
-    bary_dofs[:] = _bary_dofs
-
-    values = _np.ones(nentries, dtype=_np.float64)
 
     bary_grid = grid.barycentric_refinement
 
