@@ -356,12 +356,13 @@ def potential_assembler(
         result_type = _np.dtype(get_type(precision).complex)
     else:
         result_type = dtype
+    result_type = _np.dtype(result_type)
         
     indices = space.support_elements
     nelements = len(indices)
     vector_width = get_vector_width(precision)
     npoints = points.shape[1]
-    remainder_size = nelements % vector_width
+    remainder_size = nelements % WORKGROUP_SIZE_POTENTIAL
     main_size = nelements - remainder_size
 
 
@@ -372,14 +373,15 @@ def potential_assembler(
 
     options = {
         "NUMBER_OF_QUAD_POINTS": len(quad_weights),
-        "TRIAL": space.shapeset.identifier,
-        "TRIAL_NUMBER_OF_ELEfMENTS": space.number_of_support_elements,
-        "NUMBER_OF_TRIAL_SHAPE_FUNCTIONS": space.number_of_shape_functions,
+        "SHAPESET": space.shapeset.identifier,
+        "NUMBER_OF_SHAPE_FUNCTIONS": space.number_of_shape_functions,
         "WORKGROUP_SIZE": WORKGROUP_SIZE_POTENTIAL // vector_width,
     }
 
     if operator_descriptor.is_complex:
         options["COMPLEX_KERNEL"] = None
+        options["COMPLEX_COEFFICIENTS"] = None
+        options["COMPLEX_RESULT"] = None
 
     if main_size > 0:
         main_kernel = get_kernel_from_operator_descriptor(
@@ -398,6 +400,10 @@ def potential_assembler(
     normals_buffer = _cl.Buffer(
         ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=space.normal_multipliers
     )
+
+    points_buffer = _cl.Buffer(
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=points.ravel(order='F'))
+    
     grid_buffer = _cl.Buffer(
         ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=space.grid.as_array.astype(dtype),
     )
@@ -423,13 +429,7 @@ def potential_assembler(
     )
 
     coefficients_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY, size=result_type.itemsize * space.grid_dof_count
-    )
-
-    sum_buffer = _cl.Buffer(
-        ctx,
-        mf.READ_WRITE,
-        size=result_type.itemsize * npoints * (nelements // WORKGROUP_SIZE_POTENTIAL),
+        ctx, mf.READ_ONLY, size=result_type.itemsize * space.map_to_full_grid.shape[0]
     )
 
     if main_size > 0:
@@ -450,18 +450,6 @@ def potential_assembler(
         ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=kernel_options_array
     )
 
-    buffers = [
-        grid_buffer,
-        indices_buffer,
-        normals_buffer,
-        points_buffer,
-        coefficients_buffer,
-        quad_points_buffer,
-        quad_weights_buffer,
-        result_buffer,
-        kernel_options_buffer,
-    ]
-
     def evaluator(x):
         """Evaluate a potential."""
         result = _np.empty(kernel_dimension * npoints, dtype=result_type)
@@ -470,19 +458,12 @@ def potential_assembler(
             _cl.enqueue_fill_buffer(
                 queue,
                 result_buffer,
-                0,
+                _np.uint8(0),
                 0,
                 kernel_dimension * npoints * result_type.itemsize,
             )
-            _cl.enqueue_fill_buffer(
-                queue,
-                sum_buffer,
-                0,
-                0,
-                sum_size,
-            )
             if main_size > 0:
-                _cl.enqueue_full_buffer(queue, sum_buffer, 0, 0, sum_size)
+                _cl.enqueue_fill_buffer(queue, sum_buffer, _np.uint8(0), 0, sum_size)
                 main_kernel(
                     queue,
                     (npoints, main_size // vector_width),
@@ -497,6 +478,7 @@ def potential_assembler(
                     sum_buffer,
                     kernel_options_buffer,
                 )
+
                 sum_kernel(
                     queue,
                     (kernel_dimension * npoints,),
@@ -510,7 +492,7 @@ def potential_assembler(
                 remainder_kernel(
                     queue,
                     (npoints, remainder_size),
-                    (1, 1),
+                    (1, remainder_size),
                     grid_buffer,
                     indices_buffer,
                     normals_buffer,
@@ -520,8 +502,11 @@ def potential_assembler(
                     quad_weights_buffer,
                     result_buffer,
                     kernel_options_buffer,
+                    global_offset=(0, main_size),
             )
 
-            _cl.enqueue.copy(queue, result, result_buffer)
+            _cl.enqueue_copy(queue, result, result_buffer)
         return result
+    return evaluator
+    
             

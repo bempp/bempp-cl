@@ -26,8 +26,8 @@ def pytest_addoption(parser):
 
 @pytest.fixture()
 def device_interface():
-    #return bempp.api.default_device()
-    return None
+    return bempp.api.DEFAULT_DEVICE_INTERFACE
+
 
 
 # @pytest.fixture(scope="session", autouse=True)

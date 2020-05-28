@@ -78,6 +78,8 @@ inline void updateNormals(size_t index, __global int *signs, REALTYPE3 *normal){
 
 }
 
+#ifdef REALTYPEVEC
+
 inline void getElementVec(__global uint* connectivity, size_t *elementIndex, uint element[VEC_LENGTH][3])
 {    
     for (int i = 0; i < VEC_LENGTH; ++i)
@@ -306,6 +308,7 @@ inline void updateNormalsVec(size_t index[VEC_LENGTH], __global int *signs, REAL
 
 #endif
 
+#endif
 
 
 inline uint elementsAreAdjacent(uint* element1, uint* element2, bool gridsAreDisjoint )

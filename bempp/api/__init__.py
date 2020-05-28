@@ -246,7 +246,7 @@ __version__ = _get_version()
 PLOT_BACKEND = "jupyter_notebook"
 USE_JIT = True
 
-DEFAULT_DEVICE_INTERFACE = "numba"
+DEFAULT_DEVICE_INTERFACE = "opencl"
 DEFAULT_PRECISION = "double"
 VECTORIZATION_MODE = 'auto'
 
