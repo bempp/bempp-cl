@@ -42,7 +42,7 @@ jobs:
           command: |
             source ~/miniconda/bin/activate root
             conda activate bempp
-            python3 -m pytest --durations=50 bempp
+            python3 -m pytest --durations=50 bempp -x
           name: Run tests
       - run:
           command: |
