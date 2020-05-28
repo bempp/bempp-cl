@@ -452,12 +452,20 @@ def _compute_bc_space_data(
             vertex1, vertex2 = vertex2, vertex1
 
         # Get the local indices of vertex1 and vertex2 in upper and lower
-
+        local_vertex1 = -1
         for index, value in enumerate(grid.data.elements[:, upper]):
             if value == vertex1:
                 local_vertex1 = index
+                break
+        else:
+            local_vertex1 = -1
+
+        for index, value in enumerate(grid.data.elements[:, lower]):
             if value == vertex2:
                 local_vertex2 = index
+                break
+        else:
+            local_vertex2 = -1
 
         for vertex_index, bary_element, sign in [
             (vertex1, 6 * upper + 2 * local_vertex1, -1.0),
