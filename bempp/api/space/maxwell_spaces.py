@@ -593,13 +593,13 @@ def _compute_rwg0_space_data(
                 current_neighbors = edge_neighbors[
                     edge_neighbors_ptr[edge_index] : edge_neighbors_ptr[1 + edge_index]
                 ]
-                supported_neighbors = len([e for e in current_neighbors if support[e]])
-                if supported_neighbors == 2:
+                supported_neighbors = [e for e in current_neighbors if support[e]]
+                if len(supported_neighbors) == 2:
                     if edge_dofs[edge_index]:
                         edge_dofs[edge_index] = dof_count
                         dof_count += 1
                     has_dof = True
-                if supported_neighbors == 1 and include_boundary_dofs:
+                if len(supported_neighbors) == 1 and include_boundary_dofs:
                     if edge_dofs[edge_index]:
                         edge_dofs[edge_index] = dof_count
                         dof_count += 1
@@ -622,14 +622,14 @@ def _compute_rwg0_space_data(
                 current_neighbors = edge_neighbors[
                     edge_neighbors_ptr[edge_index] : edge_neighbors_ptr[1 + edge_index]
                 ]
-                supported_neighbors = len([e for e in current_neighbors if support[e]])
+                supported_neighbors = [e for e in current_neighbors if support[e]]
 
-                if supported_neighbors == 1:
+                if len(supported_neighbors) == 1:
                     local_multipliers[element_index, local_index] = 1
                 else:
                     # Assign 1 or -1 depending on element index
                     local_multipliers[element_index, local_index] = (
-                        1 if element_index == min(current_neighbors) else -1
+                        1 if element_index == min(supported_neighbors) else -1
                     )
 
         # For every zero local multiplier assign an existing global dof
