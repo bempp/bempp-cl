@@ -22,31 +22,38 @@ def pytest_addoption(parser):
         default="double",
         help="Valid values: single double",
     )
+    parser.addoption(
+        "--device", action="store", default="numba", help="Valid values: numba opencl",
+    )
 
 
 @pytest.fixture()
-def device_interface():
-    return bempp.api.DEFAULT_DEVICE_INTERFACE
-
+def device_interface(request):
+    value = request.config.getoption("--device")
+    if not value in ["numba", "opencl"]:
+        raise ValueError("device must be one of: 'numba', 'opencl'")
+    return value
 
 
 # @pytest.fixture(scope="session", autouse=True)
 # def set_device_options(request):
-    # """Set device options."""
-    # vec_mode = request.config.getoption("--vec")
-    # if not vec_mode in ["auto", "novec", "vec4", "vec8", "vec16"]:
-        # raise ValueError(
-            # "vec must be one of: 'auto', 'novec', 'vec4', 'vec8', 'vec16'"
-        # )
-    # bempp.api.VECTORIZATION = vec_mode
+# """Set device options."""
+# vec_mode = request.config.getoption("--vec")
+# if not vec_mode in ["auto", "novec", "vec4", "vec8", "vec16"]:
+# raise ValueError(
+# "vec must be one of: 'auto', 'novec', 'vec4', 'vec8', 'vec16'"
+# )
+# bempp.api.VECTORIZATION = vec_mode
+
 
 @pytest.fixture()
 def precision(request):
     """Return precision."""
     value = request.config.getoption("--precision")
-    if not value in ['single', 'double']:
+    if not value in ["single", "double"]:
         raise ValueError("precision must be one of: 'single', 'double'")
     return value
+
 
 @pytest.fixture
 def two_element_grid():
@@ -139,8 +146,7 @@ class Helpers(object):
     @staticmethod
     def default_tolerance(precision):
         """Given a precision return default tolerance."""
-        if precision == 'single':
-            return 5E-4
-        if precision == 'double':
-            return 1E-10
-
+        if precision == "single":
+            return 5e-4
+        if precision == "double":
+            return 1e-10

@@ -228,7 +228,7 @@ def make_scalar_hypersingular(
         target_curls, target_curls_trans = source_curls, source_curls_trans
     else:
         target_curls, target_curls_trans = compute_p1_curl_transformation(
-            dual_to_range.bempp.api.GLOBAL_PARAMETERS.quadrature_order
+            dual_to_range, bempp.api.GLOBAL_PARAMETERS.quadrature.regular
         )
 
     def evaluate_laplace_hypersingular(x):
