@@ -1,5 +1,6 @@
 import numpy as _np
 import numba as _numba
+from bempp.helpers import timeit
 
 M_INV_4PI = 1.0 / (4 * _np.pi)
 
@@ -142,12 +143,15 @@ def helmholtz_kernel(
     return interactions_real + 1j * interactions_imag
 
 
-def get_local_interaction_matrix(
+def get_local_interaction_operator(
     grid, local_points, kernel_function, kernel_parameters, precision, is_complex
 ):
 
+    from bempp.api import GLOBAL_PARAMETERS
     from bempp.api.utils.helpers import get_type
     from scipy.sparse import csr_matrix
+    from scipy.sparse.linalg import aslinearoperator
+    from scipy.sparse.linalg import LinearOperator
 
     npoints = local_points.shape[1]
 
@@ -157,19 +161,127 @@ def get_local_interaction_matrix(
     else:
         result_type = dtype
 
-    data, indices, indexptr = get_local_interaction_matrix_impl(
-        grid.data(precision),
-        local_points.astype(dtype),
-        kernel_function,
-        _np.array(kernel_parameters, dtype=dtype),
-        dtype,
-        result_type,
-    )
-
     rows = 4 * npoints * grid.number_of_elements
     cols = npoints * grid.number_of_elements
 
-    return csr_matrix((data, indices, indexptr), shape=(rows, cols))
+    if kernel_function == "laplace":
+        kernel = laplace_kernel
+    elif kernel_function == "helmholtz":
+        kernel = helmholtz_kernel
+    elif kernel_function == "modified_helmholtz":
+        kernel = modified_helmholtz_kernel
+        
+    if GLOBAL_PARAMETERS.fmm.near_field_representation == 'sparse':
+        data, indices, indexptr = get_local_interaction_matrix_impl(
+            grid.data(precision),
+            local_points.astype(dtype),
+            kernel,
+            _np.array(kernel_parameters, dtype=dtype),
+            dtype,
+            result_type,
+        )
+        return aslinearoperator(csr_matrix((data, indices, indexptr), shape=(rows, cols)))
+
+    elif GLOBAL_PARAMETERS.fmm.near_field_representation == 'numba_evaluate':
+        evaluator = get_local_interaction_evaluator_numba(
+            grid.data(precision),
+            local_points.astype(dtype),
+            kernel,
+            _np.array(kernel_parameters, dtype=dtype),
+            dtype,
+            result_type
+            )
+        return LinearOperator(shape=(rows, cols), matvec=evaluator, dtype=result_type)
+    elif GLOBAL_PARAMETERS.fmm.near_field_representation == 'opencl_evaluate':
+        evaluator = get_local_interaction_evaluator_opencl(
+            grid,
+            local_points.astype(dtype),
+            kernel_function,
+            _np.array(kernel_parameters, dtype=dtype),
+            dtype,
+            result_type
+            )
+        return LinearOperator(shape=(rows, cols), matvec=evaluator, dtype=result_type)
+    else:
+        raise ValueError("Unknown value for near_field_representation.")
+
+def get_local_interaction_evaluator_numba(
+        grid_data, local_points, kernel_function, kernel_parameters, dtype, result_type
+        ):
+    """Return an evaluator for the local interactions."""
+    import bempp.api
+
+    def evaluator(coeffs):
+        """Actually evaluate the near field correction."""
+        with bempp.api.Timer(message="Singular Corrections Evaluator."):
+            return numba_evaluate_local_interactions(
+                grid_data, coeffs, local_points, kernel_function, kernel_parameters, dtype, result_type
+                )
+    return evaluator
+
+    
+@_numba.jit(
+    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
+)
+def numba_evaluate_local_interactions(
+    grid_data, coeffs, local_points, kernel_function, kernel_parameters, dtype, result_type
+):
+    """Get the local interaction matrix on the grid."""
+    nelements = grid_data.elements.shape[1]
+    npoints = local_points.shape[1]
+    neighbor_indices = grid_data.element_neighbor_indices
+    neighbor_indexptr = grid_data.element_neighbor_indexptr
+
+    result = _np.zeros(4 * npoints * nelements, dtype=result_type)
+    global_points = _np.zeros((nelements, 3, npoints), dtype=dtype)
+
+    for element_index in range(nelements):
+        global_points[element_index, :, :] = grid_data.local2global(
+            element_index, local_points
+        )
+
+    for target_element in _numba.prange(nelements):
+        target_points = global_points[target_element]
+        nneighbors = (
+            neighbor_indexptr[1 + target_element] - neighbor_indexptr[target_element]
+        )
+        source_elements = _np.sort(
+            neighbor_indices[
+                neighbor_indexptr[target_element] : neighbor_indexptr[
+                    1 + target_element
+                ]
+            ]
+        )
+
+        local_source_points = _np.empty((3, npoints * nneighbors), dtype=dtype)
+        for source_element_index in range(nneighbors):
+            source_element = source_elements[source_element_index]
+            local_source_points[
+                :, npoints * source_element_index : npoints * (1 + source_element_index)
+            ] = global_points[source_element, :, :]
+        local_target_points = global_points[target_element, :, :]
+        interactions = kernel_function(
+            local_target_points,
+            local_source_points,
+            kernel_parameters,
+            dtype,
+            result_type,
+        )
+
+        for target_point_index in range(npoints):
+            for i in range(4):
+                for source_element_index in range(nneighbors):
+                    source_element = source_elements[source_element_index]
+                    for source_point_index in range(npoints):
+                        result[4 * npoints * target_element + 4 * target_point_index + i] += interactions[
+                            4 * target_point_index * nneighbors * npoints
+                            + 4 * source_element_index * npoints
+                            + 4 * source_point_index
+                            + i
+                        ] * coeffs[npoints * source_element + source_point_index]
+
+    return result
+
 
 
 @_numba.jit(
@@ -374,3 +486,124 @@ def grid_to_points(grid_data, local_points):
             + grid_data.jacobians[elem].dot(local_points)
         ).T
     return points
+
+def get_local_interaction_evaluator_opencl(
+        grid, local_points, kernel_function, kernel_parameters, dtype, result_type
+        ):
+    """Return an evaluator for the local interactions."""
+    import pyopencl as _cl
+    from bempp.core.opencl_kernels import get_kernel_from_name
+    from bempp.core.opencl_kernels import (
+        default_context,
+        default_device,
+        get_vector_width,
+        build_program,
+    )
+
+    if "laplace" in kernel_function:
+        mode = "laplace"
+    elif "modified_helmholtz" in kernel_function:
+        mode = "modified_helmholtz"
+    elif "helmholtz" in kernel_function:
+        mode = "helmholtz"
+    else:
+        raise ValueError("Unknown value for kernel_function.")
+    
+    mf = _cl.mem_flags
+    ctx = default_context()
+    device = default_device()
+    vector_width = get_vector_width("double")
+    npoints = local_points.shape[1]
+    ncoeffs = npoints * grid.number_of_elements
+
+
+
+    grid_buffer = _cl.Buffer(
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid.as_array.astype(dtype),
+    )
+
+    elements_buffer = _cl.Buffer(
+        ctx,
+        mf.READ_ONLY | mf.COPY_HOST_PTR,
+        hostbuf=grid.elements.ravel(order="F"),
+    )
+
+    points_buffer = _cl.Buffer(
+        ctx,
+        mf.READ_ONLY | mf.COPY_HOST_PTR,
+        hostbuf=local_points.ravel(order="F"),
+    )
+
+    neighbor_indices_buffer = _cl.Buffer(
+        ctx,
+        mf.READ_ONLY | mf.COPY_HOST_PTR,
+        hostbuf=grid.element_neighbors.indices,
+    )
+
+    neighbor_indexptr_buffer = _cl.Buffer(
+        ctx,
+        mf.READ_ONLY | mf.COPY_HOST_PTR,
+        hostbuf=grid.element_neighbors.indexptr
+    )
+
+    coefficients_buffer = _cl.Buffer(
+        ctx,
+        mf.READ_ONLY,
+        size=result_type.itemsize * ncoeffs
+        )
+
+    result_buffer = _cl.Buffer(
+        ctx,
+        mf.READ_WRITE,
+        size=4 * result_type.itemsize * ncoeffs
+        )
+        
+        
+
+    options = {}
+    if result_type == "complex128":
+        options["COMPLEX_KERNEL"] = None
+
+
+    kernel_name = "near_field_evaluator_" + mode
+    kernel = get_kernel_from_name(kernel_name, options)
+
+
+    def evaluator(coeffs):
+        """Actually evaluate the near-field correction."""
+
+        result = _np.empty(4 * ncoeffs, dtype=result_type)
+        with _cl.CommandQueue(ctx, device=device) as queue:
+            _cl.enqueue_copy(queue, coefficients_buffer, coeffs.astype(result_type))
+            _cl.enqueue_fill_buffer(
+                queue,
+                result_buffer,
+                _np.uint8(0),
+                0,
+                result_type.itemsize * ncoeffs
+                )
+            kernel(
+                queue,
+                (grid.number_of_elements,),
+                (1,),
+                grid_buffer,
+                neighbor_indices_buffer,
+                neighbor_indexptr_buffer,
+                points_buffer,
+                coefficients_buffer,
+                result_buffer,
+                _np.uint32(grid.number_of_elements),
+                _np.uint32(npoints),
+                )
+            _cl.enqueue_copy(queue, result, result_buffer)
+
+        return result
+
+    return evaluator
+            
+                
+            
+        
+    
+
+    

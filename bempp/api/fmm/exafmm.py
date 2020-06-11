@@ -176,7 +176,7 @@ class ExafmmInterface(object):
         """
         import bempp.api
         from bempp.api.integration.triangle_gauss import rule
-        from bempp.api.fmm.helpers import get_local_interaction_matrix
+        from bempp.api.fmm.helpers import get_local_interaction_operator
         import numpy as np
 
         quadrature_order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
@@ -204,34 +204,28 @@ class ExafmmInterface(object):
             # Require singular correction terms.
 
             if mode == "laplace":
-                from bempp.api.fmm.helpers import laplace_kernel
-
-                singular_correction = get_local_interaction_matrix(
+                singular_correction = get_local_interaction_operator(
                     source_grid,
                     local_points,
-                    laplace_kernel,
+                    "laplace",
                     np.array([], dtype="float64"),
                     precision,
                     False,
                 )
             elif mode == "helmholtz":
-                from bempp.api.fmm.helpers import helmholtz_kernel
-
-                singular_correction = get_local_interaction_matrix(
+                singular_correction = get_local_interaction_operator(
                     source_grid,
                     local_points,
-                    helmholtz_kernel,
+                    "helmholtz",
                     np.array([wavenumber], dtype="float64"),
                     precision,
                     True,
                 )
             elif mode == "modified_helmholtz":
-                from bempp.api.fmm.helpers import modified_helmholtz_kernel
-
-                singular_correction = get_local_interaction_matrix(
+                singular_correction = get_local_interaction_operator(
                     source_grid,
                     local_points,
-                    modified_helmholtz_kernel,
+                    "modified_helmholtz",
                     np.array([wavenumber], dtype="float64"),
                     precision,
                     False,
