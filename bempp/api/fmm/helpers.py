@@ -563,12 +563,13 @@ def get_local_interaction_evaluator_opencl(
         
     kernel_parameters_buffer = _cl.Buffer(
         ctx,
-        mf.READ_ONLY,
+        mf.READ_ONLY | mf.COPY_HOST_PTR,
         hostbuf=_np.array(kernel_parameters, dtype='float64')
     )
 
     options = {
         'MAX_POINTS': max_nneighbors * npoints
+        'NPOINTS': npoints
         }
     if result_type == "complex128":
         options["COMPLEX_KERNEL"] = None
@@ -605,7 +606,6 @@ def get_local_interaction_evaluator_opencl(
                 result_buffer,
                 kernel_parameters_buffer,
                 _np.uint32(grid.number_of_elements),
-                _np.uint32(npoints),
                 )
             _cl.enqueue_copy(queue, result, result_buffer)
 
