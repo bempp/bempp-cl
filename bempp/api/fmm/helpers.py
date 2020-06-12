@@ -516,7 +516,7 @@ def get_local_interaction_evaluator_opencl(
     npoints = local_points.shape[1]
     ncoeffs = npoints * grid.number_of_elements
 
-
+    max_nneighbors = _np.max(_np.diff(grid.element_neighbors.indexptr))
 
     grid_buffer = _cl.Buffer(
         ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid.as_array.astype(dtype),
@@ -557,16 +557,27 @@ def get_local_interaction_evaluator_opencl(
         mf.READ_WRITE,
         size=4 * result_type.itemsize * ncoeffs
         )
-        
-        
 
-    options = {}
+    if not kernel_parameters:
+        kernel_parameters = [0]
+        
+    kernel_parameters_buffer = _cl.Buffer(
+        ctx,
+        mf.READ_ONLY,
+        hostbuf=_np.array(kernel_parameters, dtype='float64')
+    )
+
+    options = {
+        'MAX_POINTS': max_nneighbors * npoints
+        }
     if result_type == "complex128":
         options["COMPLEX_KERNEL"] = None
 
 
     kernel_name = "near_field_evaluator_" + mode
     kernel = get_kernel_from_name(kernel_name, options)
+
+        
 
 
     def evaluator(coeffs):
@@ -592,6 +603,7 @@ def get_local_interaction_evaluator_opencl(
                 points_buffer,
                 coefficients_buffer,
                 result_buffer,
+                kernel_parameters_buffer,
                 _np.uint32(grid.number_of_elements),
                 _np.uint32(npoints),
                 )
