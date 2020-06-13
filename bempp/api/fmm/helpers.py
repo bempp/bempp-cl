@@ -568,7 +568,7 @@ def get_local_interaction_evaluator_opencl(
     )
 
     options = {
-        'MAX_POINTS': max_nneighbors * npoints
+        'MAX_POINTS': max_nneighbors * npoints,
         'NPOINTS': npoints
         }
     if result_type == "complex128":

@@ -11,7 +11,7 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
 	 __global REALTYPE* coefficients,
 	 __global REALTYPE* result,
 	 __global REALTYPE* kernelParameters,
-	 uint nelements,
+	 uint nelements
 	 )
 {
   size_t gid = get_global_id(0);
@@ -27,10 +27,15 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
   REALTYPE3 sourceCorners[3];
   REALTYPE3 globalPoint;
   REALTYPEVEC sourceVecPoint[3];
-  REALTYPE3 dummy;
+  REALTYPEVEC diffVec[3];
+  REALTYPE diff[3];
+  REALTYPEVEC rdistVec;
+  REALTYPE rdist;
   REALTYPE3 targetPoint;
   REALTYPE2 point;
   REALTYPEVEC coeffsVec;
+  REALTYPEVEC resultVec;
+  REALTYPE localResult;
   REALTYPEVEC myResultVec[4];
   
   getCorners(grid, gid, targetCorners);
@@ -53,8 +58,11 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
 	}
    }
 
+
   for (int targetIndex = 0; targetIndex < NPOINTS; targetIndex++)
     {
+      resultVec = M_ZERO;
+      localResult = M_ZERO;
       point = (REALTYPE2)(localPoints[2 * targetIndex],
       		    localPoints[2 * targetIndex + 1]);
 
@@ -63,28 +71,45 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
       for (int chunkIndex = 0; chunkIndex < nChunks; chunkIndex++){
 	// Fill chunk
 	for (int vecIndex = 0; vecIndex < VEC_LENGTH; vecIndex++){
-	  ((REALTYPE*)&sourceVecPoint[0])[vecIndex] = globalSourcePoints[3 * (VEC_LENGTH * chunkIndex + vecIndex) + 0];
-	  ((REALTYPE*)&sourceVecPoint[1])[vecIndex] = globalSourcePoints[3 * (VEC_LENGTH * chunkIndex + vecIndex) + 1];
-	  ((REALTYPE*)&sourceVecPoint[2])[vecIndex] = globalSourcePoints[3 * (VEC_LENGTH * chunkIndex + vecIndex) + 2];
-	  ((REALTYPE*)&coeffsVec)[vecIndex] = coefficients[VEC_LENGTH * chunkIndex + vecIndex];
+	  VEC_ELEMENT(sourceVecPoint[0], vecIndex) = globalSourcePoints[3 * (VEC_LENGTH * chunkIndex + vecIndex) + 0];
+	  VEC_ELEMENT(sourceVecPoint[1], vecIndex) = globalSourcePoints[3 * (VEC_LENGTH * chunkIndex + vecIndex) + 1];
+	  VEC_ELEMENT(sourceVecPoint[2], vecIndex) = globalSourcePoints[3 * (VEC_LENGTH * chunkIndex + vecIndex) + 2];
+	  ((REALTYPE*)&coeffsVec)[vecIndex] = coefficients[indexStart + VEC_LENGTH * chunkIndex + vecIndex];
 	}
 
-	diff[0] = targetPoint.x - sourceVecPoint[0];
-	diff[1] = targetPoint.y - sourceVecPoint[1];
-	diff[2] = targetPoint.z - sourceVecPoint[2];
+	diffVec[0] = targetPoint.x - sourceVecPoint[0];
+	diffVec[1] = targetPoint.y - sourceVecPoint[1];
+	diffVec[2] = targetPoint.z - sourceVecPoint[2];
 
-	rdist = rsqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]) * M_INV_4PI;
+	rdistVec = rsqrt(diffVec[0] * diffVec[0] + diffVec[1] * diffVec[1] + diffVec[2] * diffVec[2]) * M_INV_4PI;
+	// Check for zero dist case
+	for (int vecIndex = 0; vecIndex < VEC_LENGTH; vecIndex++){
+	  if ((VEC_ELEMENT(diffVec[0], vecIndex) == M_ZERO) && (VEC_ELEMENT(diffVec[1], vecIndex) == M_ZERO) && (VEC_ELEMENT(diffVec[2], vecIndex) == M_ZERO))
+	    VEC_ELEMENT(rdistVec, vecIndex) = M_ZERO;
+	}
 
-	myResultVec[0] += rdist * coeffsVec;
-	myResultVec[1] += -rdist * diff[0] * coeffsVec;
-	myResultVec[2] += -rdist * diff[1] * coeffsVec;
-	myResultVec[3] += -rdist * diff[2] * coeffsVec;
-
-	
-
-	
+	resultVec += rdistVec * coeffsVec;
 	
       }
+
+      // Now process the remainder scalar points
+      for (int remainderIndex = nChunks * VEC_LENGTH; remainderIndex < nIndices; remainderIndex++)
+	{
+	  diff[0] = targetPoint.x - globalSourcePoints[3 * remainderIndex + 0];
+	  diff[1] = targetPoint.y - globalSourcePoints[3 * remainderIndex + 1];
+	  diff[2] = targetPoint.z - globalSourcePoints[3 * remainderIndex + 2];
+
+	  rdist = rsqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]) * M_INV_4PI;
+	  if ((diff[0] == M_ZERO) && (diff[1] == M_ZERO) && (diff[2] == M_ZERO))
+	    rdist = M_ZERO;
+
+	  localResult += rdist * coefficients[indexStart + remainderIndex];
+	}
+      
+      result[NPOINTS * gid + targetIndex] = localResult;
+      for (int vecIndex = 0; vecIndex < VEC_LENGTH; vecIndex++)
+	result[NPOINTS * gid + targetIndex] += VEC_ELEMENT(resultVec, vecIndex);
+      
     }
   
 }      
