@@ -492,6 +492,7 @@ def get_local_interaction_evaluator_opencl(
         ):
     """Return an evaluator for the local interactions."""
     import pyopencl as _cl
+    import bempp.api
     from bempp.core.opencl_kernels import get_kernel_from_name
     from bempp.core.opencl_kernels import (
         default_context,
@@ -585,29 +586,30 @@ def get_local_interaction_evaluator_opencl(
         """Actually evaluate the near-field correction."""
 
         result = _np.empty(4 * ncoeffs, dtype=result_type)
-        with _cl.CommandQueue(ctx, device=device) as queue:
-            _cl.enqueue_copy(queue, coefficients_buffer, coeffs.astype(result_type))
-            _cl.enqueue_fill_buffer(
-                queue,
-                result_buffer,
-                _np.uint8(0),
-                0,
-                result_type.itemsize * ncoeffs
-                )
-            kernel(
-                queue,
-                (grid.number_of_elements,),
-                (1,),
-                grid_buffer,
-                neighbor_indices_buffer,
-                neighbor_indexptr_buffer,
-                points_buffer,
-                coefficients_buffer,
-                result_buffer,
-                kernel_parameters_buffer,
-                _np.uint32(grid.number_of_elements),
-                )
-            _cl.enqueue_copy(queue, result, result_buffer)
+        with bempp.api.Timer(message="Singular Corrections Evaluator"):
+            with _cl.CommandQueue(ctx, device=device) as queue:
+                _cl.enqueue_copy(queue, coefficients_buffer, coeffs.astype(result_type))
+                _cl.enqueue_fill_buffer(
+                    queue,
+                    result_buffer,
+                    _np.uint8(0),
+                    0,
+                    result_type.itemsize * ncoeffs
+                    )
+                kernel(
+                    queue,
+                    (grid.number_of_elements,),
+                    (1,),
+                    grid_buffer,
+                    neighbor_indices_buffer,
+                    neighbor_indexptr_buffer,
+                    points_buffer,
+                    coefficients_buffer,
+                    result_buffer,
+                    kernel_parameters_buffer,
+                    _np.uint32(grid.number_of_elements),
+                    )
+                _cl.enqueue_copy(queue, result, result_buffer)
 
         return result
 

@@ -20,9 +20,10 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
   int indexEnd = neighborIndexptr[1 + gid];
 
   int nIndices = indexEnd - indexStart;
-  int nChunks = nIndices / VEC_LENGTH;
+  int nChunks = (NPOINTS * nIndices) / VEC_LENGTH;
 
   REALTYPE globalSourcePoints[3 * MAX_POINTS];
+  REALTYPE localCoefficients[MAX_POINTS];
   REALTYPE3 targetCorners[3];
   REALTYPE3 sourceCorners[3];
   REALTYPE3 globalPoint;
@@ -34,9 +35,8 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
   REALTYPE3 targetPoint;
   REALTYPE2 point;
   REALTYPEVEC coeffsVec;
-  REALTYPEVEC resultVec;
-  REALTYPE localResult;
-  REALTYPEVEC myResultVec[4];
+  REALTYPEVEC resultVec[4];
+  REALTYPE resultSingle[4];
   
   getCorners(grid, gid, targetCorners);
 
@@ -51,18 +51,23 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
 		point = (REALTYPE2)(localPoints[2 * localIndex],
 		                    localPoints[2 * localIndex + 1]);
 		globalPoint = getGlobalPoint(sourceCorners, &point);
-		globalSourcePoints[count] = globalPoint.x;
-		globalSourcePoints[count + 1] = globalPoint.y;
-		globalSourcePoints[count + 2] = globalPoint.z;
-		count += 3;
+		globalSourcePoints[3 * count] = globalPoint.x;
+		globalSourcePoints[3 * count + 1] = globalPoint.y;
+		globalSourcePoints[3 * count + 2] = globalPoint.z;
+		localCoefficients[count] = coefficients[NPOINTS * elem + localIndex];
+		count += 1;
 	}
    }
 
 
   for (int targetIndex = 0; targetIndex < NPOINTS; targetIndex++)
     {
-      resultVec = M_ZERO;
-      localResult = M_ZERO;
+
+      for (int i = 0; i < 4; i++){
+	resultVec[i] = M_ZERO;
+	resultSingle[i] = M_ZERO;
+      }
+
       point = (REALTYPE2)(localPoints[2 * targetIndex],
       		    localPoints[2 * targetIndex + 1]);
 
@@ -74,7 +79,7 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
 	  VEC_ELEMENT(sourceVecPoint[0], vecIndex) = globalSourcePoints[3 * (VEC_LENGTH * chunkIndex + vecIndex) + 0];
 	  VEC_ELEMENT(sourceVecPoint[1], vecIndex) = globalSourcePoints[3 * (VEC_LENGTH * chunkIndex + vecIndex) + 1];
 	  VEC_ELEMENT(sourceVecPoint[2], vecIndex) = globalSourcePoints[3 * (VEC_LENGTH * chunkIndex + vecIndex) + 2];
-	  ((REALTYPE*)&coeffsVec)[vecIndex] = coefficients[indexStart + VEC_LENGTH * chunkIndex + vecIndex];
+	  VEC_ELEMENT(coeffsVec,vecIndex) = localCoefficients[VEC_LENGTH * chunkIndex + vecIndex];
 	}
 
 	diffVec[0] = targetPoint.x - sourceVecPoint[0];
@@ -88,12 +93,16 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
 	    VEC_ELEMENT(rdistVec, vecIndex) = M_ZERO;
 	}
 
-	resultVec += rdistVec * coeffsVec;
+	resultVec[0] += rdistVec * coeffsVec;
+	resultVec[1] += -diffVec[0] * resultVec[0];
+	resultVec[2] += -diffVec[1] * resultVec[0];
+	resultVec[3] += -diffVec[2] * resultVec[0];
+	
 	
       }
 
       // Now process the remainder scalar points
-      for (int remainderIndex = nChunks * VEC_LENGTH; remainderIndex < nIndices; remainderIndex++)
+      for (int remainderIndex = nChunks * VEC_LENGTH; remainderIndex < NPOINTS * nIndices; remainderIndex++)
 	{
 	  diff[0] = targetPoint.x - globalSourcePoints[3 * remainderIndex + 0];
 	  diff[1] = targetPoint.y - globalSourcePoints[3 * remainderIndex + 1];
@@ -103,15 +112,27 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
 	  if ((diff[0] == M_ZERO) && (diff[1] == M_ZERO) && (diff[2] == M_ZERO))
 	    rdist = M_ZERO;
 
-	  localResult += rdist * coefficients[indexStart + remainderIndex];
+	  resultSingle[0] += rdist * localCoefficients[remainderIndex];
+	  resultSingle[1] += -diff[0] * resultSingle[0];
+	  resultSingle[2] += -diff[1] * resultSingle[0];
+	  resultSingle[3] += -diff[2] * resultSingle[0];
 	}
       
-      result[NPOINTS * gid + targetIndex] = localResult;
-      for (int vecIndex = 0; vecIndex < VEC_LENGTH; vecIndex++)
-	result[NPOINTS * gid + targetIndex] += VEC_ELEMENT(resultVec, vecIndex);
+      result[4 * (NPOINTS * gid + targetIndex) + 0] = resultSingle[0];
+      result[4 * (NPOINTS * gid + targetIndex) + 1] = resultSingle[1];
+      result[4 * (NPOINTS * gid + targetIndex) + 2] = resultSingle[2];
+      result[4 * (NPOINTS * gid + targetIndex) + 3] = resultSingle[3];
+      
+      
+      for (int vecIndex = 0; vecIndex < VEC_LENGTH; vecIndex++){
+	result[4 * (NPOINTS * gid + targetIndex) + 0] += VEC_ELEMENT(resultVec[0], vecIndex);
+	result[4 * (NPOINTS * gid + targetIndex) + 1] += VEC_ELEMENT(resultVec[1], vecIndex);
+	result[4 * (NPOINTS * gid + targetIndex) + 2] += VEC_ELEMENT(resultVec[2], vecIndex);
+	result[4 * (NPOINTS * gid + targetIndex) + 3] += VEC_ELEMENT(resultVec[3], vecIndex);
+      }
       
     }
-  
+
 }      
       
 

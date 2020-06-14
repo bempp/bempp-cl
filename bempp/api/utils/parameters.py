@@ -37,7 +37,7 @@ class _Fmm(object):
         self.expansion_order = 5
         self.depth = 4
         self.ncrit = 400
-        self.near_field_representation = 'sparse'
+        self.near_field_representation = 'opencl_evaluate'
 
 class _DenseAssembly(object):
     """Dense assembly options."""
