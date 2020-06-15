@@ -559,7 +559,7 @@ def get_local_interaction_evaluator_opencl(
         size=4 * result_type.itemsize * ncoeffs
         )
 
-    if not kernel_parameters:
+    if len(kernel_parameters) == 0:
         kernel_parameters = [0]
         
     kernel_parameters_buffer = _cl.Buffer(

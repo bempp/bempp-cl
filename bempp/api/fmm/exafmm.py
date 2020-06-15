@@ -129,7 +129,8 @@ class ExafmmInterface(object):
             self._module.update_charges(self._tree, vec)
             self._module.clear_values(self._tree)
 
-            result = self._module.evaluate(self._tree, self._fmm)
+            with bempp.api.Timer(message="Calling ExaFMM."):
+                result = self._module.evaluate(self._tree, self._fmm)
 
             if apply_singular_correction and self._singular_correction is not None:
                 result -= (self._singular_correction @ vec).reshape([-1, 4])
@@ -217,7 +218,7 @@ class ExafmmInterface(object):
                     source_grid,
                     local_points,
                     "helmholtz",
-                    np.array([wavenumber], dtype="float64"),
+                    np.array([wavenumber, 0], dtype="float64"),
                     precision,
                     True,
                 )

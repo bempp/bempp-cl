@@ -107,20 +107,20 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
 	    VEC_ELEMENT(rdistVec, vecIndex) = M_ZERO;
 	}
 
-	expvalVec[0] = cos(kernel_parameters[0] * distVec);
-	expValVec[1] = sin(kernel_parameters[0] * distVec);
-	if (kernel_parameters[1] != M_ZERO){
-	  expvalVec[0] *= exp(-kernel_parameters[1] * distVec);
-	  expvalVec[1] *= exp(-kernel_parameters[1] * distVec);
+	expvalVec[0] = cos(kernelParameters[0] * distVec);
+	expvalVec[1] = sin(kernelParameters[0] * distVec);
+	if (kernelParameters[1] != M_ZERO){
+	  expvalVec[0] *= exp(-kernelParameters[1] * distVec);
+	  expvalVec[1] *= exp(-kernelParameters[1] * distVec);
 	}
 	
 	resultVec[0][0] += CMP_MULT_REAL(expvalVec, coeffsVec) * rdistVec * M_INV_4PI;
 	resultVec[0][1] += CMP_MULT_IMAG(expvalVec, coeffsVec) * rdistVec * M_INV_4PI;
 
 	factorVec[0] = -M_ONE;
-	factorVec[1] = kernel_parameters[0] * distVec;
-	if (kernel_parameters[1] != M_ZERO)
-	    factorVec[0] -= kernel_parameters[1] * distVec;
+	factorVec[1] = kernelParameters[0] * distVec;
+	if (kernelParameters[1] != M_ZERO)
+	    factorVec[0] -= kernelParameters[1] * distVec;
 
 	tmpVec[0] = CMP_MULT_REAL(factorVec, resultVec[0]) * rdistVec * rdistVec;
 	tmpVec[1] = CMP_MULT_IMAG(factorVec, resultVec[0]) * rdistVec * rdistVec;
@@ -146,20 +146,20 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
 	  if ((diff[0] == M_ZERO) && (diff[1] == M_ZERO) && (diff[2] == M_ZERO))
 	    rdist = M_ZERO;
 
-	  expval[0] = cos(kernel_parameters[0] * dist);
-	  expVal[1] = sin(kernel_parameters[0] * dist);
-	  if (kernel_parameters[1] != M_ZERO){
-	    expval[0] *= exp(-kernel_parameters[1] * dist);
-	    expval[1] *= exp(-kernel_parameters[1] * dist);
+	  expval[0] = cos(kernelParameters[0] * dist);
+	  expval[1] = sin(kernelParameters[0] * dist);
+	  if (kernelParameters[1] != M_ZERO){
+	    expval[0] *= exp(-kernelParameters[1] * dist);
+	    expval[1] *= exp(-kernelParameters[1] * dist);
 	  }
 	
 	  resultSingle[0][0] += CMP_MULT_REAL(expval, localCoefficients[remainderIndex]) * rdist * M_INV_4PI;
 	  resultSingle[0][1] += CMP_MULT_IMAG(expval, localCoefficients[remainderIndex]) * rdist * M_INV_4PI;
 
 	  factor[0] = -M_ONE;
-	  factor[1] = kernel_parameters[0] * dist;
-	  if (kernel_parameters[1] != M_ZERO)
-	    factor[0] -= kernel_parameters[1] * dist;
+	  factor[1] = kernelParameters[0] * dist;
+	  if (kernelParameters[1] != M_ZERO)
+	    factor[0] -= kernelParameters[1] * dist;
 
 	  tmp[0] = CMP_MULT_REAL(factor, resultSingle[0]) * rdist * rdist;
 	  tmp[1] = CMP_MULT_IMAG(factor, resultSingle[0]) * rdist * rdist;
