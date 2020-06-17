@@ -147,6 +147,7 @@ def get_local_interaction_operator(
     grid, local_points, kernel_function, kernel_parameters, precision, is_complex
 ):
 
+    import bempp.api
     from bempp.api import GLOBAL_PARAMETERS
     from bempp.api.utils.helpers import get_type
     from scipy.sparse import csr_matrix
@@ -170,6 +171,8 @@ def get_local_interaction_operator(
         kernel = helmholtz_kernel
     elif kernel_function == "modified_helmholtz":
         kernel = modified_helmholtz_kernel
+
+    bempp.api.log(f"Near field correction operator mode: {GLOBAL_PARAMETERS.fmm.near_field_representation}")
         
     if GLOBAL_PARAMETERS.fmm.near_field_representation == 'sparse':
         data, indices, indexptr = get_local_interaction_matrix_impl(

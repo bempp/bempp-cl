@@ -25,7 +25,7 @@ def electric_field(
         assembler,
         [_np.real(wavenumber), _np.imag(wavenumber)],
         "helmholtz_single_layer",
-        "default_scalar",
+        "maxwell_electric_field",
         device_interface,
         precision,
         True,

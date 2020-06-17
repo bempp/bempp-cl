@@ -33,7 +33,9 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
   REALTYPEVEC distVec;
   REALTYPEVEC rdistVec;
   REALTYPEVEC expvalVec;
+  REALTYPEVEC tmpVec;
   REALTYPE dist;
+  REALTYPE tmp;
   REALTYPE rdist;
   REALTYPE expval;
   REALTYPE3 targetPoint;
@@ -99,11 +101,11 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
 	    VEC_ELEMENT(rdistVec, vecIndex) = M_ZERO;
 	}
 
-        expvalVec = exp(-kernelParameters[0] * distVec);
-	resultVec[0] += expvalVec * rdistVec * coeffsVec * M_INV_4PI;
-	resultVec[1] += (-kernelParameters[0] * distVec - M_ONE) * resultVec[0] * rdistVec * rdistVec * diffVec[0];
-	resultVec[2] += (-kernelParameters[0] * distVec - M_ONE) * resultVec[0] * rdistVec * rdistVec * diffVec[1];
-	resultVec[3] += (-kernelParameters[0] * distVec - M_ONE) * resultVec[0] * rdistVec * rdistVec * diffVec[2];
+        expvalVec = exp(-kernelParameters[0] * distVec) * rdistVec * coeffsVec * M_INV_4PI;
+	resultVec[0] += expvalVec;
+	resultVec[1] += (-kernelParameters[0] * distVec - M_ONE) * expvalVec * rdistVec * rdistVec * diffVec[0];
+	resultVec[2] += (-kernelParameters[0] * distVec - M_ONE) * expvalVec * rdistVec * rdistVec * diffVec[1];
+	resultVec[3] += (-kernelParameters[0] * distVec - M_ONE) * expvalVec * rdistVec * rdistVec * diffVec[2];
 	
 	
       }
@@ -120,11 +122,11 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
 	  if ((diff[0] == M_ZERO) && (diff[1] == M_ZERO) && (diff[2] == M_ZERO))
 	    rdist = M_ZERO;
 
-	  expval = exp(-kernelParameters[0] * dist);
-	  resultSingle[0] += expval * rdist * localCoefficients[remainderIndex] * M_INV_4PI;
-	  resultSingle[1] += (-kernelParameters[0] * dist - M_ONE) * resultSingle[0] * rdist * rdist * diff[0];
-	  resultSingle[2] += (-kernelParameters[0] * dist - M_ONE) * resultSingle[0] * rdist * rdist * diff[1];
-	  resultSingle[3] += (-kernelParameters[0] * dist - M_ONE) * resultSingle[0] * rdist * rdist * diff[2];
+	  expval = exp(-kernelParameters[0] * dist) * rdist * localCoefficients[remainderIndex] * M_INV_4PI;
+	  resultSingle[0] += expval;
+	  resultSingle[1] += (-kernelParameters[0] * dist - M_ONE) * expval * rdist * rdist * diff[0];
+	  resultSingle[2] += (-kernelParameters[0] * dist - M_ONE) * expval * rdist * rdist * diff[1];
+	  resultSingle[3] += (-kernelParameters[0] * dist - M_ONE) * expval * rdist * rdist * diff[2];
 	}
       
       result[4 * (NPOINTS * gid + targetIndex) + 0] = resultSingle[0];
