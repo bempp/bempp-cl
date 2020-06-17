@@ -33,12 +33,14 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
   REALTYPEVEC distVec;
   REALTYPEVEC rdistVec;
   REALTYPEVEC expvalVec[2];
+  REALTYPEVEC expCoeffsVec[2];
   REALTYPEVEC factorVec[2];
   REALTYPEVEC tmpVec[2];
   REALTYPE dist;
   REALTYPE rdist;
   REALTYPE factor[2];
   REALTYPE expval[2];
+  REALTYPE expCoeffs[2];
   REALTYPE tmp[2];
   REALTYPE3 targetPoint;
   REALTYPE2 point;
@@ -113,24 +115,26 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
 	  expvalVec[0] *= exp(-kernelParameters[1] * distVec);
 	  expvalVec[1] *= exp(-kernelParameters[1] * distVec);
 	}
-	
-	resultVec[0][0] += CMP_MULT_REAL(expvalVec, coeffsVec) * rdistVec * M_INV_4PI;
-	resultVec[0][1] += CMP_MULT_IMAG(expvalVec, coeffsVec) * rdistVec * M_INV_4PI;
+
+	expCoeffsVec[0] = CMP_MULT_REAL(expvalVec, coeffsVec) * rdistVec * M_INV_4PI;
+	expCoeffsVec[1] = CMP_MULT_IMAG(expvalVec, coeffsVec) * rdistVec * M_INV_4PI;
+	resultVec[0][0] += expCoeffsVec[0];
+	resultVec[0][1] += expCoeffsVec[1];
 
 	factorVec[0] = -M_ONE;
 	factorVec[1] = kernelParameters[0] * distVec;
 	if (kernelParameters[1] != M_ZERO)
 	    factorVec[0] -= kernelParameters[1] * distVec;
 
-	tmpVec[0] = CMP_MULT_REAL(factorVec, resultVec[0]) * rdistVec * rdistVec;
-	tmpVec[1] = CMP_MULT_IMAG(factorVec, resultVec[0]) * rdistVec * rdistVec;
+	tmpVec[0] = CMP_MULT_REAL(factorVec, expCoeffsVec) * rdistVec * rdistVec;
+	tmpVec[1] = CMP_MULT_IMAG(factorVec, expCoeffsVec) * rdistVec * rdistVec;
 	
 	resultVec[1][0] += tmpVec[0] * diffVec[0];
 	resultVec[1][1] += tmpVec[1] * diffVec[0];
 	resultVec[2][0] += tmpVec[0] * diffVec[1];
 	resultVec[2][1] += tmpVec[1] * diffVec[1];
 	resultVec[3][0] += tmpVec[0] * diffVec[2];
-	resultVec[2][1] += tmpVec[1] * diffVec[2];
+	resultVec[3][1] += tmpVec[1] * diffVec[2];
 	
       }
 
@@ -152,24 +156,27 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
 	    expval[0] *= exp(-kernelParameters[1] * dist);
 	    expval[1] *= exp(-kernelParameters[1] * dist);
 	  }
+
+	  expCoeffs[0] = CMP_MULT_REAL(expval, localCoefficients[remainderIndex]) * rdist * M_INV_4PI;
+	  expCoeffs[1] = CMP_MULT_IMAG(expval, localCoefficients[remainderIndex]) * rdist * M_INV_4PI;
 	
-	  resultSingle[0][0] += CMP_MULT_REAL(expval, localCoefficients[remainderIndex]) * rdist * M_INV_4PI;
-	  resultSingle[0][1] += CMP_MULT_IMAG(expval, localCoefficients[remainderIndex]) * rdist * M_INV_4PI;
+	  resultSingle[0][0] += expCoeffs[0];
+	  resultSingle[0][1] += expCoeffs[1];
 
 	  factor[0] = -M_ONE;
 	  factor[1] = kernelParameters[0] * dist;
 	  if (kernelParameters[1] != M_ZERO)
 	    factor[0] -= kernelParameters[1] * dist;
 
-	  tmp[0] = CMP_MULT_REAL(factor, resultSingle[0]) * rdist * rdist;
-	  tmp[1] = CMP_MULT_IMAG(factor, resultSingle[0]) * rdist * rdist;
+	  tmp[0] = CMP_MULT_REAL(factor, expCoeffs) * rdist * rdist;
+	  tmp[1] = CMP_MULT_IMAG(factor, expCoeffs) * rdist * rdist;
 	
 	  resultSingle[1][0] += tmp[0] * diff[0];
 	  resultSingle[1][1] += tmp[1] * diff[0];
 	  resultSingle[2][0] += tmp[0] * diff[1];
 	  resultSingle[2][1] += tmp[1] * diff[1];
 	  resultSingle[3][0] += tmp[0] * diff[2];
-	  resultSingle[2][1] += tmp[1] * diff[2];
+	  resultSingle[3][1] += tmp[1] * diff[2];
 
 
 
