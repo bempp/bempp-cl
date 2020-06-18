@@ -29,56 +29,6 @@ def complex_callable(f):
     return fun
 
 
-# def real_callable(*args, jit=True):
-# """JIT Compile a callable for a grid function if jit is true."""
-
-# def wrap(f):
-# """Actual wrapper."""
-# if jit:
-# fun = _numba.njit(
-# _numba.void(
-# _numba.float64[:],
-# _numba.float64[:],
-# _numba.uint32,
-# _numba.float64[:],
-# )
-# )(f)
-# else:
-# fun = f
-# fun.bempp_type = "real"
-# return fun
-
-# if not args:
-# return wrap
-# else:
-# return wrap(args[0])
-
-
-# def complex_callable(*args, jit=True):
-# """JIT Compile a callable for a grid function if jit is true."""
-
-# def wrap(f):
-# """Actual wrapper."""
-# if jit:
-# fun = _numba.njit(
-# _numba.void(
-# _numba.float64[:],
-# _numba.float64[:],
-# _numba.uint32,
-# _numba.complex128[:],
-# )
-# )(f)
-# else:
-# fun = f
-# fun.bempp_type = "complex"
-# return fun
-
-# if not args:
-# return wrap
-# else:
-# return wrap(args[0])
-
-
 class GridFunction(object):
     """
     Representation of functions on a grid.
@@ -111,6 +61,8 @@ class GridFunction(object):
         coefficients=None,
         projections=None,
         parameters=None,
+        jit=True,
+        function_type=None
     ):
         """
         Construct a grid function.
@@ -238,7 +190,12 @@ class GridFunction(object):
 
             points, weights = rule(self._parameters.quadrature.regular)
 
-            if fun.bempp_type == "real":
+            if function_type is None:
+                if not jit:
+                    raise ValueError("If not using JIT, you must set the function_type "
+                                     "parameter to 'real' or 'complex'")
+                function_type = fun.bempp_type
+            if function_type == "real":
                 dtype = "float64"
             else:
                 dtype = "complex128"
@@ -247,20 +204,36 @@ class GridFunction(object):
 
             # Create a Numba callable from the function
 
-            _project_function(
-                fun,
-                comp_dual.grid.data,
-                comp_dual.support_elements,
-                comp_dual.local2global,
-                comp_dual.local_multipliers,
-                comp_dual.normal_multipliers,
-                comp_dual.numba_evaluate,
-                comp_dual.shapeset.evaluate,
-                points,
-                weights,
-                comp_domain.codomain_dimension,
-                grid_projections,
-            )
+            if jit:
+                _project_function(
+                    fun,
+                    comp_dual.grid.data,
+                    comp_dual.support_elements,
+                    comp_dual.local2global,
+                    comp_dual.local_multipliers,
+                    comp_dual.normal_multipliers,
+                    comp_dual.numba_evaluate,
+                    comp_dual.shapeset.evaluate,
+                    points,
+                    weights,
+                    comp_domain.codomain_dimension,
+                    grid_projections,
+                )
+            else:
+                _project_function_without_jit(
+                    fun,
+                    comp_dual.grid.data,
+                    comp_dual.support_elements,
+                    comp_dual.local2global,
+                    comp_dual.local_multipliers,
+                    comp_dual.normal_multipliers,
+                    comp_dual.numba_evaluate,
+                    comp_dual.shapeset.evaluate,
+                    points,
+                    weights,
+                    comp_domain.codomain_dimension,
+                    grid_projections,
+                )
 
             self._projections = comp_dual.dof_transformation.T @ grid_projections
 
@@ -673,6 +646,67 @@ def _project_function(
     projections,
 ):
     """Project a Numba callable onto a grid."""
+
+    npoints = points.shape[1]
+    global_points = _np.empty((3, npoints), dtype=_np.float64)
+    fvalues = _np.empty((codomain_dimension, npoints), dtype=projections.dtype)
+    fun_result = _np.empty(codomain_dimension, dtype=projections.dtype)
+    point = _np.empty(3, dtype=_np.float64)
+
+    for index in support_elements:
+
+        element_vals = evaluate_on_element(
+            index,
+            shapeset_evaluate,
+            points,
+            grid_data,
+            local_multipliers,
+            normal_multipliers,
+        )
+
+        for j in range(3):
+            global_points[j] = (
+                (1.0 - points[0] - points[1])
+                * grid_data.vertices[j, grid_data.elements[0, index]]
+                + points[0] * grid_data.vertices[j, grid_data.elements[1, index]]
+                + points[1] * grid_data.vertices[j, grid_data.elements[2, index]]
+            )
+
+        for j in range(npoints):
+            point = global_points[:, j]
+            fun(
+                point,
+                grid_data.normals[index] * normal_multipliers[index],
+                grid_data.domain_indices[index],
+                fun_result,
+            )
+            fvalues[:, j] = fun_result
+
+        for local_fun_index in range(element_vals.shape[1]):
+            projections[local2global[index, local_fun_index]] += (
+                _np.sum(
+                    _np.sum(element_vals[:, local_fun_index, :] * fvalues * weights, axis=0)
+                )
+                * grid_data.integration_elements[index]
+            )
+
+
+# Must be used in jit mode as fun might just be a Python callable and not numba compiled.
+def _project_function_without_jit(
+    fun,
+    grid_data,
+    support_elements,
+    local2global,
+    local_multipliers,
+    normal_multipliers,
+    evaluate_on_element,
+    shapeset_evaluate,
+    points,
+    weights,
+    codomain_dimension,
+    projections,
+):
+    """Project a Python callable onto a grid."""
 
     npoints = points.shape[1]
     global_points = _np.empty((3, npoints), dtype=_np.float64)
