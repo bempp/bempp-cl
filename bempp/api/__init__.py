@@ -35,7 +35,7 @@ from bempp.api.utils.pool import create_device_pool
 # Disable Numba warnings
 
 
-from numba.errors import (
+from numba.core.errors import (
     NumbaDeprecationWarning,
     NumbaPendingDeprecationWarning,
     NumbaPerformanceWarning,

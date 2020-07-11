@@ -681,7 +681,7 @@ class Grid(object):
         self._edge_neighbors = [tuple(elem) for elem in edge_neighbors]
 
 
-@_numba.jitclass(
+@_numba.experimental.jitclass(
     [
         ("vertices", _numba.float64[:, :]),
         ("elements", _numba.uint32[:, :]),
@@ -747,7 +747,7 @@ class GridDataDouble(object):
         ) + self.jacobians[elem_index].dot(local_coords)
 
 
-@_numba.jitclass(
+@_numba.experimental.jitclass(
     [
         ("vertices", _numba.float32[:, :]),
         ("elements", _numba.uint32[:, :]),
