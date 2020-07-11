@@ -31,6 +31,32 @@ def electric_field(
         True,
     )
 
+def magnetic_field(
+    domain,
+    range_,
+    dual_to_range,
+    wavenumber,
+    parameters=None,
+    assembler="default_nonlocal",
+    device_interface=None,
+    precision=None,
+):
+    """Assemble the magnetic field boundary operator."""
+
+    return _common.create_operator(
+        "magnetic_field_boundary",
+        domain,
+        range_,
+        dual_to_range,
+        parameters,
+        assembler,
+        [_np.real(wavenumber), _np.imag(wavenumber)],
+        "helmholtz_single_layer",
+        "maxwell_magnetic_field",
+        device_interface,
+        precision,
+        True,
+    )
 
 # def magnetic_field(
 #     domain,

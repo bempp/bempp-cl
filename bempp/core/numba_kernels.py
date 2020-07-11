@@ -14,6 +14,7 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
         "helmholtz_hypersingular": helmholtz_hypersingular_singular,
         "modified_helmholtz_hypersingular": modified_helmholtz_hypersingular_singular,
         "maxwell_electric_field": maxwell_efield_singular,
+        "maxwell_magnetic_field": maxwell_mfield_singular,
     }
 
     assembly_functions_regular = {
@@ -2213,3 +2214,239 @@ def maxwell_efield_singular(
                     grid_data.integration_elements[test_element]
                     * grid_data.integration_elements[trial_element]
                 )
+
+@_numba.jit(
+    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
+)
+def maxwell_mfield_singular(
+    grid_data,
+    test_points,
+    trial_points,
+    quad_weights,
+    test_elements,
+    trial_elements,
+    test_offsets,
+    trial_offsets,
+    weights_offsets,
+    number_of_quad_points,
+    test_normal_multipliers,
+    trial_normal_multipliers,
+    nshape_test,
+    nshape_trial,
+    test_shapeset,
+    trial_shapeset,
+    kernel_evaluator,
+    kernel_parameters,
+    result,
+):
+    """Singular evaluator."""
+
+    dtype = grid_data.vertices.dtype
+    nelements = len(test_elements)
+
+    test_edge_lengths = get_edge_lengths(grid_data, test_elements)
+    trial_edge_lengths = get_edge_lengths(grid_data, trial_elements)
+
+
+    for index in _numba.prange(nelements):
+        wavenumber = kernel_parameters[0] + 1j * kernel_parameters[1]
+        test_element = test_elements[index]
+        trial_element = trial_elements[index]
+        test_offset = test_offsets[index]
+        trial_offset = trial_offsets[index]
+        weights_offset = weights_offsets[index]
+        npoints = number_of_quad_points[index]
+        test_local_points = test_points[:, test_offset : test_offset + npoints]
+        trial_local_points = trial_points[:, trial_offset : trial_offset + npoints]
+        test_global_points = grid_data.local2global(test_element, test_local_points)
+        trial_global_points = grid_data.local2global(trial_element, trial_local_points)
+        test_fun_values = test_shapeset(
+            test_points[:, test_offset : test_offset + npoints]
+        )
+        trial_fun_values = trial_shapeset(
+            trial_points[:, trial_offset : trial_offset + npoints]
+        )
+
+        test_fun_values = get_piola_transform(
+            grid_data, [test_element], test_points[:, test_offset : test_offset + npoints]
+        )[0]
+        trial_fun_values = get_piola_transform(
+            grid_data, [trial_element], trial_points[:, trial_offset : trial_offset + npoints]
+        )[0]
+
+
+        kernel_values = kernel_evaluator(
+            test_global_points,
+            trial_global_points,
+            None,
+            None,
+            kernel_parameters,
+        )
+
+        for test_fun_index in range(nshape_test):
+            for trial_fun_index in range(nshape_trial):
+                for point_index in range(npoints):
+                    diff = test_global_points[:, point_index] - trial_global_points[:, point_index]
+                    dist = _np.sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2])
+                    result[
+                        nshape_trial * nshape_test * index
+                        + test_fun_index * nshape_trial
+                        + trial_fun_index
+                    ] += (
+                        kernel_values[point_index] * (1j * wavenumber * dist - 1 ) / (dist * dist) * diff.dot(
+                        _np.cross(test_fun_values[test_fun_index, :, point_index], trial_fun_values[trial_fun_index, :, point_index])
+                        )
+                        * quad_weights[weights_offset + point_index]
+                        * test_edge_lengths[index, test_fun_index]
+                        * trial_edge_lengths[index, trial_fun_index]
+                    )
+                result[
+                    nshape_trial * nshape_test * index
+                    + test_fun_index * nshape_trial
+                    + trial_fun_index
+                ] *= (
+                    grid_data.integration_elements[test_element]
+                    * grid_data.integration_elements[trial_element]
+                )
+                   
+                    
+@_numba.jit(
+    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
+)
+def maxwell_mfield_regular_assembler(
+    test_grid_data,
+    trial_grid_data,
+    nshape_test,
+    nshape_trial,
+    test_elements,
+    trial_elements,
+    test_multipliers,
+    trial_multipliers,
+    test_global_dofs,
+    trial_global_dofs,
+    test_normal_multipliers,
+    trial_normal_multipliers,
+    quad_points,
+    quad_weights,
+    kernel_evaluator,
+    kernel_parameters,
+    grids_identical,
+    test_shapeset,
+    trial_shapeset,
+    result,
+):
+    wavenumber = kernel_parameters[0] + 1j * kernel_parameters[1]
+    dtype = test_grid_data.vertices.dtype
+    result_type = result.dtype
+    n_quad_points = len(quad_weights)
+    n_test_elements = len(test_elements)
+    n_trial_elements = len(trial_elements)
+
+    trial_global_points = get_global_points(
+        trial_grid_data, trial_elements, quad_points
+    )
+
+    test_basis_functions = get_piola_transform(test_grid_data, test_elements, quad_points)
+    trial_basis_functions = get_piola_transform(trial_grid_data, trial_elements, quad_points)
+
+    test_edge_lengths = get_edge_lengths(test_grid_data, test_elements)
+    trial_edge_lengths = get_edge_lengths(trial_grid_data, trial_elements)
+
+    factors = _np.empty(
+        n_quad_points * n_trial_elements, dtype=trial_global_points.dtype
+    )
+    for trial_element_index in range(n_trial_elements):
+        for trial_point_index in range(n_quad_points):
+            factors[n_quad_points * trial_element_index + trial_point_index] = (
+                quad_weights[trial_point_index]
+                * trial_grid_data.integration_elements[
+                    trial_elements[trial_element_index]
+                ]
+            )
+
+    for i in _numba.prange(n_test_elements):
+        test_element = test_elements[i]
+        local_result = _np.zeros(
+            (n_trial_elements, nshape_test, nshape_trial), dtype=result_type
+        )
+        test_global_points = test_grid_data.local2global(test_element, quad_points)
+        local_factors = _np.empty(
+            n_trial_elements * n_quad_points, dtype=test_global_points.dtype
+        )
+        tmp = _np.empty(n_trial_elements * n_quad_points, dtype=result_type)
+        is_adjacent = _np.zeros(n_trial_elements, dtype=_np.bool_)
+
+        for trial_element_index in range(n_trial_elements):
+            trial_element = trial_elements[trial_element_index]
+            if grids_identical and elements_adjacent(
+                test_grid_data.elements, test_element, trial_element
+            ):
+                is_adjacent[trial_element_index] = True
+
+        for index in range(n_trial_elements * n_quad_points):
+            local_factors[index] = (
+                factors[index] * test_grid_data.integration_elements[test_element]
+            )
+
+        for test_point_index in range(n_quad_points):
+            test_global_point = test_global_points[:, test_point_index]
+            kernel_values = kernel_evaluator(
+                test_global_point,
+                trial_global_points,
+                None,
+                None,
+                kernel_parameters,
+            )
+
+            for index in range(n_trial_elements * n_quad_points):
+                tmp[index] = kernel_values[index] * (
+                    local_factors[index] * quad_weights[test_point_index]
+                )
+
+            for trial_element_index in range(n_trial_elements):
+                if is_adjacent[trial_element_index]:
+                    continue
+                trial_element = trial_elements[trial_element_index]
+
+                divergence_product = 4 / (test_grid_data.integration_elements[test_element] * trial_grid_data.integration_elements[trial_element])
+
+                for test_fun_index in range(nshape_test):
+                    for trial_fun_index in range(nshape_trial):
+                        for quad_point_index in range(n_quad_points):
+                            local_result[
+                                trial_element_index, test_fun_index, trial_fun_index
+                            ] += tmp[
+                                trial_element_index * n_quad_points + quad_point_index
+                            ] * (
+                                -1j * wavenumber * 
+                                test_basis_functions[i, test_fun_index, :, test_point_index].dot( 
+                                      trial_basis_functions[trial_element_index, trial_fun_index, :, quad_point_index])                                
+                                - divergence_product / (1j * wavenumber)
+                            )
+
+        for trial_element_index in range(n_trial_elements):
+            trial_element = trial_elements[trial_element_index]
+            for test_fun_index in range(nshape_test):
+                for trial_fun_index in range(nshape_trial):
+                    result[
+                        test_global_dofs[test_element, test_fun_index],
+                        trial_global_dofs[trial_element, trial_fun_index],
+                    ] += (
+                        local_result[
+                            trial_element_index, test_fun_index, trial_fun_index
+                        ]
+                        * test_multipliers[test_element, test_fun_index]
+                        * trial_multipliers[trial_element, trial_fun_index]
+                        * test_edge_lengths[i, test_fun_index]
+                        * trial_edge_lengths[trial_element_index, trial_fun_index]
+                    )
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
