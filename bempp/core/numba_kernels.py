@@ -2076,6 +2076,7 @@ def maxwell_efield_regular_assembler(
                 None,
                 kernel_parameters,
             )
+
             for index in range(n_trial_elements * n_quad_points):
                 tmp[index] = kernel_values[index] * (
                     local_factors[index] * quad_weights[test_point_index]
@@ -2096,9 +2097,9 @@ def maxwell_efield_regular_assembler(
                             ] += tmp[
                                 trial_element_index * n_quad_points + quad_point_index
                             ] * (
-                                -1j * wavenumber * test_basis_functions[i, test_fun_index, :, quad_point_index].dot(
-                                    trial_basis_functions[trial_element_index, trial_fun_index, :, quad_point_index]
-                                )
+                                -1j * wavenumber * 
+                                test_basis_functions[i, test_fun_index, :, test_point_index].dot( 
+                                      trial_basis_functions[trial_element_index, trial_fun_index, :, quad_point_index])                                
                                 - divergence_product / (1j * wavenumber)
                             )
 

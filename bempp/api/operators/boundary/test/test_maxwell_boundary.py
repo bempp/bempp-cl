@@ -42,7 +42,6 @@ def test_maxwell_electric_field_sphere(
         atol = 1e-14
 
     expected = helpers.load_npy_data("maxwell_electric_field_boundary")
-    breakpoint()
     _np.testing.assert_allclose(discrete_op.A, expected, rtol=rtol, atol=atol)
 
 # def test_maxwell_electric_field_bc_sphere(
