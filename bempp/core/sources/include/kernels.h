@@ -12,6 +12,8 @@
 #define KERNEL(modus) EVALUATOR(KERNEL_FUNCTION, modus)
 #endif
 
+#define KERNEL_EXPLICIT(kernel_name, modus) EVALUATOR(kernel_name, modus)
+
 /* Definition of constants needed in the kernels.
    They must not be left undefined if not defined
    externally. Otherwise, it will lead to compilation
