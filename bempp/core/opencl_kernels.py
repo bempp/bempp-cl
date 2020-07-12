@@ -34,6 +34,8 @@ def select_cl_kernel(operator_descriptor, mode):
 
     potential_assemblers = {
         "default_scalar": "evaluate_scalar_potential",
+        "maxwell_electric_field": "evaluate_electric_field_potential",
+        "maxwell_magnetic_field": "evaluate_magnetic_field_potential"
     }
 
     kernels = {
