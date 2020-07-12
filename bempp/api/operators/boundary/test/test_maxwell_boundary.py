@@ -199,39 +199,40 @@ def test_maxwell_electric_field_sphere(
 #     _np.testing.assert_allclose(discrete_op.A, expected, rtol=rtol, atol=atol)
 
 
-# def test_maxwell_magnetic_field_sphere(
-#     default_parameters, helpers, device_interface, precision
-# ):
-#     """Test Maxwell magnetic field on sphere."""
-#     from bempp.api import get_precision
-#     from bempp.api import function_space
-#     from bempp.api.operators.boundary.maxwell import magnetic_field
+def test_maxwell_magnetic_field_sphere(
+    default_parameters, helpers, device_interface, precision
+):
+    """Test Maxwell magnetic field on sphere."""
+    from bempp.api import function_space
+    from bempp.api.operators.boundary.maxwell import magnetic_field
 
-#     grid = helpers.load_grid("sphere")
+    grid = helpers.load_grid("sphere")
 
-#     space1 = function_space(grid, "RWG", 0)
-#     space2 = function_space(grid, "SNC", 0)
+    space1 = function_space(grid, "RWG", 0)
+    space2 = function_space(grid, "SNC", 0)
 
-#     discrete_op = magnetic_field(
-#         space1,
-#         space1,
-#         space2,
-#         2.5,
-#         assembler="dense",
-#         device_interface=device_interface,
-#         precision=precision,
-#         parameters=default_parameters,
-#     ).weak_form()
+    discrete_op = magnetic_field(
+        space1,
+        space1,
+        space2,
+        2.5,
+        assembler="dense",
+        device_interface=device_interface,
+        precision=precision,
+        parameters=default_parameters,
+    ).weak_form()
 
-#     if precision == "single":
-#         rtol = 1e-5
-#         atol = 1e-7
-#     else:
-#         rtol = 1e-10
-#         atol = 1e-14
+    if precision == "single":
+        rtol = 1e-5
+        atol = 1e-7
+    else:
+        rtol = 1e-10
+        atol = 1e-14
 
-#     expected = helpers.load_npy_data("maxwell_magnetic_field_boundary")
-#     _np.testing.assert_allclose(discrete_op.A, expected, rtol=rtol, atol=atol)
+    expected = helpers.load_npy_data("maxwell_magnetic_field_boundary")
+    actual = discrete_op.A
+
+    _np.testing.assert_allclose(discrete_op.A, expected, rtol=rtol, atol=atol)
 
 
 # def test_maxwell_magnetic_field_complex_sphere(
