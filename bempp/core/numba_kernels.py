@@ -28,6 +28,7 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
     assembly_function_potential = {
         "default_scalar": default_scalar_potential_kernel,
         "maxwell_electric_field": maxwell_efield_potential,
+        "maxwell_magnetic_field": maxwell_mfield_potential,
     }
 
     assembly_functions_sparse = {"default_sparse": default_sparse_kernel}
@@ -2666,17 +2667,16 @@ def maxwell_mfield_potential(
                 dist[index] += diff[dim, index] * diff[dim, index]
         dist = _np.sqrt(dist)        
 
-        for dim in range(kernel_dimension):
-            for trial_index in range(number_of_quad_points * n_support_elements):
-                ldist = dist[trial_index]
-                val = (kernel_values[trial_index] * 
-                    (1j * wavenumber * ldist - 1)
-                    * tmp[:, trial_index]
-                    / (ldist * ldist)
-                )
-            result[0, point_index] += diff[1, trial_index] * val[2, trial_index] - diff[2, trial_index] * val[1, trial_index]
-            result[1, point_index] += diff[2, trial_index] * val[0, trial_index] - diff[0, trial_index] * val[2, trial_index]
-            result[2, point_index] += diff[0, trial_index] * val[1, trial_index] - diff[1, trial_index] * val[0, trial_index]
+        for trial_index in range(number_of_quad_points * n_support_elements):
+            ldist = dist[trial_index]
+            val = (kernel_values[trial_index] * 
+                (1j * wavenumber * ldist - 1)
+                * tmp[:, trial_index]
+                / (ldist * ldist)
+            )
+            result[0, point_index] += diff[1, trial_index] * val[2] - diff[2, trial_index] * val[1]
+            result[1, point_index] += diff[2, trial_index] * val[0] - diff[0, trial_index] * val[2]
+            result[2, point_index] += diff[0, trial_index] * val[1] - diff[1, trial_index] * val[0]
 
 
     return result
