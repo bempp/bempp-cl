@@ -10,162 +10,48 @@ def identity(
     device_interface=None,
     precision=None,
 ):
-    # BC spaces use same code as RWG spaces.
-    # RBC spaces use same code as SNC spaces.
-    maxwell_modifier = {"bc": "rwg0", "rwg0": "rwg0", "rbc": "snc0", "snc0": "snc0"}
+    # # BC spaces use same code as RWG spaces.
+    # # RBC spaces use same code as SNC spaces.
+    # maxwell_modifier = {"bc": "rwg0", "rwg0": "rwg0", "rbc": "snc0", "snc0": "snc0"}
 
-    identity_dispatch = {
-        ("snc0", "rwg0"): _snc0_rwg0_identity,
-        ("rwg0", "snc0"): _rwg0_snc0_identity,
-        ("rwg0", "rwg0"): _rwg0_rwg0_identity,
-        ("snc0", "snc0"): _snc0_snc0_identity,
-    }
+    # identity_dispatch = {
+        # ("snc0", "rwg0"): _snc0_rwg0_identity,
+        # ("rwg0", "snc0"): _rwg0_snc0_identity,
+        # ("rwg0", "rwg0"): _rwg0_rwg0_identity,
+        # ("snc0", "snc0"): _snc0_snc0_identity,
+    # }
 
-    domain_identifier = domain.identifier
-    dual_to_range_identifier = dual_to_range.identifier
+    # domain_identifier = domain.identifier
+    # dual_to_range_identifier = dual_to_range.identifier
 
-    if domain_identifier in maxwell_modifier.keys():
-        domain_identifier = maxwell_modifier[domain_identifier]
+    # if domain_identifier in maxwell_modifier.keys():
+        # domain_identifier = maxwell_modifier[domain_identifier]
 
-    if dual_to_range_identifier in maxwell_modifier.keys():
-        dual_to_range_identifier = maxwell_modifier[dual_to_range_identifier]
+    # if dual_to_range_identifier in maxwell_modifier.keys():
+        # dual_to_range_identifier = maxwell_modifier[dual_to_range_identifier]
 
-    if (dual_to_range_identifier, domain_identifier) in identity_dispatch.keys():
-        return identity_dispatch[(dual_to_range_identifier, domain_identifier)](
-            domain, range_, dual_to_range, parameters, device_interface, precision
-        )
+    # if (dual_to_range_identifier, domain_identifier) in identity_dispatch.keys():
+        # return identity_dispatch[(dual_to_range_identifier, domain_identifier)](
+            # domain, range_, dual_to_range, parameters, device_interface, precision
+        # )
 
-    if not (domain.codomain_dimension == 1 and dual_to_range.codomain_dimension == 1):
-        raise ValueError("domain and codomain must be scalar spaces.")
+    # if not (domain.codomain_dimension == 1 and dual_to_range.codomain_dimension == 1):
+        # raise ValueError("domain and codomain must be scalar spaces.")
 
     """Assemble the L^2 identiy operator."""
     return _common.create_operator(
-        "scalar_identity",
+        "l2_identity",
         domain,
         range_,
         dual_to_range,
         parameters,
         "sparse",
-        {},
+        [],
+        'l2_identity',
         "default_sparse",
         device_interface,
         precision,
-    )
-
-
-def _snc0_rwg0_identity(
-    domain,
-    range_,
-    dual_to_range,
-    parameters=None,
-    device_interface=None,
-    precision=None,
-):
-    """Assemble the SNC/RWG identiy operator."""
-
-    if not (domain.identifier == "rwg0" and dual_to_range.identifier == "snc0"):
-        raise ValueError(
-            "Operator only defined for domain = 'rwg' and 'dual_to_range = 'snc"
-        )
-
-    return _common.create_operator(
-        "snc0_rwg0_identity",
-        domain,
-        range_,
-        dual_to_range,
-        parameters,
-        "sparse",
-        {},
-        "default_sparse",
-        device_interface,
-        precision,
-    )
-
-
-def _rwg0_snc0_identity(
-    domain,
-    range_,
-    dual_to_range,
-    parameters=None,
-    device_interface=None,
-    precision=None,
-):
-    """Assemble the SNC/RWG identiy operator."""
-
-    if not (domain.identifier == "snc0" and dual_to_range.identifier == "rwg0"):
-        raise ValueError(
-            "Operator only defined for domain = 'snc' and 'dual_to_range = 'rwg"
-        )
-
-    return _common.create_operator(
-        "rwg0_snc0_identity",
-        domain,
-        range_,
-        dual_to_range,
-        parameters,
-        "sparse",
-        {},
-        "default_sparse",
-        device_interface,
-        precision,
-    )
-
-
-def _rwg0_rwg0_identity(
-    domain,
-    range_,
-    dual_to_range,
-    parameters=None,
-    device_interface=None,
-    precision=None,
-):
-    """Assemble the RWG/RWG identiy operator."""
-
-    if not (domain.identifier == "rwg0" and dual_to_range.identifier == "rwg0"):
-        raise ValueError(
-            "Operator only defined for domain = 'rwg0' and 'dual_to_range = 'rwg0"
-        )
-
-    return _common.create_operator(
-        "rwg0_rwg0_identity",
-        domain,
-        range_,
-        dual_to_range,
-        parameters,
-        "sparse",
-        {},
-        "default_sparse",
-        device_interface,
-        precision,
-    )
-
-
-def _snc0_snc0_identity(
-    domain,
-    range_,
-    dual_to_range,
-    parameters=None,
-    device_interface=None,
-    precision=None,
-):
-    """Assemble the RWG/RWG identiy operator."""
-
-    if not (domain.identifier == "snc0" and dual_to_range.identifier == "snc0"):
-        raise ValueError(
-            "Operator only defined for domain = 'rwg0' and 'dual_to_range = 'rwg0"
-        )
-
-    return _common.create_operator(
-        "snc0_snc0_identity",
-        domain,
-        range_,
-        dual_to_range,
-        parameters,
-        "sparse",
-        {},
-        "default_sparse",
-        device_interface,
-        precision,
+        False,
     )
 
 

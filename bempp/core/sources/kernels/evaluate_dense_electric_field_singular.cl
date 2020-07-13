@@ -3,15 +3,14 @@
 #include "bempp_spaces.h"
 #include "kernels.h"
 
-__kernel void evaluate_electric_field_singular(
-    __global REALTYPE *grid, 
-    __global int *testNormalSigns, __global int *trialNormalSigns,
-    __global REALTYPE *testPoints,
+__kernel void kernel_function(
+    __global REALTYPE *grid, __global int *testNormalSigns,
+    __global int *trialNormalSigns, __global REALTYPE *testPoints,
     __global REALTYPE *trialPoints, __global REALTYPE *quadWeights,
     __global uint *testIndices, __global uint *trialIndices,
     __global uint *testOffsets, __global uint *trialOffsets,
     __global uint *weightOffsets, __global uint *numberOfLocalQuadPoints,
-    __global REALTYPE *globalResult) {
+    __global REALTYPE *globalResult, __global REALTYPE *kernel_parameters) {
   /* Variable declarations */
 
   size_t groupId;
@@ -97,10 +96,8 @@ __kernel void evaluate_electric_field_singular(
   updateNormals(trialIndex, trialNormalSigns, &trialNormal);
 
 // Computation of 1i * wavenumber and 1 / (1i * wavenumber)
-#ifdef WAVENUMBER_COMPLEX
-  shiftedWavenumber[0] = -WAVENUMBER_COMPLEX;
-#endif
-  shiftedWavenumber[1] = WAVENUMBER_REAL;
+  shiftedWavenumber[0] = -kernel_parameters[1];
+  shiftedWavenumber[1] = kernel_parameters[0];
 
   inverseShiftedWavenumber[0] = M_ONE /
                                 (shiftedWavenumber[0] * shiftedWavenumber[0] +
@@ -121,8 +118,11 @@ __kernel void evaluate_electric_field_singular(
 
   for (uint quadIndex = localQuadPointsPerItem * localId;
        quadIndex < localQuadPointsPerItem * (localId + 1); ++quadIndex) {
-    testPoint = (REALTYPE2)(testPoints[2 * (localTestOffset + quadIndex)], testPoints[2 * (localTestOffset + quadIndex) + 1]);
-    trialPoint = (REALTYPE2)(trialPoints[2 * (localTrialOffset + quadIndex)], trialPoints[2 * (localTrialOffset + quadIndex) + 1]);
+    testPoint = (REALTYPE2)(testPoints[2 * (localTestOffset + quadIndex)],
+                            testPoints[2 * (localTestOffset + quadIndex) + 1]);
+    trialPoint =
+        (REALTYPE2)(trialPoints[2 * (localTrialOffset + quadIndex)],
+                    trialPoints[2 * (localTrialOffset + quadIndex) + 1]);
     weight = quadWeights[localWeightsOffset + quadIndex];
     BASIS(TEST, evaluate)(&testPoint, &testValue[0][0]);
     BASIS(TRIAL, evaluate)(&trialPoint, &trialValue[0][0]);
@@ -133,7 +133,7 @@ __kernel void evaluate_electric_field_singular(
     trialGlobalPoint = getGlobalPoint(trialCorners, &trialPoint);
 
     KERNEL(novec)
-    (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernelValue);
+    (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernel_parameters, kernelValue);
 
     tempFactor[0] = kernelValue[0] * weight;
     tempFactor[1] = kernelValue[1] * weight;

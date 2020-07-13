@@ -586,6 +586,20 @@ class FunctionSpace(object):
             self._barycentric_representation = self._barycentric_representation(self)
         return self._barycentric_representation
 
+    def map_to_points(self, quadrature_order=None, return_transpose=False):
+        """
+        Return a map from function space coefficients to point evaluations.
+
+        Creates a mapping from function space coefficients to Green's fct.
+        coefficients. Needed mainly for FMM evaluations. The point definition
+        is the quadrature order of the underlying quadrature rule. If
+        'return_transpose' is true then then transpose of the operator is returned.
+        """
+
+        return map_space_to_points(
+            self, quadrature_order=quadrature_order, return_transpose=return_transpose
+        )
+
     def get_elements_by_color(self):
         """
         Returns color sorted elements and their index positions.
@@ -611,7 +625,7 @@ class FunctionSpace(object):
             element_index,
             self.shapeset.evaluate,
             local_coordinates,
-            self.grid.data,
+            self.grid.data(),
             self.local_multipliers,
             self.normal_multipliers,
         )
@@ -622,7 +636,7 @@ class FunctionSpace(object):
             element_index,
             self.shapeset.gradient,
             local_coordinates,
-            self.grid.data,
+            self.grid.data(),
             self.local_multipliers,
             self.normal_multipliers,
         )
@@ -711,8 +725,8 @@ class FunctionSpace(object):
         self._sorted_indices, self._indexptr = sorted_indices, indexptr
 
     def __eq__(self, other):
-        """Check if spaces are compatible."""
-        return check_if_compatible(self, other)
+        """Check if spaces are identical."""
+        return self.id == other.id
 
 
 def return_compatible_representation(*args):
@@ -743,6 +757,113 @@ def check_if_compatible(space1, space2):
         return new_space1.hash == new_space2.hash
     except:
         return False
+
+
+def map_space_to_points(space, quadrature_order=None, return_transpose=False):
+    """Return mapper from grid coeffs to point evaluations."""
+    import bempp.api
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.linalg import aslinearoperator
+    from bempp.api.integration.triangle_gauss import rule
+
+    grid = space.grid
+
+    if quadrature_order is None:
+        quadrature_order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
+
+    local_points, weights = rule(quadrature_order)
+
+    number_of_local_points = local_points.shape[1]
+    nshape_funs = space.number_of_shape_functions
+    number_of_vertices = number_of_local_points * grid.number_of_elements
+
+    data, global_indices, vertex_indices = map_space_to_points_impl(
+        grid.data("double"),
+        space.localised_space.local2global,
+        space.localised_space.local_multipliers,
+        space.localised_space.normal_multipliers,
+        space.support_elements,
+        space.numba_evaluate,
+        space.shapeset.evaluate,
+        local_points,
+        weights,
+        space.number_of_shape_functions,
+    )
+
+    if return_transpose:
+        transform = coo_matrix(
+            (data, (global_indices, vertex_indices)),
+            shape=(space.localised_space.grid_dof_count, number_of_vertices),
+        )
+
+        return (
+            aslinearoperator(space.dof_transformation.T)
+            @ aslinearoperator(space.map_to_localised_space.T)
+            @ aslinearoperator(transform)
+        )
+    else:
+        transform = coo_matrix(
+            (data, (vertex_indices, global_indices)),
+            shape=(number_of_vertices, space.localised_space.grid_dof_count),
+        )
+        return (
+            aslinearoperator(transform)
+            @ aslinearoperator(space.map_to_localised_space)
+            @ aslinearoperator(space.dof_transformation)
+        )
+
+
+@_numba.njit
+def map_space_to_points_impl(
+    grid_data,
+    local2global,
+    local_multipliers,
+    normal_multipliers,
+    support_elements,
+    numba_evaluate,
+    shape_fun,
+    local_points,
+    weights,
+    number_of_shape_functions,
+):
+    """Numba accelerated computational parts for point map."""
+
+    number_of_local_points = local_points.shape[1]
+    number_of_support_elements = len(support_elements)
+
+    nlocal = number_of_local_points * number_of_shape_functions
+
+    data = _np.empty(nlocal * number_of_support_elements, dtype=_np.float64)
+    global_indices = _np.empty(nlocal * number_of_support_elements, dtype=_np.int64)
+    vertex_indices = _np.empty(nlocal * number_of_support_elements, dtype=_np.int64)
+
+    for elem in support_elements:
+        basis_values = (
+            numba_evaluate(
+                elem,
+                shape_fun,
+                local_points,
+                grid_data,
+                local_multipliers,
+                normal_multipliers,
+            )[0, :, :]
+            * weights
+            * grid_data.integration_elements[elem]
+        )
+        data[elem * nlocal : (1 + elem) * nlocal] = basis_values.ravel()
+        for index in range(number_of_shape_functions):
+            vertex_indices[
+                elem * nlocal
+                + index * number_of_local_points : elem * nlocal
+                + (1 + index) * number_of_local_points
+            ] = _np.arange(
+                elem * number_of_local_points, (1 + elem) * number_of_local_points
+            )
+        global_indices[elem * nlocal : (1 + elem) * nlocal] = _np.repeat(
+            local2global[elem, :], number_of_local_points
+        )
+
+    return (data, global_indices, vertex_indices)
 
 
 def _process_segments(grid, support_elements, segments, swapped_normals):

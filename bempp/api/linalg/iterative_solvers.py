@@ -7,7 +7,7 @@ import numpy as _np
 # pylint: disable=too-many-locals
 
 
-class _it_counter(object):
+class IterationCounter(object):
     """Iteration Counter class."""
 
     def __init__(self, store_residuals, iteration_is_cg=False, operator=None, rhs=None):
@@ -134,7 +134,7 @@ def cg(
         A_op = A.weak_form()
         b_vec = b.projections(A.dual_to_range)
 
-    callback = _it_counter(return_residuals, True, A_op, b_vec)
+    callback = IterationCounter(return_residuals, True, A_op, b_vec)
     bempp.api.log("Starting CG iteration")
     start_time = time.time()
     x, info = scipy.sparse.linalg.cg(
@@ -195,7 +195,7 @@ def _gmres_single_op_imp(
         A_op = A.weak_form()
         b_vec = b.projections(A.dual_to_range)
 
-    callback = _it_counter(return_residuals)
+    callback = IterationCounter(return_residuals)
 
     bempp.api.log("Starting GMRES iteration")
     start_time = time.time()
@@ -252,7 +252,7 @@ def _gmres_block_op_imp(
         A_op = A.weak_form()
         b_vec = projections_from_grid_functions_list(b, A.dual_to_range_spaces)
 
-    callback = _it_counter(return_residuals)
+    callback = IterationCounter(return_residuals)
 
     bempp.api.log("Starting GMRES iteration")
     start_time = time.time()

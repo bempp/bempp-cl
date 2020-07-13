@@ -1,6 +1,6 @@
 #include "bempp_base_types.h"
 
-__kernel void evaluate_potential_sum(__global REALTYPE* inputBuffer,
+__kernel void kernel_function(__global REALTYPE* inputBuffer,
                                      __global REALTYPE* resultBuffer,
                                      uint sumLength) {
     size_t gid = get_global_id(0);

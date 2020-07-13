@@ -3,7 +3,7 @@
 #include "bempp_spaces.h"
 #include "kernels.h"
 
-__kernel void evaluate_magnetic_field_singular(
+__kernel void kernel_function(
     __global REALTYPE *grid,
     __global int *testNormalSigns, __global int *trialNormalSigns,
     __global REALTYPE *testPoints,
@@ -11,7 +11,8 @@ __kernel void evaluate_magnetic_field_singular(
     __global uint *testIndices, __global uint *trialIndices,
     __global uint *testOffsets, __global uint *trialOffsets,
     __global uint *weightOffsets, __global uint *numberOfLocalQuadPoints,
-    __global REALTYPE *globalResult) {
+    __global REALTYPE* globalResult,
+    __global REALTYPE *kernel_parameters) {
   /* Variable declarations */
 
   size_t groupId;
@@ -107,8 +108,7 @@ __kernel void evaluate_magnetic_field_singular(
     testGlobalPoint = getGlobalPoint(testCorners, &testPoint);
     trialGlobalPoint = getGlobalPoint(trialCorners, &trialPoint);
 
-    KERNEL(novec)
-    (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernelValue);
+    helmholtz_gradient_novec(testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernel_parameters, kernelValue);
 
     for (i = 0; i < 3; ++i)
       for (j = 0; j < 3; ++j)

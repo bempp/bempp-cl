@@ -53,6 +53,9 @@ class PotentialOperator(object):
         else:
             return NotImplemented
 
+    def __matmul__(self, obj):
+        return self.__mul__(obj)
+
     def __rmul__(self, obj):
         """Reverse multiply"""
 

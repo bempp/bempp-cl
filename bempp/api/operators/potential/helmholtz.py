@@ -2,56 +2,96 @@
 
 
 def single_layer(
-    space, points, wavenumber, parameters=None, device_interface=None, precision=None
+    space,
+    points,
+    wavenumber,
+    parameters=None,
+    assembler="dense",
+    device_interface=None,
+    precision=None,
 ):
     """Return a Helmholtz single-layer potential operator."""
-    from bempp.core.dense_potential_assembler import DensePotentialAssembler
+    import bempp.api
     from bempp.api.operators import OperatorDescriptor
-    from bempp.api.operators import _add_wavenumber
     from bempp.api.assembly.potential_operator import PotentialOperator
+    from bempp.api.assembly.assembler import PotentialAssembler
+    from .modified_helmholtz import single_layer as modifed_single_layer
 
-    options = {"KERNEL_FUNCTION": "helmholtz_single_layer"}
-    _add_wavenumber(options, wavenumber)
+    if _np.real(wavenumber) == 0:
+        return modified_single_layer(
+                space,
+                points,
+                wavenumber,
+                parameters,
+                assembler,
+                device_interface,
+                precision)
+
+
+    if precision is None:
+        precision = bempp.api.DEFAULT_PRECISION
+
+    operator_descriptor = OperatorDescriptor(
+        "helmholtz_single_layer_potential",  # Identifier
+        [_np.real(wavenumber), _np.imag(wavenumber)],  # Options
+        "helmholtz_single_layer",  # Kernel type
+        "default_scalar",  # Assembly type
+        precision,  # Precision
+        True,  # Is complex
+        None,  # Singular part
+        1,  # Kernel dimension
+    )
 
     return PotentialOperator(
-        DensePotentialAssembler(
-            space,
-            OperatorDescriptor(
-                "helmholtz_single_layer_potential", options, "default_dense"
-            ),
-            points,
-            1,
-            True,
-            device_interface,
-            precision,
-            parameters=parameters,
+        PotentialAssembler(
+            space, points, operator_descriptor, device_interface, assembler, parameters
         )
     )
 
 
 def double_layer(
-    space, points, wavenumber, parameters=None, device_interface=None, precision=None
+    space,
+    points,
+    wavenumber,
+    parameters=None,
+    assembler="dense",
+    device_interface=None,
+    precision=None,
 ):
     """Return a Helmholtz double-layer potential operator."""
-    from bempp.core.dense_potential_assembler import DensePotentialAssembler
+    import bempp.api
     from bempp.api.operators import OperatorDescriptor
-    from bempp.api.operators import _add_wavenumber
     from bempp.api.assembly.potential_operator import PotentialOperator
+    from bempp.api.assembly.assembler import PotentialAssembler
+    from .modified_helmholtz import double_layer as modified_double_layer
 
-    options = {"KERNEL_FUNCTION": "helmholtz_double_layer"}
-    _add_wavenumber(options, wavenumber)
+    if _np.real(wavenumber) == 0:
+        return modified_double_layer(
+                space,
+                points,
+                wavenumber,
+                parameters,
+                assembler,
+                device_interface,
+                precision)
+
+
+    if precision is None:
+        precision = bempp.api.DEFAULT_PRECISION
+
+    operator_descriptor = OperatorDescriptor(
+        "helmholtz_double_layer_potential",  # Identifier
+        [_np.real(wavenumber), _np.imag(wavenumber)],  # Options
+        "helmholtz_double_layer",  # Kernel type
+        "default_scalar",  # Assembly type
+        precision,  # Precision
+        True,  # Is complex
+        None,  # Singular part
+        1,  # Kernel dimension
+    )
 
     return PotentialOperator(
-        DensePotentialAssembler(
-            space,
-            OperatorDescriptor(
-                "helmholtz_double_layer_potential", options, "default_dense"
-            ),
-            points,
-            1,
-            True,
-            device_interface,
-            precision,
-            parameters=parameters,
+        PotentialAssembler(
+            space, points, operator_descriptor, device_interface, assembler, parameters
         )
     )

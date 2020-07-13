@@ -19,10 +19,12 @@ def single_layer(
         dual_to_range,
         parameters,
         assembler,
-        {"KERNEL_FUNCTION": "laplace_single_layer"},
+        [],
+        "laplace_single_layer",
         "default_scalar",
         device_interface,
         precision,
+        False,
     )
 
 
@@ -43,10 +45,12 @@ def double_layer(
         dual_to_range,
         parameters,
         assembler,
-        {"KERNEL_FUNCTION": "laplace_double_layer"},
+        [],
+        "laplace_double_layer",
         "default_scalar",
         device_interface,
         precision,
+        False,
     )
 
 
@@ -67,10 +71,12 @@ def adjoint_double_layer(
         dual_to_range,
         parameters,
         assembler,
-        {"KERNEL_FUNCTION": "laplace_adjoint_double_layer"},
+        [],
+        "laplace_adjoint_double_layer",
         "default_scalar",
         device_interface,
         precision,
+        False,
     )
 
 
@@ -91,8 +97,11 @@ def hypersingular(
         dual_to_range,
         parameters,
         assembler,
-        {"KERNEL_FUNCTION": "laplace_single_layer"},
+        [],
+        "laplace_single_layer",
         "laplace_hypersingular",
         device_interface,
         precision,
+        False,
     )
+

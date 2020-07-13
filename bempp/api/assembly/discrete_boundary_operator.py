@@ -230,6 +230,78 @@ class DenseDiscreteBoundaryOperator(_DiscreteOperatorBase):
         return self._impl
 
 
+class DiagonalOperator(_DiscreteOperatorBase):
+    """
+    Main class for discrete diagonal operators.
+
+    This class derives from
+    :class:`scipy.sparse.linalg.interface.LinearOperator`
+    and thereby implements the SciPy LinearOperator protocol.
+
+    """
+
+    def __init__(self, values, shape=None):
+        """Constructor. Should not be called by the user."""
+        self._values = values.ravel()
+        if shape is None:
+            shape = (len(values), len(values))
+        super().__init__(values.dtype, shape)
+
+    def _matvec(self, x):
+
+        vec_shape = x.shape
+
+        return (self._values * x.ravel()).reshape(vec_shape)
+
+    def __add__(self, other):
+
+        if self.shape != other.shape:
+            raise ValueError(f"Incompatible dimensions: {self.shape} != {other.shape}")
+        if isinstance(other, DiagonalOperator):
+            return DiagonalOperator(self.A + other.A)
+        else:
+            return super().__add__(other)
+
+    def __neg__(self):
+        return DiagonalOperator(-self.A)
+
+    def __mul__(self, other):
+        return self.dot(other)
+
+    def dot(self, other):
+        if _np.isscalar(other):
+            if self.A.dtype in ['float32', 'complex64']:
+                # Necessary to ensure that scalar multiplication does not change
+                # precision to double precision.
+                if _np.iscomplexobj(other):
+                    return DiagonalOperator(self.A * _np.dtype('complex64').type(other))
+                else:
+                    return DiagonalOperator(self.A * _np.dtype('float32').type(other))
+            else:
+                return DiagonalOperator(self.A * other)
+        return super().dot(other)
+
+    def __rmul__(self, other):
+        if _np.isscalar(other):
+            return DiagonalOperator(self.A * other)
+        else:
+            return NotImplemented
+
+    def _transpose(self):
+        """Transpose of the operator."""
+        return self
+
+    def _adjoint(self):
+        """Adjoint of the operator."""
+        return DiagonalOperator(self.A.conjugate())
+
+    # pylint: disable=invalid-name
+    @property
+    def A(self):
+        """Return the underlying array."""
+        return self._values
+
+
 class SparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     """
     Main class for the discrete form of sparse operators.

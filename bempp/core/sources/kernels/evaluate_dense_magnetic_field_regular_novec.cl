@@ -3,7 +3,7 @@
 #include "bempp_spaces.h"
 #include "kernels.h"
 
-__kernel void evaluate_dense_magnetic_field_regular(
+__kernel void kernel_function(
     __global uint *testIndices, __global uint *trialIndices,
     __global int *testNormalSigns, __global int *trialNormalSigns,
     __global REALTYPE *testGrid, __global REALTYPE *trialGrid,
@@ -12,6 +12,7 @@ __kernel void evaluate_dense_magnetic_field_regular(
     __global REALTYPE *testLocalMultipliers,
     __global REALTYPE *trialLocalMultipliers, __constant REALTYPE* quadPoints,
     __constant REALTYPE *quadWeights, __global REALTYPE *globalResult,
+    __global REALTYPE* kernel_parameters,
     int nTest, int nTrial, char gridsAreDisjoint) {
   /* Variable declarations */
 
@@ -122,8 +123,8 @@ __kernel void evaluate_dense_magnetic_field_regular(
       (&trialPoint, &trialValue[0][0]);
       getPiolaTransform(trialIntElem, trialJac, trialValue, trialElementValue);
 
-      KERNEL(novec)
-      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernelValue);
+      KERNEL_EXPLICIT(helmholtz_gradient, novec)
+      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernel_parameters, kernelValue);
 
       for (j = 0; j < 3; ++j)
         for (k = 0; k < 2; ++k)

@@ -122,70 +122,70 @@ def test_sparse_identity_p1_p1(
 
     _np.testing.assert_allclose(actual, expected, helpers.default_tolerance(precision))
 
+# def test_sparse_identity_snc_rwg(
+    # default_parameters, helpers, device_interface, precision
+# ):
+    # """Test singular assembler for the sparse L^2 identity with snc/rwg basis."""
+    # from scipy.sparse import coo_matrix
+    # from bempp.api import function_space
+    # from bempp.api.operators.boundary.sparse import identity
 
-def test_sparse_identity_snc_rwg(
-    default_parameters, helpers, device_interface, precision
-):
-    """Test singular assembler for the sparse L^2 identity with snc/rwg basis."""
-    from bempp.api import function_space
-    from bempp.api.operators.boundary.sparse import identity
+    # grid = helpers.load_grid('sphere')
+    # expected = helpers.load_npy_data("sparse_identity_snc_rwg")
 
-    grid = helpers.load_grid('sphere')
-    expected = helpers.load_npy_data("sparse_identity_snc_rwg")
+    # rwg = function_space(grid, "RWG", 0)
+    # snc = function_space(grid, "SNC", 0)
 
-    rwg = function_space(grid, "RWG", 0)
-    snc = function_space(grid, "SNC", 0)
+    # actual = (
+        # identity(
+            # rwg,
+            # rwg,
+            # snc,
+            # parameters=default_parameters,
+            # device_interface=device_interface,
+            # precision=precision,
+        # )
+        # .weak_form()
+        # .A.todense()
+    # )
 
-    actual = (
-        identity(
-            rwg,
-            rwg,
-            snc,
-            parameters=default_parameters,
-            device_interface=device_interface,
-            precision=precision,
-        )
-        .weak_form()
-        .A.todense()
-    )
+    # if precision == 'single':
+        # atol = 1E-7
+    # else:
+        # atol = 1E-14
 
-    if precision == 'single':
-        atol = 1E-7
-    else:
-        atol = 1E-14
+    # _np.testing.assert_allclose(actual, expected, atol=atol)
 
-    _np.testing.assert_allclose(actual, expected, atol=atol)
+# def test_sparse_identity_snc_bc(
+    # default_parameters, helpers, device_interface, precision
+# ):
+    # """Test singular assembler for the sparse L^2 identity with snc/bc basis."""
+    # from scipy.sparse import coo_matrix
+    # from bempp.api import function_space
+    # from bempp.api.operators.boundary.sparse import identity
 
+    # grid = helpers.load_grid('sphere')
+    # expected = helpers.load_npy_data("sparse_identity_snc_bc")
 
-def test_sparse_identity_snc_bc(
-    default_parameters, helpers, device_interface, precision
-):
-    """Test singular assembler for the sparse L^2 identity with snc/bc basis."""
-    from bempp.api import function_space
-    from bempp.api.operators.boundary.sparse import identity
+    # bc = function_space(grid, "BC", 0)
+    # snc = function_space(grid, "SNC", 0)
 
-    grid = helpers.load_grid('sphere')
-    expected = helpers.load_npy_data("sparse_identity_snc_bc")
+    # actual = (
+        # identity(
+            # bc,
+            # bc,
+            # snc,
+            # parameters=default_parameters,
+            # device_interface=device_interface,
+            # precision=precision,
+        # )
+        # .weak_form()
+        # .A.todense()
+    # )
 
-    bc = function_space(grid, "BC", 0)
-    snc = function_space(grid, "SNC", 0)
+    # if precision == 'single':
+        # atol = 1E-7
+    # else:
+        # atol = 1E-14
 
-    actual = (
-        identity(
-            bc,
-            bc,
-            snc,
-            parameters=default_parameters,
-            device_interface=device_interface,
-            precision=precision,
-        )
-        .weak_form()
-        .A.todense()
-    )
-
-    if precision == 'single':
-        atol = 1E-7
-    else:
-        atol = 1E-14
-
-    _np.testing.assert_allclose(actual, expected, atol=atol)
+    # _np.testing.assert_allclose(actual, expected, atol=atol)

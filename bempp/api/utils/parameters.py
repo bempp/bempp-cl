@@ -29,6 +29,15 @@ class _Quadrature(object):
         self.regular = 4
         self.singular = 4
 
+class _Fmm(object):
+    """Fmm options."""
+
+    def __init__(self):
+
+        self.expansion_order = 5
+        self.depth = 4
+        self.ncrit = 400
+        self.near_field_representation = 'opencl_evaluate'
 
 class _DenseAssembly(object):
     """Dense assembly options."""
@@ -45,12 +54,6 @@ class _Assembly(object):
         self.always_promote_to_double = False
         self.discretization_type = 'galerkin'
 
-
-class _Fmm(object):
-    """FMM options."""
-
-    def __init__(self):
-        self.order = 5
 
 
 class DefaultParameters(object):

@@ -1,49 +1,71 @@
 """Laplace potential operators."""
 
 
-def single_layer(space, points, parameters=None, device_interface=None, precision=None):
+def single_layer(
+    space,
+    points,
+    parameters=None,
+    assembler="dense",
+    device_interface=None,
+    precision=None,
+):
     """Return a Laplace single-layer potential operator."""
-    from bempp.core.dense_potential_assembler import DensePotentialAssembler
+    import bempp.api
     from bempp.api.operators import OperatorDescriptor
     from bempp.api.assembly.potential_operator import PotentialOperator
+    from bempp.api.assembly.assembler import PotentialAssembler
+
+    if precision is None:
+        precision = bempp.api.DEFAULT_PRECISION
+
+    operator_descriptor = OperatorDescriptor(
+        "laplace_single_layer_potential",  # Identifier
+        [],  # Options
+        "laplace_single_layer",  # Kernel type
+        "default_scalar",  # Assembly type
+        precision,  # Precision
+        False,  # Is complex
+        None,  # Singular part
+        1,  # Kernel dimension
+    )
 
     return PotentialOperator(
-        DensePotentialAssembler(
-            space,
-            OperatorDescriptor(
-                "laplace_single_layer",
-                {"KERNEL_FUNCTION": "laplace_single_layer"},
-                "default_dense",
-            ),
-            points,
-            1,
-            False,
-            device_interface,
-            precision,
-            parameters=parameters,
+        PotentialAssembler(
+            space, points, operator_descriptor, device_interface, assembler, parameters
         )
     )
 
 
-def double_layer(space, points, parameters=None, device_interface=None, precision=None):
-    """Return a Laplace double-layer potential operator."""
-    from bempp.core.dense_potential_assembler import DensePotentialAssembler
+def double_layer(
+    space,
+    points,
+    parameters=None,
+    assembler="dense",
+    device_interface=None,
+    precision=None,
+):
+    """Return a Laplace single-layer potential operator."""
+    import bempp.api
     from bempp.api.operators import OperatorDescriptor
     from bempp.api.assembly.potential_operator import PotentialOperator
+    from bempp.api.assembly.assembler import PotentialAssembler
+
+    if precision is None:
+        precision = bempp.api.DEFAULT_PRECISION
+
+    operator_descriptor = OperatorDescriptor(
+        "laplace_double_layer_potential",  # Identifier
+        [],  # Options
+        "laplace_double_layer",  # Kernel type
+        "default_scalar",  # Assembly type
+        precision,  # Precision
+        False,  # Is complex
+        None,  # Singular part
+        1,  # Kernel dimension
+    )
 
     return PotentialOperator(
-        DensePotentialAssembler(
-            space,
-            OperatorDescriptor(
-                "laplace_double_layer",
-                {"KERNEL_FUNCTION": "laplace_double_layer"},
-                "default_dense",
-            ),
-            points,
-            1,
-            False,
-            device_interface,
-            precision,
-            parameters=parameters,
+        PotentialAssembler(
+            space, points, operator_descriptor, device_interface, assembler, parameters
         )
     )

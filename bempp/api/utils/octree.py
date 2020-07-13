@@ -4,7 +4,7 @@ import numpy as _np
 import numba as _numba
 
 
-@_numba.jitclass(
+@_numba.experimental.jitclass(
     [
         ("_lbound", _numba.float64[:]),
         ("_ubound", _numba.float64[:]),

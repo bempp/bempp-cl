@@ -21,7 +21,12 @@ def rwg0_function_space(
 
     edge_neighbors, edge_neighbors_ptr = serialise_list_of_lists(grid.edge_neighbors)
 
-    global_dof_count, support, local2global, local_multipliers = _compute_rwg0_space_data(
+    (
+        global_dof_count,
+        support,
+        local2global,
+        local_multipliers,
+    ) = _compute_rwg0_space_data(
         support,
         edge_neighbors,
         edge_neighbors_ptr,
@@ -105,7 +110,7 @@ def rwg0_barycentric_function_space(coarse_space):
     )
 
     coarse_dofs, bary_dofs, values = generate_rwg0_map(
-        coarse_space.grid.data, coarse_space.support_elements, local_coords, coeffs
+        coarse_space.grid.data(), coarse_space.support_elements, local_coords, coeffs
     )
 
     local2global = _np.zeros((bary_grid_number_of_elements, 3), dtype="uint32")
@@ -160,7 +165,12 @@ def snc0_function_space(
 
     edge_neighbors, edge_neighbors_ptr = serialise_list_of_lists(grid.edge_neighbors)
 
-    global_dof_count, support, local2global, local_multipliers = _compute_rwg0_space_data(
+    (
+        global_dof_count,
+        support,
+        local2global,
+        local_multipliers,
+    ) = _compute_rwg0_space_data(
         support,
         edge_neighbors,
         edge_neighbors_ptr,
@@ -244,7 +254,7 @@ def snc0_barycentric_function_space(coarse_space):
     )
 
     coarse_dofs, bary_dofs, values = generate_rwg0_map(
-        coarse_space.grid.data, coarse_space.support_elements, local_coords, coeffs
+        coarse_space.grid.data(), coarse_space.support_elements, local_coords, coeffs
     )
 
     local2global = _np.zeros((bary_grid_number_of_elements, 3), dtype="uint32")
@@ -326,8 +336,8 @@ def bc_function_space(grid, support_elements=None, segments=None, swapped_normal
     local_multipliers[support] = 1
 
     coarse_dofs, bary_dofs, values = generate_bc_map(
-        grid.data,
-        bary_grid.data,
+        grid.data(),
+        bary_grid.data(),
         coarse_space.global_dof_count,
         coarse_space.global2local,
         coarse_space.local_multipliers,
@@ -360,7 +370,9 @@ def bc_function_space(grid, support_elements=None, segments=None, swapped_normal
     )
 
 
-def rbc_function_space(grid, support_elements=None, segments=None, swapped_normals=None):
+def rbc_function_space(
+    grid, support_elements=None, segments=None, swapped_normals=None
+):
     """Define a space of RBC functions."""
     from .space import SpaceBuilder
     from bempp.api.grid.grid import enumerate_vertex_adjacent_elements
@@ -404,8 +416,8 @@ def rbc_function_space(grid, support_elements=None, segments=None, swapped_norma
     local_multipliers[support] = 1
 
     coarse_dofs, bary_dofs, values = generate_bc_map(
-        grid.data,
-        bary_grid.data,
+        grid.data(),
+        bary_grid.data(),
         coarse_space.global_dof_count,
         coarse_space.global2local,
         coarse_space.local_multipliers,
