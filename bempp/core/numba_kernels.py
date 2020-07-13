@@ -39,10 +39,13 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
         "laplace_adjoint_double_layer": laplace_adjoint_double_layer_regular,
         "helmholtz_single_layer": helmholtz_single_layer_regular,
         "helmholtz_double_layer": helmholtz_double_layer_regular,
+        "helmholtz_far_field_single_layer": helmholtz_far_field_single_layer,
+        "helmholtz_far_field_double_layer": helmholtz_far_field_double_layer,
         "helmholtz_adjoint_double_layer": helmholtz_adjoint_double_layer_regular,
         "modified_helmholtz_single_layer": modified_helmholtz_single_layer_regular,
         "modified_helmholtz_double_layer": modified_helmholtz_double_layer_regular,
         "modified_helmholtz_adjoint_double_layer": modified_helmholtz_adjoint_double_layer_regular,
+        
     }
 
     kernel_functions_singular = {
@@ -446,6 +449,64 @@ def helmholtz_adjoint_double_layer_regular(
             -1 - wavenumber_imag * dist[j]
         )
 
+    return output_real + 1j * output_imag
+
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
+def helmholtz_far_field_single_layer(
+    test_point, trial_points, test_normal, trial_normals, kernel_parameters
+):
+    """Helmholtz single layer for regular kernels."""
+    npoints = trial_points.shape[1]
+    dtype = trial_points.dtype
+
+    dotprod = _np.zeros(npoints, dtype=dtype)
+    for dim in range(3):
+        for index in range(npoints):
+            dotprod[index] += test_point[dim] * trial_points[dim, index]
+
+    output_real = _np.zeros(npoints, dtype=dtype)
+    output_imag = _np.zeros(npoints, dtype=dtype)
+    m_inv_4pi = dtype.type(M_INV_4PI)
+
+    for index in range(npoints):
+        output_real[index] = m_inv_4pi * _np.cos(-kernel_parameters[0] * dotprod[index])
+    for index in range(npoints):
+        output_imag[index] = m_inv_4pi * _np.sin(-kernel_parameters[0] * dotprod[index])
+    
+    return output_real + 1j * output_imag
+
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
+def helmholtz_far_field_double_layer(
+    test_point, trial_points, test_normal, trial_normals, kernel_parameters
+):
+    """Helmholtz single layer for regular kernels."""
+    npoints = trial_points.shape[1]
+    dtype = trial_points.dtype
+
+    dotprod = _np.zeros(npoints, dtype=dtype)
+    for dim in range(3):
+        for index in range(npoints):
+            dotprod[index] += test_point[dim] * trial_points[dim, index]
+
+    factor = _np.zeros(npoints, dtype=dtype)
+    for dim in range(3):
+        for index in range(npoints):
+            factor[index] -= kernel_parameters[0] * test_point[dim] * trial_normals[dim, index]
+
+
+    output_real = _np.zeros(npoints, dtype=dtype)
+    output_imag = _np.zeros(npoints, dtype=dtype)
+    m_inv_4pi = dtype.type(M_INV_4PI)
+
+    for index in range(npoints):
+        output_real[index] = -factor[index] * m_inv_4pi * _np.sin(-kernel_parameters[0] * dotprod[index])
+    for index in range(npoints):
+        output_imag[index] = factor[index] * m_inv_4pi * _np.cos(-kernel_parameters[0] * dotprod[index])
+    
     return output_real + 1j * output_imag
 
 

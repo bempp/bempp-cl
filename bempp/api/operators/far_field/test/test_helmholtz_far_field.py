@@ -104,8 +104,8 @@ def test_helmholtz_far_field_segments(
             fun1 = bempp.api.GridFunction(space1, coefficients=coeffs)
             fun2 = bempp.api.GridFunction(space2, coefficients=coeffs)
 
-            actual = op(space1, points, 2.5) * fun1
-            expected = op(space2, points, 2.5) * fun2
+            actual = op(space1, points, 2.5, device_interface=device_interface, precision=precision) * fun1
+            expected = op(space2, points, 2.5, device_interface=device_interface, precision=precision) * fun2
 
             _np.testing.assert_allclose(
                 actual, expected, rtol=helpers.default_tolerance(precision)
@@ -137,7 +137,7 @@ def test_helmholtz_far_field_complex_coeffs(
     fun = bempp.api.GridFunction(space, coefficients=coeffs)
 
     for op in [single_layer, double_layer]:
-        far_field_op = op(space, points, WAVENUMBER)
+        far_field_op = op(space, points, WAVENUMBER, device_interface=device_interface, precision=precision)
         actual_real = far_field_op * fun_real
         actual_imag = far_field_op * fun_imag
         actual = actual_real + 1j * actual_imag
@@ -178,8 +178,8 @@ def test_helmholtz_far_field_segments_complex_coeffs(
             fun1 = bempp.api.GridFunction(space1, coefficients=coeffs)
             fun2 = bempp.api.GridFunction(space2, coefficients=coeffs)
 
-            actual = op(space1, points, 2.5) * fun1
-            expected = op(space2, points, 2.5) * fun2
+            actual = op(space1, points, 2.5, device_interface=device_interface, precision=precision) * fun1
+            expected = op(space2, points, 2.5, device_interface=device_interface, precision=precision) * fun2
 
             _np.testing.assert_allclose(
                 actual, expected, rtol=helpers.default_tolerance(precision)

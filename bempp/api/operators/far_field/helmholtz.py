@@ -1,57 +1,74 @@
 """Helmholtz far-field operators."""
+import numpy as _np
 
 
 def single_layer(
-    space, points, wavenumber, parameters=None, device_interface=None, precision=None
+    space,
+    points,
+    wavenumber,
+    parameters=None,
+    assembler="dense",
+    device_interface=None,
+    precision=None,
 ):
-    """Return a Helmholtz far-field operator."""
-    from bempp.core.dense_potential_assembler import DensePotentialAssembler
+    """Return a Helmholtz single-layer far-field potential operator."""
+    import bempp.api
     from bempp.api.operators import OperatorDescriptor
-    from bempp.api.operators import _add_wavenumber
     from bempp.api.assembly.potential_operator import PotentialOperator
+    from bempp.api.assembly.assembler import PotentialAssembler
 
-    options = {"KERNEL_FUNCTION": "helmholtz_single_layer_far_field"}
-    _add_wavenumber(options, wavenumber)
+    if precision is None:
+        precision = bempp.api.DEFAULT_PRECISION
+
+    operator_descriptor = OperatorDescriptor(
+        "helmholtz_far_field_single_layer_potential",  # Identifier
+        [_np.real(wavenumber), _np.imag(wavenumber)],  # Options
+        "helmholtz_far_field_single_layer",  # Kernel type
+        "default_scalar",  # Assembly type
+        precision,  # Precision
+        True,  # Is complex
+        None,  # Singular part
+        1,  # Kernel dimension
+    )
 
     return PotentialOperator(
-        DensePotentialAssembler(
-            space,
-            OperatorDescriptor(
-                "helmholtz_single_layer_far_field", options, "helmholtz_scalar_far_field"
-            ),
-            points,
-            1,
-            True,
-            device_interface,
-            precision,
-            parameters=parameters,
+        PotentialAssembler(
+            space, points, operator_descriptor, device_interface, assembler, parameters
         )
     )
 
 
 def double_layer(
-    space, points, wavenumber, parameters=None, device_interface=None, precision=None
+    space,
+    points,
+    wavenumber,
+    parameters=None,
+    assembler="dense",
+    device_interface=None,
+    precision=None,
 ):
-    """Return a Helmholtz double-layer far-field operator."""
-    from bempp.core.dense_potential_assembler import DensePotentialAssembler
+    """Return a Helmholtz double-layer far-field potential operator."""
+    import bempp.api
     from bempp.api.operators import OperatorDescriptor
-    from bempp.api.operators import _add_wavenumber
     from bempp.api.assembly.potential_operator import PotentialOperator
+    from bempp.api.assembly.assembler import PotentialAssembler
 
-    options = {"KERNEL_FUNCTION": "helmholtz_double_layer_far_field"}
-    _add_wavenumber(options, wavenumber)
+    if precision is None:
+        precision = bempp.api.DEFAULT_PRECISION
+
+    operator_descriptor = OperatorDescriptor(
+        "helmholtz_far_field_double_layer_potential",  # Identifier
+        [_np.real(wavenumber), _np.imag(wavenumber)],  # Options
+        "helmholtz_far_field_double_layer",  # Kernel type
+        "default_scalar",  # Assembly type
+        precision,  # Precision
+        True,  # Is complex
+        None,  # Singular part
+        1,  # Kernel dimension
+    )
 
     return PotentialOperator(
-        DensePotentialAssembler(
-            space,
-            OperatorDescriptor(
-                "helmholtz_double_layer_far_field", options, "helmholtz_scalar_far_field"
-            ),
-            points,
-            1,
-            True,
-            device_interface,
-            precision,
-            parameters=parameters,
+        PotentialAssembler(
+            space, points, operator_descriptor, device_interface, assembler, parameters
         )
     )
