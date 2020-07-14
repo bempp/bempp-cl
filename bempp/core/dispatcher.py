@@ -20,6 +20,7 @@ def singular_assembler_dispatcher(device_interface, *args):
 
         raise ValueError("Unknown assembler.")
 
+
 def dense_assembler_dispatcher(device_interface, *args):
     """Dispatcher for dense assemblers."""
 
@@ -39,6 +40,7 @@ def dense_assembler_dispatcher(device_interface, *args):
 
         raise ValueError("Unknown assembler.")
 
+
 def potential_dispatcher(device_interface, *args):
     """Potential assembler dispatcher."""
 
@@ -52,4 +54,3 @@ def potential_dispatcher(device_interface, *args):
         from bempp.core.opencl_assemblers import potential_assembler
 
         return potential_assembler(device_interface, *args)
-

@@ -104,4 +104,3 @@ def hypersingular(
         precision,
         False,
     )
-

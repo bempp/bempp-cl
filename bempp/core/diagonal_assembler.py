@@ -1,7 +1,4 @@
-import numpy as _np
-
 from bempp.api.assembly import assembler as _assembler
-from bempp.helpers import timeit as _timeit
 
 
 class DiagonalAssembler(_assembler.AssemblerBase):
@@ -17,7 +14,6 @@ class DiagonalAssembler(_assembler.AssemblerBase):
     ):
         """Diagonal assembly of the integral operator."""
         from bempp.api.assembly.discrete_boundary_operator import DiagonalOperator
-        from bempp.api.utils.helpers import promote_to_double_precision
 
         if (
             self.domain.requires_dof_transformation

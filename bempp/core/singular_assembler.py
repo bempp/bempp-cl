@@ -2,10 +2,8 @@ import numpy as _np
 
 from bempp.api.assembly import assembler as _assembler
 from bempp.api.integration import duffy_galerkin as _duffy_galerkin
-from bempp.helpers import timeit as _timeit
 
 import collections as _collections
-
 
 
 class SingularAssembler(_assembler.AssemblerBase):
@@ -108,7 +106,6 @@ def assemble_singular_part(
         number_of_quad_points,
     ] = rule.get_arrays(precision)
 
-    data_type = get_type(precision).real
     if is_complex:
         result_type = get_type(precision).complex
     else:

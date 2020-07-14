@@ -2,6 +2,7 @@
 from bempp.api.operators.boundary import common as _common
 import numpy as _np
 
+
 def single_layer(
     domain,
     range_,
@@ -30,6 +31,7 @@ def single_layer(
         precision,
         False,
     )
+
 
 def double_layer(
     domain,
@@ -89,7 +91,6 @@ def adjoint_double_layer(
         precision,
         False,
     )
-
 
 
 def hypersingular(

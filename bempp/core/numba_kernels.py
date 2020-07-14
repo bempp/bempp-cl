@@ -1,5 +1,3 @@
-from bempp.api.utils.helpers import numba_decorate as _numba_decorate
-
 import numba as _numba
 import numpy as _np
 
@@ -45,7 +43,6 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
         "modified_helmholtz_single_layer": modified_helmholtz_single_layer_regular,
         "modified_helmholtz_double_layer": modified_helmholtz_double_layer_regular,
         "modified_helmholtz_adjoint_double_layer": modified_helmholtz_adjoint_double_layer_regular,
-        
     }
 
     kernel_functions_singular = {
@@ -451,6 +448,7 @@ def helmholtz_adjoint_double_layer_regular(
 
     return output_real + 1j * output_imag
 
+
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
 )
@@ -474,8 +472,9 @@ def helmholtz_far_field_single_layer(
         output_real[index] = m_inv_4pi * _np.cos(-kernel_parameters[0] * dotprod[index])
     for index in range(npoints):
         output_imag[index] = m_inv_4pi * _np.sin(-kernel_parameters[0] * dotprod[index])
-    
+
     return output_real + 1j * output_imag
+
 
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
@@ -497,7 +496,6 @@ def helmholtz_far_field_double_layer(
         for index in range(npoints):
             factor[index] -= kernel_parameters[0] * test_point[dim] * trial_normals[dim, index]
 
-
     output_real = _np.zeros(npoints, dtype=dtype)
     output_imag = _np.zeros(npoints, dtype=dtype)
     m_inv_4pi = dtype.type(M_INV_4PI)
@@ -506,7 +504,7 @@ def helmholtz_far_field_double_layer(
         output_real[index] = -factor[index] * m_inv_4pi * _np.sin(-kernel_parameters[0] * dotprod[index])
     for index in range(npoints):
         output_imag[index] = factor[index] * m_inv_4pi * _np.cos(-kernel_parameters[0] * dotprod[index])
-    
+
     return output_real + 1j * output_imag
 
 
@@ -888,7 +886,6 @@ def default_sparse_kernel(
     kernel_evaluator,
     result,
 ):
-    result_type = result.dtype
     n_quad_points = len(quad_weights)
     trial_normals = get_normals(
         grid_data, n_quad_points, elements, trial_normal_multipliers
@@ -898,7 +895,6 @@ def default_sparse_kernel(
     )
 
     nelements = len(elements)
-    nshape = nshape_test * nshape_trial
 
     for element_index in _numba.prange(nelements):
         kernel_evaluator(
@@ -943,7 +939,6 @@ def default_scalar_regular_kernel(
     result,
 ):
     # Compute global points
-    dtype = test_grid_data.vertices.dtype
     result_type = result.dtype
     n_quad_points = len(quad_weights)
     n_test_elements = len(test_elements)
@@ -1080,8 +1075,8 @@ def laplace_hypersingular_regular(
     n_test_elements = len(test_elements)
     n_trial_elements = len(trial_elements)
 
-    local_test_fun_values = test_shapeset(quad_points)
-    local_trial_fun_values = trial_shapeset(quad_points)
+    # local_test_fun_values = test_shapeset(quad_points)
+    # local_trial_fun_values = trial_shapeset(quad_points)
     trial_normals = get_normals(
         trial_grid_data, n_quad_points, trial_elements, trial_normal_multipliers
     )
@@ -1589,8 +1584,6 @@ def default_scalar_singular_kernel(
     result,
 ):
     """Singular evaluator."""
-
-    dtype = grid_data.vertices.dtype
     nelements = len(test_elements)
 
     for index in _numba.prange(nelements):
@@ -1665,7 +1658,6 @@ def laplace_hypersingular_singular(
     result,
 ):
     """Singular evaluator."""
-
     dtype = grid_data.vertices.dtype
     nelements = len(test_elements)
 
@@ -1682,12 +1674,12 @@ def laplace_hypersingular_singular(
         trial_local_points = trial_points[:, trial_offset : trial_offset + npoints]
         test_global_points = grid_data.local2global(test_element, test_local_points)
         trial_global_points = grid_data.local2global(trial_element, trial_local_points)
-        test_fun_values = test_shapeset(
-            test_points[:, test_offset : test_offset + npoints]
-        )
-        trial_fun_values = trial_shapeset(
-            trial_points[:, trial_offset : trial_offset + npoints]
-        )
+        # test_fun_values = test_shapeset(
+        #     test_points[:, test_offset : test_offset + npoints]
+        # )
+        # trial_fun_values = trial_shapeset(
+        #     trial_points[:, trial_offset : trial_offset + npoints]
+        # )
 
         test_surface_gradient = (
             grid_data.jac_inv_trans[test_element] @ reference_gradient
@@ -2082,7 +2074,6 @@ def maxwell_efield_regular_assembler(
     result,
 ):
     wavenumber = kernel_parameters[0] + 1j * kernel_parameters[1]
-    dtype = test_grid_data.vertices.dtype
     result_type = result.dtype
     n_quad_points = len(quad_weights)
     n_test_elements = len(test_elements)
@@ -2225,8 +2216,6 @@ def maxwell_efield_singular(
     result,
 ):
     """Singular evaluator."""
-
-    dtype = grid_data.vertices.dtype
     nelements = len(test_elements)
 
     test_edge_lengths = get_edge_lengths(grid_data, test_elements)
@@ -2330,8 +2319,6 @@ def maxwell_mfield_singular(
     result,
 ):
     """Singular evaluator."""
-
-    dtype = grid_data.vertices.dtype
     nelements = len(test_elements)
 
     test_edge_lengths = get_edge_lengths(grid_data, test_elements)
@@ -2656,6 +2643,7 @@ def maxwell_efield_potential(
 
     return result
 
+
 @_numba.jit(
     nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
 )
@@ -2726,18 +2714,16 @@ def maxwell_mfield_potential(
         for dim in range(3):
             for index in range(number_of_quad_points * n_support_elements):
                 dist[index] += diff[dim, index] * diff[dim, index]
-        dist = _np.sqrt(dist)        
+        dist = _np.sqrt(dist)
 
         for trial_index in range(number_of_quad_points * n_support_elements):
             ldist = dist[trial_index]
-            val = (kernel_values[trial_index] * 
-                (1j * wavenumber * ldist - 1)
-                * tmp[:, trial_index]
-                / (ldist * ldist)
-            )
+            val = (kernel_values[trial_index]
+                   * (1j * wavenumber * ldist - 1)
+                   * tmp[:, trial_index]
+                   / (ldist * ldist))
             result[0, point_index] += diff[1, trial_index] * val[2] - diff[2, trial_index] * val[1]
             result[1, point_index] += diff[2, trial_index] * val[0] - diff[0, trial_index] * val[2]
             result[2, point_index] += diff[0, trial_index] * val[1] - diff[1, trial_index] * val[0]
-
 
     return result

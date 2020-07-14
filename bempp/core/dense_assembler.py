@@ -1,7 +1,6 @@
 import numpy as _np
 
 from bempp.api.assembly import assembler as _assembler
-from bempp.helpers import timeit as _timeit
 
 
 class DenseAssembler(_assembler.AssemblerBase):

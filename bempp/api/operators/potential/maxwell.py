@@ -12,7 +12,6 @@ def electric_field(
     precision=None,
 ):
     """Return a Maxwell electric field potential operator."""
-    import bempp.api
     from bempp.api.operators import OperatorDescriptor
     from bempp.api.assembly.potential_operator import PotentialOperator
     from bempp.api.assembly.assembler import PotentialAssembler
@@ -45,7 +44,6 @@ def magnetic_field(
     precision=None,
 ):
     """Return a Maxwell magnetic field potential operator."""
-    import bempp.api
     from bempp.api.operators import OperatorDescriptor
     from bempp.api.assembly.potential_operator import PotentialOperator
     from bempp.api.assembly.assembler import PotentialAssembler

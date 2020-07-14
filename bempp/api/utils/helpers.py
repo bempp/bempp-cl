@@ -4,7 +4,6 @@ import numpy as _np
 import collections as _collections
 
 
-
 def create_unique_id():
     """Create a unique id."""
     from uuid import uuid4
@@ -105,14 +104,10 @@ class MemProfiler:
         self.interval = 0
 
     def __enter__(self):
-        import gc
-
         self.start = self._process.memory_info()[0]
         return self
 
     def __exit__(self, *args):
-        import gc
-
         self.end = self._process.memory_info()[0]
         self.interval = self.end - self.start
 

@@ -30,7 +30,7 @@ def pytest_addoption(parser):
 @pytest.fixture()
 def device_interface(request):
     value = request.config.getoption("--device")
-    if not value in ["numba", "opencl"]:
+    if value not in ["numba", "opencl"]:
         raise ValueError("device must be one of: 'numba', 'opencl'")
     return value
 
@@ -46,12 +46,11 @@ def device_interface(request):
 # bempp.api.VECTORIZATION = vec_mode
 
 
-
 @pytest.fixture()
 def precision(request):
     """Return precision."""
     value = request.config.getoption("--precision")
-    if not value in ["single", "double"]:
+    if value not in ["single", "double"]:
         raise ValueError("precision must be one of: 'single', 'double'")
     return value
 

@@ -338,7 +338,6 @@ def potential_assembler(
         default_context,
         default_device,
         get_vector_width,
-        build_program,
     )
 
     mf = _cl.mem_flags
@@ -357,15 +356,13 @@ def potential_assembler(
     else:
         result_type = dtype
     result_type = _np.dtype(result_type)
-        
+
     indices = space.support_elements
     nelements = len(indices)
     vector_width = get_vector_width(precision)
     npoints = points.shape[1]
     remainder_size = nelements % WORKGROUP_SIZE_POTENTIAL
     main_size = nelements - remainder_size
-
-
 
     main_kernel = None
     remainder_kernel = None
@@ -403,16 +400,16 @@ def potential_assembler(
 
     points_buffer = _cl.Buffer(
         ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=points.ravel(order='F'))
-    
+
     grid_buffer = _cl.Buffer(
         ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=space.grid.as_array.astype(dtype),
     )
 
-    elements_buffer = _cl.Buffer(
-        ctx,
-        mf.READ_ONLY | mf.COPY_HOST_PTR,
-        hostbuf=space.grid.elements.ravel(order="F"),
-    )
+    # elements_buffer = _cl.Buffer(
+    #     ctx,
+    #     mf.READ_ONLY | mf.COPY_HOST_PTR,
+    #     hostbuf=space.grid.elements.ravel(order="F"),
+    # )
 
     quad_points_buffer = _cl.Buffer(
         ctx,
@@ -503,10 +500,8 @@ def potential_assembler(
                     result_buffer,
                     kernel_options_buffer,
                     global_offset=(0, main_size),
-            )
+                )
 
             _cl.enqueue_copy(queue, result, result_buffer)
         return result
     return evaluator
-    
-            

@@ -1538,7 +1538,7 @@ def grid_to_points(grid_data, local_points):
 
     Returns a (N, 3) point array that stores the global vertices
     associated with the local points in each triangle.
-    Points are stored in consecutive order for each element 
+    Points are stored in consecutive order for each element
     in the support_elements list. Hence, the returned array is of the form
     [ v_1^1, v_2^1, ..., v_M^1, v_1^2, v_2^2, ...], where
     v_i^j is the ith point in the jth element in

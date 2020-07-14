@@ -140,7 +140,6 @@ def hypersingular(
     precision=None,
 ):
     """Assemble the Helmholtz hypersingular boundary operator."""
-    from bempp.api.operators import _add_wavenumber
     from .modified_helmholtz import hypersingular as _hypersingular
 
     if _np.real(wavenumber) == 0:
@@ -169,7 +168,6 @@ def hypersingular(
         precision,
         True,
     )
-
 
 
 def multitrace_operator(
