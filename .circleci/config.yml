@@ -6,7 +6,7 @@ orbs:
 jobs:
   build-and-test:
     docker:
-      - image: mscroggs/bempp-cl-test
+      - image: mscroggs/bempp-cl-test:test
     steps:
       - checkout
       - run
