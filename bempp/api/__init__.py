@@ -32,14 +32,12 @@ from bempp.api.assembly.blocked_operator import GeneralizedBlockedOperator
 from bempp.api.utils import pool
 from bempp.api.utils.pool import create_device_pool
 
-# Disable Numba warnings
-
-
 from numba.core.errors import (
     NumbaDeprecationWarning,
     NumbaPendingDeprecationWarning,
     NumbaPerformanceWarning,
 )
+
 import warnings
 
 warnings.simplefilter("ignore", category=NumbaDeprecationWarning)

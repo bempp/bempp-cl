@@ -10,10 +10,11 @@ jobs:
     steps:
       - checkout
       - run:
-          command: |
-            cd bempp-cl
-            python3 setup.py install
+          command: python3 setup.py install
           name: Install Bempp
+      - run:
+          command: python3 -m pytest --durations=50 bempp
+          name: Run Bempp unit tests
       - run:
           command: python3 -m pytest --durations=50 notebooks/test_notebooks.py
           name: Run example notebooks
