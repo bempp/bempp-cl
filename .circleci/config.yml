@@ -9,7 +9,7 @@ jobs:
       - image: mscroggs/bempp-cl-test:test
     steps:
       - checkout
-      - run
+      - run:
           command: |
             cd bempp-cl
             python3 setup.py install
