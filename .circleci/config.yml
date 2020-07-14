@@ -13,6 +13,7 @@ jobs:
           command: |
             cd bempp-cl
             python3 setup.py install
+          name: Install Bempp
       - run:
           command: python3 -m pytest --durations=50 notebooks/test_notebooks.py
           name: Run example notebooks
