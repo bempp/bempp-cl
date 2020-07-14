@@ -10,6 +10,9 @@ jobs:
     steps:
       - checkout
       - run:
+          command: python3 -m flake8 bempp
+          name: Run flake8 checks
+      - run:
           command: python3 setup.py install
           name: Install Bempp
       - run:
