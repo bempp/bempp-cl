@@ -15,28 +15,28 @@ def identity(
     # maxwell_modifier = {"bc": "rwg0", "rwg0": "rwg0", "rbc": "snc0", "snc0": "snc0"}
 
     # identity_dispatch = {
-        # ("snc0", "rwg0"): _snc0_rwg0_identity,
-        # ("rwg0", "snc0"): _rwg0_snc0_identity,
-        # ("rwg0", "rwg0"): _rwg0_rwg0_identity,
-        # ("snc0", "snc0"): _snc0_snc0_identity,
+    #     ("snc0", "rwg0"): _snc0_rwg0_identity,
+    #     ("rwg0", "snc0"): _rwg0_snc0_identity,
+    #     ("rwg0", "rwg0"): _rwg0_rwg0_identity,
+    #     ("snc0", "snc0"): _snc0_snc0_identity,
     # }
 
     # domain_identifier = domain.identifier
     # dual_to_range_identifier = dual_to_range.identifier
 
     # if domain_identifier in maxwell_modifier.keys():
-        # domain_identifier = maxwell_modifier[domain_identifier]
+    #    domain_identifier = maxwell_modifier[domain_identifier]
 
     # if dual_to_range_identifier in maxwell_modifier.keys():
-        # dual_to_range_identifier = maxwell_modifier[dual_to_range_identifier]
+    #    dual_to_range_identifier = maxwell_modifier[dual_to_range_identifier]
 
     # if (dual_to_range_identifier, domain_identifier) in identity_dispatch.keys():
-        # return identity_dispatch[(dual_to_range_identifier, domain_identifier)](
-            # domain, range_, dual_to_range, parameters, device_interface, precision
-        # )
+    #    return identity_dispatch[(dual_to_range_identifier, domain_identifier)](
+    #         domain, range_, dual_to_range, parameters, device_interface, precision
+    #     )
 
     # if not (domain.codomain_dimension == 1 and dual_to_range.codomain_dimension == 1):
-        # raise ValueError("domain and codomain must be scalar spaces.")
+    #     raise ValueError("domain and codomain must be scalar spaces.")
 
     """Assemble the L^2 identiy operator."""
     return _common.create_operator(

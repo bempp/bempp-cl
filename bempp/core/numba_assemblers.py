@@ -58,7 +58,6 @@ def dense_assembler(
     device_interface, operator_descriptor, domain, dual_to_range, parameters, result
 ):
     """Numba based dense assembler."""
-    import bempp.api
     from bempp.core.numba_kernels import select_numba_kernels
     from bempp.api.utils.helpers import get_type
     from bempp.api.integration.triangle_gauss import rule
@@ -78,10 +77,10 @@ def dense_assembler(
     test_indices, test_color_indexptr = dual_to_range.get_elements_by_color()
     trial_indices, trial_color_indexptr = domain.get_elements_by_color()
     number_of_test_colors = len(test_color_indexptr) - 1
-    number_of_trial_colors = len(trial_color_indexptr) - 1
+    # number_of_trial_colors = len(trial_color_indexptr) - 1
 
-    rows = dual_to_range.global_dof_count
-    cols = domain.global_dof_count
+    # rows = dual_to_range.global_dof_count
+    # cols = domain.global_dof_count
 
     nshape_test = dual_to_range.number_of_shape_functions
     nshape_trial = domain.number_of_shape_functions

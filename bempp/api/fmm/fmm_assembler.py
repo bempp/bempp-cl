@@ -509,7 +509,7 @@ def make_default_scalar_potential(operator_descriptor, fmm_interface, space):
     def evaluate_double_layer(x):
         """Evaluate the double-layer operator."""
         x_transformed = source_map @ x
-        
+
         fmm0 = fmm_interface.evaluate(source_normals[:, 0] * x_transformed)[:, 1]
         fmm1 = fmm_interface.evaluate(source_normals[:, 1] * x_transformed)[:, 2]
         fmm2 = fmm_interface.evaluate(source_normals[:, 2] * x_transformed)[:, 3]
@@ -520,4 +520,3 @@ def make_default_scalar_potential(operator_descriptor, fmm_interface, space):
         return evaluate_single_layer
     elif "double" in operator_descriptor.identifier:
         return evaluate_double_layer
-

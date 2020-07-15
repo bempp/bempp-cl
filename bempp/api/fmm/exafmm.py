@@ -4,6 +4,7 @@ import atexit as _atexit
 
 FMM_TMP_DIR = None
 
+
 @_atexit.register
 def cleanup_fmm_tmp():
     """Clean up the FMM tmp directory."""
@@ -12,6 +13,7 @@ def cleanup_fmm_tmp():
     if FMM_TMP_DIR is not None:
         for tmp_file in Path(FMM_TMP_DIR).glob("*.tmp"):
             tmp_file.unlink()
+
 
 class ExafmmInterface(object):
     """Interface to Exafmm."""
@@ -183,7 +185,6 @@ class ExafmmInterface(object):
         quadrature_order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
 
         local_points, weights = rule(quadrature_order)
-        npoints = len(weights)
 
         if target_grid is None:
             target_grid = source_grid
@@ -242,4 +243,3 @@ class ExafmmInterface(object):
             precision=precision,
             singular_correction=singular_correction,
         )
-

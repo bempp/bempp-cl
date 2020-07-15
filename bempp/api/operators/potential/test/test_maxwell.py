@@ -188,7 +188,7 @@ def test_maxwell_magnetic_field_potential_complex(
 #             new_grid = grid_from_segments(grid, seglist)
 
 #             coeffs = rand.rand(new_grid.number_of_edges)
-            
+
 #             space1 = function_space(grid, "RWG", 0, segments=seglist, swapped_normals=swapped_normals,
 #                 include_boundary_dofs=True)
 #             space2 = function_space(new_grid, "RWG", 0, swapped_normals=swapped_normals)
@@ -226,7 +226,7 @@ def test_maxwell_magnetic_field_potential_complex(
 #             new_grid = grid_from_segments(grid, seglist)
 
 #             coeffs = rand.rand(new_grid.number_of_edges) + 1j * rand.rand(new_grid.number_of_edges)
-            
+
 #             space1 = function_space(grid, "RWG", 0, segments=seglist, swapped_normals=swapped_normals,
 #                 include_boundary_dofs=True)
 #             space2 = function_space(new_grid, "RWG", 0, swapped_normals=swapped_normals)

@@ -228,7 +228,6 @@ def test_maxwell_magnetic_field_sphere(
         atol = 1e-14
 
     expected = helpers.load_npy_data("maxwell_magnetic_field_boundary")
-    actual = discrete_op.A
 
     _np.testing.assert_allclose(discrete_op.A, expected, rtol=rtol, atol=atol)
 

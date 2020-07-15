@@ -41,4 +41,3 @@ class DensePotentialAssembler(object):
     def evaluate(self, x):
         """Call the potential evaluator."""
         return self._evaluator(x)
-

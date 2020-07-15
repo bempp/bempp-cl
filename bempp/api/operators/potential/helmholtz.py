@@ -1,4 +1,5 @@
 """Helmholtz potential operators."""
+import numpy as _np
 
 
 def single_layer(
@@ -15,18 +16,17 @@ def single_layer(
     from bempp.api.operators import OperatorDescriptor
     from bempp.api.assembly.potential_operator import PotentialOperator
     from bempp.api.assembly.assembler import PotentialAssembler
-    from .modified_helmholtz import single_layer as modifed_single_layer
+    from .modified_helmholtz import single_layer as modified_single_layer
 
     if _np.real(wavenumber) == 0:
         return modified_single_layer(
-                space,
-                points,
-                wavenumber,
-                parameters,
-                assembler,
-                device_interface,
-                precision)
-
+            space,
+            points,
+            wavenumber,
+            parameters,
+            assembler,
+            device_interface,
+            precision)
 
     if precision is None:
         precision = bempp.api.DEFAULT_PRECISION
@@ -67,14 +67,13 @@ def double_layer(
 
     if _np.real(wavenumber) == 0:
         return modified_double_layer(
-                space,
-                points,
-                wavenumber,
-                parameters,
-                assembler,
-                device_interface,
-                precision)
-
+            space,
+            points,
+            wavenumber,
+            parameters,
+            assembler,
+            device_interface,
+            precision)
 
     if precision is None:
         precision = bempp.api.DEFAULT_PRECISION

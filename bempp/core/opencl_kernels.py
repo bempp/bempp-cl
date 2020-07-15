@@ -65,7 +65,7 @@ def select_cl_kernel(operator_descriptor, mode):
         return (
             potential_assemblers[operator_descriptor.assembly_type],
             kernels[operator_descriptor.kernel_type]
-            )
+        )
 
 
 def get_kernel_compile_options(options, precision):
@@ -141,6 +141,7 @@ def get_kernel_from_operator_descriptor(
     options["VEC_STRING"] = vec_string
     return build_program(assembly_function, options, precision)
 
+
 def get_kernel_from_name(
     name, options, precision="double"
 ):
@@ -168,8 +169,6 @@ def get_vector_width(precision):
 
 def get_vec_string(precision):
     """Return vectorisation string."""
-    import bempp.api
-
     vec_strings = {1: "novec", 4: "vec4", 8: "vec8", 16: "vec16"}
 
     return vec_strings[get_vector_width(precision)]
@@ -185,7 +184,7 @@ def default_device():
     global _DEFAULT_CONTEXT
 
     if _DEFAULT_DEVICE is None:
-        if not "PYOPENCL_CTX" in os.environ:
+        if "PYOPENCL_CTX" not in os.environ:
             pair = find_cpu_driver()
             if pair is not None:
                 _DEFAULT_CONTEXT = pair[0]

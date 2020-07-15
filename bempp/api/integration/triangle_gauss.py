@@ -2937,6 +2937,7 @@ def rule(order):
     points = _np.asfortranarray(_np.vstack([bary_coords[1, :], bary_coords[2, :]]))
     return (points, 0.5 * weights[address : address + npoints])
 
+
 def get_number_of_quad_points(order):
     """"Get number of quad points per order."""
     return points_per_order[order - 1]

@@ -1,6 +1,5 @@
 import numpy as _np
 import numba as _numba
-from bempp.helpers import timeit
 
 M_INV_4PI = 1.0 / (4 * _np.pi)
 
@@ -173,7 +172,7 @@ def get_local_interaction_operator(
         kernel = modified_helmholtz_kernel
 
     bempp.api.log(f"Near field correction operator mode: {GLOBAL_PARAMETERS.fmm.near_field_representation}")
-        
+
     if GLOBAL_PARAMETERS.fmm.near_field_representation == 'sparse':
         data, indices, indexptr = get_local_interaction_matrix_impl(
             grid.data(precision),
@@ -193,7 +192,7 @@ def get_local_interaction_operator(
             _np.array(kernel_parameters, dtype=dtype),
             dtype,
             result_type
-            )
+        )
         return LinearOperator(shape=(rows, cols), matvec=evaluator, dtype=result_type)
     elif GLOBAL_PARAMETERS.fmm.near_field_representation == 'opencl_evaluate':
         evaluator = get_local_interaction_evaluator_opencl(
@@ -203,14 +202,15 @@ def get_local_interaction_operator(
             _np.array(kernel_parameters, dtype=dtype),
             dtype,
             result_type
-            )
+        )
         return LinearOperator(shape=(rows, cols), matvec=evaluator, dtype=result_type)
     else:
         raise ValueError("Unknown value for near_field_representation.")
 
+
 def get_local_interaction_evaluator_numba(
         grid_data, local_points, kernel_function, kernel_parameters, dtype, result_type
-        ):
+):
     """Return an evaluator for the local interactions."""
     import bempp.api
 
@@ -219,10 +219,10 @@ def get_local_interaction_evaluator_numba(
         with bempp.api.Timer(message="Singular Corrections Evaluator."):
             return numba_evaluate_local_interactions(
                 grid_data, coeffs, local_points, kernel_function, kernel_parameters, dtype, result_type
-                )
+            )
     return evaluator
 
-    
+
 @_numba.jit(
     nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
 )
@@ -244,7 +244,6 @@ def numba_evaluate_local_interactions(
         )
 
     for target_element in _numba.prange(nelements):
-        target_points = global_points[target_element]
         nneighbors = (
             neighbor_indexptr[1 + target_element] - neighbor_indexptr[target_element]
         )
@@ -286,7 +285,6 @@ def numba_evaluate_local_interactions(
     return result
 
 
-
 @_numba.jit(
     nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
 )
@@ -312,7 +310,6 @@ def get_local_interaction_matrix_impl(
         )
 
     for target_element in _numba.prange(nelements):
-        target_points = global_points[target_element]
         nneighbors = (
             neighbor_indexptr[1 + target_element] - neighbor_indexptr[target_element]
         )
@@ -364,13 +361,11 @@ def get_local_interaction_matrix_impl(
 
 def map_space_to_points(space, local_points, weights, return_transpose=False):
     """Return mapper from grid coeffs to point evaluations."""
-    import bempp.api
     from scipy.sparse import coo_matrix
     from scipy.sparse.linalg import aslinearoperator
 
     grid = space.grid
     number_of_local_points = local_points.shape[1]
-    nshape_funs = space.number_of_shape_functions
     number_of_vertices = number_of_local_points * grid.number_of_elements
 
     data, global_indices, vertex_indices = map_space_to_points_impl(
@@ -465,7 +460,7 @@ def grid_to_points(grid_data, local_points):
 
     Returns a (N, 3) point array that stores the global vertices
     associated with the local points in each triangle.
-    Points are stored in consecutive order for each element 
+    Points are stored in consecutive order for each element
     in the support_elements list. Hence, the returned array is of the form
     [ v_1^1, v_2^1, ..., v_M^1, v_1^2, v_2^2, ...], where
     v_i^j is the ith point in the jth element in
@@ -490,19 +485,15 @@ def grid_to_points(grid_data, local_points):
         ).T
     return points
 
+
 def get_local_interaction_evaluator_opencl(
         grid, local_points, kernel_function, kernel_parameters, dtype, result_type
-        ):
+):
     """Return an evaluator for the local interactions."""
     import pyopencl as _cl
     import bempp.api
     from bempp.core.opencl_kernels import get_kernel_from_name
-    from bempp.core.opencl_kernels import (
-        default_context,
-        default_device,
-        get_vector_width,
-        build_program,
-    )
+    from bempp.core.opencl_kernels import default_context, default_device
 
     if "laplace" in kernel_function:
         mode = "laplace"
@@ -512,11 +503,11 @@ def get_local_interaction_evaluator_opencl(
         mode = "helmholtz"
     else:
         raise ValueError("Unknown value for kernel_function.")
-    
+
     mf = _cl.mem_flags
     ctx = default_context()
     device = default_device()
-    vector_width = get_vector_width("double")
+    # vector_width = get_vector_width("double")
     npoints = local_points.shape[1]
     ncoeffs = npoints * grid.number_of_elements
 
@@ -526,11 +517,11 @@ def get_local_interaction_evaluator_opencl(
         ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid.as_array.astype(dtype),
     )
 
-    elements_buffer = _cl.Buffer(
-        ctx,
-        mf.READ_ONLY | mf.COPY_HOST_PTR,
-        hostbuf=grid.elements.ravel(order="F"),
-    )
+    # elements_buffer = _cl.Buffer(
+    #     ctx,
+    #     mf.READ_ONLY | mf.COPY_HOST_PTR,
+    #     hostbuf=grid.elements.ravel(order="F"),
+    # )
 
     points_buffer = _cl.Buffer(
         ctx,
@@ -554,17 +545,17 @@ def get_local_interaction_evaluator_opencl(
         ctx,
         mf.READ_ONLY,
         size=result_type.itemsize * ncoeffs
-        )
+    )
 
     result_buffer = _cl.Buffer(
         ctx,
         mf.READ_WRITE,
         size=4 * result_type.itemsize * ncoeffs
-        )
+    )
 
     if len(kernel_parameters) == 0:
         kernel_parameters = [0]
-        
+
     kernel_parameters_buffer = _cl.Buffer(
         ctx,
         mf.READ_ONLY | mf.COPY_HOST_PTR,
@@ -574,16 +565,12 @@ def get_local_interaction_evaluator_opencl(
     options = {
         'MAX_POINTS': max_nneighbors * npoints,
         'NPOINTS': npoints
-        }
+    }
     if result_type == "complex128":
         options["COMPLEX_KERNEL"] = None
 
-
     kernel_name = "near_field_evaluator_" + mode
     kernel = get_kernel_from_name(kernel_name, options)
-
-        
-
 
     def evaluator(coeffs):
         """Actually evaluate the near-field correction."""
@@ -597,8 +584,7 @@ def get_local_interaction_evaluator_opencl(
                     result_buffer,
                     _np.uint8(0),
                     0,
-                    result_type.itemsize * ncoeffs
-                    )
+                    result_type.itemsize * ncoeffs)
                 kernel(
                     queue,
                     (grid.number_of_elements,),
@@ -610,17 +596,9 @@ def get_local_interaction_evaluator_opencl(
                     coefficients_buffer,
                     result_buffer,
                     kernel_parameters_buffer,
-                    _np.uint32(grid.number_of_elements),
-                    )
+                    _np.uint32(grid.number_of_elements))
                 _cl.enqueue_copy(queue, result, result_buffer)
 
         return result
 
     return evaluator
-            
-                
-            
-        
-    
-
-    

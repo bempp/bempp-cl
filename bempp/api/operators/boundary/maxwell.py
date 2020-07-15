@@ -31,6 +31,7 @@ def electric_field(
         True,
     )
 
+
 def magnetic_field(
     domain,
     range_,
@@ -93,9 +94,6 @@ def magnetic_field(
 #         precision,
 #     )
 
-
-
-
 # def multitrace_operator(
 #     grid,
 #     wavenumber,
@@ -147,7 +145,7 @@ def magnetic_field(
 #     ------
 #     The Maxwell multitrace operator of the form
 #     [[M, E], [-E, M]], where M represens the magnetic
-#     and E the electric field boundary operators in 
+#     and E the electric field boundary operators in
 #     the respective spaces defined through space_type.
 #     Note that the operators in the first and second
 #     row have different discretisations depending on
@@ -180,7 +178,7 @@ def magnetic_field(
 #             rwg_target = bempp.api.function_space(target, "RWG", 0)
 #             rbc_target = bempp.api.function_space(target, "RBC", 0)
 #         else:
-#             rwg_target = rwg 
+#             rwg_target = rwg
 #             rbc_target = rbc
 
 #         domain = [bc, bc]
@@ -315,4 +313,3 @@ def magnetic_field(
 #     blocked[1, 1] = magnetic2
 
 #     return blocked
-
