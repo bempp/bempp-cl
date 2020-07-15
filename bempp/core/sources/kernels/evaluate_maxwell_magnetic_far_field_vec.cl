@@ -37,35 +37,31 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
   size_t groupId = get_group_id(1);
   size_t numGroups = get_num_groups(1);
 
-  size_t vecIndex;
-
-  REALTYPE4 surfaceGlobalPoint[3];
+  REALTYPEVEC surfaceGlobalPoint[3];
 
   REALTYPE basisValue[3][2];
-  REALTYPE4 elementValue[3][3];
+  REALTYPEVEC elementValue[3][3];
 
-  REALTYPE4 corners[3][3];
-  REALTYPE4 jacobian[2][3];
-  REALTYPE4 normal[3];
-
-  REALTYPE4 factor1[2];
-  REALTYPE3 testNormal; // Dummy variable. Only needed for kernel call.
+  REALTYPEVEC corners[3][3];
+  REALTYPEVEC jacobian[2][3];
+  REALTYPEVEC normal[3];
+  REALTYPEVEC inner;
+  REALTYPEVEC crossProd[3][3];
 
   REALTYPE2 point;
 
-  REALTYPE4 intElem;
+  REALTYPEVEC intElem;
 
   size_t quadIndex;
-  size_t i, j, k;
+  size_t i, j;
 
-  REALTYPE4 shapeIntegral[3][3][2];
+  REALTYPEVEC shapeIntegral[3][3][2];
+  REALTYPEVEC kernelValue[2];
 
-  __local REALTYPE4 localResult[WORKGROUP_SIZE][3][2];
-  REALTYPE4 gradKernelValue[3][2];
-
-  REALTYPE4 myCoefficients[NUMBER_OF_SHAPE_FUNCTIONS][2];
-
-  REALTYPE4 edgeLengths[3];
+  __local REALTYPEVEC localResult[WORKGROUP_SIZE][3][2];
+  REALTYPEVEC myCoefficients[NUMBER_OF_SHAPE_FUNCTIONS][2];
+  REALTYPEVEC factor1[2];
+  REALTYPEVEC edgeLengths[3];
 
   REALTYPE3 evalGlobalPoint =
       (REALTYPE3)(evalPoints[3 * gid[0] + 0], evalPoints[3 * gid[0] + 1],
@@ -187,6 +183,7 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
   getNormalAndIntegrationElementVec(jacobian, normal, &intElem);
 
   updateNormalsVec(elementIndex, normalSigns, normal);
+
   computeEdgeLengthVec(corners, edgeLengths);
 
   for (quadIndex = 0; quadIndex < NUMBER_OF_QUAD_POINTS; ++quadIndex) {
@@ -196,21 +193,28 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
     BASIS(SHAPESET, evaluate)(&point, &basisValue[0][0]);
     getPiolaTransformVec(intElem, jacobian, basisValue, elementValue);
 
-    KERNEL_EXPLICIT(helmholtz_gradient, VEC_STRING)
-    (evalGlobalPoint, surfaceGlobalPoint, testNormal, normal, kernel_parameters,
-     gradKernelValue);
+    inner = evalGlobalPoint.x * surfaceGlobalPoint[0] +
+            evalGlobalPoint.y * surfaceGlobalPoint[1] +
+            evalGlobalPoint.z * surfaceGlobalPoint[2];
+
+    kernelValue[0] = M_INV_4PI * cos(-kernel_parameters[0] * inner);
+    kernelValue[1] = M_INV_4PI * sin(-kernel_parameters[0] * inner);
+
+    for (i = 0; i < 3; ++i) {
+      crossProd[i][0] = evalGlobalPoint.y * elementValue[i][2] -
+                        evalGlobalPoint.z * elementValue[i][1];
+      crossProd[i][1] = evalGlobalPoint.z * elementValue[i][0] -
+                        evalGlobalPoint.x * elementValue[i][2];
+      crossProd[i][2] = evalGlobalPoint.x * elementValue[i][1] -
+                        evalGlobalPoint.y * elementValue[i][0];
+    }
 
     for (i = 0; i < 3; ++i)
-      for (k = 0; k < 2; ++k) {
-        shapeIntegral[i][0][k] += (gradKernelValue[1][k] * elementValue[i][2] -
-                                   gradKernelValue[2][k] * elementValue[i][1]) *
-                                  quadWeights[quadIndex];
-        shapeIntegral[i][1][k] += (gradKernelValue[2][k] * elementValue[i][0] -
-                                   gradKernelValue[0][k] * elementValue[i][2]) *
-                                  quadWeights[quadIndex];
-        shapeIntegral[i][2][k] += (gradKernelValue[0][k] * elementValue[i][1] -
-                                   gradKernelValue[1][k] * elementValue[i][0]) *
-                                  quadWeights[quadIndex];
+      for (j = 0; j < 3; ++j) {
+        shapeIntegral[i][j][0] += -kernelValue[1] * kernel_parameters[0] *
+                                  crossProd[i][j] * quadWeights[quadIndex];
+        shapeIntegral[i][j][1] += kernelValue[0] * kernel_parameters[0] *
+                                  crossProd[i][j] * quadWeights[quadIndex];
       }
   }
 

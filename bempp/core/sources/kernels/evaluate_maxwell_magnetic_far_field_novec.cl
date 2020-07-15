@@ -3,13 +3,11 @@
 #include "bempp_spaces.h"
 #include "kernels.h"
 
-__kernel void evaluate_magnetic_far_field_novec(
-    __global REALTYPE *grid, 
-    __global uint* indices,
-    __global int* normalSigns,
-    __global REALTYPE *evalPoints,
-    __global REALTYPE *coefficients, __constant REALTYPE *quadPoints,
-    __constant REALTYPE *quadWeights, __global REALTYPE *globalResult) {
+__kernel void kernel_function(
+    __global REALTYPE *grid, __global uint *indices, __global int *normalSigns,
+    __global REALTYPE *evalPoints, __global REALTYPE *coefficients,
+    __constant REALTYPE *quadPoints, __constant REALTYPE *quadWeights,
+    __global REALTYPE *globalResult, __global REALTYPE *kernel_parameters) {
   size_t gid[2];
 
   gid[0] = get_global_id(0);
@@ -84,23 +82,28 @@ __kernel void evaluate_magnetic_far_field_novec(
     BASIS(SHAPESET, evaluate)(&point, &basisValue[0][0]);
     getPiolaTransform(intElem, jacobian, basisValue, elementValue);
 
-    inner = evalGlobalPoint.x * surfaceGlobalPoint.x + evalGlobalPoint.y * surfaceGlobalPoint.y + 
-        evalGlobalPoint.z * surfaceGlobalPoint.z;
+    inner = evalGlobalPoint.x * surfaceGlobalPoint.x +
+            evalGlobalPoint.y * surfaceGlobalPoint.y +
+            evalGlobalPoint.z * surfaceGlobalPoint.z;
 
-    kernelValue[0] = M_INV_4PI * cos(-WAVENUMBER_REAL * inner); 
-    kernelValue[1] = M_INV_4PI * sin(-WAVENUMBER_REAL * inner);
+    kernelValue[0] = M_INV_4PI * cos(-kernel_parameters[0] * inner);
+    kernelValue[1] = M_INV_4PI * sin(-kernel_parameters[0] * inner);
 
-    for (i = 0; i < 3; ++i){
-        crossProd[i][0] = evalGlobalPoint.y * elementValue[i].z - evalGlobalPoint.z * elementValue[i].y;
-        crossProd[i][1] = evalGlobalPoint.z * elementValue[i].x - evalGlobalPoint.x * elementValue[i].z;
-        crossProd[i][2] = evalGlobalPoint.x * elementValue[i].y - evalGlobalPoint.y * elementValue[i].x;
+    for (i = 0; i < 3; ++i) {
+      crossProd[i][0] = evalGlobalPoint.y * elementValue[i].z -
+                        evalGlobalPoint.z * elementValue[i].y;
+      crossProd[i][1] = evalGlobalPoint.z * elementValue[i].x -
+                        evalGlobalPoint.x * elementValue[i].z;
+      crossProd[i][2] = evalGlobalPoint.x * elementValue[i].y -
+                        evalGlobalPoint.y * elementValue[i].x;
     }
 
     for (i = 0; i < 3; ++i)
-        for (j = 0; j < 3; ++j)
-      {
-        shapeIntegral[i][j][0] += -kernelValue[1] * WAVENUMBER_REAL * crossProd[i][j] * quadWeights[quadIndex];
-        shapeIntegral[i][j][1] += kernelValue[0] * WAVENUMBER_REAL * crossProd[i][j] * quadWeights[quadIndex];
+      for (j = 0; j < 3; ++j) {
+        shapeIntegral[i][j][0] += -kernelValue[1] * kernel_parameters[0] *
+                                  crossProd[i][j] * quadWeights[quadIndex];
+        shapeIntegral[i][j][1] += kernelValue[0] * kernel_parameters[0] *
+                                  crossProd[i][j] * quadWeights[quadIndex];
       }
   }
 
@@ -126,10 +129,10 @@ __kernel void evaluate_magnetic_far_field_novec(
         localResult[0][j][1] += localResult[i][j][1];
       }
     for (j = 0; j < 3; ++j) {
-      globalResult[2 * ((KERNEL_DIMENSION * gid[0] + j) * numGroups +
-                        groupId)] += localResult[0][j][0];
-      globalResult[2 * ((KERNEL_DIMENSION * gid[0] + j) * numGroups + groupId) +
-                   1] += localResult[0][j][1];
+      globalResult[2 * ((3 * gid[0] + j) * numGroups + groupId)] +=
+          localResult[0][j][0];
+      globalResult[2 * ((3 * gid[0] + j) * numGroups + groupId) + 1] +=
+          localResult[0][j][1];
     }
   }
 }
