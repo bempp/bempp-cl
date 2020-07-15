@@ -29,6 +29,8 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
         "default_scalar": default_scalar_potential_kernel,
         "maxwell_electric_field": maxwell_efield_potential,
         "maxwell_magnetic_field": maxwell_mfield_potential,
+        "maxwell_magnetic_far_field": maxwell_mfield_far_field,
+        "maxwell_electric_far_field": maxwell_efield_far_field,
     }
 
     assembly_functions_sparse = {"default_sparse": default_sparse_kernel}
@@ -2738,6 +2740,164 @@ def maxwell_mfield_potential(
             result[0, point_index] += diff[1, trial_index] * val[2] - diff[2, trial_index] * val[1]
             result[1, point_index] += diff[2, trial_index] * val[0] - diff[0, trial_index] * val[2]
             result[2, point_index] += diff[0, trial_index] * val[1] - diff[1, trial_index] * val[0]
+
+
+    return result
+
+@_numba.jit(
+    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
+)
+def maxwell_efield_far_field(
+    dtype,
+    result_type,
+    kernel_dimension,
+    points,
+    x,
+    grid_data,
+    quad_points,
+    quad_weights,
+    number_of_shape_functions,
+    shapeset_evaluate,
+    kernel_function,
+    kernel_parameters,
+    normal_multipliers,
+    support_elements,
+):
+    """Implement the Maxwell electric far-field potential."""
+    wavenumber = kernel_parameters[0] + 1j * kernel_parameters[1]
+    dtype = grid_data.vertices.dtype
+    result = _np.zeros((kernel_dimension, points.shape[1]), dtype=result_type)
+    n_support_elements = len(support_elements)
+    number_of_quad_points = len(quad_weights)
+    number_of_points = points.shape[1]
+
+    global_points = _np.zeros(
+        (3, number_of_quad_points * n_support_elements), dtype=dtype
+    )
+
+    basis_functions = get_piola_transform(grid_data, support_elements, quad_points)
+
+    edge_lengths = get_edge_lengths(grid_data, support_elements)
+
+    tmp1 = _np.zeros((3, number_of_quad_points * n_support_elements), dtype=result_type)
+    tmp2 = _np.zeros(number_of_quad_points * n_support_elements, dtype=result_type)
+
+    for element_index, element in enumerate(support_elements):
+        global_points[
+            :,
+            number_of_quad_points
+            * element_index : number_of_quad_points
+            * (1 + element_index),
+        ] = grid_data.local2global(element, quad_points)
+
+    for element_index, element in enumerate(support_elements):
+        for quad_point_index in range(number_of_quad_points):
+            for fun_index in range(number_of_shape_functions):
+                factor = (
+                    quad_weights[quad_point_index]
+                    * x[number_of_shape_functions * element + fun_index]
+                    * edge_lengths[element_index, fun_index]
+                )
+                tmp1[:, number_of_quad_points * element_index + quad_point_index] += (
+                    factor
+                    * basis_functions[element_index, fun_index, :, quad_point_index]
+                    * grid_data.integration_elements[element]
+                )
+                tmp2[number_of_quad_points * element_index + quad_point_index] += (
+                    2 * factor
+                )
+
+    for point_index in _numba.prange(number_of_points):
+        test_point = points[:, point_index].copy()
+
+        kernel_values = kernel_function(
+            test_point, global_points, None, None, kernel_parameters
+        )
+        for dim in range(kernel_dimension):
+            point_result = 0
+            for trial_index in range(number_of_quad_points * n_support_elements):
+                point_result += kernel_values[trial_index] * (
+                    1j * wavenumber * tmp1[dim, trial_index]
+                    - test_point[dim] * tmp2[trial_index]
+                )
+            result[dim, point_index] = point_result
+
+    return result
+
+@_numba.jit(
+    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
+)
+def maxwell_mfield_far_field(
+    dtype,
+    result_type,
+    kernel_dimension,
+    points,
+    x,
+    grid_data,
+    quad_points,
+    quad_weights,
+    number_of_shape_functions,
+    shapeset_evaluate,
+    kernel_function,
+    kernel_parameters,
+    normal_multipliers,
+    support_elements,
+):
+    """Implement the Maxwell magnetic far-field potential."""
+    wavenumber = kernel_parameters[0] + 1j * kernel_parameters[1]
+    dtype = grid_data.vertices.dtype
+    result = _np.zeros((kernel_dimension, points.shape[1]), dtype=result_type)
+    n_support_elements = len(support_elements)
+    number_of_quad_points = len(quad_weights)
+    number_of_points = points.shape[1]
+
+    global_points = _np.zeros(
+        (3, number_of_quad_points * n_support_elements), dtype=dtype
+    )
+
+    basis_functions = get_piola_transform(grid_data, support_elements, quad_points)
+
+    edge_lengths = get_edge_lengths(grid_data, support_elements)
+
+    tmp = _np.zeros((3, number_of_quad_points * n_support_elements), dtype=result_type)
+
+    for element_index, element in enumerate(support_elements):
+        global_points[
+            :,
+            number_of_quad_points
+            * element_index : number_of_quad_points
+            * (1 + element_index),
+        ] = grid_data.local2global(element, quad_points)
+
+    for element_index, element in enumerate(support_elements):
+        for quad_point_index in range(number_of_quad_points):
+            for fun_index in range(number_of_shape_functions):
+                factor = (
+                    quad_weights[quad_point_index]
+                    * x[number_of_shape_functions * element + fun_index]
+                    * edge_lengths[element_index, fun_index]
+                )
+                tmp[:, number_of_quad_points * element_index + quad_point_index] += (
+                    factor
+                    * basis_functions[element_index, fun_index, :, quad_point_index]
+                    * grid_data.integration_elements[element]
+                )
+
+    for point_index in _numba.prange(number_of_points):
+        test_point = points[:, point_index].copy()
+
+        kernel_values = kernel_function(
+            test_point, global_points, None, None, kernel_parameters
+        )
+
+        for trial_index in range(number_of_quad_points * n_support_elements):
+            val = (kernel_values[trial_index] * 
+                1j * wavenumber
+                * tmp[:, trial_index]
+            )
+            result[0, point_index] += test_point[1] * val[2] - test_point[2] * val[1]
+            result[1, point_index] += test_point[2] * val[0] - test_point[0] * val[2]
+            result[2, point_index] += test_point[0] * val[1] - test_point[1] * val[0]
 
 
     return result
