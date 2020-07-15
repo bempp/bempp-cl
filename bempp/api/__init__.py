@@ -4,6 +4,7 @@ import os as _os
 import tempfile as _tempfile
 import logging as _logging
 import time as _time
+import platform as _platform
 
 from bempp.api.utils import DefaultParameters
 from bempp.api.utils.helpers import MemProfiler
@@ -246,7 +247,15 @@ __version__ = _get_version()
 PLOT_BACKEND = "jupyter_notebook"
 USE_JIT = True
 
-DEFAULT_DEVICE_INTERFACE = "opencl"
+if _platform.system() == "Darwin":
+    DEFAULT_DEVICE_INTERFACE = "numba"
+else:
+    from bempp.core.opencl_kernels import find_cpu_driver
+    if find_cpu_driver() is None:
+        DEFAULT_DEVICE_INTERFACE = "numba"
+    else:
+        DEFAULT_DEVICE_INTERFACE = "opencl"
+
 DEFAULT_PRECISION = "double"
 VECTORIZATION_MODE = 'auto'
 
