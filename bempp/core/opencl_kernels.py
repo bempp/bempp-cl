@@ -35,7 +35,9 @@ def select_cl_kernel(operator_descriptor, mode):
     potential_assemblers = {
         "default_scalar": "evaluate_scalar_potential",
         "maxwell_electric_field": "evaluate_electric_field_potential",
-        "maxwell_magnetic_field": "evaluate_magnetic_field_potential"
+        "maxwell_magnetic_field": "evaluate_magnetic_field_potential",
+        "maxwell_electric_far_field": "evaluate_maxwell_electric_far_field",
+        "maxwell_magnetic_far_field": "evaluate_maxwell_magnetic_far_field"
     }
 
     kernels = {
@@ -44,6 +46,8 @@ def select_cl_kernel(operator_descriptor, mode):
         "laplace_adjoint_double_layer": "laplace_adjoint_double_layer",
         "helmholtz_single_layer": "helmholtz_single_layer",
         "helmholtz_double_layer": "helmholtz_double_layer",
+        "helmholtz_far_field_single_layer": "helmholtz_single_layer_far_field",
+        "helmholtz_far_field_double_layer": "helmholtz_double_layer_far_field",
         "helmholtz_adjoint_double_layer": "helmholtz_adjoint_double_layer",
         "modified_helmholtz_single_layer": "modified_helmholtz_real_single_layer",
         "modified_helmholtz_double_layer": "modified_helmholtz_real_double_layer",

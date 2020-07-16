@@ -22,6 +22,7 @@
 
 */
 
+#ifdef REALTYPEVEC
 inline void diff_vec(const REALTYPE3 vec1, const REALTYPE4 vec2[3], REALTYPEVEC result[3]){
 
     result[0] = vec1.x - vec2[0];
@@ -29,6 +30,7 @@ inline void diff_vec(const REALTYPE3 vec1, const REALTYPE4 vec2[3], REALTYPEVEC 
     result[2] = vec1.z - vec2[2];
 
 }
+#endif
 
 
 inline void diff_vec4(const REALTYPE3 vec1, const REALTYPE4 vec2[3], REALTYPE4 result[3]){
