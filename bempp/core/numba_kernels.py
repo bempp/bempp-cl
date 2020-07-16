@@ -2730,6 +2730,7 @@ def maxwell_mfield_potential(
 
     return result
 
+
 @_numba.jit(
     nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
 )
@@ -2810,6 +2811,7 @@ def maxwell_efield_far_field(
 
     return result
 
+
 @_numba.jit(
     nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
 )
@@ -2877,13 +2879,11 @@ def maxwell_mfield_far_field(
         )
 
         for trial_index in range(number_of_quad_points * n_support_elements):
-            val = (kernel_values[trial_index] * 
-                1j * wavenumber
-                * tmp[:, trial_index]
-            )
+            val = (kernel_values[trial_index]
+                   * 1j * wavenumber
+                   * tmp[:, trial_index])
             result[0, point_index] += test_point[1] * val[2] - test_point[2] * val[1]
             result[1, point_index] += test_point[2] * val[0] - test_point[0] * val[2]
             result[2, point_index] += test_point[0] * val[1] - test_point[1] * val[0]
-
 
     return result

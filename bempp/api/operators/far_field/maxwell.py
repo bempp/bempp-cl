@@ -1,6 +1,7 @@
 """Maxwell far-field operators."""
 import numpy as _np
 
+
 def electric_field(
     space,
     points,
