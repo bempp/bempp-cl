@@ -23,11 +23,11 @@
 */
 
 #ifdef REALTYPEVEC
-inline void diff_vec(const REALTYPE3 vec1, const REALTYPE4 vec2[3], REALTYPEVEC result[3]){
+inline void diff_vec(const REALTYPE3 vec1, const REALTYPEVEC vec2[3], REALTYPEVEC result[3]){
 
-    result[0] = (REALTYPEVEC){vec1.x - vec2[0]};
-    result[1] = (REALTYPEVEC){vec1.y - vec2[1]};
-    result[2] = (REALTYPEVEC){vec1.z - vec2[2]};
+    result[0] = vec1.x - vec2[0];
+    result[1] = vec1.y - vec2[1];
+    result[2] = vec1.z - vec2[2];
 
 }
 #endif
