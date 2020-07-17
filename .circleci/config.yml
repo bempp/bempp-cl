@@ -16,14 +16,54 @@ jobs:
           command: python3 setup.py install
           name: Install Bempp
       - run:
+          command: python3 -m pytest test/simple
+          name: Run Bempp simple tests
+      - run:
           command: python3 -m pytest --durations=50 bempp
           name: Run Bempp unit tests
       - run:
           command: python3 -m pytest --durations=50 notebooks/test_notebooks.py
           name: Run example notebooks
 
+  conda-build:
+    executor: python/default
+    steps:
+      - checkout
+      - run:
+          command: |
+            if [[ ! -d /home/circleci/miniconda ]]; then
+                wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
+                bash miniconda.sh -b -f -p /home/circleci/miniconda;
+            else
+                echo "Using cached miniconda";
+            fi
+          name: Install miniconda
+      - restore_cache:
+          keys:
+            - bempp-conda-{{ checksum "environment.yml" }}
+      - run:
+          command: |
+            source ~/miniconda/bin/activate root
+                conda update conda
+            if [[ ! -d /home/circleci/miniconda/envs/bempp ]]; then
+                conda env create -f environment.yml
+            fi
+          name: Create bempp environment
+      - save_cache:
+          key: bempp-conda-{{ checksum "environment.yml" }}
+          paths:
+            - ~/miniconda/envs/bempp
+      - run:
+          command: |
+            source ~/miniconda/bin/activate root
+            conda activate bempp
+            python3 -m pytest test/simple
+          name: Test installation
 
 workflows:
   main:
     jobs:
       - build-and-test
+      - conda-build:
+          requires:
+            - build-and-test
