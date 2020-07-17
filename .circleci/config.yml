@@ -67,6 +67,10 @@ jobs:
     working_directory: ~/repo
     steps:
       - checkout
+      - singularity/install-go:
+          go-version: 1.11.5
+      - singularity/debian-install-3:
+          singularity-version: 3.2.1
       - run:
           name: build container
           command: |
