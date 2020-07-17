@@ -1,6 +1,6 @@
 def test_laplace_sphere():
     import bempp.api
-    grid = bempp.api.shapes.sphere(h=0.1)
+    grid = bempp.api.shapes.sphere(h=0.5)
     space = bempp.api.function_space(grid, "DP", 0)
     slp = bempp.api.operators.boundary.laplace.single_layer(space, space, space)
 
