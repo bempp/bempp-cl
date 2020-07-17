@@ -2,6 +2,7 @@ version: 2.1
 
 orbs:
   python: circleci/python@0.2.1
+  singularity: singularity/singularity@1.0.4
 
 jobs:
   build-and-test:
@@ -61,6 +62,20 @@ jobs:
             python3 -m pytest test/simple
           name: Test installation
 
+  singularity-build:
+    machine: true
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: build container
+          command: |
+            cd ~/repo
+            /bin/bash singularity build bempp-singularity.sif Singularity
+      - store_artifacts:
+          path: ~/repo/build
+          destination: singularity-containers
+
 workflows:
   main:
     jobs:
@@ -68,3 +83,14 @@ workflows:
       - conda-build:
           requires:
             - build-and-test
+          filters:
+            branches:
+              ignore: master
+      - singularity-build:
+          requires:
+            - build-and-test
+          filters:
+            branches:
+              ignore: master
+
+
