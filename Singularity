@@ -33,13 +33,3 @@ From: ubuntu:bionic
 
 %runscript
     exec "$@"
-
-
-
-    
-                       
-
-
-
-
-
