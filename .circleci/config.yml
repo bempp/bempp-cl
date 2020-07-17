@@ -75,7 +75,7 @@ jobs:
           name: build container
           command: |
             cd ~/repo
-            /bin/bash singularity build bempp-singularity.sif Singularity
+            singularity build bempp-singularity.sif Singularity
       - store_artifacts:
           path: ~/repo/build
           destination: singularity-containers
@@ -83,16 +83,16 @@ jobs:
 workflows:
   main:
     jobs:
-      - build-and-test
-      - conda-build:
-          requires:
-            - build-and-test
-          filters:
-            branches:
-              ignore: master
+#      - build-and-test
+#      - conda-build:
+#          requires:
+#            - build-and-test
+#          filters:
+#            branches:
+#              ignore: master
       - singularity-build:
-          requires:
-            - build-and-test
+#          requires:
+#            - build-and-test
           filters:
             branches:
               ignore: master
