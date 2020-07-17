@@ -75,7 +75,7 @@ jobs:
           name: build container
           command: |
             cd ~/repo
-            singularity build bempp-singularity.sif Singularity
+            sudo singularity build bempp-singularity.sif Singularity
       - store_artifacts:
           path: ~/repo/build
           destination: singularity-containers
