@@ -16,6 +16,7 @@ from bempp.api.grid.grid import Grid
 from bempp.api.assembly.grid_function import GridFunction
 from bempp.api.assembly.grid_function import real_callable
 from bempp.api.assembly.grid_function import complex_callable
+from bempp.api.assembly.grid_function import callable
 
 from bempp.api.space import function_space
 
