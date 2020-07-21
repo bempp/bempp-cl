@@ -43,6 +43,10 @@ jobs:
             - bempp-conda-{{ checksum "environment.yml" }}
       - run:
           command: |
+            # Install libgl (dependency of gmsh)
+            apt-get update
+            apt-get install libgl1-mesa-dev -y
+            # Install miniconda
             source ~/miniconda/bin/activate root
             conda update conda
             if [[ ! -d ~/miniconda/envs/bempp ]]; then
