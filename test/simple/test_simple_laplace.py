@@ -10,4 +10,4 @@ def test_laplace_sphere():
 
     rhs = bempp.api.GridFunction(space, fun=f)
 
-    sol, info = bempp.api.linalg.gmres(slp, rhs)
+    bempp.api.linalg.gmres(slp, rhs)
