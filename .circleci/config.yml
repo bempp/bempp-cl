@@ -28,39 +28,40 @@ jobs:
 #          name: Run example notebooks
 
   conda-build:
-    executor: python/default
-    steps:
-      - checkout
-      - run:
-          command: |
-            if [[ ! -d ~/miniconda ]]; then
-                wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
-                bash miniconda.sh -b -f -p ~/miniconda;
-            else
-                echo "Using cached miniconda";
-            fi
-          name: Install miniconda
-      - restore_cache:
-          keys:
-            - bempp-conda-{{ checksum "environment.yml" }}
-      - run:
-          command: |
-            source ~/miniconda/bin/activate root
-                conda update conda
-            if [[ ! -d ~/miniconda/envs/bempp ]]; then
-                conda env create -f environment.yml
-            fi
-          name: Create bempp environment
-      - save_cache:
-          key: bempp-conda-{{ checksum "environment.yml" }}
-          paths:
-            - ~/miniconda/envs/bempp
-      - run:
-          command: |
-            source ~/miniconda/bin/activate root
-            conda activate bempp
-            python3 -m pytest test/simple
-          name: Test installation
+    machine:
+      image: ubuntu-2004
+      steps:
+        - checkout
+        - run:
+            command: |
+              if [[ ! -d ~/miniconda ]]; then
+                  wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
+                  bash miniconda.sh -b -f -p ~/miniconda;
+              else
+                  echo "Using cached miniconda";
+              fi
+            name: Install miniconda
+        - restore_cache:
+            keys:
+              - bempp-conda-{{ checksum "environment.yml" }}
+        - run:
+            command: |
+              source ~/miniconda/bin/activate root
+                  conda update conda
+              if [[ ! -d ~/miniconda/envs/bempp ]]; then
+                  conda env create -f environment.yml
+              fi
+            name: Create bempp environment
+        - save_cache:
+            key: bempp-conda-{{ checksum "environment.yml" }}
+            paths:
+              - ~/miniconda/envs/bempp
+        - run:
+            command: |
+              source ~/miniconda/bin/activate root
+              conda activate bempp
+              python3 -m pytest test/simple
+            name: Test installation
 
 workflows:
   main:
