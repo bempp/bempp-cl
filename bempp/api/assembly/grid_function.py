@@ -300,6 +300,9 @@ class GridFunction(object):
 
             # Create a Numba callable from the function
 
+            if function_parameters is None:
+                function_parameters = _np.array([], dtype=dtype)
+
             _project_function(
                 fun,
                 comp_dual.grid.data('double'),
@@ -793,6 +796,7 @@ def _project_function(
 
         for j in range(npoints):
             point = global_points[:, j]
+
             fun(
                 point,
                 grid_data.normals[index] * normal_multipliers[index],
