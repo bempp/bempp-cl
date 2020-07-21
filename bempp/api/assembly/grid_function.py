@@ -44,7 +44,7 @@ def callable(*args, complex=False, jit=True, parameterized=False):
                 def wrapper_callable(x, n, domain_index, res, parameters):
                     """Callable for object mode."""
                     f_jit(x, n, domain_index, res)
-            
+
         njit_wrapper = _numba.njit(signature_parameterized)(wrapper_callable)
 
         njit_wrapper.bempp_type = 'complex' if complex else 'real'
@@ -679,7 +679,7 @@ class GridFunction(object):
 
         """
         import bempp.api
-        
+
         if mode == 'elements':
             space = bempp.api.function_space(grid, "DP", 0)
             points = grid.centroids
@@ -691,10 +691,6 @@ class GridFunction(object):
 
         values = callable(points)
         return bempp.api.GridFunction(space, coefficients=values)
-        
-        
-
-
 
 
 @_numba.njit
