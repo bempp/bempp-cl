@@ -1,3 +1,4 @@
+# Bemoo conda environment
 name: bempp
 channels:
   - conda-forge
