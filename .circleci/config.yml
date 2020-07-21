@@ -31,9 +31,9 @@ jobs:
       - checkout
       - run:
           command: |
-            if [[ ! -d /home/circleci/miniconda ]]; then
-                wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
-                bash miniconda.sh -b -f -p /home/circleci/miniconda;
+            if [[ ! -d ~/miniconda ]]; then
+                wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
+                bash miniconda.sh -b -f -p ~/miniconda;
             else
                 echo "Using cached miniconda";
             fi
@@ -45,7 +45,7 @@ jobs:
           command: |
             source ~/miniconda/bin/activate root
                 conda update conda
-            if [[ ! -d /home/circleci/miniconda/envs/bempp ]]; then
+            if [[ ! -d ~/miniconda/envs/bempp ]]; then
                 conda env create -f environment.yml
             fi
           name: Create bempp environment
