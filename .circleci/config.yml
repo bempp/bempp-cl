@@ -26,8 +26,8 @@ jobs:
 
   conda-build:
     machine:
-      - image: cimg/base:2020.01
-    steps:
+      image: cimg/base:2020.01
+      steps:
       - checkout
       - run:
           command: |
