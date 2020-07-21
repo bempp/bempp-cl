@@ -25,9 +25,9 @@ jobs:
 #          name: Run example notebooks
 
   conda-build:
-    machine:
-      image: cimg/base:2020.01
-      steps:
+    docker:
+      - image: cimg/base:2020.01
+    steps:
       - checkout
       - run:
           command: |
