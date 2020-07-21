@@ -5,6 +5,58 @@ import numba as _numba
 import numpy as _np
 
 
+def callable(*args, complex=False, jit=True, parameterized=False):
+    """Wrap a callable for Bempp."""
+
+    if complex:
+        wrap_type = _numba.complex128[:]
+    else:
+        wrap_type = _numba.float64[:]
+
+    signature_parameterized = _numba.void(_numba.float64[:], _numba.float64[:], _numba.uint32, wrap_type, wrap_type)
+    signature_not_parameterized = _numba.void(_numba.float64[:], _numba.float64[:], _numba.uint32, wrap_type)
+
+    if parameterized:
+        signature = signature_parameterized
+    else:
+        signature = signature_not_parameterized
+
+    def wrap(f):
+        """Actual wrapper."""
+        if not jit:
+            if parameterized:
+                def wrapper_callable(x, n, domain_index, res, parameters):
+                    """Callable for object mode."""
+                    with _numba.objmode():
+                        f(x, n, domain_index, res, parameters)
+            else:
+                def wrapper_callable(x, n, domain_index, res, parameters):
+                    """Callable for object mode."""
+                    with _numba.objmode():
+                        f(x, n, domain_index, res)
+        else:
+            f_jit = _numba.njit(signature)(f)
+            if parameterized:
+                def wrapper_callable(x, n, domain_index, res, parameters):
+                    """Standard callable."""
+                    f_jit(x, n, domain_index, res, parameters)
+            else:
+                def wrapper_callable(x, n, domain_index, res, parameters):
+                    """Callable for object mode."""
+                    f_jit(x, n, domain_index, res)
+
+        njit_wrapper = _numba.njit(signature_parameterized)(wrapper_callable)
+
+        njit_wrapper.bempp_type = 'complex' if complex else 'real'
+
+        return njit_wrapper
+
+    if not args:
+        return wrap
+    else:
+        return wrap(args[0])
+
+
 def real_callable(f):
     """Wrap function as a real Numba callable."""
 
@@ -111,6 +163,7 @@ class GridFunction(object):
         coefficients=None,
         projections=None,
         parameters=None,
+        function_parameters=None,
     ):
         """
         Construct a grid function.
@@ -161,6 +214,9 @@ class GridFunction(object):
         parameters : bempp.api.ParameterList
             A ParameterList object used for the assembly of
             the GridFunction (optional).
+        function_parameters : np.ndarray
+            Numpy array containing optional parameters for the callable
+            to discretise.
 
         Notes
         -----
@@ -257,6 +313,7 @@ class GridFunction(object):
                 weights,
                 comp_domain.codomain_dimension,
                 grid_projections,
+                function_parameters,
             )
 
             self._projections = comp_dual.dof_transformation.T @ grid_projections
@@ -604,6 +661,46 @@ class GridFunction(object):
 
         return cls(space, coefficients=zeros(ndofs))
 
+    @classmethod
+    def from_grid_interpolation(cls, grid, mode, callable):
+        """
+        Obtain a grid function from interpolation on the grid.
+
+        Parameters
+        ----------
+        grid : Bempp Grid object
+            The grid to be used
+        mode : string
+            Either "elements" or "vertices". If mode is
+            "elements" the callable is interpolated on
+            element centers. If mode is "vertices" the
+            callable is interpolated on vertices.
+        callable : callable object
+            A Python callable of the form:
+            values = callable(points). 'points' is
+            a float64 Numpy array of shape (N, 3),
+            where N is the number of interpolation points.
+            values is a scalar Numpy array of interpolation
+            values.
+
+        Returns a grid function of space type ("DP", 0) for elementwise
+        interpolation and ("P", 1) for vertex interpolation.
+
+        """
+        import bempp.api
+
+        if mode == 'elements':
+            space = bempp.api.function_space(grid, "DP", 0)
+            points = grid.centroids
+        elif mode == 'vertices':
+            space = bempp.api.function_space(grid, "P", 1)
+            points = grid.vertices.T
+        else:
+            raise ValueError("'mode' must be one of 'elements' or 'vertices'.")
+
+        values = callable(points)
+        return bempp.api.GridFunction(space, coefficients=values)
+
 
 @_numba.njit
 def _integrate(
@@ -665,6 +762,7 @@ def _project_function(
     weights,
     codomain_dimension,
     projections,
+    function_parameters,
 ):
     """Project a Numba callable onto a grid."""
 
@@ -700,6 +798,7 @@ def _project_function(
                 grid_data.normals[index] * normal_multipliers[index],
                 grid_data.domain_indices[index],
                 fun_result,
+                function_parameters,
             )
             fvalues[:, j] = fun_result
 

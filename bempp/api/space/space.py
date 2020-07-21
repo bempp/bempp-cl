@@ -684,7 +684,7 @@ class FunctionSpace(object):
 
     def is_compatible(self, other):
         """Check if space is compatible with other space."""
-        return self == other
+        return self.global_dof_count == other.global_dof_count
 
     def _set_id(self, new_id):
         """Assign a new id string to the space."""
