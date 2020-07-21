@@ -48,7 +48,7 @@ jobs:
             sudo apt-get install libgl1-mesa-dev -y
             # Install miniconda
             source ~/miniconda/bin/activate root
-            conda update conda
+            conda update -y conda
             if [[ ! -d ~/miniconda/envs/bempp ]]; then
                 conda env create -f environment.yml
             fi
