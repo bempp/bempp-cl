@@ -44,8 +44,8 @@ jobs:
       - run:
           command: |
             # Install libgl (dependency of gmsh)
-            apt-get update
-            apt-get install libgl1-mesa-dev -y
+            sudo apt-get update
+            sudo apt-get install libgl1-mesa-dev -y
             # Install miniconda
             source ~/miniconda/bin/activate root
             conda update conda
