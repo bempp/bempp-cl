@@ -60,26 +60,12 @@ def callable(*args, complex=False, jit=True, parameterized=False):
 def real_callable(f):
     """Wrap function as a real Numba callable."""
 
-    fun = _numba.njit(
-        _numba.void(
-            _numba.float64[:], _numba.float64[:], _numba.uint32, _numba.float64[:]
-        )
-    )(f)
-    fun.bempp_type = "real"
-    return fun
-
+    return callable(f)
 
 def complex_callable(f):
     """Wrap function as a complex Numba callable."""
 
-    fun = _numba.njit(
-        _numba.void(
-            _numba.float64[:], _numba.float64[:], _numba.uint32, _numba.complex128[:]
-        )
-    )(f)
-    fun.bempp_type = "complex"
-    return fun
-
+    return callable(f, complex=True)
 
 # def real_callable(*args, jit=True):
 # """JIT Compile a callable for a grid function if jit is true."""
@@ -291,10 +277,15 @@ class GridFunction(object):
 
             points, weights = rule(self._parameters.quadrature.regular)
 
+            if function_parameters is None:
+                function_parameters = _np.array([], dtype='float64')
+
             if fun.bempp_type == "real":
                 dtype = "float64"
             else:
                 dtype = "complex128"
+                if function_parameters is not None:
+                    function_parameters = function_parameters.astype('complex128')
 
             grid_projections = _np.zeros(comp_dual.grid_dof_count, dtype=dtype)
 
