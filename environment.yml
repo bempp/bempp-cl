@@ -9,6 +9,7 @@ dependencies:
   - ipython>=7.9.0
   - jupyter>=1.0.0
   - libllvm9>=9.0.0
+  - llvm>=9.0.0
   - llvmlite>=0.30.0
   - mpi4py>=3.0.2
   - mpich>=3.2.1
