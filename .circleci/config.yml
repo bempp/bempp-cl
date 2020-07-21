@@ -1,4 +1,4 @@
-version: 2.1
+    version: 2.1
 
 jobs:
   build-and-test:
@@ -43,15 +43,14 @@ jobs:
             - bempp-conda-{{ checksum "environment.yml" }}
       - run:
           command: |
-            # Install libgl (dependency of gmsh)
-            sudo apt-get update
-            sudo apt-get install libgl1-mesa-dev -y
-            # Install miniconda
             source ~/miniconda/bin/activate root
+            # Install miniconda
             conda update -y conda
             if [[ ! -d ~/miniconda/envs/bempp ]]; then
                 conda env create -f environment.yml
             fi
+            # Install libgl (dependency of gmsh)
+            sudo apt-get update && sudo apt-get install libgl1-mesa-dev -y
           name: Create bempp environment
       - save_cache:
           key: bempp-conda-{{ checksum "environment.yml" }}

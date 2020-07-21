@@ -10,6 +10,9 @@ dependencies:
   - ipython>=7.9.0
   - jupyter>=1.0.0
   - libgcc>=7.2.0
+  - libllvm9
+  - llvm
+  - llvmlite
   - mpi4py>=3.0.2
   - mpich>=3.2.1
   - numba>=0.50.1
