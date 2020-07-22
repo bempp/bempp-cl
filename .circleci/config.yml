@@ -43,9 +43,12 @@ jobs:
             - bempp-conda-{{ checksum "environment.yml" }}
       - run:
           command: |
-            source ~/miniconda/bin/activate root
             # Install libgl (dependency of gmsh)
             sudo apt-get update && sudo apt-get install libgl1-mesa-dev -y
+          name: Install Ubuntu requirements
+      - run:
+          command: |
+            source ~/miniconda/bin/activate root
             conda update -y conda
             if [[ ! -d ~/miniconda/envs/bempp ]]; then
                 conda env create -f environment.yml
