@@ -17,87 +17,14 @@ jobs:
       - run:
           command: python3 -m pytest test/simple
           name: Run Bempp simple tests
-#      - run:
-#          command: python3 -m pytest --durations=50 bempp
-#          name: Run Bempp unit tests
-#      - run:
-#          command: python3 -m pytest --durations=50 notebooks/test_notebooks.py
-#          name: Run example notebooks
-
-  conda-build:
-    docker:
-      - image: cimg/base:2020.01
-    steps:
-      - checkout
       - run:
-          command: |
-            if [[ ! -d ~/miniconda ]]; then
-                wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
-                bash miniconda.sh -b -f -p ~/miniconda;
-            else
-                echo "Using cached miniconda";
-            fi
-          name: Install miniconda
-      - restore_cache:
-          keys:
-            - bempp-conda-{{ checksum "environment.yml" }}
+          command: python3 -m pytest --durations=50 bempp
+          name: Run Bempp unit tests
       - run:
-          command: |
-            sudo apt-get update && sudo apt-get install libgl1-mesa-dev gcc -y
-          name: Install Ubuntu requirements
-      - run:
-          command: |
-            source ~/miniconda/bin/activate root
-            conda update -y conda
-            if [[ ! -d ~/miniconda/envs/bempp ]]; then
-                conda env create -f environment.yml
-            fi
-            conda activate bempp
-          name: Create bempp environment
-      - save_cache:
-          key: bempp-conda-{{ checksum "environment.yml" }}
-          paths:
-            - ~/miniconda/envs/bempp
-      - run:
-          command: |
-            source ~/miniconda/bin/activate root
-            conda activate bempp
-            python3 -m pytest test/simple
-          name: Test installation
-
-  singularity-build:
-    docker:
-      - image: cimg/base:2020.01
-    steps:
-      - checkout
-      - run:
-          command: |
-            sudo apt-get update
-            sudo apt-get install singularity-container -y
-          name: Install singularity
-      - restore_cache:
-          keys:
-            - bempp-conda-{{ checksum "Singularity" }}
-      - run:
-          command: |
-            sudo singularity build ~/bempp.simg Singularity
-          name: Build singularity image
-      - save_cache:
-          key: bempp-conda-{{ checksum "environment.yml" }}
-          paths:
-            - ~/bempp.simg
-      - run:
-          command: |
-            sudo singularity exec ~/bempp.simg python3 -m pytest test/simple
-          name: Test installation
+          command: python3 -m pytest --durations=50 notebooks/test_notebooks.py
+          name: Run example notebooks
 
 workflows:
   main:
     jobs:
       - build-and-test
-      - conda-build:
-          requires:
-            - build-and-test
-      - singularity-build:
-          requires:
-            - build-and-test
