@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build-and-test:
     docker:
-      - image: mscroggs/bempp-cl-test:test
+      - image: mscroggs/bempp-cl-test:latest
     steps:
       - checkout
       - run:
@@ -12,13 +12,16 @@ jobs:
               python3 -m flake8 test
           name: Run flake8 checks
       - run:
+          command: python3 -m pydocstyle numpy bempp
+          name: Run pydocstyle checks
+      - run:
           command: python3 setup.py install
           name: Install Bempp
       - run:
           command: python3 -m pytest test/simple
           name: Run Bempp simple tests
       - run:
-          command: python3 -m pytest --durations=50 bempp
+          command: python3 -m pytest --durations=50 test/unit
           name: Run Bempp unit tests
       - run:
           command: python3 -m pytest --durations=50 notebooks/test_notebooks.py
