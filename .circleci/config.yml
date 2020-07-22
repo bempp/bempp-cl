@@ -21,7 +21,7 @@ jobs:
           command: python3 -m pytest test/simple
           name: Run Bempp simple tests
       - run:
-          command: python3 -m pytest --durations=50 test/unit
+          command: python3 -m pytest --durations=50 bempp
           name: Run Bempp unit tests
       - run:
           command: python3 -m pytest --durations=50 notebooks/test_notebooks.py
