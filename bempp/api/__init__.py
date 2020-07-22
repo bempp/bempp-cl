@@ -159,7 +159,7 @@ class Timer:
 
 
 def test(precision="double", vectorization="auto"):
-    """ Runs Bempp python unit tests """
+    """Runs Bempp python unit tests."""
     import pytest
 
     options = []
@@ -172,7 +172,7 @@ def test(precision="double", vectorization="auto"):
 
 
 def benchmark(precision="double", vectorization="auto", capture_output=True):
-    """Run py.test benchmarks"""
+    """Run py.test benchmarks."""
     import pytest
 
     benchmark_dir = _os.path.join(BEMPP_PATH, "./benchmarks/")

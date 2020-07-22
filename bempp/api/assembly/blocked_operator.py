@@ -32,7 +32,7 @@ class BlockedOperatorBase(object):
         self._cached = None
 
     def weak_form(self):
-        """Return cached weak form (assemble if necessary). """
+        """Return cached weak form (assemble if necessary)."""
         if not self._cached:
             self._cached = self._assemble()
         return self._cached
@@ -556,6 +556,7 @@ class GeneralizedDiscreteBlockedOperator(_DiscreteOperatorBase):
 
     @property
     def A(self):
+        """TODO: add docstring."""
         rows = []
         for row in self._operators:
             rows.append([])
@@ -701,6 +702,7 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
 
     @property
     def A(self):
+        """TODO: add docstring."""
         rows = []
         for i in range(self._ndims[0]):
             row = []

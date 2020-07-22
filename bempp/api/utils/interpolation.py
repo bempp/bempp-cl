@@ -7,7 +7,7 @@ import numpy as _np
 
 
 class ChebychevInterpolation(object):
-    """This class provides methods for Chebychev interpolation."""
+    """Class providing methods for Chebychev interpolation."""
 
     def __init__(self, order):
 

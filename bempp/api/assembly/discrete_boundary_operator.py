@@ -269,6 +269,7 @@ class DiagonalOperator(_DiscreteOperatorBase):
         return self.dot(other)
 
     def dot(self, other):
+        """Product with other objects."""
         if _np.isscalar(other):
             if self.A.dtype in ['float32', 'complex64']:
                 # Necessary to ensure that scalar multiplication does not change
@@ -347,6 +348,7 @@ class SparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
             return super().__mul__(other)
 
     def dot(self, other):
+        """Product with other objects."""
         if _np.isscalar(other):
             return SparseDiscreteBoundaryOperator(self.A * other)
         else:

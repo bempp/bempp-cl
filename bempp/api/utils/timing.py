@@ -1,10 +1,10 @@
-"""Timing functions"""
+"""Timing functions."""
 
 import time as _time
 
 
 def timeit(message):
-    """Decorator to time a method in Bempp"""
+    """Decorator to time a method in Bempp."""
 
     def timeit_impl(fun):
         """Implementation of timeit."""

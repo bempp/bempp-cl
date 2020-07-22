@@ -96,10 +96,7 @@ def function_space(
 
 
 class SpaceBuilder(object):
-    """
-    This object configures and builds a space object.
-
-    """
+    """An object that configures and builds a space object."""
 
     def __init__(self, grid):
         """Set all parameters to None."""
@@ -531,9 +528,7 @@ class FunctionSpace(object):
 
     @property
     def dof_transformation(self):
-        """
-        Transformation from global dofs to space dofs.
-        """
+        """Transformation from global dofs to space dofs."""
         return self._dof_transformation
 
     @property

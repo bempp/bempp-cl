@@ -1,5 +1,5 @@
 # pylint: disable-msg=too-many-arguments
-"""Definition of Grid functions in BEM++"""
+"""Definition of Grid functions in Bempp."""
 
 import numba as _numba
 import numpy as _np
@@ -557,7 +557,7 @@ class GridFunction(object):
         )
 
     def l2_norm(self):
-        """L^2 norm of the function"""
+        """L^2 norm of the function."""
         import numpy as np
 
         # L2-Norm on the whole space
@@ -628,7 +628,7 @@ class GridFunction(object):
 
     @classmethod
     def from_random(cls, space):
-        """Create a random grid function normalized to unit norm. """
+        """Create a random grid function normalized to unit norm."""
         from numpy.random import randn
 
         ndofs = space.global_dof_count
@@ -637,7 +637,7 @@ class GridFunction(object):
 
     @classmethod
     def from_ones(cls, space):
-        """Create a grid function with all coefficients set to one. """
+        """Create a grid function with all coefficients set to one."""
         from numpy import ones
 
         ndofs = space.global_dof_count
@@ -646,7 +646,7 @@ class GridFunction(object):
 
     @classmethod
     def from_zeros(cls, space):
-        """Create a grid function with all coefficients set to one. """
+        """Create a grid function with all coefficients set to one."""
         from numpy import zeros
 
         ndofs = space.global_dof_count

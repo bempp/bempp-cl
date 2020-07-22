@@ -1,4 +1,4 @@
-"""The basic grid class"""
+"""The basic grid class."""
 from bempp.helpers import timeit as _timeit
 import collections as _collections
 
@@ -158,7 +158,7 @@ class Grid(object):
     @property
     def element_neighbors(self):
         """
-        Return named tuple (indices, indexptr)
+        Return named tuple (indices, indexptr).
 
         The neighbors of element i are given as
         element_neighbors.indices[
@@ -521,7 +521,8 @@ class Grid(object):
         )
 
     def _get_element_adjacency_for_edges_and_vertices(self):
-        """
+        """Get element adjacency.
+
         The array edge_adjacency has 6 rows, such that for index j the
         element edge_adjacency[0, j] is connected with element
         edge_adjacency[1, j] via the vertices edge_adjacency[2:4, j]
@@ -739,9 +740,7 @@ class GridDataDouble(object):
         self.element_neighbor_indexptr = element_neighbor_indexptr
 
     def local2global(self, elem_index, local_coords):
-        """
-        Map local to global coordinates.
-        """
+        """Map local to global coordinates."""
         return _np.expand_dims(
             self.vertices[:, self.elements[0, elem_index]], 1
         ) + self.jacobians[elem_index].dot(local_coords)
@@ -787,7 +786,7 @@ class GridDataFloat(object):
         element_neighbor_indices,
         element_neighbor_indexptr,
     ):
-
+        """TODO: add a docstring."""
         self.vertices = vertices
         self.elements = elements
         self.edges = edges
@@ -805,9 +804,7 @@ class GridDataFloat(object):
         self.element_neighbor_indexptr = element_neighbor_indexptr
 
     def local2global(self, elem_index, local_coords):
-        """
-        Map local to global coordinates.
-        """
+        """Map local to global coordinates."""
         return _np.expand_dims(
             self.vertices[:, self.elements[0, elem_index]], 1
         ) + self.jacobians[elem_index].dot(local_coords)
@@ -818,7 +815,6 @@ class ElementGeometry(object):
 
     def __init__(self, grid, index):
         """Initialize geometry wth a 3x3 array of corners."""
-
         self._grid = grid
         self._index = index
 
@@ -1058,9 +1054,7 @@ def _find_first_common_array_index_pair_from_position(array1, array2, start=0):
 
 @_numba.njit(locals={"offset": _numba.types.int32})
 def _find_two_common_array_index_pairs(array1, array2):
-    """
-    Return two index pairs (i, j) such that array1[i] = array2[j]
-    """
+    """Return two index pairs (i, j) such that array1[i] = array2[j]."""
     offset = 0
     index_pairs = _np.empty((2, 2), dtype=_np.int32)
     index_pairs[:, 0] = _find_first_common_array_index_pair_from_position(
@@ -1076,7 +1070,7 @@ def _find_two_common_array_index_pairs(array1, array2):
 @_numba.njit()
 def _get_shared_vertex_information_for_two_elements(elements, elem0, elem1):
     """
-    Return tuple (i, j)
+    Return tuple (i, j).
 
     The tuple has the property elements[i, elem0] == elements[j, elem1]
     """
@@ -1089,7 +1083,7 @@ def _get_shared_vertex_information_for_two_elements(elements, elem0, elem1):
 @_numba.njit()
 def _get_shared_edge_information_for_two_elements(elements, elem0, elem1):
     """
-    Return 2x2 array of int32 indices
+    Return 2x2 array of int32 indices.
 
     Each column in the return indices as a pair (i, j) such that
     elements[i, elem0] = elements[j, elem1]
@@ -1142,7 +1136,7 @@ def _find_vertex_adjacency(elements, test_indices, trial_indices):
 @_numba.njit()
 def _find_edge_adjacency(elements, elem0_indices, elem1_indices):
     """
-    Return for element pairs the edge adjacency
+    Return for element pairs the edge adjacency.
 
     The return array edge_adjacency has 6 rows, such that for index
     j the element edge_adjacency[0, j] is connected with

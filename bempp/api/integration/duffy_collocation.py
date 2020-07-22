@@ -4,8 +4,8 @@ import numpy as _np
 
 
 def duffy_rule_on_reference_triangle(order):
-    """
-    Return points and weights for Duffy rule on unit triangle.
+    """Return points and weights for Duffy rule on unit triangle.
+
     The triangle has coordinates (0, 0), (1, 0), and (1, 1). The
     singularity is assumed to be at (0, 0).
     """

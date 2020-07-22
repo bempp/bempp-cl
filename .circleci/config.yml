@@ -12,7 +12,7 @@ jobs:
               python3 -m flake8 test
           name: Run flake8 checks
       - run:
-          command: python3 -m pydocstyle numpy bempp
+          command: python3 -m pydocstyle bempp/api
           name: Run pydocstyle checks
       - run:
           command: python3 setup.py install
