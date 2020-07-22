@@ -62,6 +62,7 @@ def real_callable(f):
 
     return callable(f)
 
+
 def complex_callable(f):
     """Wrap function as a complex Numba callable."""
 
