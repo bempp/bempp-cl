@@ -43,8 +43,7 @@ jobs:
             - bempp-conda-{{ checksum "environment.yml" }}
       - run:
           command: |
-            # Install libgl (dependency of gmsh)
-            sudo apt-get update && sudo apt-get install libgl1-mesa-dev -y
+            sudo apt-get update && sudo apt-get install libgl1-mesa-dev gcc -y
           name: Install Ubuntu requirements
       - run:
           command: |
@@ -66,6 +65,32 @@ jobs:
             python3 -m pytest test/simple
           name: Test installation
 
+  singularity-build:
+    docker:
+      - image: cimg/base:2020.01
+    steps:
+      - checkout
+      - run:
+          command: |
+            sudo apt-get update
+            sudo apt-get install singularity-container -y
+          name: Install singularity
+      - restore_cache:
+          keys:
+            - bempp-conda-{{ checksum "Singularity" }}
+      - run:
+          command: |
+            sudo singularity build ~/bempp.simg Singularity
+          name: Build singularity image
+      - save_cache:
+          key: bempp-conda-{{ checksum "environment.yml" }}
+          paths:
+            - ~/bempp.simg
+      - run:
+          command: |
+            sudo singularity exec ~/bempp.simg python3 -m pytest test/simple
+          name: Test installation
+
 workflows:
   main:
     jobs:
@@ -73,6 +98,6 @@ workflows:
       - conda-build:
           requires:
             - build-and-test
-          filters:
-            branches:
-              ignore: master
+      - singularity-build:
+          requires:
+            - build-and-test

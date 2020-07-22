@@ -17,9 +17,6 @@ From: ubuntu:bionic
     apt-get -y install software-properties-common wget gmsh git binutils build-essential
 
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ./miniconda.sh
-    ls
-    pwd
-    ls /
     bash ./miniconda.sh -b -p /opt/miniconda
     export PATH=/opt/miniconda/bin:$PATH
     conda create --yes -n bempp python=3.7
