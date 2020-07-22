@@ -1,7 +1,7 @@
 import bempp.api
 
 
-@bempp.api.callable
+@bempp.api.real_callable
 def f(x, n, domain_index, result):
     result[0] = x[0] + 1
 
