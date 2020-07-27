@@ -504,9 +504,7 @@ def compute_p1_curl_transformation_impl(
 
 
 def compute_rwg_basis_transform(space, quadrature_order):
-    """
-    Compute the transformation matrices for RWG basis functions.
-    """
+    """Compute the transformation matrices for RWG basis functions."""
     from bempp.api.integration.triangle_gauss import rule
     from scipy.sparse import coo_matrix
     from scipy.sparse.linalg import aslinearoperator
@@ -571,7 +569,6 @@ def compute_rwg_basis_transform_impl(
     weights,
 ):
     """Implement the RWG basis transformation."""
-
     number_of_quad_points = quad_points.shape[1]
     number_of_support_elements = len(support_elements)
 
@@ -608,9 +605,7 @@ def compute_rwg_basis_transform_impl(
 
 
 def compute_rwg_div_transform(space, quadrature_order):
-    """
-    Compute the div transformation matrices for RWG basis functions.
-    """
+    """Compute the div transformation matrices for RWG basis functions."""
     from bempp.api.integration.triangle_gauss import rule
     from scipy.sparse import coo_matrix
     from scipy.sparse.linalg import aslinearoperator
@@ -634,9 +629,6 @@ def compute_rwg_div_transform(space, quadrature_order):
         quad_points,
         weights,
     )
-
-    basis_transforms = []
-    basis_transforms_transpose = []
 
     return (
         aslinearoperator(
@@ -743,7 +735,7 @@ def make_maxwell_electric_field_boundary(
 ):
     """Make a Maxwell electric field boundary operator."""
     import bempp.api
-    from bempp.api.integration.triangle_gauss import get_number_of_quad_points
+    # from bempp.api.integration.triangle_gauss import get_number_of_quad_points
 
     wavenumber = operator_descriptor.options[0]
     order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
@@ -771,7 +763,6 @@ def make_maxwell_electric_field_boundary(
         return result + singular_part @ x
 
     return evaluate
-
 
 def make_maxwell_magnetic_field_boundary(
     operator_descriptor, fmm_interface, domain, dual_to_range
