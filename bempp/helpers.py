@@ -29,9 +29,11 @@ def timeit(fun):
 
 IndexList = _collections.namedtuple("IndexList", ["indices", "indexptr"])
 
+
 def jit_logger(name):
     """Emit a log message whenever Numba jits somethings."""
     import bempp.api
+
     def closure(func):
         """Closure that has the name variable."""
         def inner(*args, **kwargs):

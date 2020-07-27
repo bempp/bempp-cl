@@ -631,9 +631,6 @@ def compute_rwg_div_transform(space, quadrature_order):
         weights,
     )
 
-    basis_transforms = []
-    basis_transforms_transpose = []
-
     return (
         aslinearoperator(
             coo_matrix(
@@ -739,7 +736,7 @@ def make_maxwell_electric_field_boundary(
 ):
     """Make a Maxwell electric field boundary operator."""
     import bempp.api
-    from bempp.api.integration.triangle_gauss import get_number_of_quad_points
+    # from bempp.api.integration.triangle_gauss import get_number_of_quad_points
 
     wavenumber = operator_descriptor.options[0]
     order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
@@ -765,4 +762,3 @@ def make_maxwell_electric_field_boundary(
         return result + singular_part @ x
 
     return evaluate
-
