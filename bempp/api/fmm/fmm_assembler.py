@@ -96,6 +96,10 @@ def create_evaluator(
         return make_maxwell_electric_field_boundary(
             operator_descriptor, fmm_interface, domain, dual_to_range
         )
+    if operator_descriptor.assembly_type == "maxwell_magnetic_field":
+        return make_maxwell_magnetic_field_boundary(
+            operator_descriptor, fmm_interface, domain, dual_to_range
+        )
 
 
 def create_potential_evaluator(operator_descriptor, fmm_interface, space, parameters):
@@ -754,7 +758,9 @@ def make_maxwell_electric_field_boundary(
         result = _np.zeros(dual_to_range.global_dof_count, dtype=_np.complex128)
 
         for index in range(3):
-            result += rwg_map_trans[index] @ fmm_interface.evaluate(rwg_map[index] @ x)[:, 0]
+            result += (
+                rwg_map_trans[index] @ fmm_interface.evaluate(rwg_map[index] @ x)[:, 0]
+            )
 
         result *= -1j * wavenumber
         result -= (
@@ -766,3 +772,49 @@ def make_maxwell_electric_field_boundary(
 
     return evaluate
 
+
+def make_maxwell_magnetic_field_boundary(
+    operator_descriptor, fmm_interface, domain, dual_to_range
+):
+    """Make a Maxwell magnetic field boundary operator."""
+    import bempp.api
+    from bempp.api.integration.triangle_gauss import get_number_of_quad_points
+
+    wavenumber = operator_descriptor.options[0]
+    order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
+    rwg_map, rwg_map_trans = compute_rwg_basis_transform(domain, order)
+
+    singular_part = operator_descriptor.singular_part.weak_form().A
+
+    def evaluate(x):
+        """Evaluate the magnetic field operator."""
+
+        result = _np.zeros(dual_to_range.global_dof_count, dtype=_np.complex128)
+
+        vals = [
+            fmm_interface.evaluate(rwg_map[0] @ x)[:, 1:],
+            fmm_interface.evaluate(rwg_map[1] @ x)[:, 1:],
+            fmm_interface.evaluate(rwg_map[2] @ x)[:, 1:],
+        ]
+
+        # Now compute the curl
+
+        curl_val = _np.hstack(
+            [
+                (vals[2][:, 1] - vals[1][:, 2]).reshape(-1, 1),
+                (vals[0][:, 2] - vals[2][:, 0]).reshape(-1, 1),
+                (vals[1][:, 0] - vals[0][:, 1]).reshape(-1, 1),
+            ]
+        )
+
+        # Finally, compute the negative inner product
+
+        result = -(
+            rwg_map_trans[0] @ curl_val[:, 0]
+            + rwg_map_trans[1] @ curl_val[:, 1]
+            + rwg_map_trans[2] @ curl_val[:, 2]
+        )
+
+        return result + singular_part @ x
+
+    return evaluate
