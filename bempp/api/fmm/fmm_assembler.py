@@ -500,9 +500,7 @@ def compute_p1_curl_transformation_impl(
 
 
 def compute_rwg_basis_transform(space, quadrature_order):
-    """
-    Compute the transformation matrices for RWG basis functions.
-    """
+    """Compute the transformation matrices for RWG basis functions."""
     from bempp.api.integration.triangle_gauss import rule
     from scipy.sparse import coo_matrix
     from scipy.sparse.linalg import aslinearoperator
@@ -567,7 +565,6 @@ def compute_rwg_basis_transform_impl(
     weights,
 ):
     """Implement the RWG basis transformation."""
-
     number_of_quad_points = quad_points.shape[1]
     number_of_support_elements = len(support_elements)
 
@@ -604,9 +601,7 @@ def compute_rwg_basis_transform_impl(
 
 
 def compute_rwg_div_transform(space, quadrature_order):
-    """
-    Compute the div transformation matrices for RWG basis functions.
-    """
+    """Compute the div transformation matrices for RWG basis functions."""
     from bempp.api.integration.triangle_gauss import rule
     from scipy.sparse import coo_matrix
     from scipy.sparse.linalg import aslinearoperator
