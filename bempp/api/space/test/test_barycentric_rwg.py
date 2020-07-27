@@ -1,4 +1,3 @@
-
 # pylint: disable=redefined-outer-name
 # pylint: disable=C0103
 

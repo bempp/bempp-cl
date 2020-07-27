@@ -54,14 +54,12 @@ from bempp.api.assembly.blocked_operator import GeneralizedBlockedOperator
 from bempp.api.utils import pool
 from bempp.api.utils.pool import create_device_pool
 
-# Disable Numba warnings
-
-
 from numba.core.errors import (
     NumbaDeprecationWarning,
     NumbaPendingDeprecationWarning,
     NumbaPerformanceWarning,
 )
+
 import warnings
 
 warnings.simplefilter("ignore", category=NumbaDeprecationWarning)
@@ -184,7 +182,7 @@ class Timer:
 
 
 def test(precision="double", vectorization="auto"):
-    """ Runs Bempp python unit tests """
+    """Runs Bempp python unit tests."""
     import pytest
 
     options = []
@@ -197,7 +195,7 @@ def test(precision="double", vectorization="auto"):
 
 
 def benchmark(precision="double", vectorization="auto", capture_output=True):
-    """Run py.test benchmarks"""
+    """Run py.test benchmarks."""
     import pytest
 
     benchmark_dir = _os.path.join(BEMPP_PATH, "./benchmarks/")

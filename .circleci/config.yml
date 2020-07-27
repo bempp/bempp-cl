@@ -1,57 +1,31 @@
 version: 2.1
 
-orbs:
-  python: circleci/python@0.2.1
-
 jobs:
   build-and-test:
-    executor: python/default
+    docker:
+      - image: mscroggs/bempp-cl-test:latest
     steps:
       - checkout
       - run:
-          command: pip3 install flake8
-          name: Install flake8
-      - run:
-          command: python3 -m flake8 bempp
-          name: Flake8 checks
-      - run:
           command: |
-            if [[ ! -d /home/circleci/miniconda ]]; then
-                wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
-                bash miniconda.sh -b -f -p /home/circleci/miniconda;
-            else
-                echo "Using cached miniconda";
-            fi
-          name: Install miniconda
-      - restore_cache:
-          keys:
-            - bempp-conda-{{ checksum "environment.yml" }}
+              python3 -m flake8 bempp
+              python3 -m flake8 test
+          name: Run flake8 checks
       - run:
-          command: |
-            source ~/miniconda/bin/activate root
-                conda update conda
-            if [[ ! -d /home/circleci/miniconda/envs/bempp ]]; then
-                conda env create -f environment.yml
-            fi
-          name: Create bempp environment
-      - save_cache:
-          key: bempp-conda-{{ checksum "environment.yml" }}
-          paths:
-            - ~/miniconda/envs/bempp
+          command: python3 -m pydocstyle bempp/api
+          name: Run pydocstyle checks
       - run:
-          command: |
-            source ~/miniconda/bin/activate root
-            conda activate bempp
-            python3 -m pytest --durations=50 bempp
-          name: Run tests
+          command: python3 setup.py install
+          name: Install Bempp
       - run:
-          command: |
-            source ~/miniconda/bin/activate root
-            conda activate bempp
-            export PYTHONPATH="$(pwd):$PYTHONPATH"
-            python3 -m pytest --durations=50 notebooks/test_notebooks.py
+          command: python3 -m pytest test/simple
+          name: Run Bempp simple tests
+      - run:
+          command: python3 -m pytest --durations=50 bempp
+          name: Run Bempp unit tests
+      - run:
+          command: python3 -m pytest --durations=50 notebooks/test_notebooks.py
           name: Run example notebooks
-
 
 workflows:
   main:

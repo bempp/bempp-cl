@@ -19,6 +19,7 @@ class IterationCounter(object):
         self._rhs = rhs
 
     def __call__(self, x):
+        """TODO: add docstring."""
         from bempp.api import log
         self._count += 1
         if self._store_residuals:

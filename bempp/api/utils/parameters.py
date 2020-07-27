@@ -4,7 +4,7 @@
 
 
 class _Verbosity(object):
-    """Verbosity Parameters"""
+    """Verbosity Parameters."""
 
     def __init__(self):
         """Initialize verbosity parameters."""
@@ -13,7 +13,7 @@ class _Verbosity(object):
 
 
 class _Output(object):
-    """Output parameters"""
+    """Output parameters."""
 
     def __init__(self):
         """Initialize output parameters."""
@@ -22,7 +22,7 @@ class _Output(object):
 
 
 class _Quadrature(object):
-    """Quadrature orders"""
+    """Quadrature orders."""
 
     def __init__(self):
 
@@ -58,7 +58,7 @@ class _Assembly(object):
 
 
 class DefaultParameters(object):
-    """Default parameters for Bempp"""
+    """Default parameters for Bempp."""
 
     def __init__(self):
         """Initialize parameters."""

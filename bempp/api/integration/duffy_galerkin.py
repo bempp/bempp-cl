@@ -1,12 +1,9 @@
-"""
-Duffy transformation rules for singular integration for Galerkin integrals.
-"""
+"""Duffy transformation rules for singular integration for Galerkin integrals."""
 import numpy as _np
 
 
 def number_of_quadrature_points(order, adjacency):
-    """
-    Return the number of quadrature points for given adjacency.
+    """Return the number of quadrature points for given adjacency.
 
     Possible cases for adjacency are "coincident", "edge_adjacent"
     or "vertex_adjacent".
@@ -283,7 +280,7 @@ def remap_points_shared_vertex(points, vertex_id):
 
 def remap_points_shared_edge(points, shared_vertex1, shared_vertex2):
     """
-    Remap triangle points for edge adjacency
+    Remap triangle points for edge adjacency.
 
     By default the Duffy rules assume that the two triangles meet
     at edge 0. This method transforms the Duffy integration

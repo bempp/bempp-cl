@@ -2939,5 +2939,5 @@ def rule(order):
 
 
 def get_number_of_quad_points(order):
-    """"Get number of quad points per order."""
+    """Get number of quad points per order."""
     return points_per_order[order - 1]

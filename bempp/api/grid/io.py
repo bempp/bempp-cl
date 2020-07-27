@@ -154,6 +154,7 @@ def export(
 def _transform_array(a, mode=None):
     """
     Transform a data array.
+
     Parameters
     ----------
     a : np.ndarray
