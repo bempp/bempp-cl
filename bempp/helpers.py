@@ -28,3 +28,19 @@ def timeit(fun):
 
 
 IndexList = _collections.namedtuple("IndexList", ["indices", "indexptr"])
+
+def jit_logger(name):
+    """Emit a log message whenever Numba jits somethings."""
+    import bempp.api
+    def closure(func):
+        """Closure that has the name variable."""
+        def inner(*args, **kwargs):
+            origsigs = set(func.signatures)
+            result = func(*args, **kwargs)
+            newsigs = set(func.signatures)
+            if newsigs != origsigs:
+                new = (newsigs ^ origsigs).pop()
+                bempp.api.log(f"Compiled {name} for signature {new}", level="timing")
+            return result
+        return inner
+    return closure

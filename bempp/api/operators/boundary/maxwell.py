@@ -17,7 +17,7 @@ def electric_field(
     """Assemble the electric field boundary operator."""
 
     return _common.create_operator(
-        "electric_field_boundary",
+        "maxwell_electric_field_boundary",
         domain,
         range_,
         dual_to_range,
@@ -45,7 +45,7 @@ def magnetic_field(
     """Assemble the magnetic field boundary operator."""
 
     return _common.create_operator(
-        "magnetic_field_boundary",
+        "maxwell_magnetic_field_boundary",
         domain,
         range_,
         dual_to_range,

@@ -18,6 +18,8 @@ def get_mode_from_operator_identifier(identifier):
         return "helmholtz"
     elif descriptor == "modified":
         return "modified_helmholtz"
+    elif descriptor == "maxwell":
+        return "helmholtz"
     else:
         raise ValueError("Unknown identifier string.")
 
@@ -88,6 +90,10 @@ def create_evaluator(
         )
     if operator_descriptor.assembly_type.split("_")[-1] == "hypersingular":
         return make_scalar_hypersingular(
+            operator_descriptor, fmm_interface, domain, dual_to_range
+        )
+    if operator_descriptor.assembly_type == "maxwell_electric_field":
+        return make_maxwell_electric_field_boundary(
             operator_descriptor, fmm_interface, domain, dual_to_range
         )
 
@@ -493,6 +499,212 @@ def compute_p1_curl_transformation_impl(
     return (data, iind, jind)
 
 
+def compute_rwg_basis_transform(space, quadrature_order):
+    """
+    Compute the transformation matrices for RWG basis functions.
+    """
+    from bempp.api.integration.triangle_gauss import rule
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.linalg import aslinearoperator
+
+    grid_data = space.grid.data("double")
+    number_of_elements = space.grid.number_of_elements
+    quad_points, weights = rule(quadrature_order)
+    npoints = len(weights)
+    dof_count = space.localised_space.grid_dof_count
+
+    shapeset_evaluate = space.shapeset.evaluate
+    basis_eval = space.numba_evaluate
+
+    data, iind, jind = compute_rwg_basis_transform_impl(
+        grid_data,
+        shapeset_evaluate,
+        basis_eval,
+        space.support_elements,
+        space.localised_space.local_multipliers,
+        space.normal_multipliers,
+        quad_points,
+        weights,
+    )
+
+    basis_transforms = []
+    basis_transforms_transpose = []
+
+    for index in range(3):
+        basis_transforms.append(
+            aslinearoperator(
+                coo_matrix(
+                    (data[index, :], (iind, jind)),
+                    shape=(npoints * number_of_elements, dof_count),
+                ).tocsr()
+            )
+            @ aslinearoperator(space.map_to_localised_space)
+            @ aslinearoperator(space.dof_transformation)
+        )
+        basis_transforms_transpose.append(
+            aslinearoperator(space.dof_transformation.T)
+            @ aslinearoperator(space.map_to_localised_space.T)
+            @ aslinearoperator(
+                coo_matrix(
+                    (data[index, :], (jind, iind)),
+                    shape=(dof_count, npoints * number_of_elements),
+                ).tocsr()
+            )
+        )
+
+    return basis_transforms, basis_transforms_transpose
+
+
+@_numba.njit
+def compute_rwg_basis_transform_impl(
+    grid_data,
+    shapeset_evaluate,
+    basis_evaluate,
+    support_elements,
+    local_multipliers,
+    normal_multipliers,
+    quad_points,
+    weights,
+):
+    """Implement the RWG basis transformation."""
+
+    number_of_quad_points = quad_points.shape[1]
+    number_of_support_elements = len(support_elements)
+
+    nlocal = 3 * number_of_quad_points
+
+    data = _np.empty((3, nlocal * number_of_support_elements), dtype=_np.float64)
+    jind = _np.empty(nlocal * number_of_support_elements, dtype=_np.int64)
+    iind = _np.empty(nlocal * number_of_support_elements, dtype=_np.int64)
+    basis_values = _np.empty((3, 3, number_of_quad_points), dtype=_np.float64)
+
+    for element_index, element in enumerate(support_elements):
+        basis_values = basis_evaluate(
+            element,
+            shapeset_evaluate,
+            quad_points,
+            grid_data,
+            local_multipliers,
+            normal_multipliers,
+        )
+        for function_index in range(3):
+            for point_index in range(number_of_quad_points):
+                index = (
+                    nlocal * element_index
+                    + function_index * number_of_quad_points
+                    + point_index
+                )
+                data[:, index] = basis_values[:, function_index, point_index] * (
+                    weights[point_index] * grid_data.integration_elements[element]
+                )
+                iind[index] = number_of_quad_points * element_index + point_index
+                jind[index] = 3 * element_index + function_index
+
+    return (data, iind, jind)
+
+
+def compute_rwg_div_transform(space, quadrature_order):
+    """
+    Compute the div transformation matrices for RWG basis functions.
+    """
+    from bempp.api.integration.triangle_gauss import rule
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.linalg import aslinearoperator
+
+    grid_data = space.grid.data("double")
+    number_of_elements = space.grid.number_of_elements
+    quad_points, weights = rule(quadrature_order)
+    npoints = len(weights)
+    dof_count = space.localised_space.grid_dof_count
+
+    shapeset_evaluate = space.shapeset.evaluate
+    basis_eval = space.numba_evaluate
+
+    data, iind, jind = compute_rwg_div_transform_impl(
+        grid_data,
+        shapeset_evaluate,
+        basis_eval,
+        space.support_elements,
+        space.localised_space.local_multipliers,
+        space.normal_multipliers,
+        quad_points,
+        weights,
+    )
+
+    basis_transforms = []
+    basis_transforms_transpose = []
+
+    return (
+        aslinearoperator(
+            coo_matrix(
+                (data, (iind, jind)), shape=(npoints * number_of_elements, dof_count),
+            ).tocsr()
+        )
+        @ aslinearoperator(space.map_to_localised_space)
+        @ aslinearoperator(space.dof_transformation),
+        aslinearoperator(space.dof_transformation.T)
+        @ aslinearoperator(space.map_to_localised_space.T)
+        @ aslinearoperator(
+            coo_matrix(
+                (data, (jind, iind)), shape=(dof_count, npoints * number_of_elements),
+            ).tocsr()
+        ),
+    )
+
+
+@_numba.njit
+def compute_rwg_div_transform_impl(
+    grid_data,
+    shapeset_evaluate,
+    basis_evaluate,
+    support_elements,
+    local_multipliers,
+    normal_multipliers,
+    quad_points,
+    weights,
+):
+    """Implement the RWG basis div transformation."""
+
+    number_of_quad_points = quad_points.shape[1]
+    number_of_support_elements = len(support_elements)
+
+    nlocal = 3 * number_of_quad_points
+
+    data = _np.empty(nlocal * number_of_support_elements, dtype=_np.float64)
+    jind = _np.empty(nlocal * number_of_support_elements, dtype=_np.int64)
+    iind = _np.empty(nlocal * number_of_support_elements, dtype=_np.int64)
+
+    for element_index, element in enumerate(support_elements):
+        edge_lengths = _np.empty(3, dtype=_np.float64)
+        edge_lengths[0] = _np.linalg.norm(
+            grid_data.vertices[:, grid_data.elements[0, element]]
+            - grid_data.vertices[:, grid_data.elements[1, element]]
+        )
+        edge_lengths[1] = _np.linalg.norm(
+            grid_data.vertices[:, grid_data.elements[2, element]]
+            - grid_data.vertices[:, grid_data.elements[0, element]]
+        )
+        edge_lengths[2] = _np.linalg.norm(
+            grid_data.vertices[:, grid_data.elements[1, element]]
+            - grid_data.vertices[:, grid_data.elements[2, element]]
+        )
+
+        for function_index in range(3):
+            for point_index in range(number_of_quad_points):
+                index = (
+                    nlocal * element_index
+                    + function_index * number_of_quad_points
+                    + point_index
+                )
+                data[index] = (
+                    2.0 * edge_lengths[function_index] * (weights[point_index])
+                )
+                iind[index] = number_of_quad_points * element_index + point_index
+                jind[index] = 3 * element_index + function_index
+
+    return (data, iind, jind)
+
+
 def make_default_scalar_potential(operator_descriptor, fmm_interface, space):
     """Make a scalar potential operator."""
     import bempp.api
@@ -520,3 +732,37 @@ def make_default_scalar_potential(operator_descriptor, fmm_interface, space):
         return evaluate_single_layer
     elif "double" in operator_descriptor.identifier:
         return evaluate_double_layer
+
+
+def make_maxwell_electric_field_boundary(
+    operator_descriptor, fmm_interface, domain, dual_to_range
+):
+    """Make a Maxwell electric field boundary operator."""
+    import bempp.api
+    from bempp.api.integration.triangle_gauss import get_number_of_quad_points
+
+    wavenumber = operator_descriptor.options[0]
+    order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
+    rwg_map, rwg_map_trans = compute_rwg_basis_transform(domain, order)
+    div_map, div_map_trans = compute_rwg_div_transform(domain, order)
+
+    singular_part = operator_descriptor.singular_part.weak_form().A
+
+    def evaluate(x):
+        """Evaluate the electric field operator."""
+
+        result = _np.zeros(dual_to_range.global_dof_count, dtype=_np.complex128)
+
+        for index in range(3):
+            result += rwg_map_trans[index] @ fmm_interface.evaluate(rwg_map[index] @ x)[:, 0]
+
+        result *= -1j * wavenumber
+        result -= (
+            1
+            / (1j * wavenumber)
+            * (div_map_trans @ fmm_interface.evaluate(div_map @ x))[:, 0]
+        )
+        return result + singular_part @ x
+
+    return evaluate
+

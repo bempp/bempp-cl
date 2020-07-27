@@ -1,5 +1,25 @@
 """Global initialization for Bempp."""
 
+# Monkey patch Numba to emit log messages when compiling
+
+import numba
+
+oldcompile = numba.core.registry.CPUDispatcher.compile
+
+
+def compile_with_log(*args, **kwargs):
+    """Numba compilation with log messages."""
+    import bempp.api
+
+    fun_name = args[0].py_func.__name__
+    bempp.api.log(f"Compiling {fun_name} for signature {args[1]}.", level="debug")
+    res = oldcompile(*args, **kwargs)
+    bempp.api.log(f"Compilation finished.", level="debug")
+    return res
+
+
+numba.core.registry.CPUDispatcher.compile = compile_with_log
+
 import os as _os
 import tempfile as _tempfile
 import logging as _logging
@@ -157,7 +177,10 @@ class Timer:
         self.end = _time.time()
         self.interval = self.end - self.start
         if self.enable_log:
-            log("Finished Operation: " + self.message + f": {self.interval}s", level=self.level)
+            log(
+                "Finished Operation: " + self.message + f": {self.interval}s",
+                level=self.level,
+            )
 
 
 def test(precision="double", vectorization="auto"):
@@ -252,13 +275,14 @@ if _platform.system() == "Darwin":
     DEFAULT_DEVICE_INTERFACE = "numba"
 else:
     from bempp.core.opencl_kernels import find_cpu_driver
+
     if find_cpu_driver() is None:
         DEFAULT_DEVICE_INTERFACE = "numba"
     else:
         DEFAULT_DEVICE_INTERFACE = "opencl"
 
 DEFAULT_PRECISION = "double"
-VECTORIZATION_MODE = 'auto'
+VECTORIZATION_MODE = "auto"
 
 
 ALL = -1  # Useful global identifier
