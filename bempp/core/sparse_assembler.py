@@ -115,8 +115,12 @@ def assemble_sparse(
             quad_weights,
             dual_to_range.normal_multipliers,
             domain.normal_multipliers,
+            dual_to_range.local_multipliers,
+            domain.local_multipliers,
             dual_to_range.shapeset.evaluate,
             domain.shapeset.evaluate,
+            dual_to_range.numba_evaluate,
+            domain.numba_evaluate,
             numba_kernel_function,
             result)
     print(f"Numba kernel time: {t.interval}")

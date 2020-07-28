@@ -841,15 +841,23 @@ def l2_identity_kernel(
     elements,
     quad_points,
     quad_weights,
-    trial_normals,
-    test_normals,
+    test_normal_multipliers,
+    trial_normal_multipliers,
+    test_multipliers,
+    trial_multipliers,
     test_shapeset,
     trial_shapeset,
+    test_basis_evaluate,
+    trial_basis_evaluate,
     result,
 ):
 
-    local_test_fun_values = test_shapeset(quad_points)
-    local_trial_fun_values = trial_shapeset(quad_points)
+    local_test_fun_values = test_basis_evaluate(
+            element_index, test_shapeset, quad_points, grid_data, 
+            test_multipliers, test_normal_multipliers)
+    local_trial_fun_values = trial_basis_evaluate(
+            element_index, trial_shapeset, quad_points, grid_data,
+            trial_multipliers, trial_normal_multipliers)
 
     nshape = nshape_test * nshape_trial
     dimension = local_test_fun_values.shape[0]
@@ -883,18 +891,16 @@ def default_sparse_kernel(
     quad_weights,
     test_normal_multipliers,
     trial_normal_multipliers,
+    test_multipliers,
+    trial_multipliers,
     test_shapeset,
     trial_shapeset,
+    test_basis_evaluate,
+    trial_basis_evaluate,
     kernel_evaluator,
     result,
 ):
     n_quad_points = len(quad_weights)
-    trial_normals = get_normals(
-        grid_data, n_quad_points, elements, trial_normal_multipliers
-    )
-    test_normals = get_normals(
-        grid_data, n_quad_points, elements, test_normal_multipliers
-    )
 
     nelements = len(elements)
 
@@ -907,10 +913,14 @@ def default_sparse_kernel(
             elements,
             quad_points,
             quad_weights,
-            trial_normals,
-            test_normals,
+            test_normal_multipliers,
+            trial_normal_multipliers,
+            test_multipliers,
+            trial_multipliers,
             test_shapeset,
             trial_shapeset,
+            test_basis_evaluate,
+            trial_basis_evaluate,
             result,
         )
 
