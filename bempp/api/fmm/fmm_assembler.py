@@ -107,6 +107,14 @@ def create_potential_evaluator(operator_descriptor, fmm_interface, space, parame
 
     if operator_descriptor.assembly_type == "default_scalar":
         return make_default_scalar_potential(operator_descriptor, fmm_interface, space)
+    elif operator_descriptor.assembly_type == "maxwell_electric_field":
+        return make_maxwell_electric_field_potential(
+            operator_descriptor, fmm_interface, space
+        )
+    elif operator_descriptor.assembly_type == "maxwell_magnetic_field":
+        return make_maxwell_magnetic_field_potential(
+            operator_descriptor, fmm_interface, space
+        )
     else:
         raise ValueError("Unknown descriptor.")
 
@@ -722,7 +730,7 @@ def make_default_scalar_potential(operator_descriptor, fmm_interface, space):
         fmm1 = fmm_interface.evaluate(source_normals[:, 1] * x_transformed)[:, 2]
         fmm2 = fmm_interface.evaluate(source_normals[:, 2] * x_transformed)[:, 3]
 
-        return -(fmm0 + fmm1 + fmm2)
+        return -(fmm0 + fmm1 + fmm2).reshape([1, -1])
 
     if "single" in operator_descriptor.identifier:
         return evaluate_single_layer
@@ -735,6 +743,7 @@ def make_maxwell_electric_field_boundary(
 ):
     """Make a Maxwell electric field boundary operator."""
     import bempp.api
+
     # from bempp.api.integration.triangle_gauss import get_number_of_quad_points
 
     wavenumber = operator_descriptor.options[0]
@@ -763,6 +772,7 @@ def make_maxwell_electric_field_boundary(
         return result + singular_part @ x
 
     return evaluate
+
 
 def make_maxwell_magnetic_field_boundary(
     operator_descriptor, fmm_interface, domain, dual_to_range
@@ -807,5 +817,71 @@ def make_maxwell_magnetic_field_boundary(
         )
 
         return result + singular_part @ x
+
+    return evaluate
+
+
+def make_maxwell_electric_field_potential(operator_descriptor, fmm_interface, space):
+    """Make a Maxwell electric field potential operator."""
+    import bempp.api
+    from bempp.api.integration.triangle_gauss import get_number_of_quad_points
+
+    wavenumber = operator_descriptor.options[0]
+    order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
+    rwg_map, rwg_map_trans = compute_rwg_basis_transform(space, order)
+    div_map, div_map_trans = compute_rwg_div_transform(space, order)
+
+    def evaluate(x):
+        """Evaluate the potential operator."""
+
+        res = (
+            1j
+            * wavenumber
+            * _np.vstack(
+                [
+                    fmm_interface.evaluate(rwg_map[0] @ x)[:, 0],
+                    fmm_interface.evaluate(rwg_map[1] @ x)[:, 0],
+                    fmm_interface.evaluate(rwg_map[2] @ x)[:, 0],
+                ]
+            )
+            - 1.0 / (1j * wavenumber) * fmm_interface.evaluate(div_map @ x)[:, 1:].T
+        )
+
+        return res
+
+    return evaluate
+
+
+def make_maxwell_magnetic_field_potential(operator_descriptor, fmm_interface, space):
+    """Make a Maxwell magnetic field potential operator."""
+    import bempp.api
+    from bempp.api.integration.triangle_gauss import get_number_of_quad_points
+
+    wavenumber = operator_descriptor.options[0]
+    order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
+    rwg_map, rwg_map_trans = compute_rwg_basis_transform(space, order)
+    div_map, div_map_trans = compute_rwg_div_transform(space, order)
+
+    def evaluate(x):
+        """Evaluate the potential operator."""
+
+        vals = [
+            fmm_interface.evaluate(rwg_map[0] @ x)[:, 1:],
+            fmm_interface.evaluate(rwg_map[1] @ x)[:, 1:],
+            fmm_interface.evaluate(rwg_map[2] @ x)[:, 1:],
+        ]
+
+        # Now compute the curl
+
+        curl_val = _np.vstack(
+            [
+                (vals[2][:, 1] - vals[1][:, 2]),
+                (vals[0][:, 2] - vals[2][:, 0]),
+                (vals[1][:, 0] - vals[0][:, 1]),
+            ]
+        )
+        return curl_val
+
+
 
     return evaluate

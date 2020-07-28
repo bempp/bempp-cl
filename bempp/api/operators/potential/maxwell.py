@@ -15,6 +15,10 @@ def electric_field(
     from bempp.api.operators import OperatorDescriptor
     from bempp.api.assembly.potential_operator import PotentialOperator
     from bempp.api.assembly.assembler import PotentialAssembler
+    import bempp.api
+
+    if precision is None:
+        precision = bempp.api.DEFAULT_PRECISION
 
     operator_descriptor = OperatorDescriptor(
         "maxwell_electric_field_potential",  # Identifier
@@ -47,6 +51,10 @@ def magnetic_field(
     from bempp.api.operators import OperatorDescriptor
     from bempp.api.assembly.potential_operator import PotentialOperator
     from bempp.api.assembly.assembler import PotentialAssembler
+    import bempp.api
+
+    if precision is None:
+        precision = bempp.api.DEFAULT_PRECISION
 
     operator_descriptor = OperatorDescriptor(
         "maxwell_magnetic_field_potential",  # Identifier
