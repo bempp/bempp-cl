@@ -779,9 +779,9 @@ def make_maxwell_magnetic_field_boundary(
 ):
     """Make a Maxwell magnetic field boundary operator."""
     import bempp.api
-    from bempp.api.integration.triangle_gauss import get_number_of_quad_points
+    # from bempp.api.integration.triangle_gauss import get_number_of_quad_points
 
-    wavenumber = operator_descriptor.options[0]
+    # wavenumber = operator_descriptor.options[0]
     order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
     rwg_map, rwg_map_trans = compute_rwg_basis_transform(domain, order)
 
@@ -824,7 +824,7 @@ def make_maxwell_magnetic_field_boundary(
 def make_maxwell_electric_field_potential(operator_descriptor, fmm_interface, space):
     """Make a Maxwell electric field potential operator."""
     import bempp.api
-    from bempp.api.integration.triangle_gauss import get_number_of_quad_points
+    # from bempp.api.integration.triangle_gauss import get_number_of_quad_points
 
     wavenumber = operator_descriptor.options[0]
     order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
@@ -855,9 +855,9 @@ def make_maxwell_electric_field_potential(operator_descriptor, fmm_interface, sp
 def make_maxwell_magnetic_field_potential(operator_descriptor, fmm_interface, space):
     """Make a Maxwell magnetic field potential operator."""
     import bempp.api
-    from bempp.api.integration.triangle_gauss import get_number_of_quad_points
+    # from bempp.api.integration.triangle_gauss import get_number_of_quad_points
 
-    wavenumber = operator_descriptor.options[0]
+    # wavenumber = operator_descriptor.options[0]
     order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
     rwg_map, rwg_map_trans = compute_rwg_basis_transform(space, order)
     div_map, div_map_trans = compute_rwg_div_transform(space, order)
@@ -881,7 +881,5 @@ def make_maxwell_magnetic_field_potential(operator_descriptor, fmm_interface, sp
             ]
         )
         return curl_val
-
-
 
     return evaluate
