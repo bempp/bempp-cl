@@ -5,6 +5,7 @@
 
 import pytest
 import numpy as np
+import bempp.api
 
 pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
@@ -12,7 +13,6 @@ GRID_SIZE = 4
 NPOINTS = 100
 TOL = 1e-6
 
-import bempp.api
 
 bempp.api.GLOBAL_PARAMETERS.fmm.expansion_order = 10
 # bempp.api.GLOBAL_PARAMETERS.fmm.ncrit = 100
@@ -58,10 +58,9 @@ def test_laplace():
         space, space, space, assembler=assembler,
     ).weak_form()
     slp_pot_dense = bempp.api.operators.potential.laplace.single_layer(
-            space, points, assembler=assembler)
+        space, points, assembler=assembler)
     dlp_pot_dense = bempp.api.operators.potential.laplace.double_layer(
-            space, points, assembler=assembler)
-
+        space, points, assembler=assembler)
 
     assembler = "fmm"
 
@@ -79,17 +78,15 @@ def test_laplace():
     ).weak_form()
 
     slp_pot_fmm = bempp.api.operators.potential.laplace.single_layer(
-            space, points, assembler=assembler)
+        space, points, assembler=assembler)
     dlp_pot_fmm = bempp.api.operators.potential.laplace.double_layer(
-            space, points, assembler=assembler)
-
+        space, points, assembler=assembler)
 
     slp_pot_res_dense = slp_pot_dense.evaluate(grid_fun)
     dlp_pot_res_dense = dlp_pot_dense.evaluate(grid_fun)
 
     slp_pot_res_fmm = slp_pot_fmm.evaluate(grid_fun)
     dlp_pot_res_fmm = dlp_pot_fmm.evaluate(grid_fun)
-
 
     np.testing.assert_allclose(slp_dense @ vec, slp_fmm @ vec, rtol=TOL)
     np.testing.assert_allclose(dlp_dense @ vec, dlp_fmm @ vec, rtol=TOL)
@@ -98,6 +95,7 @@ def test_laplace():
 
     np.testing.assert_allclose(slp_pot_res_dense, slp_pot_res_fmm, rtol=1E-4)
     np.testing.assert_allclose(dlp_pot_res_dense, dlp_pot_res_fmm, rtol=1E-4)
+
 
 def test_helmholtz():
     """Test Helmholtz operators."""
@@ -110,7 +108,7 @@ def test_helmholtz():
 
     wavenumber = 1.5
 
-    grid_fun = bempp.api.GridFunction(space, coefficients=vec)
+    grid_fun = bempp.api.GridFunction(space, coefficients=vec)  # noqa: F841
 
     points = np.vstack(
         [
@@ -137,11 +135,11 @@ def test_helmholtz():
     # hyp_dense = bempp.api.operators.boundary.helmholtz.hypersingular(
         # space, space, space, wavenumber, assembler=assembler,
     # ).weak_form()
-    slp_pot_dense = bempp.api.operators.potential.helmholtz.single_layer(
-            space, points, wavenumber, assembler=assembler)
+    # slp_pot_dense =
+    bempp.api.operators.potential.helmholtz.single_layer(
+        space, points, wavenumber, assembler=assembler)
     # dlp_pot_dense = bempp.api.operators.potential.helmholtz.double_layer(
             # space, points, wavenumber, assembler=assembler)
-
 
     assembler = "fmm"
 
@@ -158,13 +156,11 @@ def test_helmholtz():
         # space, space, space, wavenumber, assembler=assembler,
     # ).weak_form()
 
-    slp_pot_fmm = bempp.api.operators.potential.helmholtz.single_layer(
-            space, points, wavenumber, assembler=assembler)
+    # slp_pot_fmm =
+    bempp.api.operators.potential.helmholtz.single_layer(
+        space, points, wavenumber, assembler=assembler)
     # dlp_pot_fmm = bempp.api.operators.potential.helmholtz.double_layer(
             # space, points, wavenumber, assembler=assembler)
-
-    res1 = slp_dense @ test_vec
-    res2 = slp_fmm @ test_vec
 
     # slp_pot_res_dense = slp_pot_dense.evaluate(grid_fun)
     # dlp_pot_res_dense = dlp_pot_dense.evaluate(grid_fun)

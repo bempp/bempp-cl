@@ -853,11 +853,11 @@ def l2_identity_kernel(
 ):
 
     local_test_fun_values = test_basis_evaluate(
-            element_index, test_shapeset, quad_points, grid_data, 
-            test_multipliers, test_normal_multipliers)
+        element_index, test_shapeset, quad_points, grid_data,
+        test_multipliers, test_normal_multipliers)
     local_trial_fun_values = trial_basis_evaluate(
-            element_index, trial_shapeset, quad_points, grid_data,
-            trial_multipliers, trial_normal_multipliers)
+        element_index, trial_shapeset, quad_points, grid_data,
+        trial_multipliers, trial_normal_multipliers)
 
     nshape = nshape_test * nshape_trial
     dimension = local_test_fun_values.shape[0]
@@ -900,7 +900,7 @@ def default_sparse_kernel(
     kernel_evaluator,
     result,
 ):
-    n_quad_points = len(quad_weights)
+    # n_quad_points = len(quad_weights)
 
     nelements = len(elements)
 

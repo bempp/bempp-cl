@@ -127,7 +127,6 @@ def test_sparse_identity_snc_rwg(
     default_parameters, helpers, device_interface, precision
 ):
     """Test singular assembler for the sparse L^2 identity with snc/rwg basis."""
-    from scipy.sparse import coo_matrix
     from bempp.api import function_space
     from bempp.api.operators.boundary.sparse import identity
 
@@ -162,7 +161,6 @@ def test_sparse_identity_snc_bc(
     default_parameters, helpers, device_interface, precision
 ):
     """Test singular assembler for the sparse L^2 identity with snc/bc basis."""
-    from scipy.sparse import coo_matrix
     from bempp.api import function_space
     from bempp.api.operators.boundary.sparse import identity
 
