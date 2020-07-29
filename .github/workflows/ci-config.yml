@@ -18,11 +18,6 @@ jobs:
           key: ${{ runner.os }}-Dockerfile-${{ hashFiles('Dockerfile') }}
       - name: touch ~/cache/Dockerfile
         run: touch ~/cache/Dockerfile
-      - name: cat Dockerfiles
-        run: |
-            cat Dockerfile
-            cat ~/cache/Dockerfile
-            diff Dockerfile ~/cache/Dockerfile
       - name: compare Dockerfile with cache
         id: diff
         run: |
