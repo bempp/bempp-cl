@@ -47,7 +47,7 @@ jobs:
     name: Run style checks
     runs-on: ubuntu-20.04
     steps:
-      uses: actions/checkout@v2
+      - uses: actions/checkout@v2
       - run:
           command: pip3 install pydocstyle flake8
       - run:
