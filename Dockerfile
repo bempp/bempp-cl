@@ -67,6 +67,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libocct-modeling-data-7.3 \ 
     libocct-ocaf-7.3 \
     libocct-visualization-7.3 \
+    libopenblas-dev \
     libopenexr24 \
     libopenjp2-7 \
     libraw19 \
@@ -92,6 +93,24 @@ RUN cd /usr/local && \
 
 ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
 
-RUN cd ~
+WORKDIR ~
 
 ########################################
+
+FROM bempp-dev-env AS bempp-dev-env-with-pyexafmm
+
+WORKDIR /tmp
+RUN git clone https://github.com/exafmm/pyexafmm.git
+RUN cd pyexafmm && python3 setup.py install
+
+WORKDIR ~
+
+########################################
+
+FROM bempp-dev-env AS bempp-dev-env-with-exafmm
+
+WORKDIR /tmp
+RUN git clone https://github.com/exafmm/exafmm-t.git
+RUN cd exafmm-t && ./configure && make && make install && python3 setup.py install
+
+WORKDIR ~

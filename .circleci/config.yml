@@ -1,11 +1,15 @@
 version: 2.1
 
+orbs:
+  python: circleci/python@0.2.1
+
 jobs:
-  build-and-test:
-    docker:
-      - image: mscroggs/bempp-cl-test:latest
+  style-checks:
+    executor: python/default
     steps:
       - checkout
+      - run:
+          command: pip3 install pydocstyle flake8
       - run:
           command: |
               python3 -m flake8 bempp
@@ -14,6 +18,12 @@ jobs:
       - run:
           command: python3 -m pydocstyle bempp/api
           name: Run pydocstyle checks
+    
+  build-and-test-with-exafmm:
+    docker:
+      - image: mscroggs/bempp-cl-test:exafmm
+    steps:
+      - checkout
       - run:
           command: python3 setup.py install
           name: Install Bempp
@@ -30,4 +40,5 @@ jobs:
 workflows:
   main:
     jobs:
+      - style-checks
       - build-and-test
