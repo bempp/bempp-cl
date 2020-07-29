@@ -16,8 +16,11 @@ jobs:
         with:
           path: ~/cache/Dockerfile
           key: ${{ runner.os }}-Dockerfile
-      - name: touch ~/cache/Dockerfile
-        run: touch ~/cache/Dockerfile
+      - name: cat Dockerfiles
+        run: |
+            cat Dockerfile
+            cat ~/cache/Dockerfile
+            diff Dockerfile ~/cache/Dockerfile
       - name: compare Dockerfile with cache
         id: diff
         run: |
@@ -26,6 +29,8 @@ jobs:
             else
                 echo ::set-output name=changed::yes
             fi
+      - name: Copy Dockerfile to ~/cache/Dockerfile
+        run: cp Dockerfile ~/cache/Dockerfile
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v1
@@ -57,8 +62,6 @@ jobs:
           target: bempp-dev-env-with-pyexafmm
           cache_froms: mscroggs/bempp-cl-test:dev-env-pyexafmm
         if: steps.diff.outputs.changed == 'yes'
-      - name: Copy Dockerfile to ~/cache/Dockerfile
-        run: cp Dockerfile ~/cache/Dockerfile
   
   style-checks:
     name: Run style checks
