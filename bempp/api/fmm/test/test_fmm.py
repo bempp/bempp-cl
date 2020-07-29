@@ -11,7 +11,7 @@ pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
 GRID_SIZE = 4
 NPOINTS = 100
-TOL = 1e-6
+TOL = 1e-5
 
 
 bempp.api.GLOBAL_PARAMETERS.fmm.expansion_order = 10

@@ -114,3 +114,13 @@ RUN git clone https://github.com/exafmm/exafmm-t.git
 RUN cd exafmm-t && ./configure && make && make install && python3 setup.py install
 
 WORKDIR ~
+
+########################################
+
+FROM bempp-dev-env-with-exafmm AS bempp-cl
+WORKDIR /tmp
+RUN git clone https://github.com/bempp/bempp-cl
+RUN cd bempp-cl && python3 setup.py install
+
+WORKDIR ~
+
