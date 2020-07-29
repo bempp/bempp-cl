@@ -22,9 +22,9 @@ jobs:
         id: diff
         run: |
             if diff Dockerfile ~/cache/Dockerfile > /dev/null; then
-                echo "::set-output name=changed::0"
+                echo ::set-output name=changed::no
             else
-                echo "::set-output name=changed::1"
+                echo ::set-output name=changed::yes
             fi
 
       - name: Build and push Docker image
@@ -36,7 +36,7 @@ jobs:
           tags: latest
           target: bempp-cl
           cache_froms: mscroggs/bempp-cl-test:latest
-        if: steps.diff.outputs.changed == '1'
+        if: steps.diff.outputs.changed == 'yes'
       - name: Build and push testing Docker image with exafmm
         uses: docker/build-push-action@v1
         with:
@@ -46,7 +46,7 @@ jobs:
           tags: dev-env-exafmm
           target: bempp-dev-env-with-exafmm
           cache_froms: mscroggs/bempp-cl-test:dev-env-exafmm
-        if: steps.diff.outputs.changed == '1'
+        if: steps.diff.outputs.changed == 'yes'
       - name: Build and push testing Docker image with pyexafmm
         uses: docker/build-push-action@v1
         with:
@@ -56,10 +56,10 @@ jobs:
           tags: dev-env-pyexafmm
           target: bempp-dev-env-with-pyexafmm
           cache_froms: mscroggs/bempp-cl-test:dev-env-pyexafmm
-        if: ${{steps.diff.outputs.changed}}
+        if: steps.diff.outputs.changed == 'yes'
       - name: Copy Dockerfile to ~/cache/Dockerfile
         run: cp Dockerfile ~/cache/Dockerfile
-        if: steps.diff.outputs.changed == '1'
+        if: steps.diff.outputs.changed == 'yes'
   
   style-checks:
     name: Run style checks
