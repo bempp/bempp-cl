@@ -7,6 +7,9 @@ jobs:
     steps:
       - checkout
       - run:
+          command: pip3 install pytest nbformat
+          name: Install pytest and nbformat
+      - run:
           command: python3 -m pytest --durations=10 test/validation
           name: Run Bempp validation tests
       - run:
