@@ -226,7 +226,15 @@ GMSH_PATH = _gmsh_path()
 
 __version__ = _get_version()
 
-PLOT_BACKEND = "jupyter_notebook"
+PLOT_BACKEND = "gmsh"
+try:
+    ipy = get_ipython()
+    if ipy.__class__.__name__ == "ZMQInteractiveShell":
+        # We are in a jupyter notebook, so change plotting backend
+        PLOT_BACKEND = "jupyter_notebook"
+except NameError:
+    pass
+
 USE_JIT = True
 
 if _platform.system() == "Darwin":
