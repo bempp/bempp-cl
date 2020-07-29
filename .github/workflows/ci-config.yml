@@ -15,7 +15,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/cache/Dockerfile
-          key: ${{ runner.os }}-Dockerfile
+          key: ${{ runner.os }}-Dockerfile-${{ hashFiles('Dockerfile') }}
       - name: cat Dockerfiles
         run: |
             cat Dockerfile
