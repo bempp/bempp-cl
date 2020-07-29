@@ -181,46 +181,6 @@ class Timer:
             )
 
 
-def test(precision="double", vectorization="auto"):
-    """Runs Bempp python unit tests."""
-    import pytest
-
-    options = []
-
-    options.append("--precision=" + precision)
-    options.append("--vec=" + vectorization)
-    options.append(BEMPP_PATH)
-
-    pytest.main(options)
-
-
-def benchmark(precision="double", vectorization="auto", capture_output=True):
-    """Run py.test benchmarks."""
-    import pytest
-
-    benchmark_dir = _os.path.join(BEMPP_PATH, "./benchmarks/")
-    options = [
-        "-o",
-        "python_files=benchmark_*.py",
-        "-o",
-        "python_classes=Benchmark",
-        "-o",
-        "python_functions=*_benchmark",
-        "-p",
-        "no:warnings",
-    ]
-
-    options.append("--precision=" + precision)
-    options.append("--vec=" + vectorization)
-
-    if not capture_output:
-        options.append("-s")
-
-    options.append(benchmark_dir)
-
-    pytest.main(options)
-
-
 LOGGER = _init_logger()
 
 BEMPP_PATH = _os.path.abspath(
