@@ -25,7 +25,6 @@ workflows:
     jobs:
       - large-tests
       - run-benchmarks:
-        filters:
-          branches:
-            only:
-              - master
+          filters:
+            branches:
+              only: master
