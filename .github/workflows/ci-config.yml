@@ -36,7 +36,7 @@ jobs:
           tags: latest
           target: bempp-cl
           cache_froms: mscroggs/bempp-cl-test:latest
-        if: ${{steps.diff.outputs.changed}}
+        if: steps.diff.outputs.changed == '1'
       - name: Build and push testing Docker image with exafmm
         uses: docker/build-push-action@v1
         with:
@@ -46,7 +46,7 @@ jobs:
           tags: dev-env-exafmm
           target: bempp-dev-env-with-exafmm
           cache_froms: mscroggs/bempp-cl-test:dev-env-exafmm
-        if: ${{steps.diff.outputs.changed}}
+        if: steps.diff.outputs.changed == '1'
       - name: Build and push testing Docker image with pyexafmm
         uses: docker/build-push-action@v1
         with:
@@ -59,7 +59,7 @@ jobs:
         if: ${{steps.diff.outputs.changed}}
       - name: Copy Dockerfile to ~/cache/Dockerfile
         run: cp Dockerfile ~/cache/Dockerfile
-        if: ${{steps.diff.outputs.changed}}
+        if: steps.diff.outputs.changed == '1'
   
   style-checks:
     name: Run style checks
