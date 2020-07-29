@@ -19,7 +19,7 @@ def test_maxwell_electric_far_field(
     from bempp.api import GridFunction
     from bempp.api.operators.far_field.maxwell import electric_field
 
-    grid = helpers.load_grid("sphere")
+    grid = helpers.load_grid("small_sphere")
     space = function_space(grid, "RWG", 0)
 
     data = helpers.load_npz_data("maxwell_electric_far_field")
@@ -50,7 +50,7 @@ def test_maxwell_magnetic_far_field(
     from bempp.api import GridFunction
     from bempp.api.operators.far_field.maxwell import magnetic_field
 
-    grid = helpers.load_grid("sphere")
+    grid = helpers.load_grid("small_sphere")
     space = function_space(grid, "RWG", 0)
 
     data = helpers.load_npz_data("maxwell_magnetic_far_field")
@@ -119,7 +119,7 @@ def test_maxwell_far_field_complex_coeffs(
     from bempp.api.operators.far_field.maxwell import electric_field
     from bempp.api.operators.far_field.maxwell import magnetic_field
 
-    grid = bempp.api.shapes.regular_sphere(3)
+    grid = bempp.api.shapes.regular_sphere(2)
 
     space = bempp.api.function_space(grid, "RWG", 0)
 
