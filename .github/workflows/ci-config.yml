@@ -56,13 +56,10 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-      - run:
-          command: pip3 install pydocstyle flake8
-      - run:
-          command: |
-              python3 -m flake8 bempp
-              python3 -m flake8 test
-          name: Run flake8 checks
-      - run:
-          command: python3 -m pydocstyle bempp/api
-          name: Run pydocstyle checks
+      - run: pip3 install pydocstyle flake8
+      - run: |
+            python3 -m flake8 bempp
+            python3 -m flake8 test
+        name: Run flake8 checks
+      - run: python3 -m pydocstyle bempp/api
+        name: Run pydocstyle checks
