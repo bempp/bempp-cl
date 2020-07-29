@@ -95,6 +95,9 @@ parameters.assembly.potential_operator_assembly_type = "dense"
 regular_order = 4
 singular_order = 6
 
+wavenumber = 2.5
+wavenumber_complex = 2.5 + 1j
+
 parameters.quadrature.near.double_order = regular_order
 parameters.quadrature.near.single_order = regular_order
 parameters.quadrature.medium.double_order = regular_order
@@ -187,9 +190,6 @@ generate_bem_matrix(
 ################################
 
 print("Generating Helmholtz BEM matrices.")
-
-wavenumber = 2.5
-wavenumber_complex = 2.5 + 1j
 
 generate_bem_matrix(
     p0,
