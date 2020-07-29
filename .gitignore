@@ -121,3 +121,5 @@ venv.bak/
 
 # Ignore notebook output
 notebooks/laplace/mixed_dirichlet_neumann_laplace_solution.msh
+
+.exafmm/*

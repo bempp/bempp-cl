@@ -10,37 +10,6 @@ REGENERATE = False
 
 bempp.api.enable_console_logging()
 
-parameters = bempp.api.global_parameters
-parameters.assembly.boundary_operator_assembly_type = "dense"
-parameters.assembly.potential_operator_assembly_type = "dense"
-
-regular_order = 4
-singular_order = 6
-
-parameters.quadrature.near.double_order = regular_order
-parameters.quadrature.near.single_order = regular_order
-parameters.quadrature.medium.double_order = regular_order
-parameters.quadrature.medium.single_order = regular_order
-parameters.quadrature.far.double_order = regular_order
-parameters.quadrature.far.single_order = regular_order
-
-parameters.quadrature.double_singular = singular_order
-
-grid = bempp.api.import_grid("sphere.msh")
-grid_structured = bempp.api.import_grid("structured_grid.msh")
-
-p0 = bempp.api.function_space(grid, "DP", 0)
-dp1 = bempp.api.function_space(grid, "DP", 1)
-p1 = bempp.api.function_space(grid, "P", 1)
-rwg = bempp.api.function_space(grid, "RWG", 0)
-brwg = bempp.api.function_space(grid, "B-RWG", 0)
-snc = bempp.api.function_space(grid, "SNC", 0)
-bsnc = bempp.api.function_space(grid, "B-SNC", 0)
-bc = bempp.api.function_space(grid, "BC", 0)
-rbc = bempp.api.function_space(grid, "RBC", 0)
-rwg_structured = bempp.api.function_space(grid_structured, "RWG", 0)
-snc_structured = bempp.api.function_space(grid_structured, "SNC", 0)
-
 
 def generate_bem_matrix(dual_to_range, domain, fname, operator, wavenumber=None):
     """Generate test matrix."""
@@ -119,6 +88,49 @@ def generate_far_field(domain, fname, operator, wavenumber=None):
         np.savez(fname, result=result, points=points, vec=vec)
 
 
+parameters = bempp.api.global_parameters
+parameters.assembly.boundary_operator_assembly_type = "dense"
+parameters.assembly.potential_operator_assembly_type = "dense"
+
+regular_order = 4
+singular_order = 6
+
+wavenumber = 2.5
+wavenumber_complex = 2.5 + 1j
+
+parameters.quadrature.near.double_order = regular_order
+parameters.quadrature.near.single_order = regular_order
+parameters.quadrature.medium.double_order = regular_order
+parameters.quadrature.medium.single_order = regular_order
+parameters.quadrature.far.double_order = regular_order
+parameters.quadrature.far.single_order = regular_order
+
+parameters.quadrature.double_singular = singular_order
+
+grid_structured = bempp.api.import_grid("structured_grid.msh")
+rwg_structured = bempp.api.function_space(grid_structured, "RWG", 0)
+snc_structured = bempp.api.function_space(grid_structured, "SNC", 0)
+
+generate_bem_matrix(
+    snc_structured,
+    rwg_structured,
+    "maxwell_electric_field_structured_boundary",
+    bempp.api.operators.boundary.maxwell.electric_field,
+    wavenumber,
+)
+
+grid = bempp.api.import_grid("sphere.msh")
+
+p0 = bempp.api.function_space(grid, "DP", 0)
+dp1 = bempp.api.function_space(grid, "DP", 1)
+p1 = bempp.api.function_space(grid, "P", 1)
+rwg = bempp.api.function_space(grid, "RWG", 0)
+brwg = bempp.api.function_space(grid, "B-RWG", 0)
+snc = bempp.api.function_space(grid, "SNC", 0)
+bsnc = bempp.api.function_space(grid, "B-SNC", 0)
+bc = bempp.api.function_space(grid, "BC", 0)
+rbc = bempp.api.function_space(grid, "RBC", 0)
+
 print("Generating Laplace BEM matrices.")
 
 generate_bem_matrix(
@@ -178,9 +190,6 @@ generate_bem_matrix(
 ################################
 
 print("Generating Helmholtz BEM matrices.")
-
-wavenumber = 2.5
-wavenumber_complex = 2.5 + 1j
 
 generate_bem_matrix(
     p0,
@@ -362,14 +371,6 @@ generate_bem_matrix(
     "maxwell_magnetic_field_complex_boundary",
     bempp.api.operators.boundary.maxwell.magnetic_field,
     wavenumber_complex,
-)
-
-generate_bem_matrix(
-    snc_structured,
-    rwg_structured,
-    "maxwell_electric_field_structured_boundary",
-    bempp.api.operators.boundary.maxwell.electric_field,
-    wavenumber,
 )
 
 generate_sparse_bem_matrix(

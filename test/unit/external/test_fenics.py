@@ -1,11 +1,11 @@
 """Unit tests for the FEniCS interface."""
 
 import numpy as np
-import dolfin
 
 
 def test_p1_trace():
     """Test the trace of a P1 Dolfin function."""
+    import dolfin
     import bempp.api
     from bempp.api.external.fenics import fenics_to_bempp_trace_data
     fenics_mesh = dolfin.UnitCubeMesh(2, 2, 2)
@@ -32,6 +32,7 @@ def test_p1_trace():
 
 def test_nc1_trace():
     """Test the trace of a (N1curl, 1) Dolfin function."""
+    import dolfin
     import bempp.api
     from bempp.api.external.fenics import fenics_to_bempp_trace_data
     fenics_mesh = dolfin.UnitCubeMesh(2, 2, 2)

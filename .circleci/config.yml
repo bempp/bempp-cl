@@ -1,0 +1,30 @@
+version: 2.1
+
+jobs:
+  large-tests:
+    docker:
+      - image: mscroggs/bempp-cl-test:latest
+    steps:
+      - checkout
+      - run:
+          command: python3 -m pytest --durations=10 test/validation
+          name: Run Bempp validation tests
+      - run:
+          command: python3 -m pytest --durations=10 notebooks/test_notebooks.py
+          name: Run example notebooks
+  run-benchmarks:
+    docker:
+      - image: mscroggs/bempp-cl-test:latest
+    steps:
+      - checkout
+      # TODO: run benchmarks and upload timings somewhere
+
+
+workflows:
+  main:
+    jobs:
+      - large-tests
+      - run-benchmarks:
+          filters:
+            branches:
+              only: master

@@ -12,7 +12,7 @@ def test_rwg_barycentric(helpers, precision):
     import bempp.api
     import math
 
-    grid = bempp.api.shapes.regular_sphere(3)
+    grid = bempp.api.shapes.regular_sphere(0)
     space = bempp.api.function_space(grid, "RWG", 0, include_boundary_dofs=True)
     space_bary = space.barycentric_representation()
 
