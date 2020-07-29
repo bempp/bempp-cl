@@ -22,7 +22,6 @@ jobs:
       - checkout
       # TODO: run benchmarks and upload timings somewhere
 
-
 workflows:
   main:
     jobs:
