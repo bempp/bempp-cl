@@ -12,7 +12,7 @@ jobs:
       - run:
           command: python3 -m pytest --durations=10 notebooks/test_notebooks.py
           name: Run example notebooks
-  benchmark:
+  run-benchmarks:
     docker:
       - image: mscroggs/bempp-cl-test:latest
     steps:
@@ -24,7 +24,10 @@ workflows:
   main:
     jobs:
       - large-tests
-  benchmark:
+  
+  benchmarking:
+    jobs:
+      - run-benchmarks
     branches:
       only:
         - master
