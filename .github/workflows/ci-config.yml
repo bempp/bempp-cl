@@ -18,6 +18,15 @@ jobs:
           key: ${{ runner.os }}-Dockerfile
       - name: touch ~/cache/Dockerfile
         run: touch ~/cache/Dockerfile
+      - name: compare Dockerfile with cache
+        id: diff
+        run: |
+            if diff Dockerfile ~/cache/Dockerfile > /dev/null; then
+                echo "::set-output name=changed::0"
+            else
+                echo "::set-output name=changed::1"
+            fi
+
       - name: Build and push Docker image with exafmm
         uses: docker/build-push-action@v1
         with:
@@ -27,8 +36,7 @@ jobs:
           tags: exafmm, latest
           target: bempp-dev-env-with-exafmm
           cache_froms: mscroggs/bempp-cl-test:exafmm
-        if: ${{ diff Dockerfie ~/cache/Dockerfile > /dev/null }}
-
+        if: ${{steps.diff.outputs.changed}}
       - name: Build and push Docker image with pyexafmm
         uses: docker/build-push-action@v1
         with:
@@ -38,10 +46,10 @@ jobs:
           tags: pyexafmm
           target: bempp-dev-env-with-pyexafmm
           cache_froms: mscroggs/bempp-cl-test:pyexafmm
-        if: ${{ diff Dockerfie ~/cache/Dockerfile > /dev/null }}
+        if: ${{steps.diff.outputs.changed}}
       - name: Copy Dockerfile to ~/cache/Dockerfile
         run: cp Dockerfile ~/cache/Dockerfile
-        if: ${{ diff Dockerfie ~/cache/Dockerfile > /dev/null }}
+        if: ${{steps.diff.outputs.changed}}
   
   style-checks:
     name: Run style checks
