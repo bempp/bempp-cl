@@ -41,4 +41,4 @@ workflows:
   main:
     jobs:
       - style-checks
-      - build-and-test
+      - build-and-test-with-exafmm
