@@ -12,10 +12,19 @@ jobs:
       - run:
           command: python3 -m pytest --durations=10 notebooks/test_notebooks.py
           name: Run example notebooks
+  benchmark:
+    docker:
+      - image: mscroggs/bempp-cl-test:latest
+    steps:
+      - checkout
+      # TODO: run benchmarks and upload timings somewhere
+
 
 workflows:
   main:
     jobs:
       - large-tests
-# TODO: only run this on PR
-# TODO: run benchmarks on push to master
+  benchmark:
+    branches:
+      only:
+        - master

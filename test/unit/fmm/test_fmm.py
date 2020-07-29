@@ -21,7 +21,7 @@ def test_laplace_single_layer():
     assert np.allclose((op1 * fun).coefficients, (op2 * fun).coefficients)
 
 
-@pytest.mark.parametrize("wavenumber", [2.5])  #, 2.5 + 1j])
+@pytest.mark.parametrize("wavenumber", [2.5])  # , 2.5 + 1j])
 def test_helmholtz_single_layer(wavenumber):
     """Test dense assembler for the Laplace operators."""
     grid = bempp.api.shapes.regular_sphere(2)
