@@ -75,8 +75,3 @@ jobs:
         name: Install Bempp
       - run: python3 -m pytest --durations=50 test/unit
         name: Run Bempp unit tests
-# TODO: run these on PR in circleci
-#      - run: python3 -m pytest --durations=50 test/large
-#        name: Run Bempp large tests
-#      - run: python3 -m pytest --durations=50 notebooks/test_notebooks.py
-#        name: Run example notebooks
