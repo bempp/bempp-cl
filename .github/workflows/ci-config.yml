@@ -73,8 +73,6 @@ jobs:
       - uses: actions/checkout@v2
       - run: python3 setup.py install
         name: Install Bempp
-      - run: python3 -m pytest test/simple
-        name: Run Bempp simple tests
       - run: python3 -m pytest --durations=50 test/unit
         name: Run Bempp unit tests
 # TODO: run these on PR in circleci
