@@ -16,6 +16,8 @@ jobs:
         with:
           path: ~/cache/Dockerfile
           key: ${{ runner.os }}-Dockerfile-${{ hashFiles('Dockerfile') }}
+      - name: touch ~/cache/Dockerfile
+        run: touch ~/cache/Dockerfile
       - name: cat Dockerfiles
         run: |
             cat Dockerfile
