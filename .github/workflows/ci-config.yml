@@ -29,16 +29,6 @@ jobs:
       - name: Copy Dockerfile to ~/cache/Dockerfile
         run: cp Dockerfile ~/cache/Dockerfile
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: mscroggs/bempp-cl-test
-          tags: latest
-          target: bempp-cl
-          cache_froms: mscroggs/bempp-cl-test:latest
-        if: steps.diff.outputs.changed == 'yes'
       - name: Build and push testing Docker image with exafmm
         uses: docker/build-push-action@v1
         with:
@@ -85,7 +75,10 @@ jobs:
         name: Install Bempp
       - run: python3 -m pytest test/simple
         name: Run Bempp simple tests
-      - run: python3 -m pytest --durations=50 bempp
+      - run: python3 -m pytest --durations=50 test/unit
         name: Run Bempp unit tests
-      - run: python3 -m pytest --durations=50 notebooks/test_notebooks.py
-        name: Run example notebooks
+# TODO: run these on PR in circleci
+#      - run: python3 -m pytest --durations=50 test/large
+#        name: Run Bempp large tests
+#      - run: python3 -m pytest --durations=50 notebooks/test_notebooks.py
+#        name: Run example notebooks
