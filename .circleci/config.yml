@@ -10,7 +10,7 @@ jobs:
           command: |
               pip3 install pytest
               apt update
-              apt install jupyter
+              apt install jupyter -y
           name: Install pytest and jupyter
       - run:
           command: python3 -m pytest --durations=10 test/validation
