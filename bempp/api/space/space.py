@@ -100,7 +100,7 @@ def function_space(
 
 
 class SpaceBuilder(object):
-    """This object configures and builds a space object."""
+    """Configure and builds a space object."""
 
     def __init__(self, grid):
         """Set all parameters to None."""

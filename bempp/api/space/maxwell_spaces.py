@@ -12,7 +12,7 @@ def rwg0_function_space(
     include_boundary_dofs=False,
     truncate_at_segment_edge=True
 ):
-    """Define a space of RWG functions of order 0"""
+    """Define a space of RWG functions of order 0."""
     from .space import SpaceBuilder, _process_segments
     from bempp.api.utils.helpers import serialise_list_of_lists
 
@@ -153,7 +153,7 @@ def snc0_function_space(
     include_boundary_dofs=False,
     truncate_at_segment_edge=True
 ):
-    """Define a space of SNC functions of order 0"""
+    """Define a space of SNC functions of order 0."""
     from .space import SpaceBuilder, _process_segments
     from bempp.api.utils.helpers import serialise_list_of_lists
 
