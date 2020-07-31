@@ -7,8 +7,7 @@ import collections as _collections
 
 
 class SingularAssembler(_assembler.AssemblerBase):
-    """Assembler for the singular part of boundary integral operators.
-    """
+    """Assembler for the singular part of boundary integral operators."""
 
     def __init__(self, domain, dual_to_range, parameters=None):
         """Instantiate the assembler."""
@@ -392,17 +391,16 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
         trial_indices = _np.empty(self.index_count["all"], dtype="uint32")
 
         for array, index in zip([test_indices, trial_indices], [0, 1]):
-            array[: self.index_count["coincident"]] = self._coincident_indices
+            count = self._index_count["coincident"]
+            array[:count] = self._coincident_indices
 
             array[
-                self.index_count["coincident"] : (
-                    self.index_count["coincident"] + self.index_count["edge_adjacent"]
-                )
+                count : (count + self.index_count["edge_adjacent"])
             ] = self.edge_adjacency[index, :]
 
-            array[-self.index_count["vertex_adjacent"] :] = self.vertex_adjacency[
-                index, :
-            ]
+            count += self.index_count["edge_adjacent"]
+
+            array[count:] = self.vertex_adjacency[index, :]
 
         return test_indices, trial_indices
 
@@ -482,9 +480,9 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
             )
         ] = edge_offsets[self.edge_adjacency[2, :], self.edge_adjacency[3, :]]
 
-        test_offsets[-self.index_count["vertex_adjacent"] :] = vertex_offsets[
-            self.vertex_adjacency[2, :]
-        ]
+        test_offsets[
+            (self.index_count["coincident"] + self.index_count["edge_adjacent"]) :
+        ] = vertex_offsets[self.vertex_adjacency[2, :]]
 
         trial_offsets[: self.index_count["coincident"]] = _np.zeros(
             self.index_count["coincident"]
@@ -496,9 +494,9 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
             )
         ] = edge_offsets[self.edge_adjacency[4, :], self.edge_adjacency[5, :]]
 
-        trial_offsets[-self.index_count["vertex_adjacent"] :] = vertex_offsets[
-            self.vertex_adjacency[3, :]
-        ]
+        trial_offsets[
+            (self.index_count["coincident"] + self._index_count["edge_adjacent"]) :
+        ] = vertex_offsets[self.vertex_adjacency[3, :]]
 
         weights_offsets[: self.index_count["coincident"]] = 0
         weights_offsets[
