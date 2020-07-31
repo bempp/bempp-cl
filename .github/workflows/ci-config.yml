@@ -68,7 +68,7 @@ jobs:
     needs: build-and-publish-docker
     runs-on: ubuntu-latest
     container:
-      image: mscroggs/bempp-cl-test:exafmm
+      image: mscroggs/bempp-cl-test:dev-env-exafmm
     steps:
       - uses: actions/checkout@v2
       - run: python3 setup.py install

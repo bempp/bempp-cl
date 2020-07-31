@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   large-tests:
     docker:
-      - image: mscroggs/bempp-cl-test:exafmm
+      - image: mscroggs/bempp-cl-test:dev-env-exafmm
     steps:
       - checkout
       - run:
