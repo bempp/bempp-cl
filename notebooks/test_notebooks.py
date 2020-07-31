@@ -15,7 +15,7 @@ for dir in ["laplace", "helmholtz", "maxwell"]:
 
 
 @pytest.mark.parametrize(('path', 'notebook'), notebooks)
-def test_notebook(path, notebook, kernel_name):
+def test_notebook(path, notebook):
     with open(os.path.join(path, notebook)) as f:
         nb = nbformat.read(f, as_version=4)
 
