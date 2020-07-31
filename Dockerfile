@@ -83,7 +83,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir numba meshio==4.0.1 && \
+RUN pip3 install --no-cache-dir numba meshio && \
     pip3 install --no-cache-dir flake8 pytest pydocstyle
 
 # Download Install Gmsh SDK
