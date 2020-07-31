@@ -57,65 +57,16 @@ def callable(*args, complex=False, jit=True, parameterized=False):
         return wrap(args[0])
 
 
-def real_callable(f):
+def real_callable(*args, jit=True):
     """Wrap function as a real Numba callable."""
 
-    return callable(f)
+    return callable(*args, complex=False, jit=jit)
 
 
-def complex_callable(f):
+def complex_callable(*args, jit=True):
     """Wrap function as a complex Numba callable."""
 
-    return callable(f, complex=True)
-
-# def real_callable(*args, jit=True):
-# """JIT Compile a callable for a grid function if jit is true."""
-
-# def wrap(f):
-# """Actual wrapper."""
-# if jit:
-# fun = _numba.njit(
-# _numba.void(
-# _numba.float64[:],
-# _numba.float64[:],
-# _numba.uint32,
-# _numba.float64[:],
-# )
-# )(f)
-# else:
-# fun = f
-# fun.bempp_type = "real"
-# return fun
-
-# if not args:
-# return wrap
-# else:
-# return wrap(args[0])
-
-
-# def complex_callable(*args, jit=True):
-# """JIT Compile a callable for a grid function if jit is true."""
-
-# def wrap(f):
-# """Actual wrapper."""
-# if jit:
-# fun = _numba.njit(
-# _numba.void(
-# _numba.float64[:],
-# _numba.float64[:],
-# _numba.uint32,
-# _numba.complex128[:],
-# )
-# )(f)
-# else:
-# fun = f
-# fun.bempp_type = "complex"
-# return fun
-
-# if not args:
-# return wrap
-# else:
-# return wrap(args[0])
+    return callable(*args, complex=True, jit=jit)
 
 
 class GridFunction(object):
@@ -291,7 +242,6 @@ class GridFunction(object):
             grid_projections = _np.zeros(comp_dual.grid_dof_count, dtype=dtype)
 
             # Create a Numba callable from the function
-
             _project_function(
                 fun,
                 comp_dual.grid.data('double'),
