@@ -51,6 +51,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     python3-pyopencl \
     python3-scipy \
     python3-setuptools \
+    jupyter \
     wget && \
     apt-get -y install \
     libfltk-gl1.3 \
@@ -93,7 +94,7 @@ RUN cd /usr/local && \
 
 ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
 
-WORKDIR ~
+WORKDIR /root
 
 ########################################
 
@@ -103,7 +104,7 @@ WORKDIR /tmp
 RUN git clone https://github.com/exafmm/pyexafmm.git
 RUN cd pyexafmm && python3 setup.py install
 
-WORKDIR ~
+WORKDIR /root
 
 ########################################
 
@@ -113,7 +114,7 @@ WORKDIR /tmp
 RUN git clone https://github.com/exafmm/exafmm-t.git
 RUN cd exafmm-t && ./configure && make && make install && python3 setup.py install
 
-WORKDIR ~
+WORKDIR /root
 
 ########################################
 
@@ -122,5 +123,4 @@ WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
 RUN cd bempp-cl && python3 setup.py install
 
-WORKDIR ~
-
+WORKDIR /root
