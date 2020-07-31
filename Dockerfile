@@ -11,7 +11,7 @@
 #   Jan Blechta <blechta@karlin.mff.cuni.cz>
 #
 
-ARG GMSH_VERSION=4.4.1
+ARG GMSH_VERSION=4.6.0
 
 ARG MAKEFLAGS
 
@@ -83,7 +83,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir numba meshio && \
+RUN pip3 install --no-cache-dir numba meshio>=4.0.16 && \
     pip3 install --no-cache-dir flake8 pytest pydocstyle
 
 # Download Install Gmsh SDK
