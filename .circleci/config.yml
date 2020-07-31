@@ -8,10 +8,10 @@ jobs:
       - checkout
       - run:
           command: pip3 install pytest nbformat nbconvert
-          name: Install pytest and nbformat
-      - run:
-          command: python3 -m pytest --durations=10 test/validation
-          name: Run Bempp validation tests
+          name: Install pytest and nbformat jupyter_client
+#      - run:
+#          command: python3 -m pytest --durations=10 test/validation
+#          name: Run Bempp validation tests
       - run:
           command: python3 -m pytest --durations=10 notebooks/test_notebooks.py
           name: Run example notebooks
