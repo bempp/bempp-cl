@@ -7,7 +7,7 @@ jobs:
     steps:
       - checkout
       - run:
-          command: pip3 install pytest nbformat
+          command: pip3 install pytest nbformat nbconvert
           name: Install pytest and nbformat
       - run:
           command: python3 -m pytest --durations=10 test/validation
