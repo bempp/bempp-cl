@@ -11,7 +11,7 @@
 #   Jan Blechta <blechta@karlin.mff.cuni.cz>
 #
 
-ARG GMSH_VERSION=4.4.1
+ARG GMSH_VERSION=4.6.0
 
 ARG MAKEFLAGS
 
