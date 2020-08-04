@@ -100,6 +100,84 @@ def test_laplace():
     np.testing.assert_allclose(slp_pot_res_dense, slp_pot_res_fmm, rtol=1e-4)
     np.testing.assert_allclose(dlp_pot_res_dense, dlp_pot_res_fmm, rtol=1e-4)
 
+def test_modified_helmholtz():
+    """Test modified Helmholtz operators."""
+
+    grid = bempp.api.shapes.ellipsoid(1, 0.5, 0.3)
+    space = bempp.api.function_space(grid, "P", 1)
+
+    omega = 1.5
+
+    rand = np.random.RandomState(0)
+    vec = rand.rand(space.global_dof_count)
+
+    grid_fun = bempp.api.GridFunction(space, coefficients=vec)
+
+    points = np.vstack(
+        [
+            2 * np.ones(NPOINTS, dtype="float64"),
+            rand.randn(NPOINTS),
+            rand.randn(NPOINTS),
+        ]
+    )
+
+    assembler = "dense"
+
+    slp_dense = bempp.api.operators.boundary.modified_helmholtz.single_layer(
+        space, space, space, omega, assembler=assembler,
+    ).weak_form()
+    dlp_dense = bempp.api.operators.boundary.modified_helmholtz.double_layer(
+        space, space, space, omega, assembler=assembler,
+    ).weak_form()
+    adjoint_dlp_dense = bempp.api.operators.boundary.modified_helmholtz.adjoint_double_layer(
+        space, space, space, omega, assembler=assembler,
+    ).weak_form()
+    hyp_dense = bempp.api.operators.boundary.modified_helmholtz.hypersingular(
+        space, space, space, omega, assembler=assembler,
+    ).weak_form()
+    slp_pot_dense = bempp.api.operators.potential.modified_helmholtz.single_layer(
+        space, points, omega, assembler=assembler
+    )
+    dlp_pot_dense = bempp.api.operators.potential.modified_helmholtz.double_layer(
+        space, points, omega, assembler=assembler
+    )
+
+    assembler = "fmm"
+
+    slp_fmm = bempp.api.operators.boundary.modified_helmholtz.single_layer(
+        space, space, space, omega, assembler=assembler,
+    ).weak_form()
+    dlp_fmm = bempp.api.operators.boundary.modified_helmholtz.double_layer(
+        space, space, space, omega, assembler=assembler,
+    ).weak_form()
+    adjoint_dlp_fmm = bempp.api.operators.boundary.modified_helmholtz.adjoint_double_layer(
+        space, space, space, omega, assembler=assembler,
+    ).weak_form()
+    hyp_fmm = bempp.api.operators.boundary.modified_helmholtz.hypersingular(
+        space, space, space, omega, assembler=assembler,
+    ).weak_form()
+
+    slp_pot_fmm = bempp.api.operators.potential.modified_helmholtz.single_layer(
+        space, points, omega, assembler=assembler
+    )
+    dlp_pot_fmm = bempp.api.operators.potential.modified_helmholtz.double_layer(
+        space, points, omega, assembler=assembler
+    )
+
+    slp_pot_res_dense = slp_pot_dense.evaluate(grid_fun)
+    dlp_pot_res_dense = dlp_pot_dense.evaluate(grid_fun)
+
+    slp_pot_res_fmm = slp_pot_fmm.evaluate(grid_fun)
+    dlp_pot_res_fmm = dlp_pot_fmm.evaluate(grid_fun)
+
+    np.testing.assert_allclose(slp_dense @ vec, slp_fmm @ vec, rtol=TOL)
+    np.testing.assert_allclose(dlp_dense @ vec, dlp_fmm @ vec, rtol=TOL)
+    np.testing.assert_allclose(adjoint_dlp_dense @ vec, adjoint_dlp_fmm @ vec, rtol=TOL)
+    np.testing.assert_allclose(hyp_dense @ vec, hyp_fmm @ vec, rtol=TOL)
+
+    np.testing.assert_allclose(slp_pot_res_dense, slp_pot_res_fmm, rtol=1e-4)
+    np.testing.assert_allclose(dlp_pot_res_dense, dlp_pot_res_fmm, rtol=1e-4)
+
 
 def test_helmholtz():
     """Test Helmholtz operators."""
