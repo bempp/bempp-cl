@@ -12,7 +12,7 @@
 #
 
 ARG GMSH_VERSION=4.6.0
-
+ARG TINI_VERSION=0.19.0
 ARG MAKEFLAGS
 
 ########################################
@@ -117,10 +117,20 @@ RUN cd exafmm-t && ./configure && make && make install && python3 setup.py insta
 WORKDIR /root
 
 ########################################
+FROM bempp-dev-env-with-exafmm as lab
+LABEL description="Bempp Jupyter Lab"
 
-FROM bempp-dev-env-with-exafmm AS bempp-cl
 WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
 RUN cd bempp-cl && python3 setup.py install
+RUN cp -r bempp-cl/notebooks /root/example_notebooks
 
 WORKDIR /root
+
+ARG TINI_VERSION
+ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini /tini
+RUN chmod +x /tini && \
+    pip3 install --no-cache-dir jupyter jupyterlab
+EXPOSE 8888/tcp
+
+ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
