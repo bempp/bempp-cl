@@ -603,45 +603,45 @@ class GridFunction(object):
 
         return cls(space, coefficients=zeros(ndofs))
 
-    @classmethod
-    def from_grid_interpolation(cls, grid, mode, callable):
-        """
-        Obtain a grid function from interpolation on the grid.
+    # @classmethod
+    # def from_grid_interpolation(cls, grid, mode, callable):
+        # """
+        # Obtain a grid function from interpolation on the grid.
 
-        Parameters
-        ----------
-        grid : Bempp Grid object
-            The grid to be used
-        mode : string
-            Either "elements" or "vertices". If mode is
-            "elements" the callable is interpolated on
-            element centers. If mode is "vertices" the
-            callable is interpolated on vertices.
-        callable : callable object
-            A Python callable of the form:
-            values = callable(points). 'points' is
-            a float64 Numpy array of shape (N, 3),
-            where N is the number of interpolation points.
-            values is a scalar Numpy array of interpolation
-            values.
+        # Parameters
+        # ----------
+        # grid : Bempp Grid object
+            # The grid to be used
+        # mode : string
+            # Either "elements" or "vertices". If mode is
+            # "elements" the callable is interpolated on
+            # element centers. If mode is "vertices" the
+            # callable is interpolated on vertices.
+        # callable : callable object
+            # A Python callable of the form:
+            # values = callable(points). 'points' is
+            # a float64 Numpy array of shape (N, 3),
+            # where N is the number of interpolation points.
+            # values is a scalar Numpy array of interpolation
+            # values.
 
-        Returns a grid function of space type ("DP", 0) for elementwise
-        interpolation and ("P", 1) for vertex interpolation.
+        # Returns a grid function of space type ("DP", 0) for elementwise
+        # interpolation and ("P", 1) for vertex interpolation.
 
-        """
-        import bempp.api
+        # """
+        # import bempp.api
 
-        if mode == 'elements':
-            space = bempp.api.function_space(grid, "DP", 0)
-            points = grid.centroids
-        elif mode == 'vertices':
-            space = bempp.api.function_space(grid, "P", 1)
-            points = grid.vertices.T
-        else:
-            raise ValueError("'mode' must be one of 'elements' or 'vertices'.")
+        # if mode == 'elements':
+            # space = bempp.api.function_space(grid, "DP", 0)
+            # points = grid.centroids
+        # elif mode == 'vertices':
+            # space = bempp.api.function_space(grid, "P", 1)
+            # points = grid.vertices.T
+        # else:
+            # raise ValueError("'mode' must be one of 'elements' or 'vertices'.")
 
-        values = callable(points)
-        return bempp.api.GridFunction(space, coefficients=values)
+        # values = callable(points)
+        # return bempp.api.GridFunction(space, coefficients=values)
 
 
 @_numba.njit
