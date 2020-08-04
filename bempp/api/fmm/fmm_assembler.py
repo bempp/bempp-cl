@@ -516,6 +516,8 @@ def compute_rwg_basis_transform(space, quadrature_order):
     from bempp.api.integration.triangle_gauss import rule
     from scipy.sparse import coo_matrix
     from scipy.sparse.linalg import aslinearoperator
+    from bempp.api.space.shapesets import _rwg0_shapeset_evaluate
+    from bempp.api.space.maxwell_spaces import _numba_rwg0_evaluate
 
     grid_data = space.grid.data("double")
     number_of_elements = space.grid.number_of_elements
@@ -523,8 +525,8 @@ def compute_rwg_basis_transform(space, quadrature_order):
     npoints = len(weights)
     dof_count = space.localised_space.grid_dof_count
 
-    shapeset_evaluate = space.shapeset.evaluate
-    basis_eval = space.numba_evaluate
+    shapeset_evaluate = _rwg0_shapeset_evaluate
+    basis_eval = _numba_rwg0_evaluate
 
     data, iind, jind = compute_rwg_basis_transform_impl(
         grid_data,
@@ -615,6 +617,8 @@ def compute_rwg_basis_transform_impl(
 def compute_rwg_div_transform(space, quadrature_order):
     """Compute the div transformation matrices for RWG basis functions."""
     from bempp.api.integration.triangle_gauss import rule
+    from bempp.api.space.shapesets import _rwg0_shapeset_evaluate
+    from bempp.api.space.maxwell_spaces import _numba_rwg0_evaluate
     from scipy.sparse import coo_matrix
     from scipy.sparse.linalg import aslinearoperator
 
@@ -624,8 +628,8 @@ def compute_rwg_div_transform(space, quadrature_order):
     npoints = len(weights)
     dof_count = space.localised_space.grid_dof_count
 
-    shapeset_evaluate = space.shapeset.evaluate
-    basis_eval = space.numba_evaluate
+    shapeset_evaluate = _rwg0_shapeset_evaluate
+    basis_eval = _numba_rwg0_evaluate
 
     data, iind, jind = compute_rwg_div_transform_impl(
         grid_data,
@@ -748,9 +752,11 @@ def make_maxwell_electric_field_boundary(
 
     wavenumber = operator_descriptor.options[0]
     order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
-    rwg_map, rwg_map_trans = compute_rwg_basis_transform(domain, order)
-    div_map, div_map_trans = compute_rwg_div_transform(domain, order)
-
+    domain_rwg_map, dual_rwg_map = compute_rwg_basis_transform(domain, order)
+    domain_div_map, dual_div_map = compute_rwg_div_transform(domain, order)
+    if domain != dual_to_range:
+        _, dual_rwg_map = compute_rwg_basis_transform(dual_to_range, order)
+        _, dual_div_map = compute_rwg_div_transform(dual_to_range, order)
     singular_part = operator_descriptor.singular_part.weak_form().A
 
     def evaluate(x):
@@ -760,14 +766,14 @@ def make_maxwell_electric_field_boundary(
 
         for index in range(3):
             result += (
-                rwg_map_trans[index] @ fmm_interface.evaluate(rwg_map[index] @ x)[:, 0]
+                dual_rwg_map[index] @ fmm_interface.evaluate(domain_rwg_map[index] @ x)[:, 0]
             )
 
         result *= -1j * wavenumber
         result -= (
             1
             / (1j * wavenumber)
-            * (div_map_trans @ fmm_interface.evaluate(div_map @ x))[:, 0]
+            * (dual_div_map @ fmm_interface.evaluate(domain_div_map @ x))[:, 0]
         )
         return result + singular_part @ x
 
@@ -783,7 +789,11 @@ def make_maxwell_magnetic_field_boundary(
 
     # wavenumber = operator_descriptor.options[0]
     order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
-    rwg_map, rwg_map_trans = compute_rwg_basis_transform(domain, order)
+    domain_rwg_map, dual_rwg_map = compute_rwg_basis_transform(domain, order)
+    domain_div_map, dual_div_map = compute_rwg_div_transform(domain, order)
+    if domain != dual_to_range:
+        _, dual_rwg_map = compute_rwg_basis_transform(dual_to_range, order)
+        _, dual_div_map = compute_rwg_div_transform(dual_to_range, order)
 
     singular_part = operator_descriptor.singular_part.weak_form().A
 
@@ -793,9 +803,9 @@ def make_maxwell_magnetic_field_boundary(
         result = _np.zeros(dual_to_range.global_dof_count, dtype=_np.complex128)
 
         vals = [
-            fmm_interface.evaluate(rwg_map[0] @ x)[:, 1:],
-            fmm_interface.evaluate(rwg_map[1] @ x)[:, 1:],
-            fmm_interface.evaluate(rwg_map[2] @ x)[:, 1:],
+            fmm_interface.evaluate(domain_rwg_map[0] @ x)[:, 1:],
+            fmm_interface.evaluate(domain_rwg_map[1] @ x)[:, 1:],
+            fmm_interface.evaluate(domain_rwg_map[2] @ x)[:, 1:],
         ]
 
         # Now compute the curl
@@ -811,9 +821,9 @@ def make_maxwell_magnetic_field_boundary(
         # Finally, compute the negative inner product
 
         result = -(
-            rwg_map_trans[0] @ curl_val[:, 0]
-            + rwg_map_trans[1] @ curl_val[:, 1]
-            + rwg_map_trans[2] @ curl_val[:, 2]
+            dual_rwg_map[0] @ curl_val[:, 0]
+            + dual_rwg_map[1] @ curl_val[:, 1]
+            + dual_rwg_map[2] @ curl_val[:, 2]
         )
 
         return result + singular_part @ x

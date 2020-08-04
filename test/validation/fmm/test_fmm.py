@@ -265,7 +265,7 @@ def test_helmholtz():
 def test_maxwell():
     """Test Maxwell operators."""
 
-    TOL = 5E-5
+    TOL = 5e-5
 
     grid = bempp.api.shapes.ellipsoid(1, 0.5, 0.3)
     rwg = bempp.api.function_space(grid, "RWG", 0)
@@ -330,3 +330,90 @@ def test_maxwell():
 
     np.testing.assert_allclose(efield_pot_res_dense, efield_pot_res_fmm, rtol=1e-4)
     np.testing.assert_allclose(mfield_pot_res_dense, mfield_pot_res_fmm, rtol=1e-4)
+
+
+def test_fmm_two_grids():
+    """Test the FMM between two different grids."""
+    import bempp.api
+
+    TOL = 2e-3
+
+    rand = np.random.RandomState(0)
+
+    wavenumber = 1.5
+
+    grid1 = bempp.api.shapes.ellipsoid(0.5, 0.5, 0.3)
+    grid2 = bempp.api.shapes.sphere(r=1.5)
+
+    p1_space1 = bempp.api.function_space(grid1, "P", 1)
+    p1_space2 = bempp.api.function_space(grid2, "P", 1)
+
+    rwg1 = bempp.api.function_space(grid1, "RWG", 0)
+    rwg2 = bempp.api.function_space(grid2, "RWG", 0)
+    snc2 = bempp.api.function_space(grid2, "SNC", 0)
+
+    vec1 = rand.rand(p1_space1.global_dof_count)
+    vec2 = rand.rand(rwg1.global_dof_count)
+
+    assembler = "dense"
+
+    laplace_slp_dense = bempp.api.operators.boundary.laplace.single_layer(
+        p1_space1, p1_space2, p1_space2, assembler=assembler
+    ).weak_form()
+    laplace_hyp_dense = bempp.api.operators.boundary.laplace.hypersingular(
+        p1_space1, p1_space2, p1_space2, assembler=assembler
+    ).weak_form()
+    mod_helmholtz_hyp_dense = bempp.api.operators.boundary.modified_helmholtz.hypersingular(
+        p1_space1, p1_space2, p1_space2, wavenumber, assembler=assembler
+    ).weak_form()
+    helmholtz_hyp_dense = bempp.api.operators.boundary.helmholtz.hypersingular(
+        p1_space1, p1_space2, p1_space2, wavenumber, assembler=assembler
+    ).weak_form()
+
+    maxwell_efield_dense = bempp.api.operators.boundary.maxwell.electric_field(
+            rwg1, rwg2, snc2, wavenumber, assembler=assembler
+            ).weak_form()
+    maxwell_mfield_dense = bempp.api.operators.boundary.maxwell.magnetic_field(
+            rwg1, rwg2, snc2, wavenumber, assembler=assembler
+            ).weak_form()
+
+    assembler = "fmm"
+
+    laplace_slp_fmm = bempp.api.operators.boundary.laplace.single_layer(
+        p1_space1, p1_space2, p1_space2, assembler=assembler
+    ).weak_form()
+    laplace_hyp_fmm = bempp.api.operators.boundary.laplace.hypersingular(
+        p1_space1, p1_space2, p1_space2, wavenumber, assembler=assembler
+    ).weak_form()
+    mod_helmholtz_hyp_fmm = bempp.api.operators.boundary.modified_helmholtz.hypersingular(
+        p1_space1, p1_space2, p1_space2, wavenumber, assembler=assembler
+    ).weak_form()
+    helmholtz_hyp_fmm = bempp.api.operators.boundary.helmholtz.hypersingular(
+        p1_space1, p1_space2, p1_space2, wavenumber, assembler=assembler
+    ).weak_form()
+    maxwell_efield_fmm = bempp.api.operators.boundary.maxwell.electric_field(
+            rwg1, rwg2, snc2, wavenumber, assembler=assembler
+            ).weak_form()
+    maxwell_mfield_fmm = bempp.api.operators.boundary.maxwell.magnetic_field(
+            rwg1, rwg2, snc2, wavenumber, assembler=assembler
+            ).weak_form()
+
+    np.testing.assert_allclose(
+        laplace_slp_dense @ vec1, laplace_slp_fmm @ vec1, rtol=TOL
+    )
+    np.testing.assert_allclose(
+        laplace_hyp_dense @ vec1, laplace_hyp_fmm @ vec1, rtol=TOL
+    )
+    np.testing.assert_allclose(
+        helmholtz_hyp_dense @ vec1, helmholtz_hyp_fmm @ vec1, rtol=TOL
+    )
+    np.testing.assert_allclose(
+        mod_helmholtz_hyp_dense @ vec1, mod_helmholtz_hyp_fmm @ vec1, rtol=TOL
+    )
+    np.testing.assert_allclose(
+        maxwell_efield_dense @ vec2, maxwell_efield_fmm @ vec2, rtol=TOL
+        )
+    np.testing.assert_allclose(
+        maxwell_mfield_dense @ vec2, maxwell_mfield_fmm @ vec2, rtol=TOL
+        )
+
