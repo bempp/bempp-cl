@@ -100,6 +100,7 @@ def test_laplace():
     np.testing.assert_allclose(slp_pot_res_dense, slp_pot_res_fmm, rtol=1e-4)
     np.testing.assert_allclose(dlp_pot_res_dense, dlp_pot_res_fmm, rtol=1e-4)
 
+
 def test_modified_helmholtz():
     """Test modified Helmholtz operators."""
 
