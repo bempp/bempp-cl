@@ -371,11 +371,11 @@ def test_fmm_two_grids():
     ).weak_form()
 
     maxwell_efield_dense = bempp.api.operators.boundary.maxwell.electric_field(
-            rwg1, rwg2, snc2, wavenumber, assembler=assembler
-            ).weak_form()
+        rwg1, rwg2, snc2, wavenumber, assembler=assembler
+    ).weak_form()
     maxwell_mfield_dense = bempp.api.operators.boundary.maxwell.magnetic_field(
-            rwg1, rwg2, snc2, wavenumber, assembler=assembler
-            ).weak_form()
+        rwg1, rwg2, snc2, wavenumber, assembler=assembler
+    ).weak_form()
 
     assembler = "fmm"
 
@@ -392,11 +392,11 @@ def test_fmm_two_grids():
         p1_space1, p1_space2, p1_space2, wavenumber, assembler=assembler
     ).weak_form()
     maxwell_efield_fmm = bempp.api.operators.boundary.maxwell.electric_field(
-            rwg1, rwg2, snc2, wavenumber, assembler=assembler
-            ).weak_form()
+        rwg1, rwg2, snc2, wavenumber, assembler=assembler
+    ).weak_form()
     maxwell_mfield_fmm = bempp.api.operators.boundary.maxwell.magnetic_field(
-            rwg1, rwg2, snc2, wavenumber, assembler=assembler
-            ).weak_form()
+        rwg1, rwg2, snc2, wavenumber, assembler=assembler
+    ).weak_form()
 
     np.testing.assert_allclose(
         laplace_slp_dense @ vec1, laplace_slp_fmm @ vec1, rtol=TOL
@@ -412,8 +412,7 @@ def test_fmm_two_grids():
     )
     np.testing.assert_allclose(
         maxwell_efield_dense @ vec2, maxwell_efield_fmm @ vec2, rtol=TOL
-        )
+    )
     np.testing.assert_allclose(
         maxwell_mfield_dense @ vec2, maxwell_mfield_fmm @ vec2, rtol=TOL
-        )
-
+    )
