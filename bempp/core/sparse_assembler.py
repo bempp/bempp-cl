@@ -123,7 +123,6 @@ def assemble_sparse(
             domain.numba_evaluate,
             numba_kernel_function,
             result)
-    print(f"Numba kernel time: {t.interval}")
 
     irange = _np.arange(nshape_test)
     jrange = _np.arange(nshape_trial)
