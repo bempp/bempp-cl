@@ -35,15 +35,15 @@ def device_interface(request):
     return value
 
 
-# @pytest.fixture(scope="session", autouse=True)
-# def set_device_options(request):
-# """Set device options."""
-# vec_mode = request.config.getoption("--vec")
-# if not vec_mode in ["auto", "novec", "vec4", "vec8", "vec16"]:
-# raise ValueError(
-# "vec must be one of: 'auto', 'novec', 'vec4', 'vec8', 'vec16'"
-# )
-# bempp.api.VECTORIZATION = vec_mode
+@pytest.fixture(scope="session", autouse=True)
+def set_device_options(request):
+    """Set device options."""
+    vec_mode = request.config.getoption("--vec")
+    if not vec_mode in ["auto", "novec", "vec4", "vec8", "vec16"]:
+        raise ValueError(
+        "vec must be one of: 'auto', 'novec', 'vec4', 'vec8', 'vec16'"
+        )
+    bempp.api.VECTORIZATION_MODE = vec_mode
 
 
 @pytest.fixture()
