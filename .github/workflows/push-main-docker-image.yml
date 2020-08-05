@@ -15,7 +15,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: mscroggs/bempp-cl-notebook
+          repository: bempp/cl-notebook
           tags: latest
           target: lab
-          cache_froms: mscroggs/bempp-cl-notebook:latest
+          cache_froms: bempp/cl-notebook:latest

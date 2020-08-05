@@ -34,20 +34,20 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: mscroggs/bempp-cl-test
-          tags: dev-env-exafmm
+          repository: bempp/cl-dev-env
+          tags: with-exafmm
           target: bempp-dev-env-with-exafmm
-          cache_froms: mscroggs/bempp-cl-test:dev-env-exafmm
+          cache_froms: bempp/cl-dev-env:with-exafmm
         if: steps.diff.outputs.changed == 'yes'
       - name: Build and push testing Docker image with pyexafmm
         uses: docker/build-push-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: mscroggs/bempp-cl-test
-          tags: dev-env-pyexafmm
+          repository: bempp/cl-dev-env
+          tags: with-pyexafmm
           target: bempp-dev-env-with-pyexafmm
-          cache_froms: mscroggs/bempp-cl-test:dev-env-pyexafmm
+          cache_froms: bempp/cl-dev-env:with-exafmm
         if: steps.diff.outputs.changed == 'yes'
   
   style-checks:
@@ -68,7 +68,7 @@ jobs:
     needs: build-and-publish-docker
     runs-on: ubuntu-latest
     container:
-      image: mscroggs/bempp-cl-test:dev-env-exafmm
+      image: bempp/cl-dev-env:with-exafmm
     steps:
       - uses: actions/checkout@v2
       - run: python3 setup.py install
