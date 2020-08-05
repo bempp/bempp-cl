@@ -63,7 +63,7 @@ def test_laplace_boundary_fmm(grid):
         np.testing.assert_allclose(d @ vec, f @ vec, rtol=TOL)
 
 
-def test_laplace_potential_fmm(operator, grid, points):
+def test_laplace_potential_fmm(grid, points):
     """Test Laplace potential operators."""
     space = bempp.api.function_space(grid, "P", 1)
 
