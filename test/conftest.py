@@ -68,12 +68,6 @@ def two_element_grid():
 
 
 @pytest.fixture
-def small_sphere(helpers):
-    """A regular sphere with 512 elements."""
-    return helpers.load_grid("small_sphere")
-
-
-@pytest.fixture
 def default_parameters():
     """Return a default parameters object."""
     from bempp.api.utils.parameters import DefaultParameters
