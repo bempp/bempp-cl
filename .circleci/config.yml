@@ -16,6 +16,9 @@ jobs:
           command: python3 setup.py install
           name: Install Bempp
       - run:
+          command: python3 -m pytest --durations=10 test/unit
+          name: Run Bempp unit tests
+      - run:
           command: python3 -m pytest --durations=10 test/validation
           name: Run Bempp validation tests
       - run:
