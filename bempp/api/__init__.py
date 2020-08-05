@@ -1,11 +1,31 @@
 """Global initialization for Bempp."""
 
+# Monkey patch Numba to emit log messages when compiling
+
+import numba
+
+oldcompile = numba.core.registry.CPUDispatcher.compile
+
+
+def compile_with_log(*args, **kwargs):
+    """Numba compilation with log messages."""
+    import bempp.api
+
+    fun_name = args[0].py_func.__name__
+    bempp.api.log(f"Compiling {fun_name} for signature {args[1]}.", level="debug")
+    res = oldcompile(*args, **kwargs)
+    bempp.api.log(f"Compilation finished.", level="debug")
+    return res
+
+
+numba.core.registry.CPUDispatcher.compile = compile_with_log
+
 import os as _os
 import tempfile as _tempfile
 import logging as _logging
 import time as _time
+import platform as _platform
 
-import pyopencl as _cl
 from bempp.api.utils import DefaultParameters
 from bempp.api.utils.helpers import MemProfiler
 
@@ -16,13 +36,7 @@ from bempp.api.grid.grid import Grid
 from bempp.api.assembly.grid_function import GridFunction
 from bempp.api.assembly.grid_function import real_callable
 from bempp.api.assembly.grid_function import complex_callable
-from bempp.core.cl_helpers import DeviceInterface as _DeviceInterface
-from bempp.core.cl_helpers import show_available_platforms_and_devices
-from bempp.core.cl_helpers import set_default_device
-from bempp.core.cl_helpers import default_device
-from bempp.core.cl_helpers import default_context
-from bempp.core.cl_helpers import get_precision
-from bempp.core.cl_helpers import get_context_by_name
+from bempp.api.assembly.grid_function import callable
 
 from bempp.api.space import function_space
 
@@ -40,14 +54,12 @@ from bempp.api.assembly.blocked_operator import GeneralizedBlockedOperator
 from bempp.api.utils import pool
 from bempp.api.utils.pool import create_device_pool
 
-# Disable Numba warnings
-
-
-from numba.errors import (
+from numba.core.errors import (
     NumbaDeprecationWarning,
     NumbaPendingDeprecationWarning,
     NumbaPerformanceWarning,
 )
+
 import warnings
 
 warnings.simplefilter("ignore", category=NumbaDeprecationWarning)
@@ -80,7 +92,7 @@ def _init_logger():
     """Initialize the Bempp logger."""
 
     _logging.addLevelName(11, "TIMING")
-    logger = _logging.getLogger('bempp')
+    logger = _logging.getLogger("bempp")
     logger.setLevel(DEBUG)
     logger.addHandler(_logging.NullHandler())
     return logger
@@ -110,11 +122,15 @@ def enable_console_logging(level="info"):
         console_handler.setLevel(LOG_LEVEL[level])
         if pool.is_worker():
             console_handler.setFormatter(
-                    _logging.Formatter(f"%(name)s:PROC{pool._MY_ID}:%(levelname)s: %(message)s", "%H:%M:%S")
+                _logging.Formatter(
+                    f"%(name)s:PROC{pool._MY_ID}:%(levelname)s: %(message)s", "%H:%M:%S"
+                )
             )
         else:
             console_handler.setFormatter(
-                    _logging.Formatter("%(name)s:HOST:%(levelname)s: %(message)s", "%H:%M:%S")
+                _logging.Formatter(
+                    "%(name)s:HOST:%(levelname)s: %(message)s", "%H:%M:%S"
+                )
             )
         LOGGER.addHandler(console_handler)
         CONSOLE_LOGGING_HANDLER = console_handler
@@ -122,13 +138,13 @@ def enable_console_logging(level="info"):
 
 
 # def enable_file_logging(file_name, level=DEBUG, logging_format=DEFAULT_LOGGING_FORMAT):
-    # """Enable logging to a specific file."""
+# """Enable logging to a specific file."""
 
-    # file_handler = _logging.FileHandler(file_name)
-    # file_handler.setLevel(level)
-    # file_handler.setFormatter(_logging.Formatter(logging_format, "%H:%M:%S"))
-    # LOGGER.addHandler(file_handler)
-    # return file_handler
+# file_handler = _logging.FileHandler(file_name)
+# file_handler.setLevel(level)
+# file_handler.setFormatter(_logging.Formatter(logging_format, "%H:%M:%S"))
+# LOGGER.addHandler(file_handler)
+# return file_handler
 
 
 def set_logging_level(level):
@@ -138,61 +154,31 @@ def set_logging_level(level):
 
 # pylint: disable=too-few-public-methods
 class Timer:
-    """Context manager to measure time in BEM++."""
+    """Context manager to measure time in Bempp."""
 
-    def __init__(self):
+    def __init__(self, enable_log=True, message="", level="timing"):
         """Constructor."""
         self.start = 0
         self.end = 0
         self.interval = 0
+        self.enable_log = enable_log
+        self.level = level
+        self.message = message
 
     def __enter__(self):
+        if self.enable_log:
+            log("Start operation: " + self.message, level=self.level)
         self.start = _time.time()
         return self
 
     def __exit__(self, *args):
         self.end = _time.time()
         self.interval = self.end - self.start
-
-
-def test(precision="double", vectorization="auto"):
-    """ Runs Bempp python unit tests """
-    import pytest
-
-    options = []
-
-    options.append("--precision=" + precision)
-    options.append("--vec=" + vectorization)
-    options.append(BEMPP_PATH)
-
-    pytest.main(options)
-
-
-def benchmark(precision="double", vectorization="auto", capture_output=True):
-    """Run py.test benchmarks"""
-    import pytest
-
-    benchmark_dir = _os.path.join(BEMPP_PATH, "./benchmarks/")
-    options = [
-        "-o",
-        "python_files=benchmark_*.py",
-        "-o",
-        "python_classes=Benchmark",
-        "-o",
-        "python_functions=*_benchmark",
-        "-p",
-        "no:warnings",
-    ]
-
-    options.append("--precision=" + precision)
-    options.append("--vec=" + vectorization)
-
-    if not capture_output:
-        options.append("-s")
-
-    options.append(benchmark_dir)
-
-    pytest.main(options)
+        if self.enable_log:
+            log(
+                "Finished Operation: " + self.message + f": {self.interval}s",
+                level=self.level,
+            )
 
 
 LOGGER = _init_logger()
@@ -228,18 +214,41 @@ def _gmsh_path():
         )
     return gmp
 
+
 def _get_version():
     """Get version string."""
     from bempp import version
+
     return version.__version__
+
 
 GMSH_PATH = _gmsh_path()
 
 __version__ = _get_version()
 
-VECTORIZATION = "auto"
-DEVICE_PRECISION_CPU = "double"
-DEVICE_PRECISION_GPU = "single"
-PLOT_BACKEND = "jupyter_notebook"
+PLOT_BACKEND = "gmsh"
+try:
+    ipy = get_ipython()
+    if ipy.__class__.__name__ == "ZMQInteractiveShell":
+        # We are in a jupyter notebook, so change plotting backend
+        PLOT_BACKEND = "jupyter_notebook"
+except NameError:
+    pass
+
+USE_JIT = True
+
+if _platform.system() == "Darwin":
+    DEFAULT_DEVICE_INTERFACE = "numba"
+else:
+    from bempp.core.opencl_kernels import find_cpu_driver
+
+    if find_cpu_driver() is None:
+        DEFAULT_DEVICE_INTERFACE = "numba"
+    else:
+        DEFAULT_DEVICE_INTERFACE = "opencl"
+
+DEFAULT_PRECISION = "double"
+VECTORIZATION_MODE = "auto"
+
 
 ALL = -1  # Useful global identifier

@@ -8,75 +8,82 @@ def function_space(
     grid,
     kind,
     degree,
-    support_elements=None,
-    segments=None,
-    swapped_normals=None,
     scatter=True,
-    **kwargs,
+    **kwargs
 ):
-    """Initialize a function space."""
+    """
+    Initialize a function space.
+
+    Parameters
+    ----------
+    grid : bempp.Grid
+        The grid that the space is defined on.
+    kind : str
+        The space type
+    degree : int
+        The polynomial degree of the space
+    support_elements : np.array
+        The element indices of elements that make up the part
+        of the mesh on which the space is defined.
+    segments : list
+        The segment numbers of the part of the mesh on which the space is defined.
+    swapped_normals : bool
+        TODO
+    scatter : bool
+        TODO
+    include_boundary_dofs : bool
+        Should degrees of freedom on the boundary of the grid segments be included?
+    truncate_at_segment_edge : bool
+        Should basis functions be truncated at the edge of the grid segment? If this is set to true,
+        continuous spaces will no longer be continuous across the segment edge.
+    """
     from bempp.api.utils import pool
 
     from . import scalar_spaces
     from . import scalar_dual_spaces
     from . import maxwell_spaces
 
-    space = None
+    space_f = None
 
-    if _np.count_nonzero([support_elements, segments]) > 1:
-        raise ValueError(
-            "Only one of 'support_elements' and 'segments' must be nonzero."
-        )
+    if "support_elements" in kwargs and "segments" in kwargs:
+        raise ValueError("Only one of 'support_elements' and 'segments' must be nonzero.")
 
     if kind == "DP":
         if degree == 0:
-            space = scalar_spaces.p0_discontinuous_function_space(
-                grid, support_elements, segments, swapped_normals
-            )
+            space_f = scalar_spaces.p0_discontinuous_function_space
         if degree == 1:
-            space = scalar_spaces.p1_discontinuous_function_space(
-                grid, support_elements, segments, swapped_normals
-            )
+            space_f = scalar_spaces.p1_discontinuous_function_space
 
     if kind == "P":
         if degree == 1:
-            space = scalar_spaces.p1_continuous_function_space(
-                grid, support_elements, segments, swapped_normals, **kwargs
-            )
+            space_f = scalar_spaces.p1_continuous_function_space
 
     if kind == "DUAL":
         if degree == 0:
-            space = scalar_dual_spaces.dual0_function_space(
-                grid, support_elements, segments, swapped_normals
-            )
+            space_f = scalar_dual_spaces.dual0_function_space
         if degree == 1:
-            raise ValueError("Requested space not implemented yet.")
+            space_f = scalar_dual_spaces.dual1_function_space
 
-    if kind == "RWG":
+    if kind == "RWG" or kind == "RT":
         if degree == 0:
-            space = maxwell_spaces.rwg0_function_space(
-                grid, support_elements, segments, swapped_normals, **kwargs
-            )
+            space_f = maxwell_spaces.rwg0_function_space
 
-    if kind == "SNC":
+    if kind == "SNC" or kind == "NC":
         if degree == 0:
-            space = maxwell_spaces.snc0_function_space(
-                grid, support_elements, segments, swapped_normals, **kwargs
-            )
+            space_f = maxwell_spaces.snc0_function_space
 
     if kind == "BC":
         if degree == 0:
-            space = maxwell_spaces.bc_function_space(
-                grid, support_elements, segments, swapped_normals, **kwargs
-            )
+            space_f = maxwell_spaces.bc_function_space
 
     if kind == "RBC":
         if degree == 0:
-            space = maxwell_spaces.rbc_function_space(
-                grid, support_elements, segments, swapped_normals, **kwargs
-            )
-    if space is None:
+            space_f = maxwell_spaces.rbc_function_space
+
+    if space_f is None:
         raise ValueError("Requested space not implemented.")
+
+    space = space_f(grid, **kwargs)
 
     if scatter and pool.is_initialised() and not pool.is_worker():
         pool.execute(
@@ -85,9 +92,6 @@ def function_space(
             space.id,
             kind,
             degree,
-            support_elements,
-            segments,
-            swapped_normals,
             kwargs,
         )
         space._is_scattered = True
@@ -96,10 +100,7 @@ def function_space(
 
 
 class SpaceBuilder(object):
-    """
-    This object configures and builds a space object.
-
-    """
+    """Configure and builds a space object."""
 
     def __init__(self, grid):
         """Set all parameters to None."""
@@ -531,9 +532,7 @@ class FunctionSpace(object):
 
     @property
     def dof_transformation(self):
-        """
-        Transformation from global dofs to space dofs.
-        """
+        """Transformation from global dofs to space dofs."""
         return self._dof_transformation
 
     @property
@@ -586,6 +585,20 @@ class FunctionSpace(object):
             self._barycentric_representation = self._barycentric_representation(self)
         return self._barycentric_representation
 
+    def map_to_points(self, quadrature_order=None, return_transpose=False):
+        """
+        Return a map from function space coefficients to point evaluations.
+
+        Creates a mapping from function space coefficients to Green's fct.
+        coefficients. Needed mainly for FMM evaluations. The point definition
+        is the quadrature order of the underlying quadrature rule. If
+        'return_transpose' is true then then transpose of the operator is returned.
+        """
+
+        return map_space_to_points(
+            self, quadrature_order=quadrature_order, return_transpose=return_transpose
+        )
+
     def get_elements_by_color(self):
         """
         Returns color sorted elements and their index positions.
@@ -611,7 +624,7 @@ class FunctionSpace(object):
             element_index,
             self.shapeset.evaluate,
             local_coordinates,
-            self.grid.data,
+            self.grid.data(),
             self.local_multipliers,
             self.normal_multipliers,
         )
@@ -622,7 +635,7 @@ class FunctionSpace(object):
             element_index,
             self.shapeset.gradient,
             local_coordinates,
-            self.grid.data,
+            self.grid.data(),
             self.local_multipliers,
             self.normal_multipliers,
         )
@@ -719,7 +732,6 @@ def return_compatible_representation(*args):
     """Return representation of spaces on same grid."""
 
     # Check if at least one space is barycentric.
-
     is_barycentric = any([space.is_barycentric for space in args])
 
     if not is_barycentric:
@@ -743,6 +755,112 @@ def check_if_compatible(space1, space2):
         return new_space1.hash == new_space2.hash
     except:
         return False
+
+
+def map_space_to_points(space, quadrature_order=None, return_transpose=False):
+    """Return mapper from grid coeffs to point evaluations."""
+    import bempp.api
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.linalg import aslinearoperator
+    from bempp.api.integration.triangle_gauss import rule
+
+    grid = space.grid
+
+    if quadrature_order is None:
+        quadrature_order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
+
+    local_points, weights = rule(quadrature_order)
+
+    number_of_local_points = local_points.shape[1]
+    number_of_vertices = number_of_local_points * grid.number_of_elements
+
+    data, global_indices, vertex_indices = map_space_to_points_impl(
+        grid.data("double"),
+        space.localised_space.local2global,
+        space.localised_space.local_multipliers,
+        space.localised_space.normal_multipliers,
+        space.support_elements,
+        space.numba_evaluate,
+        space.shapeset.evaluate,
+        local_points,
+        weights,
+        space.number_of_shape_functions,
+    )
+
+    if return_transpose:
+        transform = coo_matrix(
+            (data, (global_indices, vertex_indices)),
+            shape=(space.localised_space.grid_dof_count, number_of_vertices),
+        )
+
+        return (
+            aslinearoperator(space.dof_transformation.T)
+            @ aslinearoperator(space.map_to_localised_space.T)
+            @ aslinearoperator(transform)
+        )
+    else:
+        transform = coo_matrix(
+            (data, (vertex_indices, global_indices)),
+            shape=(number_of_vertices, space.localised_space.grid_dof_count),
+        )
+        return (
+            aslinearoperator(transform)
+            @ aslinearoperator(space.map_to_localised_space)
+            @ aslinearoperator(space.dof_transformation)
+        )
+
+
+@_numba.njit
+def map_space_to_points_impl(
+    grid_data,
+    local2global,
+    local_multipliers,
+    normal_multipliers,
+    support_elements,
+    numba_evaluate,
+    shape_fun,
+    local_points,
+    weights,
+    number_of_shape_functions,
+):
+    """Numba accelerated computational parts for point map."""
+
+    number_of_local_points = local_points.shape[1]
+    number_of_support_elements = len(support_elements)
+
+    nlocal = number_of_local_points * number_of_shape_functions
+
+    data = _np.empty(nlocal * number_of_support_elements, dtype=_np.float64)
+    global_indices = _np.empty(nlocal * number_of_support_elements, dtype=_np.int64)
+    vertex_indices = _np.empty(nlocal * number_of_support_elements, dtype=_np.int64)
+
+    for elem in support_elements:
+        basis_values = (
+            numba_evaluate(
+                elem,
+                shape_fun,
+                local_points,
+                grid_data,
+                local_multipliers,
+                normal_multipliers,
+            )[0, :, :]
+            * weights
+            * grid_data.integration_elements[elem]
+        )
+        data[elem * nlocal : (1 + elem) * nlocal] = basis_values.ravel()
+        for index in range(number_of_shape_functions):
+            vertex_indices[
+                elem * nlocal
+                + index * number_of_local_points : elem * nlocal
+                + (1 + index) * number_of_local_points
+            ] = _np.arange(
+                elem * number_of_local_points, (1 + elem) * number_of_local_points
+            )
+        global_indices[elem * nlocal : (1 + elem) * nlocal] = _np.repeat(
+            local2global[elem, :], number_of_local_points
+        )
+
+    return (data, global_indices, vertex_indices)
 
 
 def _process_segments(grid, support_elements, segments, swapped_normals):
@@ -843,10 +961,7 @@ def _space_scatter_worker(
     space_id,
     kind,
     degree,
-    support_elements,
-    segments,
-    swapped_normals,
-    keyword_args,
+    kwargs,
 ):
     import bempp.api
     from bempp.api.utils import pool
@@ -856,10 +971,7 @@ def _space_scatter_worker(
         grid,
         kind,
         degree,
-        support_elements=support_elements,
-        segments=segments,
-        swapped_normals=swapped_normals,
-        **keyword_args,
+        **kwargs,
     )
     space._set_id(space_id)
     pool.insert_data(space_id, space)

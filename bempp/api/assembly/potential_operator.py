@@ -53,8 +53,11 @@ class PotentialOperator(object):
         else:
             return NotImplemented
 
+    def __matmul__(self, obj):
+        return self.__mul__(obj)
+
     def __rmul__(self, obj):
-        """Reverse multiply"""
+        """Reverse multiply."""
 
         import numpy as np
 
@@ -88,7 +91,7 @@ class PotentialOperator(object):
 
 
 class _ScaledPotentialOperator(PotentialOperator):
-    """Scaled potential operator. """
+    """Scaled potential operator."""
 
     def __init__(self, op, alpha):
 
@@ -126,7 +129,7 @@ class _ScaledPotentialOperator(PotentialOperator):
 
 
 class _SumPotentialOperator(PotentialOperator):
-    """Sum of two potential operators. """
+    """Sum of two potential operators."""
 
     def __init__(self, op1, op2):
 

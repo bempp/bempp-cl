@@ -4,7 +4,7 @@ import numpy as _np
 import numba as _numba
 
 
-@_numba.jitclass(
+@_numba.experimental.jitclass(
     [
         ("_lbound", _numba.float64[:]),
         ("_ubound", _numba.float64[:]),
@@ -185,10 +185,7 @@ class Octree(object):
         return self.diameter / (1.0 * self.nodes_per_side(self.maximum_level))
 
     def _assign_nodes(self, vertices):
-        """
-        Computes leaf-nodes and parents
-        """
-
+        """Computes leaf-nodes and parents."""
         nvertices = vertices.shape[1]
         node_indices = _np.empty(nvertices, dtype=_np.uint32)
 
@@ -239,7 +236,6 @@ class Octree(object):
         """
         Compute near fields of all non empty nodes.
 
-
         Each node can have at most 27 near field nodes (including
         the node itself). If a near field node does not exist or is empty
         then the value -1 is stored, otherwise the node number.
@@ -273,10 +269,7 @@ class Octree(object):
                             count += 1
 
     def _compute_interaction_list(self):
-        """
-        Computes the interaction list for each non empty node.
-
-        """
+        """Computes the interaction list for each non empty node."""
         pass
 
 

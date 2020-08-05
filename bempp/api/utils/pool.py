@@ -16,7 +16,7 @@ _BUFFER = None
 
 
 def worker(in_queue, out_queue, worker_id, nworkers, buf, log, log_level):
-    """Definition of a worker. """
+    """Definition of a worker."""
     import bempp.api
     from bempp.api.utils import pool
     import traceback
@@ -79,10 +79,7 @@ def as_array(dtype, offset, shape):
 
 
 def to_buffer(*args):
-    """
-    Save a number of numpy arrays to a buffer.
-
-    """
+    """Save a number of numpy arrays to a buffer."""
     from bempp.api.utils import pool
 
     offset = 0
@@ -101,6 +98,7 @@ def to_buffer(*args):
 def from_buffer(arrays):
     """
     Retrieve arrays from buffer.
+
     arrays is a list of tuples
     [(dtype1, shape1), (dtype2, shape2), ...],
     where dtype is the type of the array and shape

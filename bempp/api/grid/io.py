@@ -84,9 +84,9 @@ def export(
         # indices for gmsh4.
         gmsh = True
         if write_binary:
-            file_format = "gmsh2-binary"
+            file_format = "gmsh22"
         else:
-            file_format = "gmsh2-ascii"
+            file_format = "gmsh22"
     else:
         gmsh = False
 
@@ -148,12 +148,14 @@ def export(
         point_data=point_data,
         cell_data=cell_data,
         file_format=file_format,
+        binary=write_binary
     )
 
 
 def _transform_array(a, mode=None):
     """
     Transform a data array.
+
     Parameters
     ----------
     a : np.ndarray

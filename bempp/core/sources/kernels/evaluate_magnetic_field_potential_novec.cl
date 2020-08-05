@@ -3,13 +3,14 @@
 #include "bempp_spaces.h"
 #include "kernels.h"
 
-__kernel void evaluate_magnetic_field_potential_novec(
+__kernel void kernel_function(
     __global REALTYPE *grid, 
     __global uint* indices,
     __global int* normalSigns,
     __global REALTYPE *evalPoints,
     __global REALTYPE *coefficients, __constant REALTYPE *quadPoints,
-    __constant REALTYPE *quadWeights, __global REALTYPE *globalResult) {
+    __constant REALTYPE *quadWeights, __global REALTYPE *globalResult,
+    __global REALTYPE* kernel_parameters) {
   size_t gid[2];
 
   gid[0] = get_global_id(0);
@@ -82,7 +83,7 @@ __kernel void evaluate_magnetic_field_potential_novec(
     BASIS(SHAPESET, evaluate)(&point, &basisValue[0][0]);
     getPiolaTransform(intElem, jacobian, basisValue, elementValue);
 
-    KERNEL(novec)(evalGlobalPoint, surfaceGlobalPoint, normal, normal, gradKernelValue); 
+    helmholtz_gradient_novec(evalGlobalPoint, surfaceGlobalPoint, normal, normal, kernel_parameters, gradKernelValue); 
 
 
     for (i = 0; i < 3; ++i)
@@ -115,9 +116,9 @@ __kernel void evaluate_magnetic_field_potential_novec(
         localResult[0][j][1] += localResult[i][j][1];
       }
     for (j = 0; j < 3; ++j) {
-      globalResult[2 * ((KERNEL_DIMENSION * gid[0] + j) * numGroups +
+      globalResult[2 * ((3 * gid[0] + j) * numGroups +
                         groupId)] += localResult[0][j][0];
-      globalResult[2 * ((KERNEL_DIMENSION * gid[0] + j) * numGroups + groupId) +
+      globalResult[2 * ((3 * gid[0] + j) * numGroups + groupId) +
                    1] += localResult[0][j][1];
     }
   }

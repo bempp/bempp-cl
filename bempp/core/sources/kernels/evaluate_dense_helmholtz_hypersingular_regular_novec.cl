@@ -3,7 +3,7 @@
 #include "bempp_spaces.h"
 #include "kernels.h"
 
-__kernel void evaluate_dense_helmholtz_hypersingular_novec(
+__kernel void kernel_function(
     __global uint* testIndices, __global uint* trialIndices,
     __global int *testNormalSigns, __global int *trialNormalSigns,
     __global REALTYPE* testGrid, __global REALTYPE* trialGrid,
@@ -12,6 +12,7 @@ __kernel void evaluate_dense_helmholtz_hypersingular_novec(
     __global REALTYPE* testLocalMultipliers,
     __global REALTYPE* trialLocalMultipliers, __constant REALTYPE* quadPoints,
     __constant REALTYPE* quadWeights, __global REALTYPE* globalResult,
+    __global REALTYPE* kernel_parameters,
     int nTest, int nTrial, char gridsAreDisjoint) {
   /* Variable declarations */
 
@@ -192,7 +193,7 @@ __kernel void evaluate_dense_helmholtz_hypersingular_novec(
       BASIS(TRIAL, evaluate)(&trialPoint, &trialValue[0]);
 #ifndef COMPLEX_KERNEL
       KERNEL(novec)
-      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal,
+      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernel_parameters,
        &kernelValue);
       tempFactor = quadWeights[trialQuadIndex] * kernelValue;
       tempFirstTerm += tempFactor;
@@ -200,7 +201,7 @@ __kernel void evaluate_dense_helmholtz_hypersingular_novec(
         tempResult[j] += trialValue[j] * tempFactor;
 #else
       KERNEL(novec)
-      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernelValue);
+      (testGlobalPoint, trialGlobalPoint, testNormal, trialNormal, kernel_parameters, kernelValue);
       tempFactor[0] = quadWeights[trialQuadIndex] * kernelValue[0];
       tempFactor[1] = quadWeights[trialQuadIndex] * kernelValue[1];
       tempFirstTerm[0] += tempFactor[0];
@@ -237,19 +238,14 @@ __kernel void evaluate_dense_helmholtz_hypersingular_novec(
   for (i = 0; i < 3; ++i)
     for (j = 0; j < 3; ++j)
       shapeIntegral[i][j] =
-          OMEGA * OMEGA * shapeIntegral[i][j] * normalProduct +
+          kernel_parameters[0] * kernel_parameters[0] * shapeIntegral[i][j] * normalProduct +
           firstTermIntegral * basisProduct[i][j];
 
 #else
 
-#ifdef WAVENUMBER_COMPLEX
-  wavenumberProduct[0] = WAVENUMBER_REAL * WAVENUMBER_REAL -
-                         WAVENUMBER_COMPLEX * WAVENUMBER_COMPLEX;
-  wavenumberProduct[1] = M_TWO * WAVENUMBER_REAL * WAVENUMBER_COMPLEX;
-#else
-  wavenumberProduct[0] = WAVENUMBER_REAL * WAVENUMBER_REAL;
-  wavenumberProduct[1] = M_ZERO;
-#endif
+  wavenumberProduct[0] = kernel_parameters[0] * kernel_parameters[0] -
+                         kernel_parameters[1] * kernel_parameters[1];
+  wavenumberProduct[1] = M_TWO * kernel_parameters[0] * kernel_parameters[1];
 
   for (i = 0; i < 3; ++i)
     for (j = 0; j < 3; ++j) {

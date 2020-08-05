@@ -1,270 +1,245 @@
-"""Interface to ExaFMM."""
+"""Main interface class to ExaFMM."""
 import numpy as _np
+import atexit as _atexit
 
-_NCRITICAL = 100
+FMM_TMP_DIR = None
 
 
-class Exafmm(object):
-    """Interface to ExaFmm."""
+@_atexit.register
+def cleanup_fmm_tmp():
+    """Clean up the FMM tmp directory."""
+    from pathlib import Path
+
+    if FMM_TMP_DIR is not None:
+        for tmp_file in Path(FMM_TMP_DIR).glob("*.tmp"):
+            tmp_file.unlink()
+
+
+class ExafmmInterface(object):
+    """Interface to Exafmm."""
 
     def __init__(
         self,
-        domain,
-        dual_to_range,
-        kernel,
-        regular_order,
-        singular_order,
-        expansion_order=10,
-        max_level=-1,
+        source_points,
+        target_points,
+        mode,
+        wavenumber=None,
+        depth=4,
+        expansion_order=5,
+        ncrit=400,
+        precision="double",
+        singular_correction=None,
     ):
-        """Initalize the ExaFmm Interface."""
+        """Instantiate an Exafmm session."""
         import bempp.api
+        import os
+        from bempp.api.utils.helpers import create_unique_id
 
-        self._domain = None
-        self._dual_to_range = None
-        self._regular_order = None
-        self._singular_order = None
-        self._sources = None
-        self._targets = None
-        self._interactions = None
-        self._source_transform = None
-        self._target_transform = None
-        self._local_points = None
-        self._leaf_nodes = {}
-        self._near_field_matrix = None
-        self._shape = None
+        global FMM_TMP_DIR
 
-        self._kernel = kernel
+        if FMM_TMP_DIR is None:
+            FMM_TMP_DIR = os.path.join(os.getcwd(), ".exafmm")
+            if not os.path.isdir(FMM_TMP_DIR):
+                try:
+                    os.mkdir(FMM_TMP_DIR)
+                except:
+                    raise FileExistsError(
+                        f"A file with the name {FMM_TMP_DIR} exists. Please delete it."
+                    )
 
-        bempp.api.log("Initializing FMM...")
+        for _ in range(10):
+            tmp_name = create_unique_id() + ".tmp"
+            fname = os.path.join(FMM_TMP_DIR, tmp_name)
+            if not os.path.exists(fname):
+                break
+        else:
+            raise FileExistsError("Could not create temporary filename for Exafmm.")
 
-        with bempp.api.Timer() as t:
-            self._setup(
-                domain,
-                dual_to_range,
-                regular_order,
-                singular_order,
-                expansion_order,
-                max_level,
-            )
-        bempp.api.log(f"Setup took {t.interval} seconds.")
+        self._fname = fname
+        self._singular_correction = singular_correction
 
-    @property
-    def leaf_nodes(self):
-        """Return the nodes."""
-        return self._leaf_nodes
+        self._source_points = source_points
+        self._target_points = target_points
 
-    @property
-    def source_transform(self):
-        """Return source transformation matrix."""
-        return self._source_transform
+        with bempp.api.Timer(message="Initialising Exafmm."):
 
-    @property
-    def target_transform(self):
-        """Return target transformation matrix."""
-        return self._target_transform
+            if mode == "laplace":
+                import exafmm.laplace
 
-    @property
-    def source_grid(self):
-        """Return source grid."""
-        return self._domain.grid
+                self._module = exafmm.laplace
 
-    @property
-    def target_grid(self):
-        """Return target grid."""
-        return self._dual_to_range.grid
-
-    @property
-    def sources(self):
-        """Return sources."""
-        return self._sources
-
-    @property
-    def local_points(self):
-        """Return local points."""
-        return self._local_points
-
-    @property
-    def targets(self):
-        """Return target."""
-        return self._targets
-
-    @property
-    def domain(self):
-        """Return domain space."""
-        return self._domain
-
-    @property
-    def dual_to_range(self):
-        """Return dual_to_Range space."""
-        return self._dual_to_range
-
-    def as_linear_operator(self):
-        """
-        Return a Scipy Linear Operator that evaluates the FMM.
-
-        The returned class should subclass the Scipy LinearOperator class
-        so that it provides a matvec routine that accept a vector of coefficients
-        and returns the result of a matrix vector product.
-        """
-        from scipy.sparse.linalg import LinearOperator
-
-        return LinearOperator(self._shape, matvec=self._evaluate, dtype=_np.float64)
-
-    def _setup(
-        self,
-        domain,
-        dual_to_range,
-        regular_order,
-        singular_order,
-        expansion_order=10,
-        max_level=-1,
-    ):
-        """Setup the Fmm computation."""
-        import bempp.api
-        from .common import map_space_to_points
-        from .common import grid_to_points
-        from .common import LeafNode
-        from exafmm_laplace import init_sources
-        from exafmm_laplace import init_targets
-        from exafmm_laplace import build_tree
-        from exafmm_laplace import build_list
-        from bempp.api.integration.triangle_gauss import rule
-        import exafmm_laplace
-
-        self._domain = domain
-        self._dual_to_range = dual_to_range
-        self._regular_order = regular_order
-        self._singular_order = singular_order
-        self._expansion_order = expansion_order
-        self._shape = (dual_to_range.global_dof_count, domain.global_dof_count)
-        self._local_points, self._weights = rule(regular_order)
-
-        if max_level == -1:
-            max_level = compute_max_level(domain, dual_to_range)
-
-        if max_level < 0:
-            raise ValueError("Could not correctly determine maximum level.")
-
-        exafmm_laplace.configure(expansion_order, _NCRITICAL, max_level)
-
-        self._sources = grid_to_points(self._domain.grid, self._local_points)
-
-        self._targets = grid_to_points(self._dual_to_range.grid, self._local_points)
-
-        source_bodies = init_sources(
-            self._sources, _np.zeros(len(self._sources), dtype=_np.float64)
-        )
-
-        target_bodies = init_targets(self._targets)
-
-        build_tree(source_bodies, target_bodies)
-        exafmm_nodes = build_list(True)
-
-        with bempp.api.Timer() as t:
-            for exafmm_node in exafmm_nodes:
-                if not exafmm_node.is_leaf:
-                    continue
-                self._leaf_nodes[exafmm_node.key] = LeafNode(
-                    exafmm_node.key,
-                    exafmm_node.isrcs,
-                    exafmm_node.itrgs,
-                    [node.key for node in exafmm_node.colleagues if node is not None],
+                sources = exafmm.laplace.init_sources(
+                    source_points, _np.zeros(len(source_points), dtype=_np.float64)
                 )
-        bempp.api.log(f"Time for node data structures: {t.interval}")
 
-        with bempp.api.Timer() as t:
-            self._source_transform = map_space_to_points(
-                self._domain, self._local_points, self._weights, "source"
-            )
-        bempp.api.log(f"Time for domain map: {t.interval}")
+                targets = exafmm.laplace.init_targets(target_points)
 
-        with bempp.api.Timer() as t:
-            self._target_transform = map_space_to_points(
-                self._dual_to_range,
-                self._local_points,
-                self._weights,
-                "target",
-                return_transpose=True,
-            )
-        bempp.api.log(f"Time for dual map: {t.interval}")
+                self._fmm = exafmm.laplace.LaplaceFmm(
+                    expansion_order, ncrit, depth, filename=fname
+                )
+                self._tree = exafmm.laplace.setup(sources, targets, self._fmm)
 
-        self._compute_near_field_matrix()
+            elif mode == "helmholtz":
+                import exafmm.helmholtz
 
-        with bempp.api.Timer() as t:
-            exafmm_laplace.precompute()
-        bempp.api.log(f"Time for FMM precomputation. {t.interval}")
+                self._module = exafmm.helmholtz
 
-    def _compute_near_field_matrix(self):
-        """Compute the near-field matrix."""
+                sources = exafmm.helmholtz.init_sources(
+                    source_points, _np.zeros(len(source_points), dtype=_np.float64)
+                )
+
+                targets = exafmm.helmholtz.init_targets(target_points)
+
+                self._fmm = exafmm.helmholtz.HelmholtzFmm(
+                    expansion_order, ncrit, depth, wavenumber, filename=fname
+                )
+                self._tree = exafmm.helmholtz.setup(sources, targets, self._fmm)
+
+            elif mode == "modified_helmholtz":
+                import exafmm.modified_helmholtz
+
+                self._module = exafmm.modified_helmholtz
+
+                sources = exafmm.modified_helmholtz.init_sources(
+                    source_points, _np.zeros(len(source_points), dtype=_np.float64)
+                )
+
+                targets = exafmm.modified_helmholtz.init_targets(target_points)
+
+                self._fmm = exafmm.modified_helmholtz.ModifiedHelmholtzFmm(
+                    expansion_order, ncrit, depth, wavenumber, filename=fname
+                )
+                self._tree = exafmm.modified_helmholtz.setup(
+                    sources, targets, self._fmm
+                )
+
+    @property
+    def number_of_source_points(self):
+        """Return number of source points."""
+        return len(self._source_points)
+
+    @property
+    def number_of_target_points(self):
+        """Return number of target points."""
+        return len(self._target_points)
+
+    def evaluate(self, vec, apply_singular_correction=True):
+        """Evalute the Fmm."""
         import bempp.api
-        from bempp.api.operators.boundary.laplace import single_layer
-        from bempp.core.near_field_assembler import NearFieldAssembler
 
-        with bempp.api.Timer() as t:
-            near_field_op = NearFieldAssembler(
-                self, bempp.api.default_device(), bempp.api.DEVICE_PRECISION_CPU
-            ).as_linear_operator()
-        bempp.api.log(f"Near field setup time: {t.interval}")
+        with bempp.api.Timer(message="Evaluating Fmm."):
+            self._module.update_charges(self._tree, vec)
+            self._module.clear_values(self._tree)
 
-        singular_interactions = single_layer(
-            self._domain,
-            self._domain,
-            self._dual_to_range,
-            assembler="only_singular_part",
-        ).weak_form()
+            with bempp.api.Timer(message="Calling ExaFMM."):
+                result = self._module.evaluate(self._tree, self._fmm)
 
-        source_op = self._source_transform
-        target_op = self._target_transform
+            if apply_singular_correction and self._singular_correction is not None:
+                result -= (self._singular_correction @ vec).reshape([-1, 4])
 
-        self._near_field_matrix = (
-            target_op @ near_field_op @ source_op + singular_interactions
+            return result
+
+    def as_matrix(self):
+        """Return matrix representation of Fmm."""
+        import numpy as np
+
+        ident = np.identity(self.number_of_source_points)
+
+        res = np.zeros(
+            (self.number_of_target_points, self.number_of_source_points),
+            dtype="float64",
         )
 
-    def _evaluate_far_field(self, vec):
-        """Evaluate the far-field."""
-        import exafmm_laplace
+        for index in range(self.number_of_source_points):
+            res[:, index] = self.evaluate(ident[:, index])[:, 0]
 
-        transformed_vec = self._source_transform @ vec
-        exafmm_laplace.update(transformed_vec)
-        exafmm_laplace.clear()
-        potentials = exafmm_laplace.evaluate()
+        return res
 
-        return self._target_transform @ potentials
+    @classmethod
+    def from_grid(
+        cls, source_grid, mode, wavenumber=None, target_grid=None, precision="double"
+    ):
+        """
+        Initialise an Exafmm instance from a given source and target grid.
 
-    def _evaluate(self, vec):
-        """Evaluate the FMM."""
+        Parameters
+        ----------
+        source_grid : Grid object
+            Grid for the source points.
+        mode: string
+            Fmm mode. One of 'laplace', 'helmholtz', or 'modified_helmholtz'
+        wavenumber : real number
+            For Helmholtz or modified Helmholtz the wavenumber.
+        target_grid : Grid object
+            An optional target grid. If not provided the source and target
+            grid are assumed to be identical.
+        precision : string
+            Either 'single' or 'double'. Currently, the Fmm is always
+            executed in double precision.
+        """
+        import bempp.api
+        from bempp.api.integration.triangle_gauss import rule
+        from bempp.api.fmm.helpers import get_local_interaction_operator
+        import numpy as np
 
-        return self._near_field_matrix @ vec + self._evaluate_far_field(vec)
+        quadrature_order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
 
+        local_points, weights = rule(quadrature_order)
 
-def compute_max_level(domain, dual_to_range):
-    """Compute the maximum possible level for the FMM."""
+        if target_grid is None:
+            target_grid = source_grid
 
-    hmax = _np.max(
-        [
-            domain.grid.maximum_element_diameter,
-            dual_to_range.grid.maximum_element_diameter,
-        ]
-    )
-
-    domain_box = domain.grid.bounding_box
-    dual_to_range_box = dual_to_range.grid.bounding_box
-
-    merged_box = _np.array(
-        [
-            _np.minimum(domain_box[:, 0], dual_to_range_box[:, 0]),
-            _np.maximum(domain_box[:, 1], dual_to_range_box[:, 1]),
-        ]
-    ).T
-    center = (merged_box[:, 0] + merged_box[:, 1]) / 2
-    radius = (
-        _np.maximum(
-            _np.max(center - merged_box[:, 0]), _np.max(merged_box[:, 1] - center)
+        source_points = source_grid.map_to_point_cloud(
+            quadrature_order, precision=precision
         )
-        * 1.00001
-    )
 
-    max_level = int(_np.log2(radius) - _np.log2(1.2 * hmax))
+        if target_grid != source_grid:
+            target_points = target_grid.map_to_point_cloud(
+                quadrature_order, precision=precision
+            )
+        else:
+            target_points = source_points
 
-    return max_level
+        singular_correction = None
+
+        if target_grid == source_grid:
+            # Require singular correction terms.
+
+            if mode == "laplace":
+                singular_correction = get_local_interaction_operator(
+                    source_grid,
+                    local_points,
+                    "laplace",
+                    np.array([], dtype="float64"),
+                    precision,
+                    False,
+                )
+            elif mode == "helmholtz":
+                singular_correction = get_local_interaction_operator(
+                    source_grid,
+                    local_points,
+                    "helmholtz",
+                    np.array([wavenumber, 0], dtype="float64"),
+                    precision,
+                    True,
+                )
+            elif mode == "modified_helmholtz":
+                singular_correction = get_local_interaction_operator(
+                    source_grid,
+                    local_points,
+                    "modified_helmholtz",
+                    np.array([wavenumber], dtype="float64"),
+                    precision,
+                    False,
+                )
+        return cls(
+            source_points,
+            target_points,
+            mode,
+            wavenumber=wavenumber,
+            depth=bempp.api.GLOBAL_PARAMETERS.fmm.depth,
+            expansion_order=bempp.api.GLOBAL_PARAMETERS.fmm.expansion_order,
+            ncrit=bempp.api.GLOBAL_PARAMETERS.fmm.ncrit,
+            precision=precision,
+            singular_correction=singular_correction,
+        )

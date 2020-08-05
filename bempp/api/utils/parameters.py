@@ -4,7 +4,7 @@
 
 
 class _Verbosity(object):
-    """Verbosity Parameters"""
+    """Verbosity Parameters."""
 
     def __init__(self):
         """Initialize verbosity parameters."""
@@ -13,7 +13,7 @@ class _Verbosity(object):
 
 
 class _Output(object):
-    """Output parameters"""
+    """Output parameters."""
 
     def __init__(self):
         """Initialize output parameters."""
@@ -22,12 +22,23 @@ class _Output(object):
 
 
 class _Quadrature(object):
-    """Quadrature orders"""
+    """Quadrature orders."""
 
     def __init__(self):
 
         self.regular = 4
         self.singular = 4
+
+
+class _Fmm(object):
+    """Fmm options."""
+
+    def __init__(self):
+
+        self.expansion_order = 5
+        self.depth = 4
+        self.ncrit = 400
+        self.near_field_representation = 'opencl_evaluate'
 
 
 class _DenseAssembly(object):
@@ -46,15 +57,8 @@ class _Assembly(object):
         self.discretization_type = 'galerkin'
 
 
-class _Fmm(object):
-    """FMM options."""
-
-    def __init__(self):
-        self.order = 5
-
-
 class DefaultParameters(object):
-    """Default parameters for Bempp"""
+    """Default parameters for Bempp."""
 
     def __init__(self):
         """Initialize parameters."""

@@ -44,19 +44,19 @@ class Shapeset(object):
         return self._dimension
 
 
-@_numba.njit(_numba.float64[:, :, :](_numba.float64[:, :]))
+@_numba.njit
 def _p0_shapeset_evaluate(local_coordinates):
     """Evaluate P0 shapeset."""
-    return _np.ones((1, 1, local_coordinates.shape[1]), dtype=_np.float64)
+    return _np.ones((1, 1, local_coordinates.shape[1]), dtype=local_coordinates.dtype)
 
 
-@_numba.njit(_numba.float64[:, :, :, :](_numba.float64[:, :]))
+@_numba.njit
 def _p0_shapeset_gradient(local_coordinates):
     """Evaluate P0 gradient."""
-    return _np.zeros((1, 2, 1, local_coordinates.shape[1]), dtype=_np.float64)
+    return _np.zeros((1, 2, 1, local_coordinates.shape[1]), dtype=local_coordinates.dtype)
 
 
-@_numba.njit(_numba.float64[:, :, :](_numba.float64[:, :]))
+@_numba.njit
 def _p1_disc_shapeset_evaluate(local_coordinates):
     """Evaluate P1 discontinuous shapeset."""
     return _np.expand_dims(
@@ -71,31 +71,33 @@ def _p1_disc_shapeset_evaluate(local_coordinates):
     )
 
 
-@_numba.njit(_numba.float64[:, :, :, :](_numba.float64[:, :]))
+@_numba.njit
 def _p1_disc_shapeset_gradient(local_coordinates):
     """Evaluate P1 discontinuous shapeset gradient."""
-    grad = _np.zeros((1, 2, 3, local_coordinates.shape[1]), dtype=_np.float64)
+    dtype = local_coordinates.dtype
+    grad = _np.zeros((1, 2, 3, local_coordinates.shape[1]), dtype=dtype)
     grad[0, 0, :, :] = _np.vstack(
         (
-            -_np.ones(local_coordinates.shape[1], dtype=_np.float64),
-            _np.ones(local_coordinates.shape[1], dtype=_np.float64),
-            _np.zeros(local_coordinates.shape[1], dtype=_np.float64),
+            -_np.ones(local_coordinates.shape[1], dtype=dtype),
+            _np.ones(local_coordinates.shape[1], dtype=dtype),
+            _np.zeros(local_coordinates.shape[1], dtype=dtype),
         )
     )
     grad[0, 1, :, :] = _np.vstack(
         (
-            -_np.ones(local_coordinates.shape[1], dtype=_np.float64),
-            _np.zeros(local_coordinates.shape[1], dtype=_np.float64),
-            _np.ones(local_coordinates.shape[1], dtype=_np.float64),
+            -_np.ones(local_coordinates.shape[1], dtype=dtype),
+            _np.zeros(local_coordinates.shape[1], dtype=dtype),
+            _np.ones(local_coordinates.shape[1], dtype=dtype),
         )
     )
     return grad
 
 
-@_numba.njit(_numba.float64[:, :, :](_numba.float64[:, :]))
+@_numba.njit
 def _rwg0_shapeset_evaluate(local_coordinates):
     """Evaluate RWG 0 shapeset."""
-    vals = _np.zeros((2, 3, local_coordinates.shape[1]), dtype=_np.float64)
+    dtype = local_coordinates.dtype
+    vals = _np.zeros((2, 3, local_coordinates.shape[1]), dtype=dtype)
     vals[0, :, :] = _np.vstack(
         (local_coordinates[0], local_coordinates[0] - 1, local_coordinates[0])
     )
@@ -105,15 +107,16 @@ def _rwg0_shapeset_evaluate(local_coordinates):
     return vals
 
 
-@_numba.njit(_numba.float64[:, :, :, :](_numba.float64[:, :]))
+@_numba.njit
 def _rwg0_shapeset_gradient(local_coordinates):
     """Evaluate RWG 0 shapeset gradient."""
+    dtype = local_coordinates.dtype
     npoints = local_coordinates.shape[1]
-    grad = _np.zeros((2, 2, 3, npoints), dtype=_np.float64)
+    grad = _np.zeros((2, 2, 3, npoints), dtype=_np.dtype)
     # Mixed derivates (derivative in direction j of
     # component i with i neq j) are zero.
-    grad[0, 0, :, :] = _np.ones((3, npoints), dtype=_np.float64)
-    grad[1, 1, :, :] = _np.ones((3, npoints), dtype=_np.float64)
+    grad[0, 0, :, :] = _np.ones((3, npoints), dtype=dtype)
+    grad[1, 1, :, :] = _np.ones((3, npoints), dtype=dtype)
     return grad
 
 

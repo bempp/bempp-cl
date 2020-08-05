@@ -70,4 +70,45 @@ typedef struct Geometry
 /* Print out a real variable for debugging. */
 #define PRINT_REAL(A, INFO) printf(INFO" %e \n", A)
 
+/* Define Assignment of trial indices for vectorized dense assembly. */
+#if VEC_LENGTH == 4
+#define REALTYPEVEC REALTYPE4
+#define DEFINE_TRIAL_INDICES_REGULAR_ASSEMBLY \
+  size_t trialIndex[4] = {trialIndices[offset + 4 * (gid[1] - offset) + 0], \
+                          trialIndices[offset + 4 * (gid[1] - offset) + 1], \
+                          trialIndices[offset + 4 * (gid[1] - offset) + 2], \
+                          trialIndices[offset + 4 * (gid[1] - offset) + 3]};
+#elif VEC_LENGTH == 8
+#define REALTYPEVEC REALTYPE8
+#define DEFINE_TRIAL_INDICES_REGULAR_ASSEMBLY \
+  size_t trialIndex[8] = {trialIndices[offset + 8 * (gid[1] - offset) + 0], \
+                          trialIndices[offset + 8 * (gid[1] - offset) + 1], \
+                          trialIndices[offset + 8 * (gid[1] - offset) + 2], \
+                          trialIndices[offset + 8 * (gid[1] - offset) + 3], \
+                          trialIndices[offset + 8 * (gid[1] - offset) + 4], \
+                          trialIndices[offset + 8 * (gid[1] - offset) + 5], \
+                          trialIndices[offset + 8 * (gid[1] - offset) + 6], \
+                          trialIndices[offset + 8 * (gid[1] - offset) + 7]};
+#elif VEC_LENGTH == 16
+#define REALTYPEVEC REALTYPE16
+#define DEFINE_TRIAL_INDICES_REGULAR_ASSEMBLY \
+  size_t trialIndex[16] = {trialIndices[offset + 16 * (gid[1] - offset) + 0], \
+                           trialIndices[offset + 16 * (gid[1] - offset) + 1], \
+                           trialIndices[offset + 16 * (gid[1] - offset) + 2], \
+                           trialIndices[offset + 16 * (gid[1] - offset) + 3], \
+                           trialIndices[offset + 16 * (gid[1] - offset) + 4], \
+                           trialIndices[offset + 16 * (gid[1] - offset) + 5], \
+                           trialIndices[offset + 16 * (gid[1] - offset) + 6], \
+                           trialIndices[offset + 16 * (gid[1] - offset) + 7], \
+                           trialIndices[offset + 16 * (gid[1] - offset) + 8], \
+                           trialIndices[offset + 16 * (gid[1] - offset) + 9], \
+                           trialIndices[offset + 16 * (gid[1] - offset) + 10], \
+                           trialIndices[offset + 16 * (gid[1] - offset) + 11], \
+                           trialIndices[offset + 16 * (gid[1] - offset) + 12], \
+                           trialIndices[offset + 16 * (gid[1] - offset) + 13], \
+                           trialIndices[offset + 16 * (gid[1] - offset) + 14], \
+                           trialIndices[offset + 16 * (gid[1] - offset) + 15]};
+#endif
+
+
 #endif

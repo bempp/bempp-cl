@@ -1,5 +1,6 @@
 """Interfaces to modified Helmholtz operators."""
 from bempp.api.operators.boundary import common as _common
+import numpy as _np
 
 
 def single_layer(
@@ -12,21 +13,23 @@ def single_layer(
     device_interface=None,
     precision=None,
 ):
-    """Assemble the mod. Helmholtz single-layer boundary operator."""
+    """Assemble the Helmholtz single-layer boundary operator."""
+    if _np.imag(omega) != 0:
+        raise ValueError("'omega' must be real.")
+
     return _common.create_operator(
-        "modified_helmholtz_real_single_layer_boundary",
+        "modified_helmholtz_single_layer_boundary",
         domain,
         range_,
         dual_to_range,
         parameters,
         assembler,
-        {
-            "KERNEL_FUNCTION": "modified_helmholtz_real_single_layer",
-            "OMEGA": 1.0 * omega,
-        },
+        [omega],
+        "modified_helmholtz_single_layer",
         "default_scalar",
         device_interface,
         precision,
+        False,
     )
 
 
@@ -41,20 +44,22 @@ def double_layer(
     precision=None,
 ):
     """Assemble the mod. Helmholtz double-layer boundary operator."""
+    if _np.imag(omega) != 0:
+        raise ValueError("'omega' must be real.")
+
     return _common.create_operator(
-        "modified_helmholtz_real_double_layer_boundary",
+        "modified_helmholtz_double_layer_boundary",
         domain,
         range_,
         dual_to_range,
         parameters,
         assembler,
-        {
-            "KERNEL_FUNCTION": "modified_helmholtz_real_double_layer",
-            "OMEGA": 1.0 * omega,
-        },
+        [omega],
+        "modified_helmholtz_double_layer",
         "default_scalar",
         device_interface,
         precision,
+        False,
     )
 
 
@@ -69,21 +74,23 @@ def adjoint_double_layer(
     precision=None,
 ):
     """Assemble the mod. Helmholtz adj. double-layer boundary op."""
+    if _np.imag(omega) != 0:
+        raise ValueError("'omega' must be real.")
+
     return _common.create_operator(
-        "modified_helmholtz_real_adjoint_double_layer_boundary",
+        "modified_helmholtz_adjoint_double_layer_boundary",
         domain,
         range_,
         dual_to_range,
         parameters,
         assembler,
-        {
-            "KERNEL_FUNCTION": "modified_helmholtz_real_adjoint_double_layer",
-            "OMEGA": 1.0 * omega,
-        },
+        [omega],
+        "modified_helmholtz_adjoint_double_layer",
         "default_scalar",
         device_interface,
         precision,
-    )  # Ensure that variable is float type
+        False,
+    )
 
 
 def hypersingular(
@@ -97,18 +104,20 @@ def hypersingular(
     precision=None,
 ):
     """Assemble the mod. Helmholtz hypersingular boundary op."""
+    if _np.imag(omega) != 0:
+        raise ValueError("'omega' must be real.")
+
     return _common.create_operator(
-        "helmholtz_hypersingular_boundary",
+        "modified_helmholtz_hypersingular_boundary",
         domain,
         range_,
         dual_to_range,
         parameters,
         assembler,
-        {
-            "KERNEL_FUNCTION": "modified_helmholtz_real_single_layer",
-            "OMEGA": 1.0 * omega,
-        },
-        "helmholtz_hypersingular",
+        [omega],
+        "modified_helmholtz_single_layer",
+        "modified_helmholtz_hypersingular",
         device_interface,
         precision,
-    )  # Ensure that variable is float type
+        False,
+    )

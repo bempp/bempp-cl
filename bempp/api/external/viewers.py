@@ -4,7 +4,7 @@ import numpy as _np
 
 def visualize(obj, mode="node", transformation=None):
     """
-    Main visualization method
+    Main visualization method.
 
     Attributes
     ----------
@@ -56,7 +56,7 @@ def visualize(obj, mode="node", transformation=None):
 
 
 def visualize_with_jupyter_notebook(obj, mode="element", transformation=None):
-    """View a grid or grid function in an IPython Notebook"""
+    """View a grid or grid function in an IPython Notebook."""
     import plotly
     import plotly.figure_factory as ff
     import plotly.graph_objs as go
@@ -117,7 +117,7 @@ def visualize_with_jupyter_notebook(obj, mode="element", transformation=None):
 
 def visualize_with_gmsh(obj, mode='element', transformation=None):
     """
-    View a grid or grid function with Gmsh
+    View a grid or grid function with Gmsh.
 
     Parameters
     ----------
@@ -159,7 +159,7 @@ def visualize_with_gmsh(obj, mode='element', transformation=None):
 
 def visualize_with_paraview(obj, mode='element', transformation=None):
     """
-    View a grid or grid function with Paraview
+    View a grid or grid function with Paraview.
 
     Parameters
     ----------
@@ -222,7 +222,7 @@ def enable_paraview_viewer():
 
 
 def enable_jupyter_viewer():
-    """Change plotting default to IPython"""
+    """Change plotting default to IPython."""
     import bempp.api
 
     bempp.api.PLOT_BACKEND = "jupyter_notebook"

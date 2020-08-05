@@ -2,6 +2,9 @@
 *.swp
 *.swo
 
+# Emacs files
+.#*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -118,3 +121,8 @@ venv.bak/
 
 # Ignore notebook output
 notebooks/laplace/mixed_dirichlet_neumann_laplace_solution.msh
+
+# Ignore test output
+text/grid/grids/testoutput*
+
+.exafmm/*

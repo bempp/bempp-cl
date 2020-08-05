@@ -25,7 +25,7 @@ def get_gmsh_file():
 
 
 def __generate_grid_from_gmsh_string(gmsh_string):
-    """Return a grid from a string containing a gmsh mesh"""
+    """Return a grid from a string containing a gmsh mesh."""
     import os
     import tempfile
     import bempp.api
@@ -44,8 +44,7 @@ def __generate_grid_from_gmsh_string(gmsh_string):
 
 
 def __generate_grid_from_geo_string(geo_string):
-    """Helper routine that implements the grid generation
-    """
+    """Helper routine that implements the grid generation."""
     import os
     import subprocess
     import bempp.api

@@ -4,6 +4,7 @@ import dolfin as _dolfin
 def boundary_grid_from_fenics_mesh(fenics_mesh):
     """
     Create a Bempp boundary grid from a FEniCS Mesh.
+
     Return the Bempp grid and a map from the node numberings of the FEniCS
     mesh to the node numbers of the boundary grid.
     """
@@ -19,9 +20,7 @@ def boundary_grid_from_fenics_mesh(fenics_mesh):
 
 
 def fenics_to_bempp_trace_data(fenics_space):
-    """
-    Returns tuple (space,trace_matrix)
-    """
+    """Returns tuple (space,trace_matrix)."""
     family, degree = fenics_space_info(fenics_space)
 
     if family == "Lagrange":
@@ -39,9 +38,7 @@ def fenics_to_bempp_trace_data(fenics_space):
 
 
 def fenics_space_info(fenics_space):
-    """
-    Returns tuple (family,degree) containing information about a FEniCS space
-    """
+    """Returns tuple (family,degree) containing information about a FEniCS space."""
     element = fenics_space.ufl_element()
     family = element.family()
     degree = element.degree()
@@ -49,7 +46,7 @@ def fenics_space_info(fenics_space):
 
 
 class FenicsOperator(object):
-    """Wraps a FEniCS Operator into a BEM++ operator."""
+    """Wraps a FEniCS Operator into a Bempp operator."""
 
     def __init__(self, fenics_weak_form):
         """Construct an operator from a weak form in FEniCS."""
@@ -152,11 +149,11 @@ def nc1_tangential_trace(fenics_space):
     # First get trace space
     space = bempp.api.function_space(bempp_boundary_grid, "RWG", 0)
 
-    # Now compute the mapping from BEM++ dofs to FEniCS dofs
+    # Now compute the mapping from Bempp dofs to FEniCS dofs
     # Overall plan:
     #   bempp_dofs <- bd_vertex_pairs <- all_vertex_pairs <- all_edges <- fenics_dofs
 
-    # First the BEM++ dofs to the boundary edges
+    # First the Bempp dofs to the boundary edges
     #   bempp_dofs <- bd_vertex_pairs
 
     grid = space.grid
@@ -223,7 +220,7 @@ def nc1_tangential_trace(fenics_space):
                     np.array([[0.], [.5]]),
                     np.array([[.5], [.5]])]
 
-    # Build a map from BEM++ triangles to FEniCS edges
+    # Build a map from Bempp triangles to FEniCS edges
     # aim: bempp_triangles -> all_edge_triplets -> fenics_tetrahedra
     # First: bempp Triangles -> all edge triplets
 

@@ -1,4 +1,4 @@
-"""The basic grid class"""
+"""The basic grid class."""
 from bempp.helpers import timeit as _timeit
 import collections as _collections
 
@@ -15,7 +15,9 @@ class Grid(object):
     """The Grid class."""
 
     @_timeit
-    def __init__(self, vertices, elements, domain_indices=None, grid_id=None, scatter=True):
+    def __init__(
+        self, vertices, elements, domain_indices=None, grid_id=None, scatter=True
+    ):
         """Create a grid from a vertices and an elements array."""
         from bempp.api import log
         from bempp.api.utils import pool
@@ -63,7 +65,7 @@ class Grid(object):
         self._compute_edge_neighbors()
         self._compute_vertex_neighbors()
 
-        self._grid_data = GridData(
+        self._grid_data_double = GridDataDouble(
             self._vertices,
             self._elements,
             self._edges,
@@ -76,8 +78,29 @@ class Grid(object):
             self._integration_elements,
             self._centroids,
             self._domain_indices,
-            self._vertex_on_boundary
+            self._vertex_on_boundary,
+            self._element_neighbors.indices,
+            self._element_neighbors.indexptr,
         )
+
+        self._grid_data_single = GridDataFloat(
+            self._vertices.astype("float32"),
+            self._elements,
+            self._edges,
+            self._element_edges,
+            self._volumes.astype("float32"),
+            self._normals.astype("float32"),
+            self._jacobians.astype("float32"),
+            self._jacobian_inverse_transposed.astype("float32"),
+            self._diameters.astype("float32"),
+            self._integration_elements.astype("float32"),
+            self._centroids.astype("float32"),
+            self._domain_indices,
+            self._vertex_on_boundary,
+            self._element_neighbors.indices,
+            self._element_neighbors.indexptr,
+        )
+
         self._is_scattered = False
 
         if scatter and pool.is_initialised() and not pool.is_worker():
@@ -135,7 +158,7 @@ class Grid(object):
     @property
     def element_neighbors(self):
         """
-        Return named tuple (indices, indexptr)
+        Return named tuple (indices, indexptr).
 
         The neighbors of element i are given as
         element_neighbors.indices[
@@ -285,10 +308,14 @@ class Grid(object):
         """Return for each edge the list of neighboring elements.."""
         return self._edge_neighbors
 
-    @property
-    def data(self):
+    def data(self, precision="double"):
         """Return Numba container with all relevant grid data."""
-        return self._grid_data
+        if precision == "double":
+            return self._grid_data_double
+        elif precision == "single":
+            return self._grid_data_single
+        else:
+            raise ValueError("precision must be one of 'single', 'double'")
 
     @property
     def vertex_neighbors(self):
@@ -370,6 +397,42 @@ class Grid(object):
 
         return iterator
 
+    def map_to_point_cloud(self, order=None, local_points=None, precision="double"):
+        """
+        Return a point cloud representation of the grid on quadratur points.
+
+        Return a representation of the grid as a point cloud using points on
+        each element either defined through a triangle Gauss qudrature order
+        or by directly specifying an array of local points.
+
+        Parameters
+        ----------
+        order : Integer
+            Optional parameter. Specify a quadrature order for the point
+            cloud generation.
+        local_points: Numpy array
+            A 2 x N array of N points in local reference coordinates that specify
+            the points to use for each triangle.
+        precision: String
+            Either 'single' or 'double'.
+
+        If neither order nor local_points is specified the quadrature order is
+        obtained from the global parameters.
+
+        Returns a M x 3 array of M points that represent the grid on the specified
+        points.
+
+        """
+        import bempp.api
+        from bempp.api.integration.triangle_gauss import rule
+
+        if local_points is None:
+            if order is None:
+                order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
+            local_points, _ = rule(order)
+
+        return grid_to_points(self.data("double"), local_points)
+
     def refine(self):
         """Return a new grid with all elements refined."""
 
@@ -409,28 +472,6 @@ class Grid(object):
             new_elements[:, 4 * index + 3] = [vertex01, vertex12, vertex20]
 
         return Grid(new_vertices, new_elements, new_domain_indices)
-
-    def push_to_device(self, device_interface, precision):
-        """
-        Copy serialized grid onto device.
-
-        The property as_array is used to create a representation
-        of the grid, which is pushed onto a given device.
-        The method returns a DeviceGridInterface object. If
-        the grid with the given precision is already in the context,
-        an existing DeviceGridInterface instance is returned to avoid
-        multiple copies of the grid in the same context.
-        """
-        from bempp.core.device_grid_interface import DeviceGridInterface
-
-        context = device_interface.context
-
-        if (context, precision) in self.device_interfaces.keys():
-            return self.device_interfaces[(context, precision)]
-
-        interface = DeviceGridInterface(self, device_interface, precision)
-        self.device_interfaces[(device_interface.context, precision)] = interface
-        return interface
 
     def _compute_vertex_neighbors(self):
         """Return all elements adjacent to a given vertex."""
@@ -480,7 +521,8 @@ class Grid(object):
         )
 
     def _get_element_adjacency_for_edges_and_vertices(self):
-        """
+        """Get element adjacency.
+
         The array edge_adjacency has 6 rows, such that for index j the
         element edge_adjacency[0, j] is connected with element
         edge_adjacency[1, j] via the vertices edge_adjacency[2:4, j]
@@ -640,7 +682,7 @@ class Grid(object):
         self._edge_neighbors = [tuple(elem) for elem in edge_neighbors]
 
 
-@_numba.jitclass(
+@_numba.experimental.jitclass(
     [
         ("vertices", _numba.float64[:, :]),
         ("elements", _numba.uint32[:, :]),
@@ -655,9 +697,11 @@ class Grid(object):
         ("centroids", _numba.float64[:, :]),
         ("domain_indices", _numba.uint32[:]),
         ("vertex_on_boundary", _numba.boolean[:]),
+        ("element_neighbor_indices", _numba.uint32[:]),
+        ("element_neighbor_indexptr", _numba.uint32[:]),
     ]
 )
-class GridData(object):
+class GridDataDouble(object):
     """A Numba container class for the grid data."""
 
     def __init__(
@@ -675,6 +719,8 @@ class GridData(object):
         centroids,
         domain_indices,
         vertex_on_boundary,
+        element_neighbor_indices,
+        element_neighbor_indexptr,
     ):
 
         self.vertices = vertices
@@ -690,11 +736,75 @@ class GridData(object):
         self.centroids = centroids
         self.domain_indices = domain_indices
         self.vertex_on_boundary = vertex_on_boundary
+        self.element_neighbor_indices = element_neighbor_indices
+        self.element_neighbor_indexptr = element_neighbor_indexptr
 
     def local2global(self, elem_index, local_coords):
-        """
-        Map local to global coordinates.
-        """
+        """Map local to global coordinates."""
+        return _np.expand_dims(
+            self.vertices[:, self.elements[0, elem_index]], 1
+        ) + self.jacobians[elem_index].dot(local_coords)
+
+
+@_numba.experimental.jitclass(
+    [
+        ("vertices", _numba.float32[:, :]),
+        ("elements", _numba.uint32[:, :]),
+        ("edges", _numba.uint32[:, :]),
+        ("element_edges", _numba.uint32[:, :]),
+        ("volumes", _numba.float32[:]),
+        ("normals", _numba.float32[:, :]),
+        ("jacobians", _numba.float32[:, :, :]),
+        ("jac_inv_trans", _numba.float32[:, :, :]),
+        ("diameters", _numba.float32[:]),
+        ("integration_elements", _numba.float32[:]),
+        ("centroids", _numba.float32[:, :]),
+        ("domain_indices", _numba.uint32[:]),
+        ("vertex_on_boundary", _numba.boolean[:]),
+        ("element_neighbor_indices", _numba.uint32[:]),
+        ("element_neighbor_indexptr", _numba.uint32[:]),
+    ]
+)
+class GridDataFloat(object):
+    """A Numba container class for the grid data."""
+
+    def __init__(
+        self,
+        vertices,
+        elements,
+        edges,
+        element_edges,
+        volumes,
+        normals,
+        jacobians,
+        jac_inv_trans,
+        diameters,
+        integration_elements,
+        centroids,
+        domain_indices,
+        vertex_on_boundary,
+        element_neighbor_indices,
+        element_neighbor_indexptr,
+    ):
+        """TODO: add a docstring."""
+        self.vertices = vertices
+        self.elements = elements
+        self.edges = edges
+        self.element_edges = element_edges
+        self.volumes = volumes
+        self.normals = normals
+        self.jacobians = jacobians
+        self.jac_inv_trans = jac_inv_trans
+        self.diameters = diameters
+        self.integration_elements = integration_elements
+        self.centroids = centroids
+        self.domain_indices = domain_indices
+        self.vertex_on_boundary = vertex_on_boundary
+        self.element_neighbor_indices = element_neighbor_indices
+        self.element_neighbor_indexptr = element_neighbor_indexptr
+
+    def local2global(self, elem_index, local_coords):
+        """Map local to global coordinates."""
         return _np.expand_dims(
             self.vertices[:, self.elements[0, elem_index]], 1
         ) + self.jacobians[elem_index].dot(local_coords)
@@ -705,7 +815,6 @@ class ElementGeometry(object):
 
     def __init__(self, grid, index):
         """Initialize geometry wth a 3x3 array of corners."""
-
         self._grid = grid
         self._index = index
 
@@ -945,9 +1054,7 @@ def _find_first_common_array_index_pair_from_position(array1, array2, start=0):
 
 @_numba.njit(locals={"offset": _numba.types.int32})
 def _find_two_common_array_index_pairs(array1, array2):
-    """
-    Return two index pairs (i, j) such that array1[i] = array2[j]
-    """
+    """Return two index pairs (i, j) such that array1[i] = array2[j]."""
     offset = 0
     index_pairs = _np.empty((2, 2), dtype=_np.int32)
     index_pairs[:, 0] = _find_first_common_array_index_pair_from_position(
@@ -963,7 +1070,7 @@ def _find_two_common_array_index_pairs(array1, array2):
 @_numba.njit()
 def _get_shared_vertex_information_for_two_elements(elements, elem0, elem1):
     """
-    Return tuple (i, j)
+    Return tuple (i, j).
 
     The tuple has the property elements[i, elem0] == elements[j, elem1]
     """
@@ -976,7 +1083,7 @@ def _get_shared_vertex_information_for_two_elements(elements, elem0, elem1):
 @_numba.njit()
 def _get_shared_edge_information_for_two_elements(elements, elem0, elem1):
     """
-    Return 2x2 array of int32 indices
+    Return 2x2 array of int32 indices.
 
     Each column in the return indices as a pair (i, j) such that
     elements[i, elem0] = elements[j, elem1]
@@ -1029,7 +1136,7 @@ def _find_vertex_adjacency(elements, test_indices, trial_indices):
 @_numba.njit()
 def _find_edge_adjacency(elements, elem0_indices, elem1_indices):
     """
-    Return for element pairs the edge adjacency
+    Return for element pairs the edge adjacency.
 
     The return array edge_adjacency has 6 rows, such that for index
     j the element edge_adjacency[0, j] is connected with
@@ -1210,7 +1317,9 @@ def barycentric_refinement(grid):
         grid.number_of_edges,
     )
 
-    return Grid(new_vertices, new_elements, _np.repeat(grid.domain_indices, 6), scatter=False)
+    return Grid(
+        new_vertices, new_elements, _np.repeat(grid.domain_indices, 6), scatter=False
+    )
 
 
 def union(grids, domain_indices=None, swapped_normals=None):
@@ -1356,7 +1465,7 @@ def enumerate_vertex_adjacent_elements(grid, support_elements):
         if not neighbors:
             # Continue if empty
             continue
-        vertex_edges[vertex_index] = sort_neighbors(grid.data, neighbors)
+        vertex_edges[vertex_index] = sort_neighbors(grid.data(), neighbors)
 
     return vertex_edges
 
@@ -1414,3 +1523,36 @@ def _grid_scatter_worker(grid_id, array_proxies):
         log(f"Copied grid with id {grid_id} to worker {pool.get_id()}", "debug")
     else:
         log(f"Use cached grid with id {grid_id} on worker {pool.get_id()}", "debug")
+
+
+@_numba.njit
+def grid_to_points(grid_data, local_points):
+    """
+    Map a grid to an array of points.
+
+    Returns a (N, 3) point array that stores the global vertices
+    associated with the local points in each triangle.
+    Points are stored in consecutive order for each element
+    in the support_elements list. Hence, the returned array is of the form
+    [ v_1^1, v_2^1, ..., v_M^1, v_1^2, v_2^2, ...], where
+    v_i^j is the ith point in the jth element in
+    the support_elements list.
+
+    Parameters
+    ----------
+    grid_data : GridData
+        A Bempp GridData object.
+    local_points : np.ndarray
+        (2, M) array of local coordinates.
+    """
+    number_of_elements = grid_data.elements.shape[1]
+    number_of_points = local_points.shape[1]
+
+    points = _np.empty((number_of_points * number_of_elements, 3), dtype=_np.float64)
+
+    for elem in range(number_of_elements):
+        points[number_of_points * elem : number_of_points * (1 + elem), :] = (
+            _np.expand_dims(grid_data.vertices[:, grid_data.elements[0, elem]], 1)
+            + grid_data.jacobians[elem].dot(local_points)
+        ).T
+    return points
