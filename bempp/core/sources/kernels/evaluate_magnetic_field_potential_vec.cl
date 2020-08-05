@@ -39,33 +39,33 @@ __kernel __attribute__((vec_type_hint(REALTYPEVEC))) void kernel_function(
 
   size_t vecIndex;
 
-  REALTYPE4 surfaceGlobalPoint[3];
+  REALTYPEVEC surfaceGlobalPoint[3];
 
   REALTYPE basisValue[3][2];
-  REALTYPE4 elementValue[3][3];
+  REALTYPEVEC elementValue[3][3];
 
-  REALTYPE4 corners[3][3];
-  REALTYPE4 jacobian[2][3];
-  REALTYPE4 normal[3];
+  REALTYPEVEC corners[3][3];
+  REALTYPEVEC jacobian[2][3];
+  REALTYPEVEC normal[3];
 
-  REALTYPE4 factor1[2];
+  REALTYPEVEC factor1[2];
   REALTYPE3 testNormal; // Dummy variable. Only needed for kernel call.
 
   REALTYPE2 point;
 
-  REALTYPE4 intElem;
+  REALTYPEVEC intElem;
 
   size_t quadIndex;
   size_t i, j, k;
 
-  REALTYPE4 shapeIntegral[3][3][2];
+  REALTYPEVEC shapeIntegral[3][3][2];
 
-  __local REALTYPE4 localResult[WORKGROUP_SIZE][3][2];
-  REALTYPE4 gradKernelValue[3][2];
+  __local REALTYPEVEC localResult[WORKGROUP_SIZE][3][2];
+  REALTYPEVEC gradKernelValue[3][2];
 
-  REALTYPE4 myCoefficients[NUMBER_OF_SHAPE_FUNCTIONS][2];
+  REALTYPEVEC myCoefficients[NUMBER_OF_SHAPE_FUNCTIONS][2];
 
-  REALTYPE4 edgeLengths[3];
+  REALTYPEVEC edgeLengths[3];
 
   REALTYPE3 evalGlobalPoint =
       (REALTYPE3)(evalPoints[3 * gid[0] + 0], evalPoints[3 * gid[0] + 1],

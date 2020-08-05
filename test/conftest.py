@@ -23,7 +23,7 @@ def pytest_addoption(parser):
         help="Valid values: single double",
     )
     parser.addoption(
-        "--device", action="store", default="numba", help="Valid values: numba opencl",
+        "--device", action="store", default="opencl", help="Valid values: numba opencl",
     )
 
 
