@@ -9,7 +9,6 @@ import bempp.api
 
 pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
-NPOINTS = 10
 TOL = 2e-3
 bempp.api.GLOBAL_PARAMETERS.fmm.expansion_order = 10
 # bempp.api.GLOBAL_PARAMETERS.fmm.ncrit = 100
@@ -30,24 +29,41 @@ def grid2():
     return bempp.api.shapes.sphere(r=1.5, h=0.4)
 
 
-@pytest.mark.parametrize("operator", [
-    bempp.api.operators.boundary.laplace.single_layer])
-def test_laplace_boundary_fmm(operator, grid):
+@pytest.fixture
+def points():
+    NPOINTS = 10
+    rand = np.random.RandomState(0)
+    return np.vstack([
+        2 * np.ones(NPOINTS, dtype="float64"),
+        rand.randn(NPOINTS),
+        rand.randn(NPOINTS)])
+
+
+def test_laplace_boundary_fmm(grid):
     """Test Laplace boundary operators."""
     space = bempp.api.function_space(grid, "P", 1)
 
     rand = np.random.RandomState(0)
     vec = rand.rand(space.global_dof_count)
 
-    dense = operator(space, space, space, assembler="dense").weak_form()
-    fmm = operator(space, space, space, assembler="fmm").weak_form()
+    fmm = []
+    dense = []
+    for operator in [
+        bempp.api.operators.boundary.laplace.single_layer,
+        bempp.api.operators.boundary.laplace.double_layer,
+        bempp.api.operators.boundary.laplace.adjoint_double_layer,
+        bempp.api.operators.boundary.laplace.hypersingular
+    ]:
+        dense.append(
+            operator(space, space, space, assembler="dense").weak_form())
+        fmm.append(
+            operator(space, space, space, assembler="fmm").weak_form())
 
-    np.testing.assert_allclose(dense @ vec, fmm @ vec, rtol=TOL)
+    for f, d in zip(fmm, dense):
+        np.testing.assert_allclose(d @ vec, f @ vec, rtol=TOL)
 
 
-@pytest.mark.parametrize("operator", [
-    bempp.api.operators.potential.laplace.single_layer])
-def test_laplace_potential_fmm(operator, grid):
+def test_laplace_potential_fmm(operator, grid, points):
     """Test Laplace potential operators."""
     space = bempp.api.function_space(grid, "P", 1)
 
@@ -56,21 +72,19 @@ def test_laplace_potential_fmm(operator, grid):
 
     grid_fun = bempp.api.GridFunction(space, coefficients=vec)
 
-    points = np.vstack(
-        [
-            2 * np.ones(NPOINTS, dtype="float64"),
-            rand.randn(NPOINTS),
-            rand.randn(NPOINTS),
-        ]
-    )
+    fmm = []
+    dense = []
+    for operator in [
+        bempp.api.operators.potential.laplace.single_layer,
+        bempp.api.operators.potential.laplace.double_layer
+    ]:
+        dense.append(
+            operator(space, points, assembler="dense").evaluate(grid_fun))
+        fmm.append(
+            operator(space, points, assembler="fmm").evaluate(grid_fun))
 
-    dense = operator(space, points, assembler="dense")
-    fmm = operator(space, points, assembler="fmm")
-
-    res_dense = dense.evaluate(grid_fun)
-    res_fmm = fmm.evaluate(grid_fun)
-
-    np.testing.assert_allclose(res_dense, res_fmm, rtol=TOL)
+    for f, d in zip(fmm, dense):
+        np.testing.assert_allclose(d, f, rtol=TOL)
 
 
 @pytest.mark.parametrize("operator", [
@@ -95,7 +109,7 @@ def test_helmholtz_boundary_fmm(operator, grid):
     bempp.api.operators.potential.helmholtz.single_layer,
     bempp.api.operators.potential.modified_helmholtz.double_layer
 ])
-def test_helmholtz_potential_fmm(operator, grid):
+def test_helmholtz_potential_fmm(operator, grid, points):
     """Test Helmholtz potential operators."""
     space = bempp.api.function_space(grid, "P", 1)
 
@@ -105,14 +119,6 @@ def test_helmholtz_potential_fmm(operator, grid):
     wavenumber = 1.5
 
     grid_fun = bempp.api.GridFunction(space, coefficients=vec)
-
-    points = np.vstack(
-        [
-            2 * np.ones(NPOINTS, dtype="float64"),
-            rand.randn(NPOINTS),
-            rand.randn(NPOINTS),
-        ]
-    )
 
     dense = operator(space, points, wavenumber, assembler="dense")
     fmm = operator(space, points, wavenumber, assembler="fmm")
@@ -145,9 +151,9 @@ def test_maxwell_boundary_fmm(operator, grid):
 
 @pytest.mark.parametrize("operator", [
     bempp.api.operators.potential.maxwell.electric_field,
-    bempp.api.operators.potential.maxwell.magnetic_field,
+    # bempp.api.operators.potential.maxwell.magnetic_field,
 ])
-def test_maxwell_potential_fmm(operator, grid):
+def test_maxwell_potential_fmm(operator, grid, points):
     """Test Maxwell potential operators."""
     rwg = bempp.api.function_space(grid, "RWG", 0)
 
@@ -157,14 +163,6 @@ def test_maxwell_potential_fmm(operator, grid):
     wavenumber = 1.5
 
     grid_fun = bempp.api.GridFunction(rwg, coefficients=vec)
-
-    points = np.vstack(
-        [
-            2 * np.ones(NPOINTS, dtype="float64"),
-            rand.randn(NPOINTS),
-            rand.randn(NPOINTS),
-        ]
-    )
 
     dense = operator(rwg, points, wavenumber, assembler="dense")
     fmm = operator(rwg, points, wavenumber, assembler="fmm")
