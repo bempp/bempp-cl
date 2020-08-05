@@ -105,7 +105,7 @@ def assemble_sparse(
 
     result = _np.zeros(nshape_test * nshape_trial * number_of_elements, dtype=result_type)
 
-    with bempp.api.Timer() as t:
+    with bempp.api.Timer() as t:  # noqa: F841
         numba_assembly_function(
             domain.grid.data(precision),
             nshape_test,
