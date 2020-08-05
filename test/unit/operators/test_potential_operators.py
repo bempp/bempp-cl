@@ -43,15 +43,16 @@ def test_helmholtz_operators(points, operator, wavenumber, space_type):
     operator(space, points, wavenumber).evaluate(fun)
 
 
+@pytest.mark.parametrize("assembler", ["fmm", "dense"])
 @pytest.mark.parametrize("operator", [
     maxwell.electric_field, maxwell.magnetic_field])
 @pytest.mark.parametrize("space_type", div_spaces)
 @pytest.mark.parametrize("wavenumber", [2.5, 2.5 + 1j])
-def test_maxwell_operators(points, operator, wavenumber, space_type):
+def test_maxwell_operators(points, operator, wavenumber, space_type, assembler):
     """Test dense assembler for the Helmholtz operators."""
     grid = bempp.api.shapes.regular_sphere(0)
     space = function_space(grid, *space_type)
     fun = bempp.api.GridFunction(
         space, coefficients=np.random.rand(space.global_dof_count))
 
-    operator(space, points, wavenumber).evaluate(fun)
+    operator(space, points, wavenumber, assembler=assembler).evaluate(fun)
