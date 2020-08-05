@@ -39,10 +39,8 @@ def device_interface(request):
 def set_device_options(request):
     """Set device options."""
     vec_mode = request.config.getoption("--vec")
-    if not vec_mode in ["auto", "novec", "vec4", "vec8", "vec16"]:
-        raise ValueError(
-        "vec must be one of: 'auto', 'novec', 'vec4', 'vec8', 'vec16'"
-        )
+    if vec_mode not in ["auto", "novec", "vec4", "vec8", "vec16"]:
+        raise ValueError("vec must be one of: 'auto', 'novec', 'vec4', 'vec8', 'vec16'")
     bempp.api.VECTORIZATION_MODE = vec_mode
 
 
