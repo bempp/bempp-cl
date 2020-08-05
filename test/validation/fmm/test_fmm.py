@@ -9,10 +9,8 @@ import bempp.api
 
 pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
-GRID_SIZE = 4
-NPOINTS = 100
+NPOINTS = 10
 TOL = 1e-5
-
 
 bempp.api.GLOBAL_PARAMETERS.fmm.expansion_order = 10
 # bempp.api.GLOBAL_PARAMETERS.fmm.ncrit = 100
@@ -355,7 +353,7 @@ def test_maxwell_potential_fmm():
 
     wavenumber = 1.5
 
-    grid_fun = bempp.api.GridFunction(rwg, coefficients=vec)  # noqa: F841
+    grid_fun = bempp.api.GridFunction(rwg, coefficients=vec)
 
     points = np.vstack(
         [
@@ -393,8 +391,8 @@ def test_maxwell_potential_fmm():
     np.testing.assert_allclose(mfield_pot_res_dense, mfield_pot_res_fmm, rtol=1e-4)
 
 
-def test_fmm_two_grids():
-    """Test the FMM between two different grids."""
+def test_fmm_two_grids_laplace():
+    """Test the FMM for Laplace between two different grids."""
     import bempp.api
 
     TOL = 2e-3
@@ -409,12 +407,7 @@ def test_fmm_two_grids():
     p1_space1 = bempp.api.function_space(grid1, "P", 1)
     p1_space2 = bempp.api.function_space(grid2, "P", 1)
 
-    rwg1 = bempp.api.function_space(grid1, "RWG", 0)
-    rwg2 = bempp.api.function_space(grid2, "RWG", 0)
-    snc2 = bempp.api.function_space(grid2, "SNC", 0)
-
-    vec1 = rand.rand(p1_space1.global_dof_count)
-    vec2 = rand.rand(rwg1.global_dof_count)
+    vec = rand.rand(p1_space1.global_dof_count)
 
     assembler = "dense"
 
@@ -423,19 +416,6 @@ def test_fmm_two_grids():
     ).weak_form()
     laplace_hyp_dense = bempp.api.operators.boundary.laplace.hypersingular(
         p1_space1, p1_space2, p1_space2, assembler=assembler
-    ).weak_form()
-    mod_helmholtz_hyp_dense = bempp.api.operators.boundary.modified_helmholtz.hypersingular(
-        p1_space1, p1_space2, p1_space2, wavenumber, assembler=assembler
-    ).weak_form()
-    helmholtz_hyp_dense = bempp.api.operators.boundary.helmholtz.hypersingular(
-        p1_space1, p1_space2, p1_space2, wavenumber, assembler=assembler
-    ).weak_form()
-
-    maxwell_efield_dense = bempp.api.operators.boundary.maxwell.electric_field(
-        rwg1, rwg2, snc2, wavenumber, assembler=assembler
-    ).weak_form()
-    maxwell_mfield_dense = bempp.api.operators.boundary.maxwell.magnetic_field(
-        rwg1, rwg2, snc2, wavenumber, assembler=assembler
     ).weak_form()
 
     assembler = "fmm"
@@ -446,12 +426,89 @@ def test_fmm_two_grids():
     laplace_hyp_fmm = bempp.api.operators.boundary.laplace.hypersingular(
         p1_space1, p1_space2, p1_space2, wavenumber, assembler=assembler
     ).weak_form()
+
+    np.testing.assert_allclose(
+        laplace_slp_dense @ vec, laplace_slp_fmm @ vec, rtol=TOL
+    )
+    np.testing.assert_allclose(
+        laplace_hyp_dense @ vec, laplace_hyp_fmm @ vec, rtol=TOL
+    )
+
+
+def test_fmm_two_grids_helmholtz():
+    """Test the FMM for Helmholtz between two different grids."""
+    import bempp.api
+
+    TOL = 2e-3
+
+    rand = np.random.RandomState(0)
+
+    wavenumber = 1.5
+
+    grid1 = bempp.api.shapes.ellipsoid(0.5, 0.5, 0.3)
+    grid2 = bempp.api.shapes.sphere(r=1.5)
+
+    p1_space1 = bempp.api.function_space(grid1, "P", 1)
+    p1_space2 = bempp.api.function_space(grid2, "P", 1)
+
+    vec = rand.rand(p1_space1.global_dof_count)
+
+    assembler = "dense"
+
+    mod_helmholtz_hyp_dense = bempp.api.operators.boundary.modified_helmholtz.hypersingular(
+        p1_space1, p1_space2, p1_space2, wavenumber, assembler=assembler
+    ).weak_form()
+    helmholtz_hyp_dense = bempp.api.operators.boundary.helmholtz.hypersingular(
+        p1_space1, p1_space2, p1_space2, wavenumber, assembler=assembler
+    ).weak_form()
+
+    assembler = "fmm"
+
     mod_helmholtz_hyp_fmm = bempp.api.operators.boundary.modified_helmholtz.hypersingular(
         p1_space1, p1_space2, p1_space2, wavenumber, assembler=assembler
     ).weak_form()
     helmholtz_hyp_fmm = bempp.api.operators.boundary.helmholtz.hypersingular(
         p1_space1, p1_space2, p1_space2, wavenumber, assembler=assembler
     ).weak_form()
+
+    np.testing.assert_allclose(
+        helmholtz_hyp_dense @ vec, helmholtz_hyp_fmm @ vec, rtol=TOL
+    )
+    np.testing.assert_allclose(
+        mod_helmholtz_hyp_dense @ vec, mod_helmholtz_hyp_fmm @ vec, rtol=TOL
+    )
+
+
+def test_fmm_two_grids_maxwell():
+    """Test the FMM for Maxwell between two different grids."""
+    import bempp.api
+
+    TOL = 2e-3
+
+    rand = np.random.RandomState(0)
+
+    wavenumber = 1.5
+
+    grid1 = bempp.api.shapes.ellipsoid(0.5, 0.5, 0.3)
+    grid2 = bempp.api.shapes.sphere(r=1.5)
+
+    rwg1 = bempp.api.function_space(grid1, "RWG", 0)
+    rwg2 = bempp.api.function_space(grid2, "RWG", 0)
+    snc2 = bempp.api.function_space(grid2, "SNC", 0)
+
+    vec = rand.rand(rwg1.global_dof_count)
+
+    assembler = "dense"
+
+    maxwell_efield_dense = bempp.api.operators.boundary.maxwell.electric_field(
+        rwg1, rwg2, snc2, wavenumber, assembler=assembler
+    ).weak_form()
+    maxwell_mfield_dense = bempp.api.operators.boundary.maxwell.magnetic_field(
+        rwg1, rwg2, snc2, wavenumber, assembler=assembler
+    ).weak_form()
+
+    assembler = "fmm"
+
     maxwell_efield_fmm = bempp.api.operators.boundary.maxwell.electric_field(
         rwg1, rwg2, snc2, wavenumber, assembler=assembler
     ).weak_form()
@@ -460,20 +517,8 @@ def test_fmm_two_grids():
     ).weak_form()
 
     np.testing.assert_allclose(
-        laplace_slp_dense @ vec1, laplace_slp_fmm @ vec1, rtol=TOL
+        maxwell_efield_dense @ vec, maxwell_efield_fmm @ vec, rtol=TOL
     )
     np.testing.assert_allclose(
-        laplace_hyp_dense @ vec1, laplace_hyp_fmm @ vec1, rtol=TOL
-    )
-    np.testing.assert_allclose(
-        helmholtz_hyp_dense @ vec1, helmholtz_hyp_fmm @ vec1, rtol=TOL
-    )
-    np.testing.assert_allclose(
-        mod_helmholtz_hyp_dense @ vec1, mod_helmholtz_hyp_fmm @ vec1, rtol=TOL
-    )
-    np.testing.assert_allclose(
-        maxwell_efield_dense @ vec2, maxwell_efield_fmm @ vec2, rtol=TOL
-    )
-    np.testing.assert_allclose(
-        maxwell_mfield_dense @ vec2, maxwell_mfield_fmm @ vec2, rtol=TOL
+        maxwell_mfield_dense @ vec, maxwell_mfield_fmm @ vec, rtol=TOL
     )
