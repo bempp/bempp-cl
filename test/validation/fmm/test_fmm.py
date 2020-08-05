@@ -27,14 +27,11 @@ def grid1():
 
 @pytest.fixture
 def grid2():
-    return bempp.api.shapes.sphere(r=1.5, h=0.2)
+    return bempp.api.shapes.sphere(r=1.5, h=0.4)
 
 
 @pytest.mark.parametrize("operator", [
-    bempp.api.operators.boundary.laplace.single_layer,
-    bempp.api.operators.boundary.laplace.double_layer,
-    bempp.api.operators.boundary.laplace.adjoint_double_layer,
-    bempp.api.operators.boundary.laplace.hypersingular])
+    bempp.api.operators.boundary.laplace.single_layer])
 def test_laplace_boundary_fmm(operator, grid):
     """Test Laplace boundary operators."""
     space = bempp.api.function_space(grid, "P", 1)
@@ -49,8 +46,7 @@ def test_laplace_boundary_fmm(operator, grid):
 
 
 @pytest.mark.parametrize("operator", [
-    bempp.api.operators.potential.laplace.single_layer,
-    bempp.api.operators.potential.laplace.double_layer])
+    bempp.api.operators.potential.laplace.single_layer])
 def test_laplace_potential_fmm(operator, grid):
     """Test Laplace potential operators."""
     space = bempp.api.function_space(grid, "P", 1)
@@ -79,13 +75,7 @@ def test_laplace_potential_fmm(operator, grid):
 
 @pytest.mark.parametrize("operator", [
     bempp.api.operators.boundary.helmholtz.single_layer,
-    bempp.api.operators.boundary.helmholtz.double_layer,
-    bempp.api.operators.boundary.helmholtz.adjoint_double_layer,
-    bempp.api.operators.boundary.helmholtz.hypersingular,
-    bempp.api.operators.boundary.modified_helmholtz.single_layer,
-    bempp.api.operators.boundary.modified_helmholtz.double_layer,
-    bempp.api.operators.boundary.modified_helmholtz.adjoint_double_layer,
-    bempp.api.operators.boundary.modified_helmholtz.hypersingular])
+    bempp.api.operators.boundary.modified_helmholtz.double_layer])
 def test_helmholtz_boundary_fmm(operator, grid):
     """Test Helmholtz boundary operators."""
     space = bempp.api.function_space(grid, "P", 1)
@@ -103,8 +93,6 @@ def test_helmholtz_boundary_fmm(operator, grid):
 
 @pytest.mark.parametrize("operator", [
     bempp.api.operators.potential.helmholtz.single_layer,
-    bempp.api.operators.potential.helmholtz.double_layer,
-    bempp.api.operators.potential.modified_helmholtz.single_layer,
     bempp.api.operators.potential.modified_helmholtz.double_layer
 ])
 def test_helmholtz_potential_fmm(operator, grid):
@@ -203,52 +191,5 @@ def test_fmm_two_grids_laplace(operator, grid1, grid2):
                      assembler="dense").weak_form()
     fmm = operator(p1_space1, p1_space2, p1_space2,
                    assembler="fmm").weak_form()
-
-    np.testing.assert_allclose(dense @ vec, fmm @ vec, rtol=TOL)
-
-
-@pytest.mark.parametrize("operator", [
-    bempp.api.operators.boundary.helmholtz.hypersingular,
-    bempp.api.operators.boundary.modified_helmholtz.hypersingular])
-def test_fmm_two_grids_helmholtz(operator, grid1, grid2):
-    """Test the FMM for Helmholtz between two different grids."""
-    import bempp.api
-
-    rand = np.random.RandomState(0)
-
-    wavenumber = 1.5
-
-    p1_space1 = bempp.api.function_space(grid1, "P", 1)
-    p1_space2 = bempp.api.function_space(grid2, "P", 1)
-
-    vec = rand.rand(p1_space1.global_dof_count)
-
-    dense = operator(p1_space1, p1_space2, p1_space2, wavenumber,
-                     assembler="dense").weak_form()
-    fmm = operator(p1_space1, p1_space2, p1_space2, wavenumber,
-                   assembler="fmm").weak_form()
-
-    np.testing.assert_allclose(dense @ vec, fmm @ vec, rtol=TOL)
-
-
-@pytest.mark.parametrize("operator", [
-    bempp.api.operators.boundary.maxwell.electric_field,
-    bempp.api.operators.boundary.maxwell.magnetic_field])
-def test_fmm_two_grids_maxwell(operator, grid1, grid2):
-    """Test the FMM for Maxwell between two different grids."""
-    import bempp.api
-
-    rand = np.random.RandomState(0)
-
-    wavenumber = 1.5
-
-    rwg1 = bempp.api.function_space(grid1, "RWG", 0)
-    rwg2 = bempp.api.function_space(grid2, "RWG", 0)
-    snc2 = bempp.api.function_space(grid2, "SNC", 0)
-
-    vec = rand.rand(rwg1.global_dof_count)
-
-    dense = operator(rwg1, rwg2, snc2, wavenumber, assembler="dense").weak_form()
-    fmm = operator(rwg1, rwg2, snc2, wavenumber, assembler="fmm").weak_form()
 
     np.testing.assert_allclose(dense @ vec, fmm @ vec, rtol=TOL)
