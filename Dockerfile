@@ -1,5 +1,7 @@
 # Dockerfile giving an environment in which Bempp-cl can be run
 #
+# Docker images created by this file are pushed to hub.docker.com/u/bempp
+#
 # Authors:
 #   Matthew Scroggs <mws48@cam.ac.uk>
 #   Timo Betcke <t.betcke@ucl.ac.uk>
