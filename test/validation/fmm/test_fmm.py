@@ -24,8 +24,53 @@ def check_close(op1, op2, vec):
     return np.allclose(res1, res2, rtol=TOL)
 
 
-def test_laplace():
-    """Test Laplace operators."""
+def test_laplace_boundary_fmm():
+    """Test Laplace boundary operators."""
+
+    grid = bempp.api.shapes.ellipsoid(1, 0.5, 0.3)
+    space = bempp.api.function_space(grid, "P", 1)
+
+    rand = np.random.RandomState(0)
+    vec = rand.rand(space.global_dof_count)
+
+    assembler = "dense"
+
+    slp_dense = bempp.api.operators.boundary.laplace.single_layer(
+        space, space, space, assembler=assembler,
+    ).weak_form()
+    dlp_dense = bempp.api.operators.boundary.laplace.double_layer(
+        space, space, space, assembler=assembler,
+    ).weak_form()
+    adjoint_dlp_dense = bempp.api.operators.boundary.laplace.adjoint_double_layer(
+        space, space, space, assembler=assembler,
+    ).weak_form()
+    hyp_dense = bempp.api.operators.boundary.laplace.hypersingular(
+        space, space, space, assembler=assembler,
+    ).weak_form()
+
+    assembler = "fmm"
+
+    slp_fmm = bempp.api.operators.boundary.laplace.single_layer(
+        space, space, space, assembler=assembler,
+    ).weak_form()
+    dlp_fmm = bempp.api.operators.boundary.laplace.double_layer(
+        space, space, space, assembler=assembler,
+    ).weak_form()
+    adjoint_dlp_fmm = bempp.api.operators.boundary.laplace.adjoint_double_layer(
+        space, space, space, assembler=assembler,
+    ).weak_form()
+    hyp_fmm = bempp.api.operators.boundary.laplace.hypersingular(
+        space, space, space, assembler=assembler,
+    ).weak_form()
+
+    np.testing.assert_allclose(slp_dense @ vec, slp_fmm @ vec, rtol=TOL)
+    np.testing.assert_allclose(dlp_dense @ vec, dlp_fmm @ vec, rtol=TOL)
+    np.testing.assert_allclose(adjoint_dlp_dense @ vec, adjoint_dlp_fmm @ vec, rtol=TOL)
+    np.testing.assert_allclose(hyp_dense @ vec, hyp_fmm @ vec, rtol=TOL)
+
+
+def test_laplace_potential_fmm():
+    """Test Laplace potential operators."""
 
     grid = bempp.api.shapes.ellipsoid(1, 0.5, 0.3)
     space = bempp.api.function_space(grid, "P", 1)
@@ -45,18 +90,6 @@ def test_laplace():
 
     assembler = "dense"
 
-    slp_dense = bempp.api.operators.boundary.laplace.single_layer(
-        space, space, space, assembler=assembler,
-    ).weak_form()
-    dlp_dense = bempp.api.operators.boundary.laplace.double_layer(
-        space, space, space, assembler=assembler,
-    ).weak_form()
-    adjoint_dlp_dense = bempp.api.operators.boundary.laplace.adjoint_double_layer(
-        space, space, space, assembler=assembler,
-    ).weak_form()
-    hyp_dense = bempp.api.operators.boundary.laplace.hypersingular(
-        space, space, space, assembler=assembler,
-    ).weak_form()
     slp_pot_dense = bempp.api.operators.potential.laplace.single_layer(
         space, points, assembler=assembler
     )
@@ -65,19 +98,6 @@ def test_laplace():
     )
 
     assembler = "fmm"
-
-    slp_fmm = bempp.api.operators.boundary.laplace.single_layer(
-        space, space, space, assembler=assembler,
-    ).weak_form()
-    dlp_fmm = bempp.api.operators.boundary.laplace.double_layer(
-        space, space, space, assembler=assembler,
-    ).weak_form()
-    adjoint_dlp_fmm = bempp.api.operators.boundary.laplace.adjoint_double_layer(
-        space, space, space, assembler=assembler,
-    ).weak_form()
-    hyp_fmm = bempp.api.operators.boundary.laplace.hypersingular(
-        space, space, space, assembler=assembler,
-    ).weak_form()
 
     slp_pot_fmm = bempp.api.operators.potential.laplace.single_layer(
         space, points, assembler=assembler
@@ -92,17 +112,59 @@ def test_laplace():
     slp_pot_res_fmm = slp_pot_fmm.evaluate(grid_fun)
     dlp_pot_res_fmm = dlp_pot_fmm.evaluate(grid_fun)
 
+    np.testing.assert_allclose(slp_pot_res_dense, slp_pot_res_fmm, rtol=1e-4)
+    np.testing.assert_allclose(dlp_pot_res_dense, dlp_pot_res_fmm, rtol=1e-4)
+
+
+def test_modified_helmholtz_boundary_fmm():
+    """Test modified Helmholtz boundary operators."""
+
+    grid = bempp.api.shapes.ellipsoid(1, 0.5, 0.3)
+    space = bempp.api.function_space(grid, "P", 1)
+
+    omega = 1.5
+
+    rand = np.random.RandomState(0)
+    vec = rand.rand(space.global_dof_count)
+
+    assembler = "dense"
+
+    slp_dense = bempp.api.operators.boundary.modified_helmholtz.single_layer(
+        space, space, space, omega, assembler=assembler,
+    ).weak_form()
+    dlp_dense = bempp.api.operators.boundary.modified_helmholtz.double_layer(
+        space, space, space, omega, assembler=assembler,
+    ).weak_form()
+    adjoint_dlp_dense = bempp.api.operators.boundary.modified_helmholtz.adjoint_double_layer(
+        space, space, space, omega, assembler=assembler,
+    ).weak_form()
+    hyp_dense = bempp.api.operators.boundary.modified_helmholtz.hypersingular(
+        space, space, space, omega, assembler=assembler,
+    ).weak_form()
+
+    assembler = "fmm"
+
+    slp_fmm = bempp.api.operators.boundary.modified_helmholtz.single_layer(
+        space, space, space, omega, assembler=assembler,
+    ).weak_form()
+    dlp_fmm = bempp.api.operators.boundary.modified_helmholtz.double_layer(
+        space, space, space, omega, assembler=assembler,
+    ).weak_form()
+    adjoint_dlp_fmm = bempp.api.operators.boundary.modified_helmholtz.adjoint_double_layer(
+        space, space, space, omega, assembler=assembler,
+    ).weak_form()
+    hyp_fmm = bempp.api.operators.boundary.modified_helmholtz.hypersingular(
+        space, space, space, omega, assembler=assembler,
+    ).weak_form()
+
     np.testing.assert_allclose(slp_dense @ vec, slp_fmm @ vec, rtol=TOL)
     np.testing.assert_allclose(dlp_dense @ vec, dlp_fmm @ vec, rtol=TOL)
     np.testing.assert_allclose(adjoint_dlp_dense @ vec, adjoint_dlp_fmm @ vec, rtol=TOL)
     np.testing.assert_allclose(hyp_dense @ vec, hyp_fmm @ vec, rtol=TOL)
 
-    np.testing.assert_allclose(slp_pot_res_dense, slp_pot_res_fmm, rtol=1e-4)
-    np.testing.assert_allclose(dlp_pot_res_dense, dlp_pot_res_fmm, rtol=1e-4)
 
-
-def test_modified_helmholtz():
-    """Test modified Helmholtz operators."""
+def test_modified_helmholtz_potential_fmm():
+    """Test modified Helmholtz potential operators."""
 
     grid = bempp.api.shapes.ellipsoid(1, 0.5, 0.3)
     space = bempp.api.function_space(grid, "P", 1)
@@ -124,18 +186,6 @@ def test_modified_helmholtz():
 
     assembler = "dense"
 
-    slp_dense = bempp.api.operators.boundary.modified_helmholtz.single_layer(
-        space, space, space, omega, assembler=assembler,
-    ).weak_form()
-    dlp_dense = bempp.api.operators.boundary.modified_helmholtz.double_layer(
-        space, space, space, omega, assembler=assembler,
-    ).weak_form()
-    adjoint_dlp_dense = bempp.api.operators.boundary.modified_helmholtz.adjoint_double_layer(
-        space, space, space, omega, assembler=assembler,
-    ).weak_form()
-    hyp_dense = bempp.api.operators.boundary.modified_helmholtz.hypersingular(
-        space, space, space, omega, assembler=assembler,
-    ).weak_form()
     slp_pot_dense = bempp.api.operators.potential.modified_helmholtz.single_layer(
         space, points, omega, assembler=assembler
     )
@@ -144,19 +194,6 @@ def test_modified_helmholtz():
     )
 
     assembler = "fmm"
-
-    slp_fmm = bempp.api.operators.boundary.modified_helmholtz.single_layer(
-        space, space, space, omega, assembler=assembler,
-    ).weak_form()
-    dlp_fmm = bempp.api.operators.boundary.modified_helmholtz.double_layer(
-        space, space, space, omega, assembler=assembler,
-    ).weak_form()
-    adjoint_dlp_fmm = bempp.api.operators.boundary.modified_helmholtz.adjoint_double_layer(
-        space, space, space, omega, assembler=assembler,
-    ).weak_form()
-    hyp_fmm = bempp.api.operators.boundary.modified_helmholtz.hypersingular(
-        space, space, space, omega, assembler=assembler,
-    ).weak_form()
 
     slp_pot_fmm = bempp.api.operators.potential.modified_helmholtz.single_layer(
         space, points, omega, assembler=assembler
@@ -171,17 +208,59 @@ def test_modified_helmholtz():
     slp_pot_res_fmm = slp_pot_fmm.evaluate(grid_fun)
     dlp_pot_res_fmm = dlp_pot_fmm.evaluate(grid_fun)
 
+    np.testing.assert_allclose(slp_pot_res_dense, slp_pot_res_fmm, rtol=1e-4)
+    np.testing.assert_allclose(dlp_pot_res_dense, dlp_pot_res_fmm, rtol=1e-4)
+
+
+def test_helmholtz_boundary_fmm():
+    """Test Helmholtz boundary operators."""
+
+    grid = bempp.api.shapes.ellipsoid(1, 0.5, 0.3)
+    space = bempp.api.function_space(grid, "P", 1)
+
+    rand = np.random.RandomState(0)
+    vec = rand.rand(space.global_dof_count)
+
+    wavenumber = 1.5
+
+    assembler = "dense"
+
+    slp_dense = bempp.api.operators.boundary.helmholtz.single_layer(
+        space, space, space, wavenumber, assembler=assembler,
+    ).weak_form()
+    dlp_dense = bempp.api.operators.boundary.helmholtz.double_layer(
+        space, space, space, wavenumber, assembler=assembler,
+    ).weak_form()
+    adjoint_dlp_dense = bempp.api.operators.boundary.helmholtz.adjoint_double_layer(
+        space, space, space, wavenumber, assembler=assembler,
+    ).weak_form()
+    hyp_dense = bempp.api.operators.boundary.helmholtz.hypersingular(
+        space, space, space, wavenumber, assembler=assembler,
+    ).weak_form()
+
+    assembler = "fmm"
+
+    slp_fmm = bempp.api.operators.boundary.helmholtz.single_layer(
+        space, space, space, wavenumber, assembler=assembler,
+    ).weak_form()
+    dlp_fmm = bempp.api.operators.boundary.helmholtz.double_layer(
+        space, space, space, wavenumber, assembler=assembler,
+    ).weak_form()
+    adjoint_dlp_fmm = bempp.api.operators.boundary.helmholtz.adjoint_double_layer(
+        space, space, space, wavenumber, assembler=assembler,
+    ).weak_form()
+    hyp_fmm = bempp.api.operators.boundary.helmholtz.hypersingular(
+        space, space, space, wavenumber, assembler=assembler,
+    ).weak_form()
+
     np.testing.assert_allclose(slp_dense @ vec, slp_fmm @ vec, rtol=TOL)
     np.testing.assert_allclose(dlp_dense @ vec, dlp_fmm @ vec, rtol=TOL)
     np.testing.assert_allclose(adjoint_dlp_dense @ vec, adjoint_dlp_fmm @ vec, rtol=TOL)
     np.testing.assert_allclose(hyp_dense @ vec, hyp_fmm @ vec, rtol=TOL)
 
-    np.testing.assert_allclose(slp_pot_res_dense, slp_pot_res_fmm, rtol=1e-4)
-    np.testing.assert_allclose(dlp_pot_res_dense, dlp_pot_res_fmm, rtol=1e-4)
 
-
-def test_helmholtz():
-    """Test Helmholtz operators."""
+def test_helmholtz_potential_fmm():
+    """Test Helmholtz potential operators."""
 
     grid = bempp.api.shapes.ellipsoid(1, 0.5, 0.3)
     space = bempp.api.function_space(grid, "P", 1)
@@ -203,21 +282,6 @@ def test_helmholtz():
 
     assembler = "dense"
 
-    test_vec = np.zeros(space.global_dof_count, dtype="float64")
-    test_vec[0] = 1
-
-    slp_dense = bempp.api.operators.boundary.helmholtz.single_layer(
-        space, space, space, wavenumber, assembler=assembler,
-    ).weak_form()
-    dlp_dense = bempp.api.operators.boundary.helmholtz.double_layer(
-        space, space, space, wavenumber, assembler=assembler,
-    ).weak_form()
-    adjoint_dlp_dense = bempp.api.operators.boundary.helmholtz.adjoint_double_layer(
-        space, space, space, wavenumber, assembler=assembler,
-    ).weak_form()
-    hyp_dense = bempp.api.operators.boundary.helmholtz.hypersingular(
-        space, space, space, wavenumber, assembler=assembler,
-    ).weak_form()
     slp_pot_dense = bempp.api.operators.potential.helmholtz.single_layer(
         space, points, wavenumber, assembler=assembler
     )
@@ -226,19 +290,6 @@ def test_helmholtz():
     )
 
     assembler = "fmm"
-
-    slp_fmm = bempp.api.operators.boundary.helmholtz.single_layer(
-        space, space, space, wavenumber, assembler=assembler,
-    ).weak_form()
-    dlp_fmm = bempp.api.operators.boundary.helmholtz.double_layer(
-        space, space, space, wavenumber, assembler=assembler,
-    ).weak_form()
-    adjoint_dlp_fmm = bempp.api.operators.boundary.helmholtz.adjoint_double_layer(
-        space, space, space, wavenumber, assembler=assembler,
-    ).weak_form()
-    hyp_fmm = bempp.api.operators.boundary.helmholtz.hypersingular(
-        space, space, space, wavenumber, assembler=assembler,
-    ).weak_form()
 
     slp_pot_fmm = bempp.api.operators.potential.helmholtz.single_layer(
         space, points, wavenumber, assembler=assembler
@@ -253,23 +304,51 @@ def test_helmholtz():
     slp_pot_res_fmm = slp_pot_fmm.evaluate(grid_fun)
     dlp_pot_res_fmm = dlp_pot_fmm.evaluate(grid_fun)
 
-    np.testing.assert_allclose(slp_dense @ vec, slp_fmm @ vec, rtol=TOL)
-    np.testing.assert_allclose(dlp_dense @ vec, dlp_fmm @ vec, rtol=TOL)
-    np.testing.assert_allclose(adjoint_dlp_dense @ vec, adjoint_dlp_fmm @ vec, rtol=TOL)
-    np.testing.assert_allclose(hyp_dense @ vec, hyp_fmm @ vec, rtol=TOL)
-
     np.testing.assert_allclose(slp_pot_res_dense, slp_pot_res_fmm, rtol=1e-4)
     np.testing.assert_allclose(dlp_pot_res_dense, dlp_pot_res_fmm, rtol=1e-4)
 
 
-def test_maxwell():
-    """Test Maxwell operators."""
+def test_maxwell_boundary_fmm():
+    """Test Maxwell boundary operators."""
 
     TOL = 5e-5
 
     grid = bempp.api.shapes.ellipsoid(1, 0.5, 0.3)
     rwg = bempp.api.function_space(grid, "RWG", 0)
     snc = bempp.api.function_space(grid, "SNC", 0)
+
+    rand = np.random.RandomState(0)
+    vec = rand.rand(rwg.global_dof_count)
+
+    wavenumber = 1.5
+
+    assembler = "dense"
+
+    efield_dense = bempp.api.operators.boundary.maxwell.electric_field(
+        rwg, rwg, snc, wavenumber, assembler=assembler,
+    ).weak_form()
+    mfield_dense = bempp.api.operators.boundary.maxwell.magnetic_field(
+        rwg, rwg, snc, wavenumber, assembler=assembler,
+    ).weak_form()
+
+    assembler = "fmm"
+
+    efield_fmm = bempp.api.operators.boundary.maxwell.electric_field(
+        rwg, rwg, snc, wavenumber, assembler=assembler,
+    ).weak_form()
+    mfield_fmm = bempp.api.operators.boundary.maxwell.magnetic_field(
+        rwg, rwg, snc, wavenumber, assembler=assembler,
+    ).weak_form()
+
+    np.testing.assert_allclose(efield_dense @ vec, efield_fmm @ vec, rtol=TOL)
+    np.testing.assert_allclose(mfield_dense @ vec, mfield_fmm @ vec, rtol=TOL)
+
+
+def test_maxwell_potential_fmm():
+    """Test Maxwell potential operators."""
+
+    grid = bempp.api.shapes.ellipsoid(1, 0.5, 0.3)
+    rwg = bempp.api.function_space(grid, "RWG", 0)
 
     rand = np.random.RandomState(0)
     vec = rand.rand(rwg.global_dof_count)
@@ -288,15 +367,6 @@ def test_maxwell():
 
     assembler = "dense"
 
-    test_vec = np.zeros(rwg.global_dof_count, dtype="float64")
-    test_vec[0] = 1
-
-    efield_dense = bempp.api.operators.boundary.maxwell.electric_field(
-        rwg, rwg, snc, wavenumber, assembler=assembler,
-    ).weak_form()
-    mfield_dense = bempp.api.operators.boundary.maxwell.magnetic_field(
-        rwg, rwg, snc, wavenumber, assembler=assembler,
-    ).weak_form()
     efield_pot_dense = bempp.api.operators.potential.maxwell.electric_field(
         rwg, points, wavenumber, assembler=assembler
     )
@@ -306,12 +376,6 @@ def test_maxwell():
 
     assembler = "fmm"
 
-    efield_fmm = bempp.api.operators.boundary.maxwell.electric_field(
-        rwg, rwg, snc, wavenumber, assembler=assembler,
-    ).weak_form()
-    mfield_fmm = bempp.api.operators.boundary.maxwell.magnetic_field(
-        rwg, rwg, snc, wavenumber, assembler=assembler,
-    ).weak_form()
     efield_pot_fmm = bempp.api.operators.potential.maxwell.electric_field(
         rwg, points, wavenumber, assembler=assembler
     )
@@ -324,9 +388,6 @@ def test_maxwell():
 
     efield_pot_res_fmm = efield_pot_fmm.evaluate(grid_fun)
     mfield_pot_res_fmm = mfield_pot_fmm.evaluate(grid_fun)
-
-    np.testing.assert_allclose(efield_dense @ vec, efield_fmm @ vec, rtol=TOL)
-    np.testing.assert_allclose(mfield_dense @ vec, mfield_fmm @ vec, rtol=TOL)
 
     np.testing.assert_allclose(efield_pot_res_dense, efield_pot_res_fmm, rtol=1e-4)
     np.testing.assert_allclose(mfield_pot_res_dense, mfield_pot_res_fmm, rtol=1e-4)
