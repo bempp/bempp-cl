@@ -151,7 +151,7 @@ def test_maxwell_boundary_fmm(operator, grid):
 
 @pytest.mark.parametrize("operator", [
     bempp.api.operators.potential.maxwell.electric_field,
-    # bempp.api.operators.potential.maxwell.magnetic_field,
+    bempp.api.operators.potential.maxwell.magnetic_field,
 ])
 def test_maxwell_potential_fmm(operator, grid, points):
     """Test Maxwell potential operators."""
