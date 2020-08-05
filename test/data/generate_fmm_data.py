@@ -59,7 +59,7 @@ def save_potential_eval_result(operator, space, vec, points, filename, *args):
         print("Skipping " + filename + " (already generated)")
 
 
-grid = bempp.api.shapes.ellipsoid(1, 0.5, 0.3, h=0.05)
+grid = bempp.api.shapes.ellipsoid(1, 0.5, 0.3, h=0.1)
 space = bempp.api.function_space(grid, "P", 1)
 
 vec = generate_vector(space.global_dof_count, "fmm_p1_vec")
@@ -123,8 +123,8 @@ for filename, operator in [
 
 
 # Generate two grid data
-grid1 = bempp.api.shapes.ellipsoid(0.5, 0.5, 0.3, h=0.05)
-grid2 = bempp.api.shapes.sphere(r=1.5, h=0.05)
+grid1 = bempp.api.shapes.ellipsoid(0.5, 0.5, 0.3, h=0.1)
+grid2 = bempp.api.shapes.sphere(r=1.5, h=0.1)
 
 p1_space1 = bempp.api.function_space(grid1, "P", 1)
 p1_space2 = bempp.api.function_space(grid2, "P", 1)

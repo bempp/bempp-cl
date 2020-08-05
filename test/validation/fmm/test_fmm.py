@@ -16,17 +16,17 @@ bempp.api.GLOBAL_PARAMETERS.fmm.expansion_order = 10
 
 @pytest.fixture
 def grid():
-    return bempp.api.shapes.ellipsoid(1, 0.5, 0.3, h=0.05)
+    return bempp.api.shapes.ellipsoid(1, 0.5, 0.3, h=0.1)
 
 
 @pytest.fixture
 def grid1():
-    return bempp.api.shapes.ellipsoid(0.5, 0.5, 0.3, h=0.05)
+    return bempp.api.shapes.ellipsoid(0.5, 0.5, 0.3, h=0.1)
 
 
 @pytest.fixture
 def grid2():
-    return bempp.api.shapes.sphere(r=1.5, h=0.05)
+    return bempp.api.shapes.sphere(r=1.5, h=0.1)
 
 
 def test_laplace_boundary_fmm(helpers, grid):
