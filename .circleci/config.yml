@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   large-tests:
     docker:
-      - image: mscroggs/bempp-cl-test:dev-env-exafmm
+      - image: bempp/cl-dev-env:with-exafmm
     steps:
       - checkout
       - run:
@@ -26,7 +26,7 @@ jobs:
           name: Run example notebooks
   run-benchmarks:
     docker:
-      - image: mscroggs/bempp-cl-test:latest
+      - image: bempp/cl-dev-env:with-exafmm
     steps:
       - checkout
       # TODO: run benchmarks and upload timings somewhere
