@@ -4,9 +4,10 @@ import bempp.api
 import numpy as np
 
 import os.path
+import sys
 
-# Set to true to regenerate all matrices
-REGENERATE = False
+# run `python generate_matrices.py REGENERATE` to regenerate everything
+REGENERATE = "REGENERATE" in sys.argv
 
 bempp.api.enable_console_logging()
 
