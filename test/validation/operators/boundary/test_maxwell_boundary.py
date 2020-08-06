@@ -89,6 +89,8 @@ def test_maxwell_electric_field_rbc_bc_sphere(
 
     _np.testing.assert_allclose(actual, expected, rtol=rtol, atol=atol)
 
+    bempp.api.clear_fmm_cache()
+
 
 def test_maxwell_electric_field_bc_sphere(
     default_parameters, helpers, device_interface, precision
@@ -133,6 +135,8 @@ def test_maxwell_electric_field_bc_sphere(
     mat = helpers.load_npy_data("maxwell_electric_field_boundary_bc")
     expected = mat @ vec
     _np.testing.assert_allclose(actual, expected, rtol=rtol, atol=atol)
+
+    bempp.api.clear_fmm_cache()
 
 
 # def test_maxwell_electric_field_complex_sphere(
