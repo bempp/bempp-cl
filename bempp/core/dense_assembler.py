@@ -15,7 +15,9 @@ class DenseAssembler(_assembler.AssemblerBase):
         self, operator_descriptor, device_interface, precision, *args, **kwargs
     ):
         """Dense assembly of the integral operator."""
-        from bempp.api.assembly.discrete_boundary_operator import DenseDiscreteBoundaryOperator
+        from bempp.api.assembly.discrete_boundary_operator import (
+            DenseDiscreteBoundaryOperator,
+        )
         from bempp.api.utils.helpers import promote_to_double_precision
 
         if (

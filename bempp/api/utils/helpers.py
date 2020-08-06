@@ -121,5 +121,9 @@ def numba_decorate(fun):
         return fun
     else:
         return numba.jit(
-            nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
+            nopython=True,
+            parallel=True,
+            error_model="numpy",
+            fastmath=True,
+            boundscheck=False,
         )(fun)

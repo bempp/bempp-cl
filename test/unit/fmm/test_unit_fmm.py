@@ -16,7 +16,8 @@ def test_laplace_single_layer():
     op2 = laplace.single_layer(space, space, space, assembler="fmm")
 
     fun = bempp.api.GridFunction(
-        space, coefficients=np.random.rand(space.global_dof_count))
+        space, coefficients=np.random.rand(space.global_dof_count)
+    )
 
     assert np.allclose((op1 * fun).coefficients, (op2 * fun).coefficients)
 
@@ -31,6 +32,7 @@ def test_helmholtz_single_layer(wavenumber):
     op2 = helmholtz.single_layer(space, space, space, wavenumber, assembler="fmm")
 
     fun = bempp.api.GridFunction(
-        space, coefficients=np.random.rand(space.global_dof_count))
+        space, coefficients=np.random.rand(space.global_dof_count)
+    )
 
     assert np.allclose((op1 * fun).coefficients, (op2 * fun).coefficients)

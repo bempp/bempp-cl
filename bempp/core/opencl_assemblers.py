@@ -399,7 +399,8 @@ def potential_assembler(
     )
 
     points_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=points.ravel(order='F'))
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=points.ravel(order="F")
+    )
 
     grid_buffer = _cl.Buffer(
         ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=space.grid.as_array.astype(dtype),
@@ -504,4 +505,5 @@ def potential_assembler(
 
             _cl.enqueue_copy(queue, result, result_buffer)
         return result
+
     return evaluator

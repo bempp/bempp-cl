@@ -29,10 +29,9 @@ def generate_points(size, filename):
     if filename not in data:
         if REGENERATE or not os.path.exists(filename + ".npy"):
             rand = np.random.RandomState(0)
-            points = np.vstack([
-                2 * np.ones(size, dtype="float64"),
-                rand.randn(size),
-                rand.randn(size)])
+            points = np.vstack(
+                [2 * np.ones(size, dtype="float64"), rand.randn(size), rand.randn(size)]
+            )
             np.save(filename, points)
         else:
             points = np.load(filename + ".npy")
@@ -43,7 +42,9 @@ def generate_points(size, filename):
 def save_matvec_result(operator, space1, space2, space3, vec, filename, *args):
     if REGENERATE or not os.path.exists(filename + ".npy"):
         print("Generating " + filename)
-        dense_mat = operator(space1, space2, space3, *args, assembler="dense").weak_form()
+        dense_mat = operator(
+            space1, space2, space3, *args, assembler="dense"
+        ).weak_form()
         np.save(filename, dense_mat @ vec)
     else:
         print("Skipping " + filename + " (already generated)")
@@ -77,27 +78,60 @@ for filename, operator in [
 for filename, operator in [
     ("fmm_helmholtz_single", bempp.api.operators.boundary.helmholtz.single_layer),
     ("fmm_helmholtz_double", bempp.api.operators.boundary.helmholtz.double_layer),
-    ("fmm_helmholtz_adjoint", bempp.api.operators.boundary.helmholtz.adjoint_double_layer),
+    (
+        "fmm_helmholtz_adjoint",
+        bempp.api.operators.boundary.helmholtz.adjoint_double_layer,
+    ),
     ("fmm_helmholtz_hyper", bempp.api.operators.boundary.helmholtz.hypersingular),
-    ("fmm_modified_helmholtz_single", bempp.api.operators.boundary.modified_helmholtz.single_layer),
-    ("fmm_modified_helmholtz_double", bempp.api.operators.boundary.modified_helmholtz.double_layer),
-    ("fmm_modified_helmholtz_adjoint", bempp.api.operators.boundary.modified_helmholtz.adjoint_double_layer),
-    ("fmm_modified_helmholtz_hyper", bempp.api.operators.boundary.modified_helmholtz.hypersingular),
+    (
+        "fmm_modified_helmholtz_single",
+        bempp.api.operators.boundary.modified_helmholtz.single_layer,
+    ),
+    (
+        "fmm_modified_helmholtz_double",
+        bempp.api.operators.boundary.modified_helmholtz.double_layer,
+    ),
+    (
+        "fmm_modified_helmholtz_adjoint",
+        bempp.api.operators.boundary.modified_helmholtz.adjoint_double_layer,
+    ),
+    (
+        "fmm_modified_helmholtz_hyper",
+        bempp.api.operators.boundary.modified_helmholtz.hypersingular,
+    ),
 ]:
     save_matvec_result(operator, space, space, space, vec, filename, 1.5)
 
 # Generate P1 potential operator results
 for filename, operator in [
-    ("fmm_laplace_potential_single", bempp.api.operators.potential.laplace.single_layer),
-    ("fmm_laplace_potential_double", bempp.api.operators.potential.laplace.double_layer),
+    (
+        "fmm_laplace_potential_single",
+        bempp.api.operators.potential.laplace.single_layer,
+    ),
+    (
+        "fmm_laplace_potential_double",
+        bempp.api.operators.potential.laplace.double_layer,
+    ),
 ]:
     save_potential_eval_result(operator, space, vec, points, filename)
 
 for filename, operator in [
-    ("fmm_helmholtz_potential_single", bempp.api.operators.potential.helmholtz.single_layer),
-    ("fmm_helmholtz_potential_double", bempp.api.operators.potential.helmholtz.double_layer),
-    ("fmm_modified_potential_helmholtz_single", bempp.api.operators.potential.modified_helmholtz.single_layer),
-    ("fmm_modified_potential_helmholtz_double", bempp.api.operators.potential.modified_helmholtz.double_layer),
+    (
+        "fmm_helmholtz_potential_single",
+        bempp.api.operators.potential.helmholtz.single_layer,
+    ),
+    (
+        "fmm_helmholtz_potential_double",
+        bempp.api.operators.potential.helmholtz.double_layer,
+    ),
+    (
+        "fmm_modified_potential_helmholtz_single",
+        bempp.api.operators.potential.modified_helmholtz.single_layer,
+    ),
+    (
+        "fmm_modified_potential_helmholtz_double",
+        bempp.api.operators.potential.modified_helmholtz.double_layer,
+    ),
 ]:
     save_potential_eval_result(operator, space, vec, points, filename, 1.5)
 
@@ -110,14 +144,20 @@ vec2 = generate_vector(rwg.global_dof_count, "fmm_rwg_vec")
 # Generate Maxwell boundary operator results
 for filename, operator in [
     ("fmm_maxwell_electric", bempp.api.operators.boundary.maxwell.electric_field),
-    ("fmm_maxwell_magnetic", bempp.api.operators.boundary.maxwell.magnetic_field)
+    ("fmm_maxwell_magnetic", bempp.api.operators.boundary.maxwell.magnetic_field),
 ]:
     save_matvec_result(operator, rwg, rwg, snc, vec2, filename, 1.5)
 
 # Generate Maxwell potential operator results
 for filename, operator in [
-    ("fmm_maxwell_potential_electric", bempp.api.operators.potential.maxwell.electric_field),
-    ("fmm_maxwell_potential_magnetic", bempp.api.operators.potential.maxwell.magnetic_field)
+    (
+        "fmm_maxwell_potential_electric",
+        bempp.api.operators.potential.maxwell.electric_field,
+    ),
+    (
+        "fmm_maxwell_potential_magnetic",
+        bempp.api.operators.potential.maxwell.magnetic_field,
+    ),
 ]:
     save_potential_eval_result(operator, rwg, vec2, points, filename, 1.5)
 
@@ -133,6 +173,6 @@ vec = generate_vector(p1_space1.global_dof_count, "fmm_two_mesh_vec")
 
 for filename, operator in [
     ("fmm_two_mesh_laplace_single", bempp.api.operators.boundary.laplace.single_layer),
-    ("fmm_two_mesh_laplace_hyper", bempp.api.operators.boundary.laplace.hypersingular)
+    ("fmm_two_mesh_laplace_hyper", bempp.api.operators.boundary.laplace.hypersingular),
 ]:
     save_matvec_result(operator, p1_space1, p1_space2, p1_space2, vec, filename)

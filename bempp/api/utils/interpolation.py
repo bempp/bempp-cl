@@ -138,72 +138,73 @@ def chebychev_nodes_and_weights_second_kind(order):
 #        to specify the wavenumber for Helmholtz kernels.
 #    """
 
-    # from bempp.core import cl_helpers
-    # import bempp.api
+# from bempp.core import cl_helpers
+# import bempp.api
 
-    # nnodes = len(nodes)
+# nnodes = len(nodes)
 
-    # if kernel_type not in {"laplace", "helmholtz"}:
-    #     raise ValueError("'kernel_type' must be one of 'laplace' or 'helmholtz'.")
+# if kernel_type not in {"laplace", "helmholtz"}:
+#     raise ValueError("'kernel_type' must be one of 'laplace' or 'helmholtz'.")
 
-    # if device_interface is None:
-    #     device_interface = bempp.api.default_device()
+# if device_interface is None:
+#     device_interface = bempp.api.default_device()
 
-    # if precision is None:
-    #     precision = bempp.api.get_precision(device_interface)
+# if precision is None:
+#     precision = bempp.api.get_precision(device_interface)
 
-    # real_type = cl_helpers.get_type(precision).real
+# real_type = cl_helpers.get_type(precision).real
 
-    # if kernel_type == "laplace":
-    #     dtype = cl_helpers.get_type(precision).real
+# if kernel_type == "laplace":
+#     dtype = cl_helpers.get_type(precision).real
 
-    # if kernel_type == "helmholtz":
-    #     dtype = cl_helpers.get_type(precision).complex
+# if kernel_type == "helmholtz":
+#     dtype = cl_helpers.get_type(precision).complex
 
-    # result = cl_helpers.DeviceBuffer(
-    #     (nnodes ** 3, nnodes ** 3),
-    #     dtype,
-    #     device_interface.context,
-    #     access_mode="write_only",
-    # )
+# result = cl_helpers.DeviceBuffer(
+#     (nnodes ** 3, nnodes ** 3),
+#     dtype,
+#     device_interface.context,
+#     access_mode="write_only",
+# )
 
-    # nodes = cl_helpers.DeviceBuffer.from_array(
-    #     nodes, device_interface, dtype=real_type, access_mode="read_only"
-    # )
+# nodes = cl_helpers.DeviceBuffer.from_array(
+#     nodes, device_interface, dtype=real_type, access_mode="read_only"
+# )
 
-    # options = dict()
-    # options["X_XMIN"] = lboundx[0]
-    # options["X_YMIN"] = lboundx[1]
-    # options["X_ZMIN"] = lboundx[2]
+# options = dict()
+# options["X_XMIN"] = lboundx[0]
+# options["X_YMIN"] = lboundx[1]
+# options["X_ZMIN"] = lboundx[2]
 
-    # options["Y_XMIN"] = lboundy[0]
-    # options["Y_YMIN"] = lboundy[1]
-    # options["Y_ZMIN"] = lboundy[2]
+# options["Y_XMIN"] = lboundy[0]
+# options["Y_YMIN"] = lboundy[1]
+# options["Y_ZMIN"] = lboundy[2]
 
-    # options["X_XMAX"] = uboundx[0]
-    # options["X_YMAX"] = uboundx[1]
-    # options["X_ZMAX"] = uboundx[2]
+# options["X_XMAX"] = uboundx[0]
+# options["X_YMAX"] = uboundx[1]
+# options["X_ZMAX"] = uboundx[2]
 
-    # options["Y_XMAX"] = uboundy[0]
-    # options["Y_YMAX"] = uboundy[1]
-    # options["Y_ZMAX"] = uboundy[2]
-    # options["NNODES"] = nnodes
+# options["Y_XMAX"] = uboundy[0]
+# options["Y_YMAX"] = uboundy[1]
+# options["Y_ZMAX"] = uboundy[2]
+# options["NNODES"] = nnodes
 
-    # if kernel_type == "helmholtz":
-    #     options["WAVENUMBER"] = kwargs["wavenumber"]
+# if kernel_type == "helmholtz":
+#     options["WAVENUMBER"] = kwargs["wavenumber"]
 
-    # cl_kernel_source = cl_helpers.kernel_source_from_identifier(
-    #     kernel_type + "_kernel_evaluator" + "_novec", options
-    # )
+# cl_kernel_source = cl_helpers.kernel_source_from_identifier(
+#     kernel_type + "_kernel_evaluator" + "_novec", options
+# )
 
-    # cl_kernel = cl_helpers.Kernel(cl_kernel_source, device_interface.context, precision)
+# cl_kernel = cl_helpers.Kernel(cl_kernel_source, device_interface.context, precision)
 
-    # event = cl_kernel.run(
-    #     device_interface, (nnodes ** 3, nnodes ** 3), (1, 1), nodes, result
-    # )
-    # event.wait()
+# event = cl_kernel.run(
+#     device_interface, (nnodes ** 3, nnodes ** 3), (1, 1), nodes, result
+# )
+# event.wait()
 
-    # return result.get_host_copy(device_interface)
+# return result.get_host_copy(device_interface)
+
 
 def evaluate_kernel_on_interpolation_points(
     kernel_type,
@@ -214,7 +215,7 @@ def evaluate_kernel_on_interpolation_points(
     nodes,
     device_interface=None,
     precision="double",
-    **kwargs
+    **kwargs,
 ):
     """
     Return a kernel evaluation on Chebychev points.
@@ -267,12 +268,12 @@ def evaluate_kernel_on_interpolation_points(
     pointsy = chebychev_tensor_points_3d(lboundy, uboundy, nodes)
 
     if kernel_type == "laplace":
-        return evaluate_laplace_kernel_on_interpolation_points(
-            pointsx, pointsy)
+        return evaluate_laplace_kernel_on_interpolation_points(pointsx, pointsy)
 
     if kernel_type == "helmholtz":
         return evaluate_helmholtz_kernel_on_interpolation_points(
-            pointsx, pointsy, kwargs["wavenumber"])
+            pointsx, pointsy, kwargs["wavenumber"]
+        )
 
     raise ValueError(f"Unknown kernel: {kernel_type}")
 
@@ -293,8 +294,9 @@ def evaluate_helmholtz_kernel_on_interpolation_points(pointsx, pointsy, wavenumb
     values = _np.empty((pointsx.shape[0], pointsy.shape[0]), _np.complex128)
     for i, x in enumerate(pointsx):
         for j, y in enumerate(pointsy):
-            values[i, :] = _np.exp(1j * wavenumber * _np.linalg.norm(x - y)) \
-                / (4 * _np.pi * _np.linalg.norm(x - y))
+            values[i, :] = _np.exp(1j * wavenumber * _np.linalg.norm(x - y)) / (
+                4 * _np.pi * _np.linalg.norm(x - y)
+            )
     return values
 
 

@@ -30,10 +30,14 @@ class PotentialOperator(object):
         """Check compatibility with other potential operator."""
         import numpy as np
 
-        return (self.component_count == other.component_count and
-                np.linalg.norm(self.evaluation_points -
-                               other.evaluation_points, ord=np.inf) == 0 and
-                self.space.is_compatible(other.space))
+        return (
+            self.component_count == other.component_count
+            and np.linalg.norm(
+                self.evaluation_points - other.evaluation_points, ord=np.inf
+            )
+            == 0
+            and self.space.is_compatible(other.space)
+        )
 
     def __add__(self, obj):
 

@@ -219,6 +219,7 @@ def multitrace_operator(
     """
     import bempp.api
     from bempp.api.assembly.blocked_operator import BlockedOperator
+
     space = bempp.api.function_space(grid, "P", 1)
 
     if target is not None:

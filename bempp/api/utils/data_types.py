@@ -3,11 +3,11 @@
 import numpy as _np
 
 
-def check_type(name, default='float64'):
+def check_type(name, default="float64"):
     """Try to convert input into a numpy.dtype object."""
 
     value = str(name) if name is not None else default
-    if value not in ['float32', 'float64', 'complex64', 'complex128']:
+    if value not in ["float32", "float64", "complex64", "complex128"]:
         raise ValueError("Incorrect type (%s)" % value)
 
     return _np.dtype(value)

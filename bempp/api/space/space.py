@@ -4,13 +4,7 @@ import numpy as _np
 import numba as _numba
 
 
-def function_space(
-    grid,
-    kind,
-    degree,
-    scatter=True,
-    **kwargs
-):
+def function_space(grid, kind, degree, scatter=True, **kwargs):
     """
     Initialize a function space.
 
@@ -46,7 +40,9 @@ def function_space(
     space_f = None
 
     if "support_elements" in kwargs and "segments" in kwargs:
-        raise ValueError("Only one of 'support_elements' and 'segments' must be nonzero.")
+        raise ValueError(
+            "Only one of 'support_elements' and 'segments' must be nonzero."
+        )
 
     if kind == "DP":
         if degree == 0:
@@ -87,12 +83,7 @@ def function_space(
 
     if scatter and pool.is_initialised() and not pool.is_worker():
         pool.execute(
-            _space_scatter_worker,
-            grid.id,
-            space.id,
-            kind,
-            degree,
-            kwargs,
+            _space_scatter_worker, grid.id, space.id, kind, degree, kwargs,
         )
         space._is_scattered = True
 
@@ -957,22 +948,13 @@ def make_localised_space(space):
 
 
 def _space_scatter_worker(
-    grid_id,
-    space_id,
-    kind,
-    degree,
-    kwargs,
+    grid_id, space_id, kind, degree, kwargs,
 ):
     import bempp.api
     from bempp.api.utils import pool
 
     grid = pool.get_data(grid_id)
-    space = bempp.api.function_space(
-        grid,
-        kind,
-        degree,
-        **kwargs,
-    )
+    space = bempp.api.function_space(grid, kind, degree, **kwargs,)
     space._set_id(space_id)
     pool.insert_data(space_id, space)
     bempp.api.log(f"Copied space {space.id} to worker {pool.get_id()}.", "debug")

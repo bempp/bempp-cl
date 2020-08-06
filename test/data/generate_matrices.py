@@ -31,7 +31,7 @@ def generate_bem_matrix(dual_to_range, domain, fname, operator, wavenumber=None)
             .A
         )
 
-    if REGENERATE or not os.path.exists(fname + '.npy'):
+    if REGENERATE or not os.path.exists(fname + ".npy"):
         np.save(fname, mat)
 
 
@@ -40,7 +40,7 @@ def generate_sparse_bem_matrix(dual_to_range, domain, fname, operator):
     print("Generating " + fname)
 
     mat = operator(domain, domain, dual_to_range).weak_form().sparse_operator.todense()
-    if REGENERATE or not os.path.exists(fname + '.npy'):
+    if REGENERATE or not os.path.exists(fname + ".npy"):
         np.save(fname, mat)
 
 
@@ -62,7 +62,7 @@ def generate_potential(domain, fname, operator, wavenumber=None):
 
     result = pot.evaluate(fun)
 
-    if REGENERATE or not os.path.exists(fname + '.npz'):
+    if REGENERATE or not os.path.exists(fname + ".npz"):
         np.savez(fname, result=result, points=points, vec=vec)
 
 
@@ -85,7 +85,7 @@ def generate_far_field(domain, fname, operator, wavenumber=None):
 
     result = pot.evaluate(fun)
 
-    if REGENERATE or not os.path.exists(fname + '.npz'):
+    if REGENERATE or not os.path.exists(fname + ".npz"):
         np.savez(fname, result=result, points=points, vec=vec)
 
 

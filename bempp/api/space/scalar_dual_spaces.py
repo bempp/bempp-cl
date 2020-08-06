@@ -1,20 +1,33 @@
 import numpy as _np
 from bempp.api import log
 
-from .scalar_spaces import (p1_continuous_function_space, p0_discontinuous_function_space,
-                            _numba_p0_surface_gradient, _numba_p1_surface_gradient)
+from .scalar_spaces import (
+    p1_continuous_function_space,
+    p0_discontinuous_function_space,
+    _numba_p0_surface_gradient,
+    _numba_p1_surface_gradient,
+)
 
 
-def dual0_function_space(grid, support_elements=None, segments=None, swapped_normals=None,
-                         include_boundary_dofs=False, truncate_at_segment_edge=False):
+def dual0_function_space(
+    grid,
+    support_elements=None,
+    segments=None,
+    swapped_normals=None,
+    include_boundary_dofs=False,
+    truncate_at_segment_edge=False,
+):
     """Define a space of DP0 functions on the dual grid."""
     from .space import SpaceBuilder, invert_local2global
     from scipy.sparse import coo_matrix
 
     coarse_space = p1_continuous_function_space(
-        grid, support_elements, segments, swapped_normals,
+        grid,
+        support_elements,
+        segments,
+        swapped_normals,
         include_boundary_dofs=include_boundary_dofs,
-        truncate_at_segment_edge=truncate_at_segment_edge
+        truncate_at_segment_edge=truncate_at_segment_edge,
     )
 
     number_of_support_elements = coarse_space.number_of_support_elements
@@ -32,9 +45,7 @@ def dual0_function_space(grid, support_elements=None, segments=None, swapped_nor
     local2global = _np.zeros((bary_grid.number_of_elements, 1), dtype="uint32")
     local_multipliers = _np.zeros((bary_grid.number_of_elements, 1), dtype="uint32")
 
-    local2global[support] = _np.arange(bary_support_size).reshape(
-        bary_support_size, 1
-    )
+    local2global[support] = _np.arange(bary_support_size).reshape(bary_support_size, 1)
 
     local_multipliers[support] = 1
     global2local = invert_local2global(local2global, local_multipliers)
@@ -92,14 +103,22 @@ def dual0_function_space(grid, support_elements=None, segments=None, swapped_nor
     )
 
 
-def dual1_function_space(grid, support_elements=None, segments=None, swapped_normals=None,
-                         include_boundary_dofs=None, truncate_at_segment_edge=False):
+def dual1_function_space(
+    grid,
+    support_elements=None,
+    segments=None,
+    swapped_normals=None,
+    include_boundary_dofs=None,
+    truncate_at_segment_edge=False,
+):
     """Define a space of DP1 functions on the dual grid."""
     from .space import SpaceBuilder, invert_local2global
     from scipy.sparse import coo_matrix
 
     if include_boundary_dofs is not None:
-        log("Setting include_boundary_dofs has no effect on this space type.", "warning")
+        log(
+            "Setting include_boundary_dofs has no effect on this space type.", "warning"
+        )
 
     coarse_space = p0_discontinuous_function_space(
         grid, support_elements, segments, swapped_normals

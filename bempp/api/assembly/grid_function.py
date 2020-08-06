@@ -13,8 +13,12 @@ def callable(*args, complex=False, jit=True, parameterized=False):
     else:
         wrap_type = _numba.float64[:]
 
-    signature_parameterized = _numba.void(_numba.float64[:], _numba.float64[:], _numba.uint32, wrap_type, wrap_type)
-    signature_not_parameterized = _numba.void(_numba.float64[:], _numba.float64[:], _numba.uint32, wrap_type)
+    signature_parameterized = _numba.void(
+        _numba.float64[:], _numba.float64[:], _numba.uint32, wrap_type, wrap_type
+    )
+    signature_not_parameterized = _numba.void(
+        _numba.float64[:], _numba.float64[:], _numba.uint32, wrap_type
+    )
 
     if parameterized:
         signature = signature_parameterized
@@ -25,29 +29,36 @@ def callable(*args, complex=False, jit=True, parameterized=False):
         """Actual wrapper."""
         if not jit:
             if parameterized:
+
                 def wrapper_callable(x, n, domain_index, res, parameters):
                     """Callable for object mode."""
                     with _numba.objmode():
                         f(x, n, domain_index, res, parameters)
+
             else:
+
                 def wrapper_callable(x, n, domain_index, res, parameters):
                     """Callable for object mode."""
                     with _numba.objmode():
                         f(x, n, domain_index, res)
+
         else:
             f_jit = _numba.njit(signature)(f)
             if parameterized:
+
                 def wrapper_callable(x, n, domain_index, res, parameters):
                     """Standard callable."""
                     f_jit(x, n, domain_index, res, parameters)
+
             else:
+
                 def wrapper_callable(x, n, domain_index, res, parameters):
                     """Callable for object mode."""
                     f_jit(x, n, domain_index, res)
 
         njit_wrapper = _numba.njit(signature_parameterized)(wrapper_callable)
 
-        njit_wrapper.bempp_type = 'complex' if complex else 'real'
+        njit_wrapper.bempp_type = "complex" if complex else "real"
 
         return njit_wrapper
 
@@ -230,21 +241,21 @@ class GridFunction(object):
             points, weights = rule(self._parameters.quadrature.regular)
 
             if function_parameters is None:
-                function_parameters = _np.array([], dtype='float64')
+                function_parameters = _np.array([], dtype="float64")
 
             if fun.bempp_type == "real":
                 dtype = "float64"
             else:
                 dtype = "complex128"
                 if function_parameters is not None:
-                    function_parameters = function_parameters.astype('complex128')
+                    function_parameters = function_parameters.astype("complex128")
 
             grid_projections = _np.zeros(comp_dual.grid_dof_count, dtype=dtype)
 
             # Create a Numba callable from the function
             _project_function(
                 fun,
-                comp_dual.grid.data('double'),
+                comp_dual.grid.data("double"),
                 comp_dual.support_elements,
                 comp_dual.local2global,
                 comp_dual.local_multipliers,
@@ -605,43 +616,43 @@ class GridFunction(object):
 
     # @classmethod
     # def from_grid_interpolation(cls, grid, mode, callable):
-        # """
-        # Obtain a grid function from interpolation on the grid.
+    # """
+    # Obtain a grid function from interpolation on the grid.
 
-        # Parameters
-        # ----------
-        # grid : Bempp Grid object
-            # The grid to be used
-        # mode : string
-            # Either "elements" or "vertices". If mode is
-            # "elements" the callable is interpolated on
-            # element centers. If mode is "vertices" the
-            # callable is interpolated on vertices.
-        # callable : callable object
-            # A Python callable of the form:
-            # values = callable(points). 'points' is
-            # a float64 Numpy array of shape (N, 3),
-            # where N is the number of interpolation points.
-            # values is a scalar Numpy array of interpolation
-            # values.
+    # Parameters
+    # ----------
+    # grid : Bempp Grid object
+    # The grid to be used
+    # mode : string
+    # Either "elements" or "vertices". If mode is
+    # "elements" the callable is interpolated on
+    # element centers. If mode is "vertices" the
+    # callable is interpolated on vertices.
+    # callable : callable object
+    # A Python callable of the form:
+    # values = callable(points). 'points' is
+    # a float64 Numpy array of shape (N, 3),
+    # where N is the number of interpolation points.
+    # values is a scalar Numpy array of interpolation
+    # values.
 
-        # Returns a grid function of space type ("DP", 0) for elementwise
-        # interpolation and ("P", 1) for vertex interpolation.
+    # Returns a grid function of space type ("DP", 0) for elementwise
+    # interpolation and ("P", 1) for vertex interpolation.
 
-        # """
-        # import bempp.api
+    # """
+    # import bempp.api
 
-        # if mode == 'elements':
-            # space = bempp.api.function_space(grid, "DP", 0)
-            # points = grid.centroids
-        # elif mode == 'vertices':
-            # space = bempp.api.function_space(grid, "P", 1)
-            # points = grid.vertices.T
-        # else:
-            # raise ValueError("'mode' must be one of 'elements' or 'vertices'.")
+    # if mode == 'elements':
+    # space = bempp.api.function_space(grid, "DP", 0)
+    # points = grid.centroids
+    # elif mode == 'vertices':
+    # space = bempp.api.function_space(grid, "P", 1)
+    # points = grid.vertices.T
+    # else:
+    # raise ValueError("'mode' must be one of 'elements' or 'vertices'.")
 
-        # values = callable(points)
-        # return bempp.api.GridFunction(space, coefficients=values)
+    # values = callable(points)
+    # return bempp.api.GridFunction(space, coefficients=values)
 
 
 @_numba.njit

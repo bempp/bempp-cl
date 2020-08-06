@@ -9,16 +9,25 @@ from bempp.api import log
 
 @_timeit
 def p0_discontinuous_function_space(
-    grid, support_elements=None, segments=None, swapped_normals=None,
-    include_boundary_dofs=None, truncate_at_segment_edge=None
+    grid,
+    support_elements=None,
+    segments=None,
+    swapped_normals=None,
+    include_boundary_dofs=None,
+    truncate_at_segment_edge=None,
 ):
     """Define a space of piecewise constant functions."""
     from .space import SpaceBuilder, _process_segments
 
     if include_boundary_dofs is not None:
-        log("Setting include_boundary_dofs has no effect on this space type.", "warning")
+        log(
+            "Setting include_boundary_dofs has no effect on this space type.", "warning"
+        )
     if truncate_at_segment_edge is not None:
-        log("Setting truncate_at_segment_edge has no effect on this space type.", "warning")
+        log(
+            "Setting truncate_at_segment_edge has no effect on this space type.",
+            "warning",
+        )
 
     support, normal_multipliers = _process_segments(
         grid, support_elements, segments, swapped_normals
@@ -73,7 +82,9 @@ def p0_barycentric_discontinuous_function_space(coarse_space):
 
     normal_multipliers = _np.repeat(coarse_space.normal_multipliers, 6)
 
-    coarse_dofs = _np.repeat(_np.arange(number_of_support_elements, dtype=_np.uint32), 6)
+    coarse_dofs = _np.repeat(
+        _np.arange(number_of_support_elements, dtype=_np.uint32), 6
+    )
     bary_dofs = _np.arange(6 * number_of_support_elements, dtype=_np.uint32)
     values = _np.ones(6 * number_of_support_elements, dtype=_np.float64)
 
@@ -115,16 +126,25 @@ def p0_barycentric_discontinuous_function_space(coarse_space):
 
 @_timeit
 def p1_discontinuous_function_space(
-    grid, support_elements=None, segments=None, swapped_normals=None,
-    include_boundary_dofs=None, truncate_at_segment_edge=None
+    grid,
+    support_elements=None,
+    segments=None,
+    swapped_normals=None,
+    include_boundary_dofs=None,
+    truncate_at_segment_edge=None,
 ):
     """Define a discontinuous space of piecewise linear functions."""
     from .space import SpaceBuilder, _process_segments
 
     if include_boundary_dofs is not None:
-        log("Setting include_boundary_dofs has no effect on this space type.", "warning")
+        log(
+            "Setting include_boundary_dofs has no effect on this space type.", "warning"
+        )
     if truncate_at_segment_edge is not None:
-        log("Setting truncate_at_segment_edge has no effect on this space type.", "warning")
+        log(
+            "Setting truncate_at_segment_edge has no effect on this space type.",
+            "warning",
+        )
 
     support, normal_multipliers = _process_segments(
         grid, support_elements, segments, swapped_normals
@@ -175,8 +195,8 @@ def p1_continuous_function_space(
 
     # vertex_neighbors = [[] for _ in range(grid.number_of_vertices)]
     # for index in range(grid.number_of_elements):
-        # for vertex in grid.elements[:, index]:
-            # vertex_neighbors[vertex].append(index)
+    # for vertex in grid.elements[:, index]:
+    # vertex_neighbors[vertex].append(index)
     # vertex_neighbors1, index_ptr1 = serialise_list_of_lists(vertex_neighbors)
 
     vertex_neighbors, index_ptr = grid.vertex_neighbors
@@ -228,24 +248,36 @@ def p1_barycentric_continuous_function_space(coarse_space):
     normal_multipliers = _np.repeat(coarse_space.normal_multipliers, 6)
 
     coeffs = [
-        _np.array([[1., 1 / 3, 1 / 2],
-                   [1., 1 / 2, 1 / 3],
-                   [0., 1 / 3, 1 / 2],
-                   [0., 0., 1 / 3],
-                   [0., 1 / 3, 0.],
-                   [0., 1 / 2, 1 / 3]]),
-        _np.array([[0., 1 / 3, 0.],
-                   [0., 1 / 2, 1 / 3],
-                   [1., 1 / 3, 1 / 2],
-                   [1., 1 / 2, 1 / 3],
-                   [0., 1 / 3, 1 / 2],
-                   [0., 0., 1 / 3]]),
-        _np.array([[0., 1 / 3, 1 / 2],
-                   [0., 0., 1 / 3],
-                   [0., 1 / 3, 0.],
-                   [0., 1 / 2, 1 / 3],
-                   [1., 1 / 3, 1 / 2],
-                   [1., 1 / 2, 1 / 3]]),
+        _np.array(
+            [
+                [1.0, 1 / 3, 1 / 2],
+                [1.0, 1 / 2, 1 / 3],
+                [0.0, 1 / 3, 1 / 2],
+                [0.0, 0.0, 1 / 3],
+                [0.0, 1 / 3, 0.0],
+                [0.0, 1 / 2, 1 / 3],
+            ]
+        ),
+        _np.array(
+            [
+                [0.0, 1 / 3, 0.0],
+                [0.0, 1 / 2, 1 / 3],
+                [1.0, 1 / 3, 1 / 2],
+                [1.0, 1 / 2, 1 / 3],
+                [0.0, 1 / 3, 1 / 2],
+                [0.0, 0.0, 1 / 3],
+            ]
+        ),
+        _np.array(
+            [
+                [0.0, 1 / 3, 1 / 2],
+                [0.0, 0.0, 1 / 3],
+                [0.0, 1 / 3, 0.0],
+                [0.0, 1 / 2, 1 / 3],
+                [1.0, 1 / 3, 1 / 2],
+                [1.0, 1 / 2, 1 / 3],
+            ]
+        ),
     ]
 
     coarse_dofs, bary_dofs, values = generate_p1_map(
@@ -357,7 +389,10 @@ def _compute_p1_dof_map(
             vertex = grid_data.elements[local_index, element_index]
             neighbors = vertex_neighbors[index_ptr[vertex] : index_ptr[vertex + 1]]
             non_support_neighbors = [n for n in neighbors if not support[n]]
-            node_is_interior = len(non_support_neighbors) == 0 and not grid_data.vertex_on_boundary[vertex]
+            node_is_interior = (
+                len(non_support_neighbors) == 0
+                and not grid_data.vertex_on_boundary[vertex]
+            )
             if include_boundary_dofs or node_is_interior:
                 # Just add dof
                 local2global[element_index, local_index] = vertex

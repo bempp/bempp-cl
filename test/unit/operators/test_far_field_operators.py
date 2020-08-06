@@ -13,11 +13,10 @@ curl_spaces = [("SNC", 0)]
 
 @pytest.fixture
 def points():
-    return np.array([[2., 3.], [2., 1.], [1., 1.]])
+    return np.array([[2.0, 3.0], [2.0, 1.0], [1.0, 1.0]])
 
 
-@pytest.mark.parametrize("operator", [
-    helmholtz.single_layer, helmholtz.double_layer])
+@pytest.mark.parametrize("operator", [helmholtz.single_layer, helmholtz.double_layer])
 @pytest.mark.parametrize("space_type", scalar_spaces)
 @pytest.mark.parametrize("wavenumber", [2.5, 2.5 + 1j])
 def test_helmholtz_operators(points, operator, wavenumber, space_type):
@@ -25,13 +24,13 @@ def test_helmholtz_operators(points, operator, wavenumber, space_type):
     grid = bempp.api.shapes.regular_sphere(0)
     space = function_space(grid, *space_type)
     fun = bempp.api.GridFunction(
-        space, coefficients=np.random.rand(space.global_dof_count))
+        space, coefficients=np.random.rand(space.global_dof_count)
+    )
 
     operator(space, points, wavenumber).evaluate(fun)
 
 
-@pytest.mark.parametrize("operator", [
-    maxwell.electric_field, maxwell.magnetic_field])
+@pytest.mark.parametrize("operator", [maxwell.electric_field, maxwell.magnetic_field])
 @pytest.mark.parametrize("space_type", div_spaces)
 @pytest.mark.parametrize("wavenumber", [2.5, 2.5 + 1j])
 def test_maxwell_operators(points, operator, wavenumber, space_type):
@@ -39,6 +38,7 @@ def test_maxwell_operators(points, operator, wavenumber, space_type):
     grid = bempp.api.shapes.regular_sphere(0)
     space = function_space(grid, *space_type)
     fun = bempp.api.GridFunction(
-        space, coefficients=np.random.rand(space.global_dof_count))
+        space, coefficients=np.random.rand(space.global_dof_count)
+    )
 
     operator(space, points, wavenumber).evaluate(fun)

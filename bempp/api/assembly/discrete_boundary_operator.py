@@ -80,7 +80,9 @@ class _SumDiscreteOperator(_DiscreteOperatorBase):
         """Constructor."""
 
         if op1.shape != op2.shape:
-            raise ValueError(f"Operators have incompatible shapes {op1.shape} != {op2.shape}")
+            raise ValueError(
+                f"Operators have incompatible shapes {op1.shape} != {op2.shape}"
+            )
 
         self._op1 = op1
         self._op2 = op2
@@ -109,7 +111,9 @@ class _ProductDiscreteOperator(_DiscreteOperatorBase):
         """Constructor."""
 
         if op1.shape[1] != op2.shape[0]:
-            raise ValueError(f"Incompatible dimensions shapes for multiplication with {op1.shape} and {op2.shape}")
+            raise ValueError(
+                f"Incompatible dimensions shapes for multiplication with {op1.shape} and {op2.shape}"
+            )
 
         self._op1 = op1
         self._op2 = op2
@@ -137,9 +141,7 @@ class GenericDiscreteBoundaryOperator(_DiscreteOperatorBase):
     def __init__(self, evaluator):
         """Constructor for discrete boundary operator."""
 
-        super().__init__(
-            evaluator.dtype, evaluator.shape
-        )
+        super().__init__(evaluator.dtype, evaluator.shape)
         self._evaluator = evaluator
         self._is_complex = self.dtype == "complex128" or self.dtype == "complex64"
 
@@ -177,8 +179,9 @@ class DenseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     def _matmat(self, x):
 
         if _np.iscomplexobj(x) and not _np.iscomplexobj(self.A):
-            return self.A.dot(_np.real(x).astype(self.dtype)) + \
-                1j * self.A.dot(_np.imag(x).astype(self.dtype))
+            return self.A.dot(_np.real(x).astype(self.dtype)) + 1j * self.A.dot(
+                _np.imag(x).astype(self.dtype)
+            )
         return self.A.dot(x.astype(self.dtype))
 
     def __add__(self, other):
@@ -198,13 +201,17 @@ class DenseDiscreteBoundaryOperator(_DiscreteOperatorBase):
         if isinstance(other, DenseDiscreteBoundaryOperator):
             return DenseDiscreteBoundaryOperator(self.A.dot(other.A))
         if _np.isscalar(other):
-            if self.A.dtype in ['float32', 'complex64']:
+            if self.A.dtype in ["float32", "complex64"]:
                 # Necessary to ensure that scalar multiplication does not change
                 # precision to double precision.
                 if _np.iscomplexobj(other):
-                    return DenseDiscreteBoundaryOperator(self.A * _np.dtype('complex64').type(other))
+                    return DenseDiscreteBoundaryOperator(
+                        self.A * _np.dtype("complex64").type(other)
+                    )
                 else:
-                    return DenseDiscreteBoundaryOperator(self.A * _np.dtype('float32').type(other))
+                    return DenseDiscreteBoundaryOperator(
+                        self.A * _np.dtype("float32").type(other)
+                    )
             else:
                 return DenseDiscreteBoundaryOperator(self.A * other)
         return super().dot(other)
@@ -271,13 +278,13 @@ class DiagonalOperator(_DiscreteOperatorBase):
     def dot(self, other):
         """Product with other objects."""
         if _np.isscalar(other):
-            if self.A.dtype in ['float32', 'complex64']:
+            if self.A.dtype in ["float32", "complex64"]:
                 # Necessary to ensure that scalar multiplication does not change
                 # precision to double precision.
                 if _np.iscomplexobj(other):
-                    return DiagonalOperator(self.A * _np.dtype('complex64').type(other))
+                    return DiagonalOperator(self.A * _np.dtype("complex64").type(other))
                 else:
-                    return DiagonalOperator(self.A * _np.dtype('float32').type(other))
+                    return DiagonalOperator(self.A * _np.dtype("float32").type(other))
             else:
                 return DiagonalOperator(self.A * other)
         return super().dot(other)
@@ -390,9 +397,7 @@ class InverseSparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
 
         self._solver = _Solver(operator)
         self._operator = operator
-        super().__init__(
-            self._solver.dtype, self._solver.shape
-        )
+        super().__init__(self._solver.dtype, self._solver.shape)
 
     def _matmat(self, vec):
         """Implemententation of matvec."""

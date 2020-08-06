@@ -26,7 +26,8 @@ def single_layer(
             parameters,
             assembler,
             device_interface,
-            precision)
+            precision,
+        )
 
     if precision is None:
         precision = bempp.api.DEFAULT_PRECISION
@@ -73,7 +74,8 @@ def double_layer(
             parameters,
             assembler,
             device_interface,
-            precision)
+            precision,
+        )
 
     if precision is None:
         precision = bempp.api.DEFAULT_PRECISION

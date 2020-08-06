@@ -20,7 +20,9 @@ class SparseAssembler(_assembler.AssemblerBase):
         from bempp.api.space.space import return_compatible_representation
         from .numba_kernels import select_numba_kernels
         from scipy.sparse import coo_matrix
-        from bempp.api.assembly.discrete_boundary_operator import SparseDiscreteBoundaryOperator
+        from bempp.api.assembly.discrete_boundary_operator import (
+            SparseDiscreteBoundaryOperator,
+        )
 
         domain, dual_to_range = return_compatible_representation(
             self.domain, self.dual_to_range
@@ -29,7 +31,9 @@ class SparseAssembler(_assembler.AssemblerBase):
         col_grid_dofs = domain.grid_dof_count
 
         if domain.grid != dual_to_range.grid:
-            raise ValueError("For sparse operators the domain and dual_to_range grids must be identical.")
+            raise ValueError(
+                "For sparse operators the domain and dual_to_range grids must be identical."
+            )
 
         trial_local2global = domain.local2global.ravel()
         test_local2global = dual_to_range.local2global.ravel()
@@ -103,7 +107,9 @@ def assemble_sparse(
     else:
         result_type = get_type(precision).real
 
-    result = _np.zeros(nshape_test * nshape_trial * number_of_elements, dtype=result_type)
+    result = _np.zeros(
+        nshape_test * nshape_trial * number_of_elements, dtype=result_type
+    )
 
     with bempp.api.Timer() as t:  # noqa: F841
         numba_assembly_function(
@@ -122,23 +128,18 @@ def assemble_sparse(
             dual_to_range.numba_evaluate,
             domain.numba_evaluate,
             numba_kernel_function,
-            result)
+            result,
+        )
 
     irange = _np.arange(nshape_test)
     jrange = _np.arange(nshape_trial)
 
-    i_ind = _np.tile(
-        _np.repeat(irange, nshape_trial), len(elements)
-    ) + _np.repeat(
-        elements * nshape_test,
-        nshape_test * nshape_trial,
+    i_ind = _np.tile(_np.repeat(irange, nshape_trial), len(elements)) + _np.repeat(
+        elements * nshape_test, nshape_test * nshape_trial,
     )
 
-    j_ind = _np.tile(
-        _np.tile(jrange, nshape_test), len(elements)
-    ) + _np.repeat(
-        elements * nshape_trial,
-        nshape_test * nshape_trial,
+    j_ind = _np.tile(_np.tile(jrange, nshape_test), len(elements)) + _np.repeat(
+        elements * nshape_trial, nshape_test * nshape_trial,
     )
 
     return i_ind, j_ind, result

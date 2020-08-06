@@ -129,7 +129,7 @@ class Pool(object):
 
     """
 
-    def __init__(self, nworkers, buffer_size=100, log=False, log_level='info'):
+    def __init__(self, nworkers, buffer_size=100, log=False, log_level="info"):
         """
         Initialise the pool.
 
@@ -164,7 +164,15 @@ class Pool(object):
         self._workers = [
             ctx.Process(
                 target=worker,
-                args=(self._senders[i], self._receivers[i], i, nworkers, pool._BUFFER, log, log_level),
+                args=(
+                    self._senders[i],
+                    self._receivers[i],
+                    i,
+                    nworkers,
+                    pool._BUFFER,
+                    log,
+                    log_level,
+                ),
             )
             for i in range(nworkers)
         ]

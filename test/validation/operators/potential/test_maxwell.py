@@ -40,7 +40,9 @@ def test_maxwell_electric_field_potential_complex(
         device_interface=device_interface,
     ).evaluate(fun)
 
-    _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
+    _np.testing.assert_allclose(
+        actual, expected, rtol=helpers.default_tolerance(precision)
+    )
 
 
 def test_maxwell_electric_field_potential_rwg(
@@ -71,7 +73,9 @@ def test_maxwell_electric_field_potential_rwg(
         device_interface=device_interface,
     ).evaluate(fun)
 
-    _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
+    _np.testing.assert_allclose(
+        actual, expected, rtol=helpers.default_tolerance(precision)
+    )
 
 
 # def test_maxwell_electric_field_potential_bc(
@@ -133,7 +137,9 @@ def test_maxwell_magnetic_field_potential_rwg(
         device_interface=device_interface,
     ).evaluate(fun)
 
-    _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
+    _np.testing.assert_allclose(
+        actual, expected, rtol=helpers.default_tolerance(precision)
+    )
 
 
 def test_maxwell_magnetic_field_potential_complex(
@@ -164,7 +170,10 @@ def test_maxwell_magnetic_field_potential_complex(
         device_interface=device_interface,
     ).evaluate(fun)
 
-    _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
+    _np.testing.assert_allclose(
+        actual, expected, rtol=helpers.default_tolerance(precision)
+    )
+
 
 # def test_maxwell_potentials_segments(
 #         default_parameters, helpers, device_interface, precision):

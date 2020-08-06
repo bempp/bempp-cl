@@ -30,7 +30,7 @@ def test_interpolation_complex_callable():
 
 def test_interpolation_python_callable():
     # This array can't be assembled by Numba, so jit cannot be used
-    parameters = [1, None, 1.]
+    parameters = [1, None, 1.0]
 
     @bempp.api.complex_callable(jit=False)
     def f(x, n, d, r):
