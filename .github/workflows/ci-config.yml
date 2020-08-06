@@ -62,6 +62,7 @@ jobs:
         name: Run flake8 checks
       - run: python3 -m pydocstyle bempp/api
         name: Run pydocstyle checks
+      - uses: RojerGS/python-black-check@master
 
   build-and-test-with-exafmm:
     name: Build and run tests with ExaFMM
