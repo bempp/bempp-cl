@@ -617,9 +617,7 @@ def get_local_interaction_evaluator_opencl(
 
 
 def debug_fmm(targets, sources, charges, mode, kernel_parameters, fmm_result):
-    """
-    Compare the result of an FMM result with the corresponding dense computation.
-    """
+    """Compare the result of an FMM result with the corresponding dense computation."""
     import bempp.api
 
     dense_result = dense_interaction_evaluator(
