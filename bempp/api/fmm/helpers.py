@@ -657,8 +657,6 @@ def dense_interaction_evaluator(
     Returns the dense evaluation of the interaction between sources
     and targets with the given charges.
     """
-    import bempp.api
-
     if mode == "laplace":
         kernel = laplace_kernel
         kernel_type = _np.float64
