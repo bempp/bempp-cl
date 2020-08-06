@@ -60,6 +60,14 @@ class ExafmmInterface(object):
 
         self._source_points = source_points
         self._target_points = target_points
+        self._mode = mode
+
+        if mode == "laplace":
+            self._kernel_parameters = _np.array([], dtype="float64")
+        elif mode == "helmholtz":
+            self._kernel_parameters = _np.array([wavenumber], dtype="float64")
+        elif mode == "modified_helmholtz":
+            self._kernel_parameters = _np.array([wavenumber], dtype="float64")
 
         with bempp.api.Timer(message="Initialising Exafmm."):
 
@@ -126,13 +134,34 @@ class ExafmmInterface(object):
     def evaluate(self, vec, apply_singular_correction=True):
         """Evalute the Fmm."""
         import bempp.api
+        from bempp.api.fmm.helpers import debug_fmm
 
         with bempp.api.Timer(message="Evaluating Fmm."):
             self._module.update_charges(self._tree, vec)
             self._module.clear_values(self._tree)
 
             with bempp.api.Timer(message="Calling ExaFMM."):
-                result = self._module.evaluate(self._tree, self._fmm)
+                if bempp.api.GLOBAL_PARAMETERS.fmm.dense_evaluation:
+                    from bempp.api.fmm.helpers import dense_interaction_evaluator
+
+                    result = dense_interaction_evaluator(
+                        self._target_points,
+                        self._source_points,
+                        vec,
+                        self._mode,
+                        self._kernel_parameters,
+                    )
+                else:
+                    result = self._module.evaluate(self._tree, self._fmm)
+                if bempp.api.GLOBAL_PARAMETERS.fmm.debug:
+                    debug_fmm(
+                        self._target_points,
+                        self._source_points,
+                        vec,
+                        self._mode,
+                        self._kernel_parameters,
+                        result,
+                    )
 
             if apply_singular_correction and self._singular_correction is not None:
                 result -= (self._singular_correction @ vec).reshape([-1, 4])

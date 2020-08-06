@@ -171,9 +171,12 @@ def get_local_interaction_operator(
     elif kernel_function == "modified_helmholtz":
         kernel = modified_helmholtz_kernel
 
-    bempp.api.log(f"Near field correction operator mode: {GLOBAL_PARAMETERS.fmm.near_field_representation}")
+    bempp.api.log(
+        "Near field correction operator mode:"
+        f" {GLOBAL_PARAMETERS.fmm.near_field_representation}"
+    )
 
-    if GLOBAL_PARAMETERS.fmm.near_field_representation == 'sparse':
+    if GLOBAL_PARAMETERS.fmm.near_field_representation == "sparse":
         data, indices, indexptr = get_local_interaction_matrix_impl(
             grid.data(precision),
             local_points.astype(dtype),
@@ -182,26 +185,28 @@ def get_local_interaction_operator(
             dtype,
             result_type,
         )
-        return aslinearoperator(csr_matrix((data, indices, indexptr), shape=(rows, cols)))
+        return aslinearoperator(
+            csr_matrix((data, indices, indexptr), shape=(rows, cols))
+        )
 
-    elif GLOBAL_PARAMETERS.fmm.near_field_representation == 'numba_evaluate':
+    elif GLOBAL_PARAMETERS.fmm.near_field_representation == "numba_evaluate":
         evaluator = get_local_interaction_evaluator_numba(
             grid.data(precision),
             local_points.astype(dtype),
             kernel,
             _np.array(kernel_parameters, dtype=dtype),
             dtype,
-            result_type
+            result_type,
         )
         return LinearOperator(shape=(rows, cols), matvec=evaluator, dtype=result_type)
-    elif GLOBAL_PARAMETERS.fmm.near_field_representation == 'opencl_evaluate':
+    elif GLOBAL_PARAMETERS.fmm.near_field_representation == "opencl_evaluate":
         evaluator = get_local_interaction_evaluator_opencl(
             grid,
             local_points.astype(dtype),
             kernel_function,
             _np.array(kernel_parameters, dtype=dtype),
             dtype,
-            result_type
+            result_type,
         )
         return LinearOperator(shape=(rows, cols), matvec=evaluator, dtype=result_type)
     else:
@@ -209,7 +214,7 @@ def get_local_interaction_operator(
 
 
 def get_local_interaction_evaluator_numba(
-        grid_data, local_points, kernel_function, kernel_parameters, dtype, result_type
+    grid_data, local_points, kernel_function, kernel_parameters, dtype, result_type
 ):
     """Return an evaluator for the local interactions."""
     import bempp.api
@@ -218,8 +223,15 @@ def get_local_interaction_evaluator_numba(
         """Actually evaluate the near field correction."""
         with bempp.api.Timer(message="Singular Corrections Evaluator."):
             return numba_evaluate_local_interactions(
-                grid_data, coeffs, local_points, kernel_function, kernel_parameters, dtype, result_type
+                grid_data,
+                coeffs,
+                local_points,
+                kernel_function,
+                kernel_parameters,
+                dtype,
+                result_type,
             )
+
     return evaluator
 
 
@@ -227,7 +239,13 @@ def get_local_interaction_evaluator_numba(
     nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
 )
 def numba_evaluate_local_interactions(
-    grid_data, coeffs, local_points, kernel_function, kernel_parameters, dtype, result_type
+    grid_data,
+    coeffs,
+    local_points,
+    kernel_function,
+    kernel_parameters,
+    dtype,
+    result_type,
 ):
     """Get the local interaction matrix on the grid."""
     nelements = grid_data.elements.shape[1]
@@ -275,12 +293,17 @@ def numba_evaluate_local_interactions(
                 for source_element_index in range(nneighbors):
                     source_element = source_elements[source_element_index]
                     for source_point_index in range(npoints):
-                        result[4 * npoints * target_element + 4 * target_point_index + i] += interactions[
-                            4 * target_point_index * nneighbors * npoints
-                            + 4 * source_element_index * npoints
-                            + 4 * source_point_index
-                            + i
-                        ] * coeffs[npoints * source_element + source_point_index]
+                        result[
+                            4 * npoints * target_element + 4 * target_point_index + i
+                        ] += (
+                            interactions[
+                                4 * target_point_index * nneighbors * npoints
+                                + 4 * source_element_index * npoints
+                                + 4 * source_point_index
+                                + i
+                            ]
+                            * coeffs[npoints * source_element + source_point_index]
+                        )
 
     return result
 
@@ -487,7 +510,7 @@ def grid_to_points(grid_data, local_points):
 
 
 def get_local_interaction_evaluator_opencl(
-        grid, local_points, kernel_function, kernel_parameters, dtype, result_type
+    grid, local_points, kernel_function, kernel_parameters, dtype, result_type
 ):
     """Return an evaluator for the local interactions."""
     import pyopencl as _cl
@@ -524,33 +547,23 @@ def get_local_interaction_evaluator_opencl(
     # )
 
     points_buffer = _cl.Buffer(
-        ctx,
-        mf.READ_ONLY | mf.COPY_HOST_PTR,
-        hostbuf=local_points.ravel(order="F"),
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=local_points.ravel(order="F"),
     )
 
     neighbor_indices_buffer = _cl.Buffer(
-        ctx,
-        mf.READ_ONLY | mf.COPY_HOST_PTR,
-        hostbuf=grid.element_neighbors.indices,
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid.element_neighbors.indices,
     )
 
     neighbor_indexptr_buffer = _cl.Buffer(
-        ctx,
-        mf.READ_ONLY | mf.COPY_HOST_PTR,
-        hostbuf=grid.element_neighbors.indexptr
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid.element_neighbors.indexptr
     )
 
     coefficients_buffer = _cl.Buffer(
-        ctx,
-        mf.READ_ONLY,
-        size=result_type.itemsize * ncoeffs
+        ctx, mf.READ_ONLY, size=result_type.itemsize * ncoeffs
     )
 
     result_buffer = _cl.Buffer(
-        ctx,
-        mf.READ_WRITE,
-        size=4 * result_type.itemsize * ncoeffs
+        ctx, mf.READ_WRITE, size=4 * result_type.itemsize * ncoeffs
     )
 
     if len(kernel_parameters) == 0:
@@ -559,13 +572,10 @@ def get_local_interaction_evaluator_opencl(
     kernel_parameters_buffer = _cl.Buffer(
         ctx,
         mf.READ_ONLY | mf.COPY_HOST_PTR,
-        hostbuf=_np.array(kernel_parameters, dtype='float64')
+        hostbuf=_np.array(kernel_parameters, dtype="float64"),
     )
 
-    options = {
-        'MAX_POINTS': max_nneighbors * npoints,
-        'NPOINTS': npoints
-    }
+    options = {"MAX_POINTS": max_nneighbors * npoints, "NPOINTS": npoints}
     if result_type == "complex128":
         options["COMPLEX_KERNEL"] = None
 
@@ -584,7 +594,8 @@ def get_local_interaction_evaluator_opencl(
                     result_buffer,
                     _np.uint8(0),
                     0,
-                    result_type.itemsize * ncoeffs)
+                    result_type.itemsize * ncoeffs,
+                )
                 kernel(
                     queue,
                     (grid.number_of_elements,),
@@ -596,9 +607,115 @@ def get_local_interaction_evaluator_opencl(
                     coefficients_buffer,
                     result_buffer,
                     kernel_parameters_buffer,
-                    _np.uint32(grid.number_of_elements))
+                    _np.uint32(grid.number_of_elements),
+                )
                 _cl.enqueue_copy(queue, result, result_buffer)
 
         return result
 
     return evaluator
+
+
+def debug_fmm(targets, sources, charges, mode, kernel_parameters, fmm_result):
+    """Compare the result of an FMM result with the corresponding dense computation."""
+    import bempp.api
+
+    dense_result = dense_interaction_evaluator(
+        targets, sources, charges, mode, kernel_parameters
+    ).reshape(-1, 4)
+
+    rel_error = _np.max(_np.abs(dense_result - fmm_result) / _np.abs(fmm_result))
+
+    bempp.api.log(f"FMM error: {rel_error}.")
+
+    return dense_result
+
+
+def dense_interaction_evaluator(
+    targets, sources, charges, mode, kernel_parameters
+):
+    """
+    Dense evaluation of interaction between sources and targets.
+
+    Parameters
+    ----------
+    targets : ndarray
+        M x 3 array of target points.
+    sources : ndarray
+        N x 3 array of source points.
+    charges : ndarray
+        N array of charges.
+    mode : string
+        Either 'laplace', 'helmholtz', 'modified_helmholtz'
+    kernel_parameters : ndarray
+        Array with kernel parameters
+    kernel_type : dtype
+        Type of the kernel (numpy.float64 or numpy.complex128)
+
+    Returns the dense evaluation of the interaction between sources
+    and targets with the given charges.
+    """
+    if mode == "laplace":
+        kernel = laplace_kernel
+        kernel_type = _np.float64
+    elif mode == "helmholtz":
+        kernel = helmholtz_kernel
+        kernel_type = _np.complex128
+    elif mode == "modified_helmholtz":
+        kernel = modified_helmholtz_kernel
+        kernel_type = _np.float64
+    else:
+        raise ValueError("Unknown value for 'kernel_function'.")
+
+    return dense_interaction_evaluator_impl(
+        targets, sources, charges, kernel, kernel_parameters, kernel_type
+    ).reshape(-1, 4)
+
+
+@_numba.jit(
+    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
+)
+def dense_interaction_evaluator_impl(
+    targets, sources, charges, kernel, kernel_parameters, kernel_type
+):
+    """
+    Dense evaluation of interaction between sources and targets.
+
+    Parameters
+    ----------
+    targets : ndarray
+        M x 3 array of target points.
+    sources : ndarray
+        N x 3 array of source points.
+    charges : ndarray
+        N array of charges.
+    kernel : Numba function object
+        The kernel object (either helpers.laplace,
+        helpers.helmholtz or helpers.modified_helmholtz)
+    kernel_parameters : ndarray
+        Array with kernel parameters
+    kernel_type : dtype
+        Type of the kernel (numpy.float64 or numpy.complex128)
+
+    Returns the dense evaluation of the interaction between sources
+    and targets with the given charges.
+    """
+    dtype = sources.dtype
+
+    sources = sources.T.copy()
+    targets = targets.T.copy()
+
+    ntargets = targets.shape[1]
+    nsources = sources.shape[1]
+    result = _np.zeros(4 * ntargets, dtype=kernel_type)
+
+    for target_index in _numba.prange(ntargets):
+        current_target = targets[:, target_index].copy().reshape((3, 1))
+        vals = kernel(current_target, sources, kernel_parameters, dtype, kernel_type)
+        for source_index in range(nsources):
+            for local_index in range(4):
+                result[4 * target_index + local_index] += (
+                    vals[4 * source_index + local_index] * charges[source_index]
+                )
+
+    return result
