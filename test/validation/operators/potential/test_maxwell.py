@@ -78,45 +78,6 @@ def test_maxwell_electric_field_potential_rwg(
     )
 
 
-# def test_maxwell_electric_field_potential_bc(
-    # default_parameters, helpers, device_interface, precision
-# ):
-    # """Test Maxwell efield potential."""
-    # import bempp.api
-    # from bempp.api import function_space
-    # from bempp.api import GridFunction
-    # from bempp.api.operators.potential.maxwell import electric_field
-
-    # grid = helpers.load_grid("sphere")
-    # space = function_space(grid, "BC", 0)
-
-    # data = helpers.load_npz_data("maxwell_electric_field_potential_bc")
-
-    # coefficients = data["vec"]
-    # points = data["points"]
-    # expected = data["result"]
-
-    # fun = GridFunction(space, coefficients=coefficients)
-
-    # bempp.api.GLOBAL_PARAMETERS.fmm.dense_evaluation = True
-
-    # actual = electric_field(
-        # space,
-        # points,
-        # WAVENUMBER,
-        # parameters=default_parameters,
-        # precision=precision,
-        # device_interface=device_interface,
-        # assembler="fmm",
-    # ).evaluate(fun)
-
-    # bempp.api.GLOBAL_PARAMETERS.fmm.dense_evaluation = False
-
-    # _np.testing.assert_allclose(
-        # actual, expected, rtol=helpers.default_tolerance(precision)
-    # )
-
-
 def test_maxwell_magnetic_field_potential_rwg(
     default_parameters, helpers, device_interface, precision
 ):
