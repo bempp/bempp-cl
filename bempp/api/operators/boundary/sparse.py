@@ -10,7 +10,7 @@ def identity(
     device_interface=None,
     precision=None,
 ):
-    """Assemble the L^2 identiy operator."""
+    """Assemble the L^2 identity operator."""
     return _common.create_operator(
         "l2_identity",
         domain,

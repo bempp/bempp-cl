@@ -39,6 +39,8 @@ class _Fmm(object):
         self.depth = 4
         self.ncrit = 400
         self.near_field_representation = "opencl_evaluate"
+        self.debug = False
+        self.dense_evaluation = False
 
 
 class _DenseAssembly(object):

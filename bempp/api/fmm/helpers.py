@@ -172,7 +172,8 @@ def get_local_interaction_operator(
         kernel = modified_helmholtz_kernel
 
     bempp.api.log(
-        f"Near field correction operator mode: {GLOBAL_PARAMETERS.fmm.near_field_representation}"
+        "Near field correction operator mode:"
+        f" {GLOBAL_PARAMETERS.fmm.near_field_representation}"
     )
 
     if GLOBAL_PARAMETERS.fmm.near_field_representation == "sparse":
@@ -613,3 +614,106 @@ def get_local_interaction_evaluator_opencl(
         return result
 
     return evaluator
+
+
+def debug_fmm(targets, sources, charges, mode, kernel_parameters, fmm_result):
+    """Compare the result of an FMM result with the corresponding dense computation."""
+    import bempp.api
+
+    dense_result = dense_interaction_evaluator(
+        targets, sources, charges, mode, kernel_parameters
+    ).reshape(-1, 4)
+
+    rel_error = _np.max(_np.abs(dense_result - fmm_result) / _np.abs(fmm_result))
+
+    bempp.api.log(f"FMM error: {rel_error}.")
+
+    return dense_result
+
+
+def dense_interaction_evaluator(targets, sources, charges, mode, kernel_parameters):
+    """
+    Dense evaluation of interaction between sources and targets.
+
+    Parameters
+    ----------
+    targets : ndarray
+        M x 3 array of target points.
+    sources : ndarray
+        N x 3 array of source points.
+    charges : ndarray
+        N array of charges.
+    mode : string
+        Either 'laplace', 'helmholtz', 'modified_helmholtz'
+    kernel_parameters : ndarray
+        Array with kernel parameters
+    kernel_type : dtype
+        Type of the kernel (numpy.float64 or numpy.complex128)
+
+    Returns the dense evaluation of the interaction between sources
+    and targets with the given charges.
+    """
+    if mode == "laplace":
+        kernel = laplace_kernel
+        kernel_type = _np.float64
+    elif mode == "helmholtz":
+        kernel = helmholtz_kernel
+        kernel_type = _np.complex128
+    elif mode == "modified_helmholtz":
+        kernel = modified_helmholtz_kernel
+        kernel_type = _np.float64
+    else:
+        raise ValueError("Unknown value for 'kernel_function'.")
+
+    return dense_interaction_evaluator_impl(
+        targets, sources, charges, kernel, kernel_parameters, kernel_type
+    ).reshape(-1, 4)
+
+
+@_numba.jit(
+    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
+)
+def dense_interaction_evaluator_impl(
+    targets, sources, charges, kernel, kernel_parameters, kernel_type
+):
+    """
+    Dense evaluation of interaction between sources and targets.
+
+    Parameters
+    ----------
+    targets : ndarray
+        M x 3 array of target points.
+    sources : ndarray
+        N x 3 array of source points.
+    charges : ndarray
+        N array of charges.
+    kernel : Numba function object
+        The kernel object (either helpers.laplace,
+        helpers.helmholtz or helpers.modified_helmholtz)
+    kernel_parameters : ndarray
+        Array with kernel parameters
+    kernel_type : dtype
+        Type of the kernel (numpy.float64 or numpy.complex128)
+
+    Returns the dense evaluation of the interaction between sources
+    and targets with the given charges.
+    """
+    dtype = sources.dtype
+
+    sources = sources.T.copy()
+    targets = targets.T.copy()
+
+    ntargets = targets.shape[1]
+    nsources = sources.shape[1]
+    result = _np.zeros(4 * ntargets, dtype=kernel_type)
+
+    for target_index in _numba.prange(ntargets):
+        current_target = targets[:, target_index].copy().reshape((3, 1))
+        vals = kernel(current_target, sources, kernel_parameters, dtype, kernel_type)
+        for source_index in range(nsources):
+            for local_index in range(4):
+                result[4 * target_index + local_index] += (
+                    vals[4 * source_index + local_index] * charges[source_index]
+                )
+
+    return result
