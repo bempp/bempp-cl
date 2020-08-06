@@ -47,6 +47,8 @@ def test_laplace_boundary_fmm(helpers, grid):
         dense = helpers.load_npy_data(filename)
         np.testing.assert_allclose(dense, fmm @ vec, rtol=TOL)
 
+    bempp.api.clear_fmm_cache()
+
 
 def test_laplace_potential_fmm(helpers, grid):
     """Test Laplace potential operators."""
@@ -69,6 +71,8 @@ def test_laplace_potential_fmm(helpers, grid):
         dense = helpers.load_npy_data(filename)
         np.testing.assert_allclose(dense, fmm, rtol=TOL)
 
+    bempp.api.clear_fmm_cache()
+
 
 def test_helmholtz_boundary_fmm(helpers, grid):
     """Test Helmholtz boundary operators."""
@@ -88,6 +92,8 @@ def test_helmholtz_boundary_fmm(helpers, grid):
         fmm = operator(space, space, space, wavenumber, assembler="fmm").weak_form()
         dense = helpers.load_npy_data(filename)
         np.testing.assert_allclose(dense, fmm @ vec, rtol=TOL)
+
+    bempp.api.clear_fmm_cache()
 
 
 def test_helmholtz_potential_fmm(helpers, grid):
@@ -111,6 +117,8 @@ def test_helmholtz_potential_fmm(helpers, grid):
         fmm = operator(space, points, wavenumber, assembler="fmm").evaluate(grid_fun)
         dense = helpers.load_npy_data(filename)
         np.testing.assert_allclose(dense, fmm, rtol=TOL)
+
+    bempp.api.clear_fmm_cache()
 
 
 def test_modified_helmholtz_boundary_fmm(helpers, grid):
@@ -141,6 +149,8 @@ def test_modified_helmholtz_boundary_fmm(helpers, grid):
         dense = helpers.load_npy_data(filename)
         np.testing.assert_allclose(dense, fmm @ vec, rtol=TOL)
 
+    bempp.api.clear_fmm_cache()
+
 
 def test_modified_helmholtz_potential_fmm(helpers, grid):
     """Test modified Helmholtz potential operators."""
@@ -164,6 +174,8 @@ def test_modified_helmholtz_potential_fmm(helpers, grid):
         dense = helpers.load_npy_data(filename)
         np.testing.assert_allclose(dense, fmm, rtol=TOL)
 
+    bempp.api.clear_fmm_cache()
+
 
 def test_maxwell_boundary_fmm(helpers, grid):
     """Test Maxwell boundary operators."""
@@ -179,6 +191,8 @@ def test_maxwell_boundary_fmm(helpers, grid):
         fmm = operator(rwg, rwg, snc, wavenumber, assembler="fmm").weak_form()
         dense = helpers.load_npy_data(filename)
         np.testing.assert_allclose(dense, fmm @ vec, rtol=TOL)
+
+    bempp.api.clear_fmm_cache()
 
 
 def test_maxwell_potential_fmm(helpers, grid):
@@ -203,6 +217,8 @@ def test_maxwell_potential_fmm(helpers, grid):
         dense = helpers.load_npy_data(filename)
         np.testing.assert_allclose(dense, fmm, rtol=TOL)
 
+    bempp.api.clear_fmm_cache()
+
 
 def test_fmm_two_grids_laplace(helpers, grid1, grid2):
     """Test the FMM for Laplace between two different grids."""
@@ -223,3 +239,5 @@ def test_fmm_two_grids_laplace(helpers, grid1, grid2):
         fmm = operator(p1_space1, p1_space2, p1_space2, assembler="fmm").weak_form()
         dense = helpers.load_npy_data(filename)
         np.testing.assert_allclose(dense, fmm @ vec, rtol=TOL)
+
+    bempp.api.clear_fmm_cache()

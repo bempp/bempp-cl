@@ -897,3 +897,12 @@ def make_maxwell_magnetic_field_potential(operator_descriptor, fmm_interface, sp
         return curl_val
 
     return evaluate
+
+
+def clear_fmm_cache():
+    """Clean the FMM cache."""
+    global _FMM_CACHE
+    global _FMM_POTENTIAL_CACHE
+
+    _FMM_CACHE = {}
+    _FMM_POTENTIAL_CACHE = {}
