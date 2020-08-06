@@ -63,7 +63,15 @@ jobs:
       - run: python3 -m pydocstyle bempp/api
         name: Run pydocstyle checks
       - uses: RojerGS/python-black-check@master
-
+        with:
+          line-length: '88'
+          path: 'bempp'
+        name: Run black checks in bempp
+      - uses: RojerGS/python-black-check@master
+        with:
+          line-length: '88'
+          path: 'test'
+        name: Run black checks on tests
   build-and-test-with-exafmm:
     name: Build and run tests with ExaFMM
     needs: build-and-publish-docker
