@@ -17,8 +17,7 @@ def get_gmsh_file():
     import tempfile
     import bempp.api
 
-    geo, geo_name = tempfile.mkstemp(
-        suffix='.geo', dir=bempp.api.TMP_PATH, text=True)
+    geo, geo_name = tempfile.mkstemp(suffix=".geo", dir=bempp.api.TMP_PATH, text=True)
     geo_file = os.fdopen(geo, "w")
     msh_name = os.path.splitext(geo_name)[0] + ".msh"
     return (geo_file, geo_name, msh_name)
@@ -33,7 +32,8 @@ def __generate_grid_from_gmsh_string(gmsh_string):
     if bempp.api.mpi_rank == 0:
         # First create the grid.
         handle, fname = tempfile.mkstemp(
-            suffix='.msh', dir=bempp.api.TMP_PATH, text=True)
+            suffix=".msh", dir=bempp.api.TMP_PATH, text=True
+        )
         with os.fdopen(handle, "w") as f:
             f.write(gmsh_string)
     grid = bempp.api.import_grid(fname)
@@ -58,11 +58,10 @@ def __generate_grid_from_geo_string(geo_string):
         f.write(geo_string)
         f.close()
 
-        fnull = open(os.devnull, 'w')
+        fnull = open(os.devnull, "w")
         cmd = gmsh_command + " -2 " + geo_name
         try:
-            subprocess.check_call(
-                cmd, shell=True, stdout=fnull, stderr=fnull)
+            subprocess.check_call(cmd, shell=True, stdout=fnull, stderr=fnull)
         except:
             print("The following command failed: " + cmd)
             fnull.close()
@@ -77,7 +76,7 @@ def __generate_grid_from_geo_string(geo_string):
     return grid
 
 
-def screen(corners, h=.1):
+def screen(corners, h=0.1):
     """
     Creates a screen.
 
@@ -143,7 +142,7 @@ def regular_sphere(refine_level):
     return Grid(spheres["v" + str(refine_level)], spheres["e" + str(refine_level)])
 
 
-def multitrace_cube(h=.1):
+def multitrace_cube(h=0.1):
     """
     Definitition of a cube with an interface at z=.5.
 
@@ -222,7 +221,7 @@ def multitrace_cube(h=.1):
     Physical Surface(10) = {4};
     Physical Surface(11) = {12};
     """
-    geometry = ("cl = " + str(h) + ";\n" + stub)
+    geometry = "cl = " + str(h) + ";\n" + stub
     return __generate_grid_from_geo_string(geometry)
 
 
@@ -230,11 +229,7 @@ def reference_triangle():
     """Return a grid consisting of only the reference triangle."""
     from bempp.api.grid.grid import Grid
 
-    vertices = _np.array([
-        [0, 0, 0],
-        [1, 0, 0],
-        [0, 1, 0]
-    ]).T
+    vertices = _np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]]).T
 
     elements = _np.array([[0, 1, 2]]).T
 
@@ -308,13 +303,29 @@ def ellipsoid(r1=1, r2=1, r3=1, origin=(0, 0, 0), h=0.1):
     """
 
     geometry = (
-        "r1 = " + str(r1) + ";\n" +
-        "r2 = " + str(r2) + ";\n" +
-        "r3 = " + str(r3) + ";\n" +
-        "orig0 = " + str(origin[0]) + ";\n" +
-        "orig1 = " + str(origin[1]) + ";\n" +
-        "orig2 = " + str(origin[2]) + ";\n" +
-        "cl = " + str(h) + ";\n" + stub)
+        "r1 = "
+        + str(r1)
+        + ";\n"
+        + "r2 = "
+        + str(r2)
+        + ";\n"
+        + "r3 = "
+        + str(r3)
+        + ";\n"
+        + "orig0 = "
+        + str(origin[0])
+        + ";\n"
+        + "orig1 = "
+        + str(origin[1])
+        + ";\n"
+        + "orig2 = "
+        + str(origin[2])
+        + ";\n"
+        + "cl = "
+        + str(h)
+        + ";\n"
+        + stub
+    )
 
     return __generate_grid_from_geo_string(geometry)
 
@@ -375,10 +386,20 @@ def rectangle_with_hole(a=1, b=1, hole_radius=0.2, h=0.1):
     """
 
     geometry = (
-        "a = " + str(a) + ";\n" +
-        "b = " + str(b) + ";\n" +
-        "r = " + str(hole_radius) + ";\n" +
-        "cl = " + str(h) + ";\n" + stub)
+        "a = "
+        + str(a)
+        + ";\n"
+        + "b = "
+        + str(b)
+        + ";\n"
+        + "r = "
+        + str(hole_radius)
+        + ";\n"
+        + "cl = "
+        + str(h)
+        + ";\n"
+        + stub
+    )
 
     return __generate_grid_from_geo_string(geometry)
 
@@ -465,8 +486,14 @@ def reentrant_cube(h=0.1, refinement_factor=0.2):
     Mesh.Algorithm = 6;
     """
     reentrant_cube_geometry = (
-        "h = " + str(h) + ";\n" +
-        "r = h * " + str(refinement_factor) + ";\n" + reentrant_cube_stub)
+        "h = "
+        + str(h)
+        + ";\n"
+        + "r = h * "
+        + str(refinement_factor)
+        + ";\n"
+        + reentrant_cube_stub
+    )
     return __generate_grid_from_geo_string(reentrant_cube_geometry)
 
 
@@ -536,13 +563,29 @@ def cuboid(length=(1, 1, 1), origin=(0, 0, 0), h=0.1):
     """
 
     cuboid_geometry = (
-        "l0 = " + str(length[0]) + ";\n" +
-        "l1 = " + str(length[1]) + ";\n" +
-        "l2 = " + str(length[2]) + ";\n" +
-        "orig0 = " + str(origin[0]) + ";\n" +
-        "orig1 = " + str(origin[1]) + ";\n" +
-        "orig2 = " + str(origin[2]) + ";\n" +
-        "cl = " + str(h) + ";\n" + cuboid_stub)
+        "l0 = "
+        + str(length[0])
+        + ";\n"
+        + "l1 = "
+        + str(length[1])
+        + ";\n"
+        + "l2 = "
+        + str(length[2])
+        + ";\n"
+        + "orig0 = "
+        + str(origin[0])
+        + ";\n"
+        + "orig1 = "
+        + str(origin[1])
+        + ";\n"
+        + "orig2 = "
+        + str(origin[2])
+        + ";\n"
+        + "cl = "
+        + str(h)
+        + ";\n"
+        + cuboid_stub
+    )
 
     return __generate_grid_from_geo_string(cuboid_geometry)
 

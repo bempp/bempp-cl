@@ -207,7 +207,9 @@ def test_laplace_p1_segments(default_parameters, helpers, device_interface, prec
     )
 
 
-def test_laplace_p1_segments_complex_coeffs(default_parameters, helpers, device_interface, precision):
+def test_laplace_p1_segments_complex_coeffs(
+    default_parameters, helpers, device_interface, precision
+):
     """Test P1 potential evaluation on segments with complex coeffs."""
 
     from bempp.api.shapes import cube
@@ -223,14 +225,18 @@ def test_laplace_p1_segments_complex_coeffs(default_parameters, helpers, device_
         1,
         segments=[4, 5, 6],
         include_boundary_dofs=True,
-        truncate_at_segment_edge=False
+        truncate_at_segment_edge=False,
     )
     seg_all = function_space(grid, "DP", 1)
 
     random = _np.random.RandomState(0)
 
-    coeffs1 = random.rand(seg1.global_dof_count) + 1j * random.rand(seg1.global_dof_count)
-    coeffs2 = random.rand(seg2.global_dof_count) + 1j * random.rand(seg2.global_dof_count)
+    coeffs1 = random.rand(seg1.global_dof_count) + 1j * random.rand(
+        seg1.global_dof_count
+    )
+    coeffs2 = random.rand(seg2.global_dof_count) + 1j * random.rand(
+        seg2.global_dof_count
+    )
     coeffs_all = seg1.map_to_full_grid.dot(coeffs1) + seg2.map_to_full_grid.dot(coeffs2)
 
     points = 1.6 * _np.ones((3, 1)) + 0.5 * _np.random.rand(3, 20)

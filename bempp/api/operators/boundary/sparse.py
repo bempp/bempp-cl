@@ -19,7 +19,7 @@ def identity(
         parameters,
         "sparse",
         [],
-        'l2_identity',
+        "l2_identity",
         "default_sparse",
         device_interface,
         precision,

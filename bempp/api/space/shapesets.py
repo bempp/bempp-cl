@@ -53,7 +53,9 @@ def _p0_shapeset_evaluate(local_coordinates):
 @_numba.njit
 def _p0_shapeset_gradient(local_coordinates):
     """Evaluate P0 gradient."""
-    return _np.zeros((1, 2, 1, local_coordinates.shape[1]), dtype=local_coordinates.dtype)
+    return _np.zeros(
+        (1, 2, 1, local_coordinates.shape[1]), dtype=local_coordinates.dtype
+    )
 
 
 @_numba.njit

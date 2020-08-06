@@ -38,7 +38,7 @@ class _Fmm(object):
         self.expansion_order = 5
         self.depth = 4
         self.ncrit = 400
-        self.near_field_representation = 'opencl_evaluate'
+        self.near_field_representation = "opencl_evaluate"
         self.debug = False
         self.dense_evaluation = False
 
@@ -56,7 +56,7 @@ class _Assembly(object):
     def __init__(self):
         self.dense = _DenseAssembly()
         self.always_promote_to_double = False
-        self.discretization_type = 'galerkin'
+        self.discretization_type = "galerkin"
 
 
 class DefaultParameters(object):

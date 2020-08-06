@@ -24,5 +24,6 @@ def test_rwg_barycentric(helpers, precision):
     fun = bempp.api.GridFunction(space, coefficients=coeffs)
     fun_bary = bempp.api.GridFunction(space_bary, coefficients=coeffs)
 
-    assert math.isclose(fun.l2_norm(), fun_bary.l2_norm(),
-                        rel_tol=helpers.default_tolerance(precision))
+    assert math.isclose(
+        fun.l2_norm(), fun_bary.l2_norm(), rel_tol=helpers.default_tolerance(precision)
+    )

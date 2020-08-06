@@ -8,6 +8,7 @@ def test_p1_trace():
     import dolfin
     import bempp.api
     from bempp.api.external.fenics import fenics_to_bempp_trace_data
+
     fenics_mesh = dolfin.UnitCubeMesh(2, 2, 2)
     fenics_space = dolfin.FunctionSpace(fenics_mesh, "CG", 1)
 
@@ -35,6 +36,7 @@ def test_nc1_trace():
     import dolfin
     import bempp.api
     from bempp.api.external.fenics import fenics_to_bempp_trace_data
+
     fenics_mesh = dolfin.UnitCubeMesh(2, 2, 2)
     fenics_space = dolfin.FunctionSpace(fenics_mesh, "N1curl", 1)
 

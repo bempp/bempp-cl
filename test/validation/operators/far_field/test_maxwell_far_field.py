@@ -39,7 +39,9 @@ def test_maxwell_electric_far_field(
         device_interface=device_interface,
     ).evaluate(fun)
 
-    _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
+    _np.testing.assert_allclose(
+        actual, expected, rtol=helpers.default_tolerance(precision)
+    )
 
 
 def test_maxwell_magnetic_far_field(
@@ -70,11 +72,14 @@ def test_maxwell_magnetic_far_field(
         device_interface=device_interface,
     ).evaluate(fun)
 
-    _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
+    _np.testing.assert_allclose(
+        actual, expected, rtol=helpers.default_tolerance(precision)
+    )
 
 
 def test_maxwell_far_field_segments(
-        default_parameters, helpers, device_interface, precision):
+    default_parameters, helpers, device_interface, precision
+):
     """Test Maxwell far field on segments."""
     import bempp.api
     from bempp.api import function_space
@@ -97,15 +102,41 @@ def test_maxwell_far_field_segments(
 
             coeffs = rand.rand(new_grid.number_of_edges)
 
-            space1 = function_space(grid, "RWG", 0, segments=seglist, swapped_normals=swapped_normals,
-                                    include_boundary_dofs=True)
+            space1 = function_space(
+                grid,
+                "RWG",
+                0,
+                segments=seglist,
+                swapped_normals=swapped_normals,
+                include_boundary_dofs=True,
+            )
             space2 = function_space(new_grid, "RWG", 0, swapped_normals=swapped_normals)
 
             fun1 = bempp.api.GridFunction(space1, coefficients=coeffs)
             fun2 = bempp.api.GridFunction(space2, coefficients=coeffs)
 
-            actual = op(space1, points, 2.5, parameters=default_parameters, precision=precision, device_interface=device_interface) * fun1
-            expected = op(space2, points, 2.5, parameters=default_parameters, precision=precision, device_interface=device_interface) * fun2
+            actual = (
+                op(
+                    space1,
+                    points,
+                    2.5,
+                    parameters=default_parameters,
+                    precision=precision,
+                    device_interface=device_interface,
+                )
+                * fun1
+            )
+            expected = (
+                op(
+                    space2,
+                    points,
+                    2.5,
+                    parameters=default_parameters,
+                    precision=precision,
+                    device_interface=device_interface,
+                )
+                * fun2
+            )
 
             _np.testing.assert_allclose(
                 actual, expected, rtol=helpers.default_tolerance(precision)
@@ -113,7 +144,8 @@ def test_maxwell_far_field_segments(
 
 
 def test_maxwell_far_field_complex_coeffs(
-        default_parameters, helpers, device_interface, precision):
+    default_parameters, helpers, device_interface, precision
+):
     """Test Maxwell far field ops with complex coefficients."""
     import bempp.api
     from bempp.api.operators.far_field.maxwell import electric_field
@@ -137,7 +169,14 @@ def test_maxwell_far_field_complex_coeffs(
     fun = bempp.api.GridFunction(space, coefficients=coeffs)
 
     for op in [electric_field, magnetic_field]:
-        far_field_op = op(space, points, WAVENUMBER, parameters=default_parameters, precision=precision, device_interface=device_interface)
+        far_field_op = op(
+            space,
+            points,
+            WAVENUMBER,
+            parameters=default_parameters,
+            precision=precision,
+            device_interface=device_interface,
+        )
         actual_real = far_field_op * fun_real
         actual_imag = far_field_op * fun_imag
         actual = actual_real + 1j * actual_imag
@@ -148,7 +187,8 @@ def test_maxwell_far_field_complex_coeffs(
 
 
 def test_maxwell_far_field_segments_complex_coeffs(
-        default_parameters, helpers, device_interface, precision):
+    default_parameters, helpers, device_interface, precision
+):
     """Test Maxwell potentials on segments with complex coeffs."""
     import bempp.api
     from bempp.api import function_space
@@ -170,17 +210,45 @@ def test_maxwell_far_field_segments_complex_coeffs(
         for seglist, swapped_normals in zip(seglists, swapped_normal_lists):
             new_grid = grid_from_segments(grid, seglist)
 
-            coeffs = rand.rand(new_grid.number_of_edges) + 1j * rand.rand(new_grid.number_of_edges)
+            coeffs = rand.rand(new_grid.number_of_edges) + 1j * rand.rand(
+                new_grid.number_of_edges
+            )
 
-            space1 = function_space(grid, "RWG", 0, segments=seglist, swapped_normals=swapped_normals,
-                                    include_boundary_dofs=True)
+            space1 = function_space(
+                grid,
+                "RWG",
+                0,
+                segments=seglist,
+                swapped_normals=swapped_normals,
+                include_boundary_dofs=True,
+            )
             space2 = function_space(new_grid, "RWG", 0, swapped_normals=swapped_normals)
 
             fun1 = bempp.api.GridFunction(space1, coefficients=coeffs)
             fun2 = bempp.api.GridFunction(space2, coefficients=coeffs)
 
-            actual = op(space1, points, 2.5, parameters=default_parameters, device_interface=device_interface, precision=precision) * fun1
-            expected = op(space2, points, 2.5, parameters=default_parameters, device_interface=device_interface, precision=precision) * fun2
+            actual = (
+                op(
+                    space1,
+                    points,
+                    2.5,
+                    parameters=default_parameters,
+                    device_interface=device_interface,
+                    precision=precision,
+                )
+                * fun1
+            )
+            expected = (
+                op(
+                    space2,
+                    points,
+                    2.5,
+                    parameters=default_parameters,
+                    device_interface=device_interface,
+                    precision=precision,
+                )
+                * fun2
+            )
 
             _np.testing.assert_allclose(
                 actual, expected, rtol=helpers.default_tolerance(precision)

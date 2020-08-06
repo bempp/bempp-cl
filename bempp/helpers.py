@@ -36,6 +36,7 @@ def jit_logger(name):
 
     def closure(func):
         """Closure that has the name variable."""
+
         def inner(*args, **kwargs):
             origsigs = set(func.signatures)
             result = func(*args, **kwargs)
@@ -44,5 +45,7 @@ def jit_logger(name):
                 new = (newsigs ^ origsigs).pop()
                 bempp.api.log(f"Compiled {name} for signature {new}", level="timing")
             return result
+
         return inner
+
     return closure

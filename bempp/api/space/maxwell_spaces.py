@@ -10,7 +10,7 @@ def rwg0_function_space(
     segments=None,
     swapped_normals=None,
     include_boundary_dofs=False,
-    truncate_at_segment_edge=True
+    truncate_at_segment_edge=True,
 ):
     """Define a space of RWG functions of order 0."""
     from .space import SpaceBuilder, _process_segments
@@ -22,7 +22,12 @@ def rwg0_function_space(
 
     edge_neighbors, edge_neighbors_ptr = serialise_list_of_lists(grid.edge_neighbors)
 
-    global_dof_count, support, local2global, local_multipliers = _compute_rwg0_space_data(
+    (
+        global_dof_count,
+        support,
+        local2global,
+        local_multipliers,
+    ) = _compute_rwg0_space_data(
         support,
         edge_neighbors,
         edge_neighbors_ptr,
@@ -30,7 +35,7 @@ def rwg0_function_space(
         grid.number_of_elements,
         grid.number_of_edges,
         include_boundary_dofs,
-        truncate_at_segment_edge
+        truncate_at_segment_edge,
     )
 
     return (
@@ -151,7 +156,7 @@ def snc0_function_space(
     segments=None,
     swapped_normals=None,
     include_boundary_dofs=False,
-    truncate_at_segment_edge=True
+    truncate_at_segment_edge=True,
 ):
     """Define a space of SNC functions of order 0."""
     from .space import SpaceBuilder, _process_segments
@@ -163,7 +168,12 @@ def snc0_function_space(
 
     edge_neighbors, edge_neighbors_ptr = serialise_list_of_lists(grid.edge_neighbors)
 
-    global_dof_count, support, local2global, local_multipliers = _compute_rwg0_space_data(
+    (
+        global_dof_count,
+        support,
+        local2global,
+        local_multipliers,
+    ) = _compute_rwg0_space_data(
         support,
         edge_neighbors,
         edge_neighbors_ptr,
@@ -171,7 +181,7 @@ def snc0_function_space(
         grid.number_of_elements,
         grid.number_of_edges,
         include_boundary_dofs,
-        truncate_at_segment_edge
+        truncate_at_segment_edge,
     )
 
     return (
@@ -287,8 +297,12 @@ def snc0_barycentric_function_space(coarse_space):
 
 
 def bc_function_space(
-    grid, support_elements=None, segments=None, swapped_normals=None,
-    include_boundary_dofs=False, truncate_at_segment_edge=True
+    grid,
+    support_elements=None,
+    segments=None,
+    swapped_normals=None,
+    include_boundary_dofs=False,
+    truncate_at_segment_edge=True,
 ):
     """Define a space of BC functions."""
     from .space import SpaceBuilder
@@ -296,18 +310,21 @@ def bc_function_space(
     bary_grid = grid.barycentric_refinement
 
     coarse_space = rwg0_function_space(
-        grid, support_elements, segments, swapped_normals,
+        grid,
+        support_elements,
+        segments,
+        swapped_normals,
         include_boundary_dofs=include_boundary_dofs,
-        truncate_at_segment_edge=truncate_at_segment_edge
+        truncate_at_segment_edge=truncate_at_segment_edge,
     )
 
     (
-        dof_transformation, support, normal_multipliers,
-        local2global, local_multipliers
-    ) = _compute_bc_space_data(
-        grid, bary_grid, coarse_space,
-        truncate_at_segment_edge
-    )
+        dof_transformation,
+        support,
+        normal_multipliers,
+        local2global,
+        local_multipliers,
+    ) = _compute_bc_space_data(grid, bary_grid, coarse_space, truncate_at_segment_edge)
 
     return (
         SpaceBuilder(bary_grid)
@@ -328,8 +345,12 @@ def bc_function_space(
 
 
 def rbc_function_space(
-    grid, support_elements=None, segments=None, swapped_normals=None,
-    include_boundary_dofs=False, truncate_at_segment_edge=True
+    grid,
+    support_elements=None,
+    segments=None,
+    swapped_normals=None,
+    include_boundary_dofs=False,
+    truncate_at_segment_edge=True,
 ):
     """Define a space of RBC functions."""
     from .space import SpaceBuilder
@@ -337,18 +358,21 @@ def rbc_function_space(
     bary_grid = grid.barycentric_refinement
 
     coarse_space = rwg0_function_space(
-        grid, support_elements, segments, swapped_normals,
+        grid,
+        support_elements,
+        segments,
+        swapped_normals,
         include_boundary_dofs=include_boundary_dofs,
-        truncate_at_segment_edge=truncate_at_segment_edge
+        truncate_at_segment_edge=truncate_at_segment_edge,
     )
 
     (
-        dof_transformation, support, normal_multipliers,
-        local2global, local_multipliers
-    ) = _compute_bc_space_data(
-        grid, bary_grid, coarse_space,
-        truncate_at_segment_edge
-    )
+        dof_transformation,
+        support,
+        normal_multipliers,
+        local2global,
+        local_multipliers,
+    ) = _compute_bc_space_data(grid, bary_grid, coarse_space, truncate_at_segment_edge)
 
     return (
         SpaceBuilder(bary_grid)
@@ -368,12 +392,7 @@ def rbc_function_space(
     )
 
 
-def _compute_bc_space_data(
-    grid,
-    bary_grid,
-    coarse_space,
-    truncate_at_segment_edge
-):
+def _compute_bc_space_data(grid, bary_grid, coarse_space, truncate_at_segment_edge):
     """Generate the BC map."""
     from bempp.api.grid.grid import enumerate_vertex_adjacent_elements
     from scipy.sparse import coo_matrix
@@ -389,7 +408,7 @@ def _compute_bc_space_data(
                 vertex = grid.data().edges[v, edge_index]
                 start = grid.vertex_neighbors.indexptr[vertex]
                 end = grid.vertex_neighbors.indexptr[vertex + 1]
-                for cell in grid.vertex_neighbors.indices[start: end]:
+                for cell in grid.vertex_neighbors.indices[start:end]:
                     coarse_support[cell] = True
 
     coarse_support_elements = _np.array([i for i, j in enumerate(coarse_support) if j])
@@ -433,9 +452,7 @@ def _compute_bc_space_data(
         local_dofs = coarse_space.global2local[global_dof_index]
         edge_index = grid.data().element_edges[local_dofs[0][1], local_dofs[0][0]]
         neighbors = grid.edge_neighbors[edge_index]
-        other = (
-            neighbors[1] if local_dofs[0][0] == neighbors[0] else neighbors[0]
-        )
+        other = neighbors[1] if local_dofs[0][0] == neighbors[0] else neighbors[0]
         if coarse_space.local_multipliers[local_dofs[0][0], local_dofs[0][1]] > 0:
             lower = local_dofs[0][0]
             upper = other
@@ -469,7 +486,7 @@ def _compute_bc_space_data(
 
         for vertex_index, bary_element, sign in [
             (vertex1, 6 * upper + 2 * local_vertex1, -1.0),
-            (vertex2, 6 * lower + 2 * local_vertex2, 1.0)
+            (vertex2, 6 * lower + 2 * local_vertex2, 1.0),
         ]:
             # Find the reference element index in elements adjacent to that vertex
             for ind, elem in enumerate(bary_vertex_to_edge[vertex_index]):
@@ -562,7 +579,13 @@ def _compute_bc_space_data(
         dtype=_np.float64,
     ).tocsr()
 
-    return dof_transformation, support, normal_multipliers, local2global, local_multipliers
+    return (
+        dof_transformation,
+        support,
+        normal_multipliers,
+        local2global,
+        local_multipliers,
+    )
 
 
 @_numba.njit(cache=True)
@@ -574,7 +597,7 @@ def _compute_rwg0_space_data(
     number_of_elements,
     number_of_edges,
     include_boundary_dofs,
-    truncate_at_segment_edge
+    truncate_at_segment_edge,
 ):
     """Compute the local2global map for the space."""
 

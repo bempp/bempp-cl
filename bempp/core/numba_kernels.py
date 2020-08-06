@@ -496,16 +496,22 @@ def helmholtz_far_field_double_layer(
     factor = _np.zeros(npoints, dtype=dtype)
     for dim in range(3):
         for index in range(npoints):
-            factor[index] -= kernel_parameters[0] * test_point[dim] * trial_normals[dim, index]
+            factor[index] -= (
+                kernel_parameters[0] * test_point[dim] * trial_normals[dim, index]
+            )
 
     output_real = _np.zeros(npoints, dtype=dtype)
     output_imag = _np.zeros(npoints, dtype=dtype)
     m_inv_4pi = dtype.type(M_INV_4PI)
 
     for index in range(npoints):
-        output_real[index] = -factor[index] * m_inv_4pi * _np.sin(-kernel_parameters[0] * dotprod[index])
+        output_real[index] = (
+            -factor[index] * m_inv_4pi * _np.sin(-kernel_parameters[0] * dotprod[index])
+        )
     for index in range(npoints):
-        output_imag[index] = factor[index] * m_inv_4pi * _np.cos(-kernel_parameters[0] * dotprod[index])
+        output_imag[index] = (
+            factor[index] * m_inv_4pi * _np.cos(-kernel_parameters[0] * dotprod[index])
+        )
 
     return output_real + 1j * output_imag
 
@@ -853,11 +859,21 @@ def l2_identity_kernel(
 ):
 
     local_test_fun_values = test_basis_evaluate(
-        element_index, test_shapeset, quad_points, grid_data,
-        test_multipliers, test_normal_multipliers)
+        element_index,
+        test_shapeset,
+        quad_points,
+        grid_data,
+        test_multipliers,
+        test_normal_multipliers,
+    )
     local_trial_fun_values = trial_basis_evaluate(
-        element_index, trial_shapeset, quad_points, grid_data,
-        trial_multipliers, trial_normal_multipliers)
+        element_index,
+        trial_shapeset,
+        quad_points,
+        grid_data,
+        trial_multipliers,
+        trial_normal_multipliers,
+    )
 
     nshape = nshape_test * nshape_trial
     dimension = local_test_fun_values.shape[0]
@@ -2730,13 +2746,21 @@ def maxwell_mfield_potential(
 
         for trial_index in range(number_of_quad_points * n_support_elements):
             ldist = dist[trial_index]
-            val = (kernel_values[trial_index]
-                   * (1j * wavenumber * ldist - 1)
-                   * tmp[:, trial_index]
-                   / (ldist * ldist))
-            result[0, point_index] += diff[1, trial_index] * val[2] - diff[2, trial_index] * val[1]
-            result[1, point_index] += diff[2, trial_index] * val[0] - diff[0, trial_index] * val[2]
-            result[2, point_index] += diff[0, trial_index] * val[1] - diff[1, trial_index] * val[0]
+            val = (
+                kernel_values[trial_index]
+                * (1j * wavenumber * ldist - 1)
+                * tmp[:, trial_index]
+                / (ldist * ldist)
+            )
+            result[0, point_index] += (
+                diff[1, trial_index] * val[2] - diff[2, trial_index] * val[1]
+            )
+            result[1, point_index] += (
+                diff[2, trial_index] * val[0] - diff[0, trial_index] * val[2]
+            )
+            result[2, point_index] += (
+                diff[0, trial_index] * val[1] - diff[1, trial_index] * val[0]
+            )
 
     return result
 
@@ -2889,9 +2913,7 @@ def maxwell_mfield_far_field(
         )
 
         for trial_index in range(number_of_quad_points * n_support_elements):
-            val = (kernel_values[trial_index]
-                   * 1j * wavenumber
-                   * tmp[:, trial_index])
+            val = kernel_values[trial_index] * 1j * wavenumber * tmp[:, trial_index]
             result[0, point_index] += test_point[1] * val[2] - test_point[2] * val[1]
             result[1, point_index] += test_point[2] * val[0] - test_point[0] * val[2]
             result[2, point_index] += test_point[0] * val[1] - test_point[1] * val[0]

@@ -15,6 +15,7 @@ def compute_lu_factors(A):
     """
     from bempp.api import as_matrix
     from scipy.linalg import lu_factor
+
     return lu_factor(as_matrix(A.weak_form()))
 
 

@@ -110,7 +110,10 @@ def p1_trace(fenics_space):
     vertices_from_fenics_dofs = coo_matrix(
         (
             np.ones(fenics_mesh.num_vertices()),
-            (_dolfin.dof_to_vertex_map(fenics_space), np.arange(fenics_mesh.num_vertices())),
+            (
+                _dolfin.dof_to_vertex_map(fenics_space),
+                np.arange(fenics_mesh.num_vertices()),
+            ),
         ),
         shape=(fenics_mesh.num_vertices(), fenics_mesh.num_vertices()),
         dtype="float64",
@@ -139,8 +142,10 @@ def nc1_tangential_trace(fenics_space):
     import numpy as np
 
     family, degree = fenics_space_info(fenics_space)
-    if not (family == 'Nedelec 1st kind H(curl)' and degree == 1):
-        raise ValueError("fenics_space must be an order 1 Nedelec 1st kind H(curl) space")
+    if not (family == "Nedelec 1st kind H(curl)" and degree == 1):
+        raise ValueError(
+            "fenics_space must be an order 1 Nedelec 1st kind H(curl) space"
+        )
 
     fenics_mesh = fenics_space.mesh()
     bempp_boundary_grid, bm_nodes = boundary_grid_from_fenics_mesh(fenics_mesh)
@@ -191,10 +196,14 @@ def nc1_tangential_trace(fenics_space):
         all_e = all_vertices_to_all_edges[v2]
         bempp_dofs_to_all_edges_map[bd_e] = all_e
 
-    bempp_dofs_from_all_edges = coo_matrix((
-        np.ones(space.global_dof_count),
-        (np.arange(space.global_dof_count), bempp_dofs_to_all_edges_map)),
-        shape=(space.global_dof_count, fenics_dim), dtype='float64').tocsc()
+    bempp_dofs_from_all_edges = coo_matrix(
+        (
+            np.ones(space.global_dof_count),
+            (np.arange(space.global_dof_count), bempp_dofs_to_all_edges_map),
+        ),
+        shape=(space.global_dof_count, fenics_dim),
+        dtype="float64",
+    ).tocsc()
 
     # Finally the edges to FEniCS dofs
     #   all_edges <- fenics_dofs
@@ -206,9 +215,11 @@ def nc1_tangential_trace(fenics_space):
         for d, e in zip(c_d, c_e):
             dof_to_edge_map[d] = e
 
-    all_edges_from_fenics_dofs = coo_matrix((
-        np.ones(fenics_dim), (dof_to_edge_map, np.arange(fenics_dim))),
-        shape=(fenics_dim, fenics_dim), dtype='float64').tocsc()
+    all_edges_from_fenics_dofs = coo_matrix(
+        (np.ones(fenics_dim), (dof_to_edge_map, np.arange(fenics_dim))),
+        shape=(fenics_dim, fenics_dim),
+        dtype="float64",
+    ).tocsc()
 
     # Get trace matrix by multiplication
     #   bempp_dofs <- bd_edges <- all_edges <- fenics_dofs
@@ -216,9 +227,11 @@ def nc1_tangential_trace(fenics_space):
 
     # Now sort out directions
     v_list = list(space.grid.entity_iterator(2))
-    local_coords = [np.array([[.5], [0.]]),
-                    np.array([[0.], [.5]]),
-                    np.array([[.5], [.5]])]
+    local_coords = [
+        np.array([[0.5], [0.0]]),
+        np.array([[0.0], [0.5]]),
+        np.array([[0.5], [0.5]]),
+    ]
 
     # Build a map from Bempp triangles to FEniCS edges
     # aim: bempp_triangles -> all_edge_triplets -> fenics_tetrahedra
@@ -238,17 +251,21 @@ def nc1_tangential_trace(fenics_space):
         edge_triples_to_tetrahedra[(all_es[0], all_es[1], all_es[3])] = tetra
         edge_triples_to_tetrahedra[(all_es[0], all_es[2], all_es[3])] = tetra
         edge_triples_to_tetrahedra[(all_es[1], all_es[2], all_es[3])] = tetra
-    triangles_to_tetrahedra = [edge_triples_to_tetrahedra[triple]
-                               for triple in triangles_to_edge_triples]
+    triangles_to_tetrahedra = [
+        edge_triples_to_tetrahedra[triple] for triple in triangles_to_edge_triples
+    ]
 
     # return None, None
     fenics_fun = _dolfin.Function(fenics_space)
     non_z = trace_matrix.nonzero()
     for i, j in zip(non_z[0], non_z[1]):
-        fenics_fun.vector()[:] = [1. if k == j else 0. for k in range(fenics_dim)]
+        fenics_fun.vector()[:] = [1.0 if k == j else 0.0 for k in range(fenics_dim)]
         bempp_fun = bempp.api.GridFunction(
-            space, coefficients=[1. if k == i else 0.
-                                 for k in range(space.global_dof_count)])
+            space,
+            coefficients=[
+                1.0 if k == i else 0.0 for k in range(space.global_dof_count)
+            ],
+        )
 
         v1 = v_list[dof_to_vertices_map[i][0]]
         v2 = v_list[dof_to_vertices_map[i][1]]
@@ -256,8 +273,9 @@ def nc1_tangential_trace(fenics_space):
 
         face = dof_to_face_map[i]
         fenics_values = np.zeros(3)
-        fenics_fun.eval_cell(fenics_values, midpoint.T[0],
-                             triangles_to_tetrahedra[face[0].index])
+        fenics_fun.eval_cell(
+            fenics_values, midpoint.T[0], triangles_to_tetrahedra[face[0].index]
+        )
 
         bempp_values = bempp_fun.evaluate(face[0].index, local_coords[face[1]])
         normal = face[0].geometry.normal

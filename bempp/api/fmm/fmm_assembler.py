@@ -766,7 +766,8 @@ def make_maxwell_electric_field_boundary(
 
         for index in range(3):
             result += (
-                dual_rwg_map[index] @ fmm_interface.evaluate(domain_rwg_map[index] @ x)[:, 0]
+                dual_rwg_map[index]
+                @ fmm_interface.evaluate(domain_rwg_map[index] @ x)[:, 0]
             )
 
         result *= -1j * wavenumber
@@ -785,6 +786,7 @@ def make_maxwell_magnetic_field_boundary(
 ):
     """Make a Maxwell magnetic field boundary operator."""
     import bempp.api
+
     # from bempp.api.integration.triangle_gauss import get_number_of_quad_points
 
     # wavenumber = operator_descriptor.options[0]
@@ -834,6 +836,7 @@ def make_maxwell_magnetic_field_boundary(
 def make_maxwell_electric_field_potential(operator_descriptor, fmm_interface, space):
     """Make a Maxwell electric field potential operator."""
     import bempp.api
+
     # from bempp.api.integration.triangle_gauss import get_number_of_quad_points
 
     wavenumber = operator_descriptor.options[0]
@@ -865,6 +868,7 @@ def make_maxwell_electric_field_potential(operator_descriptor, fmm_interface, sp
 def make_maxwell_magnetic_field_potential(operator_descriptor, fmm_interface, space):
     """Make a Maxwell magnetic field potential operator."""
     import bempp.api
+
     # from bempp.api.integration.triangle_gauss import get_number_of_quad_points
 
     # wavenumber = operator_descriptor.options[0]

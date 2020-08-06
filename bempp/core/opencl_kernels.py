@@ -20,7 +20,7 @@ def select_cl_kernel(operator_descriptor, mode):
         "helmholtz_hypersingular": "evaluate_dense_helmholtz_hypersingular_singular",
         "modified_helmholtz_hypersingular": "evaluate_dense_helmholtz_hypersingular_singular",
         "maxwell_electric_field": "evaluate_dense_electric_field_singular",
-        "maxwell_magnetic_field": "evaluate_dense_magnetic_field_singular"
+        "maxwell_magnetic_field": "evaluate_dense_magnetic_field_singular",
     }
 
     regular_assemblers = {
@@ -29,7 +29,7 @@ def select_cl_kernel(operator_descriptor, mode):
         "helmholtz_hypersingular": "evaluate_dense_helmholtz_hypersingular_regular",
         "modified_helmholtz_hypersingular": "evaluate_dense_helmholtz_hypersingular_regular",
         "maxwell_electric_field": "evaluate_dense_electric_field_regular",
-        "maxwell_magnetic_field": "evaluate_dense_magnetic_field_regular"
+        "maxwell_magnetic_field": "evaluate_dense_magnetic_field_regular",
     }
 
     potential_assemblers = {
@@ -37,7 +37,7 @@ def select_cl_kernel(operator_descriptor, mode):
         "maxwell_electric_field": "evaluate_electric_field_potential",
         "maxwell_magnetic_field": "evaluate_magnetic_field_potential",
         "maxwell_electric_far_field": "evaluate_maxwell_electric_far_field",
-        "maxwell_magnetic_far_field": "evaluate_maxwell_magnetic_far_field"
+        "maxwell_magnetic_far_field": "evaluate_maxwell_magnetic_far_field",
     }
 
     kernels = {
@@ -68,7 +68,7 @@ def select_cl_kernel(operator_descriptor, mode):
     elif mode == "potential":
         return (
             potential_assemblers[operator_descriptor.assembly_type],
-            kernels[operator_descriptor.kernel_type]
+            kernels[operator_descriptor.kernel_type],
         )
 
 
@@ -146,9 +146,7 @@ def get_kernel_from_operator_descriptor(
     return build_program(assembly_function, options, precision)
 
 
-def get_kernel_from_name(
-    name, options, precision="double"
-):
+def get_kernel_from_name(name, options, precision="double"):
     """Return compiled kernel from name."""
 
     vec_length = get_vector_width(precision)

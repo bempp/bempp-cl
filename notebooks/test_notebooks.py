@@ -14,11 +14,11 @@ for dir in ["laplace", "helmholtz", "maxwell"]:
             notebooks.append((os.path.join("notebooks", dir), i))
 
 
-@pytest.mark.parametrize(('path', 'notebook'), notebooks)
+@pytest.mark.parametrize(("path", "notebook"), notebooks)
 def test_notebook(path, notebook):
     with open(os.path.join(path, notebook)) as f:
         nb = nbformat.read(f, as_version=4)
 
     ep = ExecutePreprocessor(timeout=600)
 
-    ep.preprocess(nb, {'metadata': {'path': path}})
+    ep.preprocess(nb, {"metadata": {"path": path}})

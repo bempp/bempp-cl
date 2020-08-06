@@ -6,12 +6,7 @@ class DensePotentialAssembler(object):
 
     # pylint: disable=useless-super-delegation
     def __init__(
-        self,
-        space,
-        operator_descriptor,
-        points,
-        device_interface,
-        parameters=None,
+        self, space, operator_descriptor, points, device_interface, parameters=None,
     ):
         """Create a dense assembler instance."""
         from bempp.core.dispatcher import potential_dispatcher

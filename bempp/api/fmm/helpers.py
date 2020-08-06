@@ -631,9 +631,7 @@ def debug_fmm(targets, sources, charges, mode, kernel_parameters, fmm_result):
     return dense_result
 
 
-def dense_interaction_evaluator(
-    targets, sources, charges, mode, kernel_parameters
-):
+def dense_interaction_evaluator(targets, sources, charges, mode, kernel_parameters):
     """
     Dense evaluation of interaction between sources and targets.
 

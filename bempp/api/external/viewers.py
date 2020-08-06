@@ -79,7 +79,7 @@ def visualize_with_jupyter_notebook(obj, mode="element", transformation=None):
             simplices=elements.T,
             color_func=elements.shape[1] * ["rgb(255, 222, 173)"],
         )
-        fig['layout']['scene'].update(go.layout.Scene(aspectmode='data'))
+        fig["layout"]["scene"].update(go.layout.Scene(aspectmode="data"))
         plotly.offline.iplot(fig)
 
     elif isinstance(obj, GridFunction):
@@ -111,11 +111,11 @@ def visualize_with_jupyter_notebook(obj, mode="element", transformation=None):
             simplices=elements.T,
             color_func=color_codes,
         )
-        fig['layout']['scene'].update(go.layout.Scene(aspectmode='data'))
+        fig["layout"]["scene"].update(go.layout.Scene(aspectmode="data"))
         plotly.offline.iplot(fig)
 
 
-def visualize_with_gmsh(obj, mode='element', transformation=None):
+def visualize_with_gmsh(obj, mode="element", transformation=None):
     """
     View a grid or grid function with Gmsh.
 
@@ -145,19 +145,22 @@ def visualize_with_gmsh(obj, mode='element', transformation=None):
         print("Gmsh not available for visualization.")
         return None
 
-    outfile = tempfile.NamedTemporaryFile(
-        suffix=".msh", dir=TMP_PATH, delete=False)
+    outfile = tempfile.NamedTemporaryFile(suffix=".msh", dir=TMP_PATH, delete=False)
     if isinstance(obj, Grid):
         export(outfile.name, grid=obj)
     elif isinstance(obj, GridFunction):
-        export(outfile.name, grid_function=obj,
-               transformation=transformation, data_type=mode)
+        export(
+            outfile.name,
+            grid_function=obj,
+            transformation=transformation,
+            data_type=mode,
+        )
     outfile.close()
 
     subprocess.Popen([GMSH_PATH, outfile.name])
 
 
-def visualize_with_paraview(obj, mode='element', transformation=None):
+def visualize_with_paraview(obj, mode="element", transformation=None):
     """
     View a grid or grid function with Paraview.
 
@@ -192,16 +195,20 @@ def visualize_with_paraview(obj, mode='element', transformation=None):
 
     if pview is None:
         raise EnvironmentError(
-            "Could not find Paraview." +
-            "Interactive plotting with Paraview not available.")
+            "Could not find Paraview."
+            + "Interactive plotting with Paraview not available."
+        )
 
-    outfile = tempfile.NamedTemporaryFile(
-        suffix=".vtu", dir=TMP_PATH, delete=False)
+    outfile = tempfile.NamedTemporaryFile(suffix=".vtu", dir=TMP_PATH, delete=False)
     if isinstance(obj, Grid):
         export(outfile.name, grid=obj)
     elif isinstance(obj, GridFunction):
-        export(outfile.name, grid_function=obj,
-               transformation=transformation, data_type=mode)
+        export(
+            outfile.name,
+            grid_function=obj,
+            transformation=transformation,
+            data_type=mode,
+        )
     outfile.close()
 
     subprocess.Popen([pview, outfile.name])

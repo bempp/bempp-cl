@@ -10,7 +10,3 @@ from .shapes import cuboid
 from .shapes import almond
 from .shapes import reentrant_cube
 from .shapes import screen
-
-
-
-

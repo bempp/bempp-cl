@@ -21,6 +21,7 @@ class IterationCounter(object):
     def __call__(self, x):
         """TODO: add docstring."""
         from bempp.api import log
+
         self._count += 1
         if self._store_residuals:
             if self._iteration_is_cg:

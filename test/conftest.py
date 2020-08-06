@@ -107,25 +107,19 @@ class Helpers(object):
     @staticmethod
     def load_npy_data(name):
         """Load data stored as npy file (give name without .npy)."""
-        data_name = os.path.join(
-            Helpers.test_path(), "data/" + name + ".npy"
-        )
+        data_name = os.path.join(Helpers.test_path(), "data/" + name + ".npy")
         return np.load(data_name)
 
     @staticmethod
     def load_npz_data(name):
         """Load data stored as npz file (give name without .npz)."""
-        data_name = os.path.join(
-            Helpers.test_path(), "data/" + name + ".npz"
-        )
+        data_name = os.path.join(Helpers.test_path(), "data/" + name + ".npz")
         return np.load(data_name)
 
     @staticmethod
     def load_grid(name):
         """Load grid stored as msh file (give name without ending)"""
-        grid_name = os.path.join(
-            Helpers.test_path(), "data/" + name + ".msh"
-        )
+        grid_name = os.path.join(Helpers.test_path(), "data/" + name + ".msh")
         return bempp.api.import_grid(grid_name)
 
     @staticmethod
