@@ -365,7 +365,12 @@ class MultiplicationOperator(BoundaryOperator):
         nshape_test = comp_test.shapeset.number_of_shape_functions
         nshape = nshape_trial * nshape_test
 
-        data = _np.zeros(number_of_elements * nshape_trial * nshape_test)
+        if _np.iscomplexobj(self._grid_fun.coefficients):
+            dtype = "complex128"
+        else:
+            dtype = "float64"
+
+        data = _np.zeros(number_of_elements * nshape_trial * nshape_test, dtype=dtype)
 
         for index, elem_index in enumerate(elements):
             scale_vals = (
