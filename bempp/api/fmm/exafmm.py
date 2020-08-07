@@ -83,7 +83,7 @@ class ExafmmInterface(object):
                 targets = exafmm.laplace.init_targets(target_points)
 
                 self._fmm = exafmm.laplace.LaplaceFmm(
-                    expansion_order, ncrit, depth, filename=fname
+                    expansion_order, ncrit, filename=fname
                 )
                 self._tree = exafmm.laplace.setup(sources, targets, self._fmm)
 
@@ -99,7 +99,7 @@ class ExafmmInterface(object):
                 targets = exafmm.helmholtz.init_targets(target_points)
 
                 self._fmm = exafmm.helmholtz.HelmholtzFmm(
-                    expansion_order, ncrit, depth, wavenumber, filename=fname
+                    expansion_order, ncrit, wavenumber, filename=fname
                 )
                 self._tree = exafmm.helmholtz.setup(sources, targets, self._fmm)
 
@@ -115,7 +115,7 @@ class ExafmmInterface(object):
                 targets = exafmm.modified_helmholtz.init_targets(target_points)
 
                 self._fmm = exafmm.modified_helmholtz.ModifiedHelmholtzFmm(
-                    expansion_order, ncrit, depth, wavenumber, filename=fname
+                    expansion_order, ncrit, wavenumber, filename=fname
                 )
                 self._tree = exafmm.modified_helmholtz.setup(
                     sources, targets, self._fmm
