@@ -17,6 +17,9 @@ ARG GMSH_VERSION=4.6.0
 ARG TINI_VERSION=0.19.0
 ARG MAKEFLAGS
 
+# TODO: once ExaFMM has a release number, use this to wget the correct version
+# ARG EXAFMM_VERSION = ## 2020-08-07
+
 ########################################
 
 FROM ubuntu:20.04 as bempp-dev-env
@@ -24,7 +27,6 @@ LABEL maintainer="Bempp <bempp@googlegroups.org>"
 LABEL description="Bempp-cl development environment"
 
 ARG GMSH_VERSION
-
 ARG MAKEFLAGS
 
 WORKDIR /tmp
