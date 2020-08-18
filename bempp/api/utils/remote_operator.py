@@ -1,4 +1,5 @@
 """Implementation of MPI based remote operators."""
+from bempp.api.assembly.blocked_operator import BlockedOperator as _BlockedOperator
 from bempp.api.assembly.discrete_boundary_operator import _DiscreteOperatorBase
 
 
@@ -26,19 +27,6 @@ class Message:
         self.nelements = nelements
 
 
-class RankCounter:
-    """Simple class to give next rank for object."""
-
-    def __init__(self):
-        """Initialize rank counter."""
-        self._count = 0
-
-    def next(self):
-        """Get next rank."""
-        ret_val = 1 + (self._count % MPI_SIZE)
-        self._count += 1
-        return ret_val
-
 
 class RemoteManager:
     """Manage remote worker execution."""
@@ -46,37 +34,48 @@ class RemoteManager:
     def __init__(self):
         self._op_data = {}
         self._op_location = {}
+        self._tags = {}
         self._tags_counter = 0
+        self._rank_counter = 1
 
-    def register(self, op, rank):
+
+    def register(self, op):
         """
         Register operator for remote execution.
         """
 
         tag = self._tags_counter
+        rank = self._rank_counter
 
         self._op_data[tag] = op
         self._op_location[tag] = rank
+        self._tags[op] = tag
 
         self._tags_counter += 1
+        self._rank_counter = (1 + self._rank_counter) % MPI_SIZE
+        if self._rank_counter == 0:
+            self._rank_counter = 1
 
-        return tag
 
     def execute_worker(self):
         """Only execute on workers."""
 
         while True:
-            msg, data, tag = self.receive_data(0)
+            msg, tag, data = self.receive_data(0)
 
             if msg == "SHUTDOWN":
                 break
-
-            try:
+            elif msg == "ASSEMBLE":
+                self._op_data[tag].weak_form()
+            elif msg == "SYNCHRONIZE":
+                self.send_data("SYNCHRONIZED", 0, tag)
+            elif msg == "GET_DTYPE":
+                self.send_data(
+                    _np.dtype(self._op_data[tag].weak_form().dtype).name, 0, tag
+                )
+            elif msg == "DATA":
                 result = self._op_data[tag].weak_form() @ data
-            except Exception as e:
-                self.send_error("FAILED", tag)
-            else:
-                self.send_data("SUCCESS", 0, tag, result)
+                self.send_data("DATA", 0, tag, result)
 
     def send_data(self, msg, dest, operator_tag=None, data=None):
         """Send data to destination rank."""
@@ -89,7 +88,7 @@ class RemoteManager:
             ),
             dest=dest,
         )
-        if msg != "SHUTDOWN":
+        if msg == "DATA":
             COMM.Send(data, dest=dest)
 
     def send_error(self, msg, operator_tag):
@@ -101,41 +100,58 @@ class RemoteManager:
         """Receive data."""
         message = COMM.recv(source=source)
 
-        if message.status == "FAILED":
-            raise Exception(f"Error in worker: {source}")
         if message.status == "SHUTDOWN":
             return message.status, None, None
-        if message.is_complex:
-            dtype = _np.complex128
+        elif message.status == "DATA":
+            if message.is_complex:
+                dtype = _np.complex128
+            else:
+                dtype = _np.float64
+            data = _np.empty(message.nelements, dtype=dtype)
+            COMM.Recv(data, source=source)
+            return message.status, message.operator_tag, data
         else:
-            dtype = _np.float64
-        data = _np.empty(message.nelements, dtype=dtype)
-
-        COMM.Recv(data, source=source)
-
-        return message.status, data, message.operator_tag
+            return message.status, message.operator_tag, None
 
     def submit_computation(self, tag, x):
         """Submit computation to operator (only execute on rank 0)."""
 
         rank = self._op_location[tag]
 
-        self.send_data("COMPUTE", rank, tag, x)
+        self.send_data("DATA", rank, tag, x)
 
     def receive_result(self, tag):
         """Receive result from a specific operator."""
 
         rank = self._op_location[tag]
+        _, _, data = self.receive_data(rank)
+        return data
 
-        msg, data, _ = self.receive_data(rank)
+    def assemble(self, tag):
+        """Assemble a given remote operator."""
 
-        if msg != "SUCCESS":
-            raise Exception
+        rank = self._op_location[tag]
+        self.send_data("ASSEMBLE", rank, tag)
 
+    def barrier(self):
+        """Barrier operation for workers."""
 
-        return msg, data
+        for rank in range(1, MPI_SIZE):
+            self.send_data("SYNCHRONIZE", rank, 0)
+            msg, _, _ = self.receive_data(rank)
+            if msg != "SYNCHRONIZED":
+                raise Exception(
+                    f"Error: expected message 'SYNCHRONIZED' from rank {0}, received"
+                    f" {msg}"
+                )
 
+    def get_operator_dtype(self, tag):
+        """Get dtype of remote operator."""
 
+        rank = self._op_location[tag]
+        self.send_data("GET_DTYPE", rank, tag)
+        msg, _, _ = self.receive_data(rank)
+        return _np.dtype(msg)
 
     def shutdown(self):
         """Shutdown all workers."""
@@ -146,6 +162,50 @@ class RemoteManager:
         for worker in range(1, MPI_SIZE):
             self.send_data("SHUTDOWN", worker)
 
+
+    def compute_parallel(self, tasks):
+        """
+        Schedule parallel computations.
+
+        Parameters
+        ----------
+        tasks : dict
+            A dictionary {tag1: data1, tag2: data2, ...}
+            of tags and associated vectors.
+
+        Returns a dictionary {tag1: result1, tag2: result2, ...}
+        of the results of the computation.
+
+        """
+
+        items = list(tasks.items())
+        ranks = {item: self._op_locations[item[0]] for item in items}
+        results = {}
+
+        while items:
+            current_tasks = []
+            rank_set = set()
+            for item in items:
+                if ranks[item] not in rank_set:
+                    task_order.append(item)
+            for task in current_tasks:
+                self.submit_computation(*task)
+            for task in current_tasks:
+                results[task[0]] = self.receive_result(task[0])
+            for task in current_tasks:
+                items.remove(task)
+
+            
+
+            
+
+
+    @property
+    def tags(self):
+        """Return tags."""
+        return self._tags
+
+
 def get_remote_manager():
     """Initialize remote manager."""
     global _REMOTE_MANAGER
@@ -155,10 +215,27 @@ def get_remote_manager():
     return _REMOTE_MANAGER
 
 
+
+class RemoteBlockedOperator(_BlockedOperator):
+    """Define a remote blocked operator."""
+
+    def __init__(self, m, n):
+        "Initialize an m x n remote blocked operator."
+
+        super().__init__(m, n)
+
+    def _assemble(self):
+        """Assemble the operator."""
+        if not self._fill_complete():
+            raise ValueError("Each row and column must have at least one operator")
+
+        return RemoteBlockedDiscreteOperator(self._operators)
+
+
 class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
     """Implementation of a discrete blocked boundary operator."""
 
-    def __init__(self, ops, is_complex=False):
+    def __init__(self, ops):
         """
         Construct an operator from a two dimensional Numpy array of operators.
 
@@ -173,8 +250,6 @@ class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
         )
 
         self._manager = get_remote_manager()
-        self._is_complex = is_complex
-        rank_counter = RankCounter()
 
         if not isinstance(ops, _np.ndarray):
             ops = _np.array(ops)
@@ -220,9 +295,17 @@ class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
                 if self._operators[i, j] is None:
                     self._tags[i, j] = -1
                 else:
-                    self._tags[i, j] = self._manager.register(self._operators[i, j], rank_counter.next())
+                    self._tags[i, j] = self._manager.tags[self._operators[i, j]]
 
         shape = (_np.sum(self._rows), _np.sum(self._cols))
+
+        is_complex = False
+        for i in range(rows):
+            for j in range(cols):
+                self._manager.assemble(self._tags[i, j])
+                dtype = self._manager.get_operator_dtype(self._tags[i, j])
+                if dtype in ["complex128", "complex64"]:
+                    is_complex = True
 
         if is_complex:
             dtype = _np.complex128
@@ -230,7 +313,6 @@ class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
             dtype = _np.float64
 
         super().__init__(dtype, shape)
-
 
     def __getitem__(self, key):
         """Return the object at position (i, j)."""
@@ -274,11 +356,11 @@ class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
         for i in range(self._ndims[0]):
             col_dim = 0
             for j in range(self._ndims[1]):
-                if self._tags[i, j] == -1: continue
-                msg, remote_result = self._manager.receive_result(self._tags[i, j])
-                if msg != "SUCCESS":
-                    raise Exception(f"Remote computation for block {(i, j)} failed with message {msg}.")
-                res[row_dim : row_dim + self._rows[i]] += remote_result
+                if self._tags[i, j] == -1:
+                    continue
+                res[row_dim : row_dim + self._rows[i]] += self._manager.receive_result(
+                    self._tags[i, j]
+                )
             row_dim += self._rows[i]
 
         if ndims == 2:
@@ -307,13 +389,3 @@ class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
 
     row_dimensions = property(_get_row_dimensions)
     column_dimensions = property(_get_column_dimensions)
-
-
-
-        
-
-
-
-
-
-        
