@@ -277,8 +277,6 @@ class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
 
         """
         # pylint: disable=too-many-branches
-        from bempp.api.utils.data_types import combined_type
-
         self._manager = get_remote_manager()
 
         if not isinstance(ops, _np.ndarray):
