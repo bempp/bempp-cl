@@ -253,7 +253,7 @@ class RemoteBlockedOperator(_BlockedOperator):
     """Define a remote blocked operator."""
 
     def __init__(self, m, n):
-        "Initialize an m x n remote blocked operator."
+        """Initialize an m x n remote blocked operator."""
 
         super().__init__(m, n)
 
