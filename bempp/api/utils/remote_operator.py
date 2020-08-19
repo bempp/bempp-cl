@@ -38,9 +38,7 @@ class RemoteManager:
         self._rank_counter = 1
 
     def register(self, op):
-        """
-        Register operator for remote execution.
-        """
+        """Register operator for remote execution."""
 
         tag = self._tags_counter
         rank = self._rank_counter
