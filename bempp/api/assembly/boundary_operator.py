@@ -215,7 +215,11 @@ class ZeroBoundaryOperator(BoundaryOperator):
     """
 
     def __init__(self, domain, range_, dual_to_range):
-        super(ZeroBoundaryOperator, self).__init__(domain, range_, dual_to_range)
+        import bempp.api
+
+        super(ZeroBoundaryOperator, self).__init__(
+            domain, range_, dual_to_range, bempp.api.GLOBAL_PARAMETERS
+        )
 
     def _assemble(self):
 
