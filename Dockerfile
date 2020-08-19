@@ -116,8 +116,7 @@ WORKDIR /root
 FROM bempp-dev-env AS bempp-dev-env-with-exafmm
 
 WORKDIR /tmp
-RUN git clone https://github.com/exafmm/exafmm-t.git
-RUN git checkout tags/${EXAFMM_VERSION}
+RUN git clone -b ${EXAFMM_VERSION} https://github.com/exafmm/exafmm-t.git
 RUN cd exafmm-t && ./configure && make && make install && python3 setup.py install
 
 WORKDIR /root
