@@ -176,7 +176,7 @@ class RemoteManager:
         output = []
 
         tags_with_indices = {index: tag for index, tag in enumerate(tags)}
-        
+
         while len(tags_with_indices) > 0:
             current_indices = []
             current_ranks = []
@@ -191,18 +191,16 @@ class RemoteManager:
 
         return output
 
-
     def assemble_parallel(self, ops):
         """Assemble a list of operators in parallel."""
 
         tags = [self._tags[op] for op in ops]
         grouped_indices = self._group_by_rank(tags)
-        
+
         for index_list in grouped_indices:
             for index in index_list:
                 self.assemble(ops[index])
             self.barrier()
-
 
     def compute_parallel(self, tasks):
         """
@@ -221,12 +219,11 @@ class RemoteManager:
         and are scheduled correctly.
 
         """
-
         tags = [self._tags[op] for op, _ in tasks]
 
         results = len(tasks) * [None]
         grouped_indices = self._group_by_rank(tags)
-        
+
         for index_list in grouped_indices:
             for index in index_list:
                 op, data = tasks[index]
@@ -236,7 +233,6 @@ class RemoteManager:
                 results[index] = self.receive_result(op)
 
         return results
-
 
     @property
     def tags(self):
@@ -336,14 +332,16 @@ class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
         is_complex = False
         for i in range(rows):
             for j in range(cols):
-                if self._tags[i, j] == -1: continue
+                if self._tags[i, j] == -1:
+                    continue
                 self._manager.assemble(self._operators[i, j])
 
         self._manager.barrier()
 
         for i in range(rows):
             for j in range(cols):
-                if self._tags[i, j] == -1: continue
+                if self._tags[i, j] == -1:
+                    continue
                 dtype = self._manager.get_operator_dtype(self._tags[i, j])
                 if dtype in ["complex128", "complex64"]:
                     is_complex = True
@@ -385,7 +383,6 @@ class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
         # Submit the computations
         for i in range(self._ndims[0]):
             col_dim = 0
-            local_res = res[row_dim : row_dim + self._rows[i]]
             for j in range(self._ndims[1]):
                 if self._tags[i, j] != -1:
                     # If self._tags[i, j] == -1 the operator is None
