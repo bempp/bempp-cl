@@ -15,6 +15,7 @@
 
 ARG GMSH_VERSION=4.6.0
 ARG TINI_VERSION=0.19.0
+ARG EXAFMM_VERSION=v0.1.0
 ARG MAKEFLAGS
 
 # TODO: once ExaFMM has a release number, use this to wget the correct version
@@ -116,6 +117,7 @@ FROM bempp-dev-env AS bempp-dev-env-with-exafmm
 
 WORKDIR /tmp
 RUN git clone https://github.com/exafmm/exafmm-t.git
+RUN git checkout tags/${EXAFMM_VERSION}
 RUN cd exafmm-t && ./configure && make && make install && python3 setup.py install
 
 WORKDIR /root
