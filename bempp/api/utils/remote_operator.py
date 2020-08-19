@@ -204,7 +204,7 @@ class RemoteManager:
 
     def compute_parallel(self, tasks):
         """
-        Compute in parallel
+        Compute in parallel.
 
         Parameters
         ----------
@@ -418,7 +418,7 @@ class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
 
     @property
     def A(self):
-        """TODO: add docstring."""
+        """Return as dense Numpy array."""
         raise NotImplementedError()
 
     def _transpose(self):
