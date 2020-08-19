@@ -15,9 +15,7 @@ _REMOTE_MANAGER = None
 
 
 class Message:
-    """
-    Messages to remote manager.
-    """
+    """Messages for remote workers."""
 
     def __init__(self, status, operator_tag=None, is_complex=False, nelements=None):
 
