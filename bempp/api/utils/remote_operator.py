@@ -282,9 +282,6 @@ class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
         """
         # pylint: disable=too-many-branches
         from bempp.api.utils.data_types import combined_type
-        from bempp.api.assembly.discrete_boundary_operator import (
-            ZeroDiscreteBoundaryOperator,
-        )
 
         self._manager = get_remote_manager()
 
