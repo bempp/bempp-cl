@@ -121,7 +121,7 @@ def export(
                 cell_data["real"] = _np.real(data)
                 cell_data["imag"] = _np.imag(data)
             else:
-                cell_data["data"] = data
+                cell_data["data"] = data.reshape(1, -1)
 
         else:
             raise ValueError("'data_type' must be one of 'element' or 'node'")
