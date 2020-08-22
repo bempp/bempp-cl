@@ -858,8 +858,10 @@ def l2_identity_kernel(
     result,
 ):
 
+    element = elements[element_index]
+
     local_test_fun_values = test_basis_evaluate(
-        element_index,
+        element,
         test_shapeset,
         quad_points,
         grid_data,
@@ -867,7 +869,7 @@ def l2_identity_kernel(
         test_normal_multipliers,
     )
     local_trial_fun_values = trial_basis_evaluate(
-        element_index,
+        element,
         trial_shapeset,
         quad_points,
         grid_data,
@@ -878,7 +880,6 @@ def l2_identity_kernel(
     nshape = nshape_test * nshape_trial
     dimension = local_test_fun_values.shape[0]
     n_quad_points = local_test_fun_values.shape[2]
-    element = elements[element_index]
     integration_element = grid_data.integration_elements[element]
 
     for test_index in range(nshape_test):

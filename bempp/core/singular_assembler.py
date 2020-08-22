@@ -87,7 +87,7 @@ def assemble_singular_part(
     order = parameters.quadrature.singular
 
     rule = _SingularQuadratureRuleInterfaceGalerkin(
-        grid, order, domain.support, dual_to_range.support
+        grid, order, dual_to_range.support, domain.support
     )
 
     number_of_test_shape_functions = dual_to_range.number_of_shape_functions

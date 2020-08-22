@@ -970,4 +970,8 @@ def _numba_evaluate(
     normal_multipliers,
 ):
     """Evaluate the basis on an element."""
-    return shapeset_evaluate(local_coordinates)
+    shapeset_values = shapeset_evaluate(local_coordinates)
+    nshapeset = shapeset_values.shape[1]
+    for index in range(nshapeset):
+        shapeset_values[:, index, :] *= local_multipliers[element_index, index]
+    return shapeset_values
