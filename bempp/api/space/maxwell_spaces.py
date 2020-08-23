@@ -667,7 +667,7 @@ def _compute_rwg0_space_data(
 
         for local_index in range(3):
             if local_multipliers[element_index, local_index] == 0:
-                dofmap[local_index] = first_nonzero
+                dofmap[local_index] = dofmap[first_nonzero]
         local2global_map[element_index, :] = dofmap
 
     return dof_count, support, local2global_map, local_multipliers

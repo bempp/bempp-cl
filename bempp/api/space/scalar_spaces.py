@@ -439,13 +439,14 @@ def _compute_p1_dof_map(
             local_multipliers[element_index, local_index] = 1
         # If not every local index was used in a grid we need to
         # map the non-used local dofs to some global dof. Use the
-        # one with minimal index in element. The corresponding
+        # one with maximal index in element. The corresponding
         # multipliers are set to zero so that these artificial dofs
         # do not influence computations.
-        min_dof = _np.min(local2global_final[element_index])
-        for local_index in range(3):
-            if local2global[element_index, local_index] == -1:
-                local2global_final[element_index, local_index] = min_dof
+        if support_final[element_index]:
+            max_dof = _np.max(local2global_final[element_index])
+            for local_index in range(3):
+                if local2global[element_index, local_index] == -1:
+                    local2global_final[element_index, local_index] = max_dof
 
     return local2global_final, local_multipliers, support_final
 
