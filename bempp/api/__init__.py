@@ -8,14 +8,14 @@
 
 
 # def compile_with_log(*args, **kwargs):
-    # """Numba compilation with log messages."""
-    # import bempp.api
+# """Numba compilation with log messages."""
+# import bempp.api
 
-    # fun_name = args[0].py_func.__name__
-    # bempp.api.log(f"Compiling {fun_name} for signature {args[1]}.", level="debug")
-    # res = oldcompile(*args, **kwargs)
-    # bempp.api.log(f"Compilation finished.", level="debug")
-    # return res
+# fun_name = args[0].py_func.__name__
+# bempp.api.log(f"Compiling {fun_name} for signature {args[1]}.", level="debug")
+# res = oldcompile(*args, **kwargs)
+# bempp.api.log(f"Compilation finished.", level="debug")
+# return res
 
 
 # numba.core.registry.CPUDispatcher.compile = compile_with_log
