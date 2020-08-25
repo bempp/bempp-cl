@@ -1070,7 +1070,7 @@ def cylinders(h=1.0, z=1.0, r=[0.5, 1, 1.5, 1.7], square=True):
         A structured grid.
 
     """
-    if square == True:
+    if square:
         stub0 = ""
     else:
         stub0 = """
@@ -1079,7 +1079,7 @@ Point(1) = {0, 0, 0, cl};"""
     stub1 = """
 For i In {0:(N-1)}
     r = r[i];"""
-    if square == True:
+    if square:
         stub2 = """
     Point(1+4*i) = {-r,-r, 0, cl};
     Point(2+4*i) = {r,-r, 0, cl};
@@ -1114,10 +1114,7 @@ EndFor
 
 For i In {0:(N-1)}
     Printf("i = %g", i);
-    out[] = Extrude {0,0,z} {Surface{21+3*i}; Layers{cl};};     
-    //Physical Surface(21 + 3*i) = {21+3*i};
-    //Physical Surface(22 + 3*i) = {out[0]}; 
-    //Physical Surface(23 + 3*i) = {out[2], out[3], out[4], out[5]}; 
+    out[] = Extrude {0,0,z} {Surface{21+3*i}; Layers{cl};};
     Reverse Surface{21+3*i};
 
     If (i < (N-1))
@@ -1128,7 +1125,7 @@ For i In {0:(N-1)}
     EndIf
 EndFor
 
-//Delete Physicals;
+// Delete Physicals;
 
 
 For i In {1:N}
