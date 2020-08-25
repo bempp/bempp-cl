@@ -50,7 +50,9 @@ def test_vectorized_assembly():
 
     grid = bempp.api.shapes.cube()
 
-    p1_space = bempp.api.function_space(grid, "P", 1, segments=[1, 2], swapped_normals=[1])
+    p1_space = bempp.api.function_space(
+        grid, "P", 1, segments=[1, 2], swapped_normals=[1]
+    )
 
     direction = np.array([1, 2, 3]) / np.sqrt(14)
     k = 2
