@@ -1049,9 +1049,9 @@ Physical Surface(1) = {518, 520, 750, 718, 516, 714, 748, 603, 491, 489, 487, 60
 """
 
 
-def cylinders(h=1.0, z=1.0, r=[0.5, 1, 1.5, 1.7], square=True):
+def cylinders(h=1.0, z=1.0, r=[0.5, 1, 1.5, 1.7], square=False):
     """
-    Creates a sequence of concentric cylindrical objects (squares or circles).
+    Creates a sequence of concentric cylindrical or cuboidal objects.
 
     Parameters
     ----------
