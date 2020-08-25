@@ -880,8 +880,6 @@ def _project_function_vectorized(
     """Project a Numba callable onto a grid."""
 
     npoints = points.shape[1]
-    global_points = _np.empty((3, npoints), dtype=_np.float64)
-    point = _np.empty(3, dtype=_np.float64)
 
     for index, element in enumerate(support_elements):
 
