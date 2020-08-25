@@ -5,62 +5,86 @@ import numba as _numba
 import numpy as _np
 
 
-def callable(*args, complex=False, jit=True, parameterized=False):
+def callable(*args, complex=False, jit=True, parameterized=False, vectorized=False):
     """Wrap a callable for Bempp."""
 
-    if complex:
-        wrap_type = _numba.complex128[:]
-    else:
-        wrap_type = _numba.float64[:]
+    if vectorized:
 
-    signature_parameterized = _numba.void(
-        _numba.float64[:], _numba.float64[:], _numba.uint32, wrap_type, wrap_type
-    )
-    signature_not_parameterized = _numba.void(
-        _numba.float64[:], _numba.float64[:], _numba.uint32, wrap_type
-    )
-
-    if parameterized:
-        signature = signature_parameterized
-    else:
-        signature = signature_not_parameterized
-
-    def wrap(f):
-        """Actual wrapper."""
-        if not jit:
+        def wrap(f):
+            """Vectorized wrapper function."""
             if parameterized:
 
                 def wrapper_callable(x, n, domain_index, res, parameters):
-                    """Callable for object mode."""
-                    with _numba.objmode():
-                        f(x, n, domain_index, res, parameters)
+                    """Wrapper callable."""
+                    f(x, n, domain_index, res, parameters)
 
             else:
 
                 def wrapper_callable(x, n, domain_index, res, parameters):
-                    """Callable for object mode."""
-                    with _numba.objmode():
-                        f(x, n, domain_index, res)
+                    """Wrapper callable."""
+                    f(x, n, domain_index, res)
 
+            wrapper_callable.bempp_type = "complex" if complex else "real"
+            wrapper_callable.bempp_vectorized = True
+
+            return wrapper_callable
+
+    else:
+
+        if complex:
+            wrap_type = _numba.complex128[:]
         else:
-            f_jit = _numba.njit(signature)(f)
-            if parameterized:
+            wrap_type = _numba.float64[:]
 
-                def wrapper_callable(x, n, domain_index, res, parameters):
-                    """Standard callable."""
-                    f_jit(x, n, domain_index, res, parameters)
+        signature_parameterized = _numba.void(
+            _numba.float64[:], _numba.float64[:], _numba.uint32, wrap_type, wrap_type
+        )
+        signature_not_parameterized = _numba.void(
+            _numba.float64[:], _numba.float64[:], _numba.uint32, wrap_type
+        )
+
+        if parameterized:
+            signature = signature_parameterized
+        else:
+            signature = signature_not_parameterized
+
+        def wrap(f):
+            """Actual wrapper."""
+            if not jit:
+                if parameterized:
+
+                    def wrapper_callable(x, n, domain_index, res, parameters):
+                        """Callable for object mode."""
+                        with _numba.objmode():
+                            f(x, n, domain_index, res, parameters)
+
+                else:
+
+                    def wrapper_callable(x, n, domain_index, res, parameters):
+                        """Callable for object mode."""
+                        with _numba.objmode():
+                            f(x, n, domain_index, res)
 
             else:
+                f_jit = _numba.njit(signature)(f)
+                if parameterized:
 
-                def wrapper_callable(x, n, domain_index, res, parameters):
-                    """Callable for object mode."""
-                    f_jit(x, n, domain_index, res)
+                    def wrapper_callable(x, n, domain_index, res, parameters):
+                        """Standard callable."""
+                        f_jit(x, n, domain_index, res, parameters)
 
-        njit_wrapper = _numba.njit(signature_parameterized)(wrapper_callable)
+                else:
 
-        njit_wrapper.bempp_type = "complex" if complex else "real"
+                    def wrapper_callable(x, n, domain_index, res, parameters):
+                        """Callable for object mode."""
+                        f_jit(x, n, domain_index, res)
 
-        return njit_wrapper
+            njit_wrapper = _numba.njit(signature_parameterized)(wrapper_callable)
+
+            njit_wrapper.bempp_type = "complex" if complex else "real"
+            njit_wrapper.bempp_vectorized = False
+
+            return njit_wrapper
 
     if not args:
         return wrap
@@ -251,23 +275,64 @@ class GridFunction(object):
                     function_parameters = function_parameters.astype("complex128")
 
             grid_projections = _np.zeros(comp_dual.grid_dof_count, dtype=dtype)
+            if not fun.bempp_vectorized:
+                # Callable is not vectorized
 
-            # Create a Numba callable from the function
-            _project_function(
-                fun,
-                comp_dual.grid.data("double"),
-                comp_dual.support_elements,
-                comp_dual.local2global,
-                comp_dual.local_multipliers,
-                comp_dual.normal_multipliers,
-                comp_dual.numba_evaluate,
-                comp_dual.shapeset.evaluate,
-                points,
-                weights,
-                comp_domain.codomain_dimension,
-                grid_projections,
-                function_parameters,
-            )
+                # Create a Numba callable from the function
+                _project_function(
+                    fun,
+                    comp_dual.grid.data("double"),
+                    comp_dual.support_elements,
+                    comp_dual.local2global,
+                    comp_dual.local_multipliers,
+                    comp_dual.normal_multipliers,
+                    comp_dual.numba_evaluate,
+                    comp_dual.shapeset.evaluate,
+                    points,
+                    weights,
+                    comp_domain.codomain_dimension,
+                    grid_projections,
+                    function_parameters,
+                )
+            else:
+                # Callable is vectorized
+
+                (
+                    global_quad_points,
+                    global_normals,
+                    global_domain_indices,
+                ) = get_function_quadrature_information(
+                    comp_dual.grid.data("double"),
+                    comp_dual.support_elements,
+                    comp_dual.normal_multipliers,
+                    points,
+                )
+                function_data = _np.empty(
+                    (comp_domain.codomain_dimension, global_quad_points.shape[1]),
+                    dtype=dtype,
+                )
+                fun(
+                    global_quad_points,
+                    global_normals,
+                    global_domain_indices,
+                    function_data,
+                    function_parameters,
+                )
+                _project_function_vectorized(
+                    function_data,
+                    comp_dual.grid.data("double"),
+                    comp_dual.support_elements,
+                    comp_dual.local2global,
+                    comp_dual.local_multipliers,
+                    comp_dual.normal_multipliers,
+                    comp_dual.numba_evaluate,
+                    comp_dual.shapeset.evaluate,
+                    points,
+                    weights,
+                    comp_domain.codomain_dimension,
+                    grid_projections,
+                    function_parameters,
+                )
 
             self._projections = comp_dual.dof_transformation.T @ grid_projections
 
@@ -700,6 +765,35 @@ def _integrate(
     return result
 
 
+@_numba.njit
+def get_function_quadrature_information(
+    grid_data, support_elements, normal_multipliers, quad_points
+):
+    """Return vectorized version of quad_points, normals and domain_indices."""
+
+    nelements = len(support_elements)
+    nlocal = quad_points.shape[1]
+    npoints = nlocal * nelements
+
+    global_quad_points = _np.empty((3, npoints), dtype=_np.float64)
+    global_normals = _np.empty((3, npoints), dtype=_np.float64)
+    global_domain_indices = _np.empty(npoints, dtype=_np.float64)
+
+    for index, element in enumerate(support_elements):
+        global_quad_points[
+            :, nlocal * index : nlocal * (1 + index)
+        ] = grid_data.local2global(element, quad_points)
+        for local_index in range(nlocal):
+            global_normals[:, nlocal * index + local_index] = (
+                grid_data.normals[element] * normal_multipliers[element]
+            )
+            global_domain_indices[
+                nlocal * index + local_index
+            ] = grid_data.domain_indices[element]
+
+    return (global_quad_points, global_normals, global_domain_indices)
+
+
 # Must be used in jit mode as fun might just be a Python callable and not numba compiled.
 @_numba.njit
 def _project_function(
@@ -764,4 +858,49 @@ def _project_function(
                     )
                 )
                 * grid_data.integration_elements[index]
+            )
+
+
+@_numba.njit
+def _project_function_vectorized(
+    function_data,
+    grid_data,
+    support_elements,
+    local2global,
+    local_multipliers,
+    normal_multipliers,
+    evaluate_on_element,
+    shapeset_evaluate,
+    points,
+    weights,
+    codomain_dimension,
+    projections,
+    function_parameters,
+):
+    """Project a Numba callable onto a grid."""
+
+    npoints = points.shape[1]
+
+    for index, element in enumerate(support_elements):
+
+        element_vals = evaluate_on_element(
+            element,
+            shapeset_evaluate,
+            points,
+            grid_data,
+            local_multipliers,
+            normal_multipliers,
+        )
+
+        for local_fun_index in range(element_vals.shape[1]):
+            projections[local2global[element, local_fun_index]] += (
+                _np.sum(
+                    _np.sum(
+                        element_vals[:, local_fun_index, :]
+                        * function_data[:, index * npoints : (1 + index) * npoints]
+                        * weights,
+                        axis=0,
+                    )
+                )
+                * grid_data.integration_elements[element]
             )
