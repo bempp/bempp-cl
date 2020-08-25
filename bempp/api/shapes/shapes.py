@@ -1047,3 +1047,115 @@ Line Loop(749) = {118, 276, 289, -291};
 Ruled Surface(750) = {-749};
 Physical Surface(1) = {518, 520, 750, 718, 516, 714, 748, 603, 491, 489, 487, 601, 710, 746, 477, 475, 479, 599, 485, 493, 514, 481, 473, 522, 706, 569, 744, 720, 597, 459, 471, 571, 716, 469, 483, 495, 573, 467, 712, 461, 465, 463, 704, 742, 595, 575, 512, 708, 524, 497, 505, 499, 567, 730, 577, 501, 503, 702, 700, 740, 526, 593, 509, 565, 732, 528, 579, 694, 563, 660, 530, 734, 507, 532, 561, 658, 668, 698, 738, 662, 591, 624, 606, 692, 581, 534, 559, 670, 656, 664, 626, 608, 557, 672, 536, 654, 666, 696, 736, 589, 555, 690, 674, 583, 628, 610, 684, 539, 585, 680, 553, 676, 652, 722, 678, 551, 682, 587, 549, 687, 642, 622, 640, 728, 724, 630, 547, 541, 612, 726, 650, 644, 638, 620, 545, 543, 646, 648, 632, 614, 636, 618, 634, 616};
 """
+
+
+def cylinders(h=1.0, z=1.0, r=[0.5, 1, 1.5, 1.7], square=False):
+    """
+    Creates a sequence of concentric cylindrical or cuboidal objects.
+
+    Parameters
+    ----------
+    h : float
+        A floating point number specifying the grid size.
+    z : float
+        A floating point number specifying the extrusion parameter along z-axis.
+    r : increasing sequence of floats
+        A sequence definying the radius of each concentric cylinder.
+    square: boolean
+        Specifies whether the cylindrical shape is a sequence of squares or circles
+
+    Output
+    -------
+    grid : bempp.Grid
+        A structured grid.
+
+    """
+    if square:
+        stub0 = ""
+    else:
+        stub0 = """
+Point(1) = {0, 0, 0, cl};"""
+
+    stub1 = """
+For i In {0:(N-1)}
+    r = r[i];"""
+    if square:
+        stub2 = """
+    Point(1+4*i) = {-r,-r, 0, cl};
+    Point(2+4*i) = {r,-r, 0, cl};
+    Point(3+4*i) = {r,r, 0, cl};
+    Point(4+4*i) = {-r,r, 0, cl};
+
+    Line(1+4*i) = {1+4*i,2+4*i};
+    Line(2+4*i) = {2+4*i,3+4*i};
+    Line(3+4*i) = {3+4*i,4+4*i};
+    Line(4+4*i) = {4+4*i,1+4*i};"""
+    else:
+        stub2 = """
+    Point(2+4*i) = {r,0, 0, cl};
+    Point(3+4*i) = {0,r, 0, cl};
+    Point(4+4*i) = {-r,0, 0, cl};
+    Point(5+4*i) = {0,-r, 0, cl};
+
+    Circle(1+4*i) = {2+4*i, 1, 3+4*i};
+    Circle(2+4*i) = {3+4*i, 1, 4+4*i};
+    Circle(3+4*i) = {4+4*i, 1, 5+4*i};
+    Circle(4+4*i) = {5+4*i, 1, 2+4*i};
+        """
+    stub3 = """
+    Line Loop(11+i) = {3+4*i, 4+4*i, 1+4*i, 2+4*i};
+
+    If (i==0)
+        Plane Surface(21) = {11};
+    Else
+        Plane Surface(21 + 3*i) = {11+i, -(11 + i - 1)};
+    EndIf
+EndFor
+
+For i In {0:(N-1)}
+    Printf("i = %g", i);
+    out[] = Extrude {0,0,z} {Surface{21+3*i}; Layers{cl};};
+    Reverse Surface{21+3*i};
+
+    If (i < (N-1))
+    Physical Surface(10 * (i+1)) = {21+3*i, out[0]};
+    Physical Surface(10 * (i+2) + (i+1)) = {out[2], out[3], out[4], out[5]};
+    Else
+    Physical Surface(10 * (i+1)) = {21+3*i, out[0],out[2], out[3], out[4], out[5]};
+    EndIf
+EndFor
+
+// Delete Physicals;
+
+
+For i In {1:N}
+    b() = Boundary{Volume{i};};
+    Printf("--------");
+    sb = #b[];
+    For j In {0:(sb-1)}
+        Printf("b0= %g", b[j]);
+    EndFor
+
+EndFor
+
+Mesh.Algorithm = 3;
+    """
+    geometry = (
+        "N = "
+        + str(len(r))
+        + ";\n"
+        + "cl = "
+        + str(h)
+        + ";\n"
+        + "z ="
+        + str(z)
+        + ";\n"
+        + "r[] = {"
+        + str(r)[1:-1]
+        + "};\n"
+        + stub0
+        + stub1
+        + stub2
+        + stub3
+    )
+    return __generate_grid_from_geo_string(geometry)
