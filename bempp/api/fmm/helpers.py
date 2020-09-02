@@ -98,8 +98,6 @@ def helmholtz_kernel(
     nsources = source_points.shape[1]
     m_inv_4pi = dtype.type(M_INV_4PI)
 
-    wavenumber = kernel_parameters[0]
-
     tmp_real = _np.empty(nsources, dtype=dtype)
     tmp_imag = _np.empty(nsources, dtype=dtype)
     interactions_real = _np.empty(4 * ntargets * nsources, dtype=dtype)
@@ -114,20 +112,30 @@ def helmholtz_kernel(
         for j in range(nsources):
             dist[j] = _np.sqrt(dist[j])
         for j in range(nsources):
-            tmp_real[j] = m_inv_4pi * _np.cos(wavenumber * dist[j]) / dist[j]
-            tmp_imag[j] = m_inv_4pi * _np.sin(wavenumber * dist[j]) / dist[j]
+            tmp_real[j] = m_inv_4pi * _np.cos(kernel_parameters[0] * dist[j]) / dist[j]
+            tmp_imag[j] = m_inv_4pi * _np.sin(kernel_parameters[0] * dist[j]) / dist[j]
+        if kernel_parameters[1] != 0:
+            for j in range(nsources):
+                tmp_real[j] *= _np.exp(-kernel_parameters[1] * dist[j])
+                tmp_imag[j] *= _np.exp(-kernel_parameters[1] * dist[j])
         for j in range(nsources):
             interactions_real[target_point_index * 4 * nsources + 4 * j] = tmp_real[j]
             interactions_imag[target_point_index * 4 * nsources + 4 * j] = tmp_imag[j]
         for i in range(3):
             for j in range(nsources):
                 interactions_real[target_point_index * 4 * nsources + 4 * j + 1 + i] = (
-                    (-tmp_real[j] - wavenumber * dist[j] * tmp_imag[j])
+                    (
+                        -(1 + dist[j] * kernel_parameters[1]) * tmp_real[j]
+                        - kernel_parameters[0] * dist[j] * tmp_imag[j]
+                    )
                     / (dist[j] * dist[j])
                     * diff[i, j]
                 )
                 interactions_imag[target_point_index * 4 * nsources + 4 * j + 1 + i] = (
-                    (-tmp_imag[j] + wavenumber * dist[j] * tmp_real[j])
+                    (
+                        -(1 + dist[j] * kernel_parameters[1]) * tmp_imag[j]
+                        + kernel_parameters[0] * dist[j] * tmp_real[j]
+                    )
                     / (dist[j] * dist[j])
                     * diff[i, j]
                 )

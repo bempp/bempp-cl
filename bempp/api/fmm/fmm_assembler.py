@@ -131,8 +131,14 @@ class FmmPotentialAssembler(object):
 
         if mode == "laplace":
             wavenumber = None
-        else:
+        elif mode == "helmholtz":
+            wavenumber = (
+                operator_descriptor.options[0] + 1j * operator_descriptor.options[1]
+            )
+        elif mode == "modified_helmholtz":
             wavenumber = operator_descriptor.options[0]
+        else:
+            raise ValueError(f"Unknown value {mode} for `mode`.")
 
         fmm_potential_interface = get_fmm_potential_interface(
             space, points, mode, wavenumber
@@ -177,10 +183,17 @@ class FmmAssembler(_assembler.AssemblerBase):
         )
 
         mode = get_mode_from_operator_identifier(operator_descriptor.identifier)
+
         if mode == "laplace":
             wavenumber = None
-        else:
+        elif mode == "helmholtz":
+            wavenumber = (
+                operator_descriptor.options[0] + 1j * operator_descriptor.options[1]
+            )
+        elif mode == "modified_helmholtz":
             wavenumber = operator_descriptor.options[0]
+        else:
+            raise ValueError(f"Unknown value {mode} for `mode`.")
 
         fmm_interface = get_fmm_interface(
             actual_domain, actual_dual_to_range, mode, wavenumber
@@ -267,7 +280,9 @@ def make_scalar_hypersingular(
     def evaluate_helmholtz_hypersingular(x):
         """Evaluate the Helmholtz hypersingular kernel."""
 
-        wavenumber = operator_descriptor.options[0]
+        wavenumber = (
+            operator_descriptor.options[0] + 1j * operator_descriptor.options[1]
+        )
         x_transformed = source_map @ x
 
         fmm_res0 = (
@@ -750,7 +765,7 @@ def make_maxwell_electric_field_boundary(
 
     # from bempp.api.integration.triangle_gauss import get_number_of_quad_points
 
-    wavenumber = operator_descriptor.options[0]
+    wavenumber = operator_descriptor.options[0] + 1j * operator_descriptor.options[1]
     order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
     domain_rwg_map, dual_rwg_map = compute_rwg_basis_transform(domain, order)
     domain_div_map, dual_div_map = compute_rwg_div_transform(domain, order)
@@ -839,7 +854,7 @@ def make_maxwell_electric_field_potential(operator_descriptor, fmm_interface, sp
 
     # from bempp.api.integration.triangle_gauss import get_number_of_quad_points
 
-    wavenumber = operator_descriptor.options[0]
+    wavenumber = operator_descriptor.options[0] + 1j * operator_descriptor.options[1]
     order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
     rwg_map, rwg_map_trans = compute_rwg_basis_transform(space, order)
     div_map, div_map_trans = compute_rwg_div_transform(space, order)
