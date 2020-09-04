@@ -90,6 +90,13 @@ def hypersingular(
     precision=None,
 ):
     """Assemble the Laplace hypersingular boundary operator."""
+
+    if domain.shapeset.identifier != "p1_discontinuous":
+        raise ValueError("Domain shapeset must be of type 'p1_discontinuous'.")
+
+    if dual_to_range.shapeset.identifier != "p1_discontinuous":
+        raise ValueError("Dual to range shapeset must be of type 'p1_discontinuous'.")
+
     return _common.create_operator(
         "laplace_hypersingular_boundary",
         domain,

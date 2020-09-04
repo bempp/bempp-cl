@@ -142,6 +142,12 @@ def hypersingular(
     """Assemble the Helmholtz hypersingular boundary operator."""
     from .modified_helmholtz import hypersingular as _hypersingular
 
+    if domain.shapeset.identifier != "p1_discontinuous":
+        raise ValueError("Domain shapeset must be of type 'p1_discontinuous'.")
+
+    if dual_to_range.shapeset.identifier != "p1_discontinuous":
+        raise ValueError("Dual to range shapeset must be of type 'p1_discontinuous'.")
+
     if _np.real(wavenumber) == 0:
         return _hypersingular(
             domain,
