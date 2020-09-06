@@ -44,11 +44,7 @@ def test_maxwell_sparse_operators(operator, type0, type1):
 
 @pytest.mark.parametrize(
     "operator",
-    [
-        laplace.single_layer,
-        laplace.double_layer,
-        laplace.adjoint_double_layer,
-    ],
+    [laplace.single_layer, laplace.double_layer, laplace.adjoint_double_layer,],
 )
 @pytest.mark.parametrize("type0", scalar_spaces)
 @pytest.mark.parametrize("type1", scalar_spaces)
@@ -64,11 +60,7 @@ def test_laplace_operators(operator, type0, type1):
 
 @pytest.mark.parametrize(
     "operator",
-    [
-        helmholtz.single_layer,
-        helmholtz.double_layer,
-        helmholtz.adjoint_double_layer,
-    ],
+    [helmholtz.single_layer, helmholtz.double_layer, helmholtz.adjoint_double_layer,],
 )
 @pytest.mark.parametrize("wavenumber", [2.5, 2.5 + 1j])
 @pytest.mark.parametrize("type0", scalar_spaces)
@@ -124,11 +116,7 @@ def test_hypersingular_operators():
 
 @pytest.mark.parametrize(
     ("type0", "type1"),
-    [
-        [("DP", 0), ("P", 1)],
-        [("P", 1), ("DP", 0)],
-        [("DP", 0), ("DP", 0)],
-    ],
+    [[("DP", 0), ("P", 1)], [("P", 1), ("DP", 0)], [("DP", 0), ("DP", 0)],],
 )
 def test_hypersingular_fails_for_wrong_space(type0, type1):
     """Expected failure for wrong spaces."""
