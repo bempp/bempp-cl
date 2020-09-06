@@ -96,6 +96,27 @@ def test_helmholtz_boundary_fmm(helpers, grid):
     bempp.api.clear_fmm_cache()
 
 
+def test_helmholtz_boundary_fmm_complex(helpers):
+    """Test Helmholtz boundary operators with complex wavenumber."""
+    rand = np.random.RandomState(0)
+    grid = bempp.api.shapes.regular_sphere(2)
+    space = bempp.api.function_space(grid, "P", 1)
+    vec = rand.rand(space.global_dof_count)
+    wavenumber = 1.5 + 0.5j
+
+    for operator in [
+        bempp.api.operators.boundary.helmholtz.single_layer,
+        bempp.api.operators.boundary.helmholtz.double_layer,
+        bempp.api.operators.boundary.helmholtz.hypersingular,
+    ]:
+        fmm = operator(space, space, space, wavenumber, assembler="fmm").weak_form()
+        dense = operator(space, space, space, wavenumber, assembler="dense").weak_form()
+
+        np.testing.assert_allclose(dense @ vec, fmm @ vec, rtol=TOL)
+
+    bempp.api.clear_fmm_cache()
+
+
 def test_helmholtz_potential_fmm(helpers, grid):
     """Test Helmholtz potential operators."""
     space = bempp.api.function_space(grid, "P", 1)
@@ -117,6 +138,31 @@ def test_helmholtz_potential_fmm(helpers, grid):
         fmm = operator(space, points, wavenumber, assembler="fmm").evaluate(grid_fun)
         dense = helpers.load_npy_data(filename)
         np.testing.assert_allclose(dense, fmm, rtol=TOL)
+
+    bempp.api.clear_fmm_cache()
+
+
+def test_helmholtz_potential_fmm_complex(helpers):
+    """Test Helmholtz boundary operators with complex wavenumber."""
+    rand = np.random.RandomState(0)
+    grid = bempp.api.shapes.regular_sphere(2)
+    space = bempp.api.function_space(grid, "P", 1)
+    vec = rand.rand(space.global_dof_count)
+    grid_fun = bempp.api.GridFunction(space, coefficients=vec)
+    wavenumber = 1.5 + 0.5j
+
+    points = np.array([2.0, 1.0, 0.0]).reshape(3, 1)
+
+    for operator in [
+        bempp.api.operators.potential.helmholtz.single_layer,
+        bempp.api.operators.potential.helmholtz.double_layer,
+    ]:
+        fmm = operator(space, points, wavenumber, assembler="fmm")
+        dense = operator(space, points, wavenumber, assembler="dense")
+
+        np.testing.assert_allclose(
+            dense.evaluate(grid_fun), fmm.evaluate(grid_fun), rtol=TOL
+        )
 
     bempp.api.clear_fmm_cache()
 
@@ -239,5 +285,55 @@ def test_fmm_two_grids_laplace(helpers, grid1, grid2):
         fmm = operator(p1_space1, p1_space2, p1_space2, assembler="fmm").weak_form()
         dense = helpers.load_npy_data(filename)
         np.testing.assert_allclose(dense, fmm @ vec, rtol=TOL)
+
+    bempp.api.clear_fmm_cache()
+
+
+def test_maxwell_boundary_fmm_complex(helpers):
+    """Test Maxwell boundary operators with complex wavenumber."""
+    rand = np.random.RandomState(0)
+    grid = bempp.api.shapes.regular_sphere(2)
+    space = bempp.api.function_space(grid, "RWG", 0)
+    dual_space = bempp.api.function_space(grid, "SNC", 0)
+    vec = rand.rand(space.global_dof_count)
+    wavenumber = 1.5 + 0.5j
+
+    for operator in [
+        bempp.api.operators.boundary.maxwell.electric_field,
+        bempp.api.operators.boundary.maxwell.magnetic_field,
+    ]:
+        fmm = operator(
+            space, space, dual_space, wavenumber, assembler="fmm"
+        ).weak_form()
+        dense = operator(
+            space, space, dual_space, wavenumber, assembler="dense"
+        ).weak_form()
+
+        np.testing.assert_allclose(dense @ vec, fmm @ vec, rtol=TOL)
+
+    bempp.api.clear_fmm_cache()
+
+
+def test_maxwell_potential_fmm_complex(helpers):
+    """Test Maxwell boundary operators with complex wavenumber."""
+    rand = np.random.RandomState(0)
+    grid = bempp.api.shapes.regular_sphere(2)
+    space = bempp.api.function_space(grid, "RWG", 0)
+    vec = rand.rand(space.global_dof_count)
+    grid_fun = bempp.api.GridFunction(space, coefficients=vec)
+    wavenumber = 1.5 + 0.5j
+
+    points = np.array([2.0, 1.0, 0.0]).reshape(3, 1)
+
+    for operator in [
+        bempp.api.operators.potential.maxwell.electric_field,
+        bempp.api.operators.potential.maxwell.magnetic_field,
+    ]:
+        fmm = operator(space, points, wavenumber, assembler="fmm")
+        dense = operator(space, points, wavenumber, assembler="dense")
+
+        np.testing.assert_allclose(
+            dense.evaluate(grid_fun), fmm.evaluate(grid_fun), rtol=TOL
+        )
 
     bempp.api.clear_fmm_cache()
