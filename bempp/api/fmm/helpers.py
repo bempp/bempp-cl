@@ -211,7 +211,7 @@ def get_local_interaction_operator(
             )
         else:
             raise ValueError(
-                f"DEFAULT_DEVICE_INTERFACE must be one of 'numba', 'opencl'."
+                "DEFAULT_DEVICE_INTERFACE must be one of 'numba', 'opencl'."
             )
     else:
         raise ValueError("Unknown value for near_field_representation.")
