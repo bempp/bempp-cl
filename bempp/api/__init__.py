@@ -249,6 +249,11 @@ else:
     else:
         DEFAULT_DEVICE_INTERFACE = "opencl"
 
+if DEFAULT_DEVICE_INTERFACE == "numba":
+    log(
+        "Numba backend activated. For full performance the OpenCL backend with an OpenCL CPU driver is required."
+    )
+
 DEFAULT_PRECISION = "double"
 VECTORIZATION_MODE = "auto"
 

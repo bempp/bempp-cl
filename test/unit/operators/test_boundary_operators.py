@@ -44,12 +44,7 @@ def test_maxwell_sparse_operators(operator, type0, type1):
 
 @pytest.mark.parametrize(
     "operator",
-    [
-        laplace.single_layer,
-        laplace.double_layer,
-        laplace.adjoint_double_layer,
-        laplace.hypersingular,
-    ],
+    [laplace.single_layer, laplace.double_layer, laplace.adjoint_double_layer],
 )
 @pytest.mark.parametrize("type0", scalar_spaces)
 @pytest.mark.parametrize("type1", scalar_spaces)
@@ -65,12 +60,7 @@ def test_laplace_operators(operator, type0, type1):
 
 @pytest.mark.parametrize(
     "operator",
-    [
-        helmholtz.single_layer,
-        helmholtz.double_layer,
-        helmholtz.adjoint_double_layer,
-        helmholtz.hypersingular,
-    ],
+    [helmholtz.single_layer, helmholtz.double_layer, helmholtz.adjoint_double_layer],
 )
 @pytest.mark.parametrize("wavenumber", [2.5, 2.5 + 1j])
 @pytest.mark.parametrize("type0", scalar_spaces)
@@ -91,7 +81,6 @@ def test_helmholtz_operators(operator, wavenumber, type0, type1):
         modified_helmholtz.single_layer,
         modified_helmholtz.double_layer,
         modified_helmholtz.adjoint_double_layer,
-        modified_helmholtz.hypersingular,
     ],
 )
 @pytest.mark.parametrize("wavenumber", [2.5])
@@ -107,6 +96,46 @@ def test_modified_helmholtz_operators(operator, wavenumber, type0, type1):
     op.weak_form()
 
 
+def test_hypersingular_operators():
+    """Test the hypersingular operators."""
+
+    grid = bempp.api.shapes.regular_sphere(0)
+
+    space = function_space(grid, "P", 1)
+
+    bempp.api.operators.boundary.laplace.hypersingular(
+        space, space, space, assembler="dense"
+    ).weak_form()
+    bempp.api.operators.boundary.helmholtz.hypersingular(
+        space, space, space, 1.5, assembler="dense"
+    ).weak_form()
+    bempp.api.operators.boundary.modified_helmholtz.hypersingular(
+        space, space, space, 1.5, assembler="dense"
+    ).weak_form()
+
+
+@pytest.mark.parametrize(
+    ("type0", "type1"),
+    [[("DP", 0), ("P", 1)], [("P", 1), ("DP", 0)], [("DP", 0), ("DP", 0)]],
+)
+def test_hypersingular_fails_for_wrong_space(type0, type1):
+    """Expected failure for wrong spaces."""
+    grid = bempp.api.shapes.regular_sphere(0)
+    space0 = function_space(grid, *type0)
+    space1 = function_space(grid, *type1)
+
+    with pytest.raises(ValueError):
+        laplace.hypersingular(space0, space1, space1, assembler="dense").weak_form()
+    with pytest.raises(ValueError):
+        helmholtz.hypersingular(
+            space0, space1, space1, 1.5, assembler="dense"
+        ).weak_form()
+    with pytest.raises(ValueError):
+        modified_helmholtz.hypersingular(
+            space0, space1, space1, 1.5, assembler="dense"
+        ).weak_form()
+
+
 @pytest.mark.parametrize("operator", [maxwell.magnetic_field, maxwell.electric_field])
 @pytest.mark.parametrize("wavenumber", [2.5, 2.5 + 1j])
 @pytest.mark.parametrize("type0", div_spaces)
@@ -119,3 +148,8 @@ def test_maxwell_operators(operator, wavenumber, type0, type1):
 
     op = operator(space0, space0, space1, wavenumber, assembler="dense")
     op.weak_form()
+
+    # Check that we cannot swap curl and div conforming spaces for Maxwell
+
+    with pytest.raises(ValueError):
+        op = operator(space1, space1, space0, wavenumber, assembler="dense")

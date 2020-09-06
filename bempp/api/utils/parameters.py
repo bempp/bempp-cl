@@ -38,7 +38,7 @@ class _Fmm(object):
         self.expansion_order = 5
         self.depth = 4
         self.ncrit = 400
-        self.near_field_representation = "opencl_evaluate"
+        self.near_field_representation = "evaluate"
         self.debug = False
         self.dense_evaluation = False
 

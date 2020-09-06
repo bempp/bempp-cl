@@ -104,6 +104,13 @@ def hypersingular(
     precision=None,
 ):
     """Assemble the mod. Helmholtz hypersingular boundary op."""
+
+    if domain.shapeset.identifier != "p1_discontinuous":
+        raise ValueError("Domain shapeset must be of type 'p1_discontinuous'.")
+
+    if dual_to_range.shapeset.identifier != "p1_discontinuous":
+        raise ValueError("Dual to range shapeset must be of type 'p1_discontinuous'.")
+
     if _np.imag(omega) != 0:
         raise ValueError("'omega' must be real.")
 

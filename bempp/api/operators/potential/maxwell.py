@@ -17,6 +17,9 @@ def electric_field(
     from bempp.api.assembly.assembler import PotentialAssembler
     import bempp.api
 
+    if space.identifier != "rwg0":
+        raise ValueError("Space must be an RWG type function space.")
+
     if precision is None:
         precision = bempp.api.DEFAULT_PRECISION
 
@@ -52,6 +55,9 @@ def magnetic_field(
     from bempp.api.assembly.potential_operator import PotentialOperator
     from bempp.api.assembly.assembler import PotentialAssembler
     import bempp.api
+
+    if space.identifier != "rwg0":
+        raise ValueError("Space must be an RWG type function space.")
 
     if precision is None:
         precision = bempp.api.DEFAULT_PRECISION

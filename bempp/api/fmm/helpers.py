@@ -179,11 +179,6 @@ def get_local_interaction_operator(
     elif kernel_function == "modified_helmholtz":
         kernel = modified_helmholtz_kernel
 
-    bempp.api.log(
-        "Near field correction operator mode:"
-        f" {GLOBAL_PARAMETERS.fmm.near_field_representation}"
-    )
-
     if GLOBAL_PARAMETERS.fmm.near_field_representation == "sparse":
         data, indices, indexptr = get_local_interaction_matrix_impl(
             grid.data(precision),
@@ -197,26 +192,35 @@ def get_local_interaction_operator(
             csr_matrix((data, indices, indexptr), shape=(rows, cols))
         )
 
-    elif GLOBAL_PARAMETERS.fmm.near_field_representation == "numba_evaluate":
-        evaluator = get_local_interaction_evaluator_numba(
-            grid.data(precision),
-            local_points.astype(dtype),
-            kernel,
-            _np.array(kernel_parameters, dtype=dtype),
-            dtype,
-            result_type,
-        )
-        return LinearOperator(shape=(rows, cols), matvec=evaluator, dtype=result_type)
-    elif GLOBAL_PARAMETERS.fmm.near_field_representation == "opencl_evaluate":
-        evaluator = get_local_interaction_evaluator_opencl(
-            grid,
-            local_points.astype(dtype),
-            kernel_function,
-            _np.array(kernel_parameters, dtype=dtype),
-            dtype,
-            result_type,
-        )
-        return LinearOperator(shape=(rows, cols), matvec=evaluator, dtype=result_type)
+    elif GLOBAL_PARAMETERS.fmm.near_field_representation == "evaluate":
+        if bempp.api.DEFAULT_DEVICE_INTERFACE == "numba":
+            evaluator = get_local_interaction_evaluator_numba(
+                grid.data(precision),
+                local_points.astype(dtype),
+                kernel,
+                _np.array(kernel_parameters, dtype=dtype),
+                dtype,
+                result_type,
+            )
+            return LinearOperator(
+                shape=(rows, cols), matvec=evaluator, dtype=result_type
+            )
+        elif bempp.api.DEFAULT_DEVICE_INTERFACE == "opencl":
+            evaluator = get_local_interaction_evaluator_opencl(
+                grid,
+                local_points.astype(dtype),
+                kernel_function,
+                _np.array(kernel_parameters, dtype=dtype),
+                dtype,
+                result_type,
+            )
+            return LinearOperator(
+                shape=(rows, cols), matvec=evaluator, dtype=result_type
+            )
+        else:
+            raise ValueError(
+                "DEFAULT_DEVICE_INTERFACE must be one of 'numba', 'opencl'."
+            )
     else:
         raise ValueError("Unknown value for near_field_representation.")
 
