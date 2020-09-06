@@ -165,4 +165,3 @@ def test_maxwell_operators(operator, wavenumber, type0, type1):
 
     with pytest.raises(ValueError):
         op = operator(space1, space1, space0, wavenumber, assembler="dense")
-
