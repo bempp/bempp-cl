@@ -65,7 +65,9 @@ class ExafmmInterface(object):
         if mode == "laplace":
             self._kernel_parameters = _np.array([], dtype="float64")
         elif mode == "helmholtz":
-            self._kernel_parameters = _np.array([wavenumber], dtype="float64")
+            self._kernel_parameters = _np.array(
+                [_np.real(wavenumber), _np.imag(wavenumber)], dtype="float64"
+            )
         elif mode == "modified_helmholtz":
             self._kernel_parameters = _np.array([wavenumber], dtype="float64")
 
@@ -248,7 +250,9 @@ class ExafmmInterface(object):
                     source_grid,
                     local_points,
                     "helmholtz",
-                    np.array([wavenumber, 0], dtype="float64"),
+                    np.array(
+                        [_np.real(wavenumber), _np.imag(wavenumber)], dtype="float64"
+                    ),
                     precision,
                     True,
                 )
