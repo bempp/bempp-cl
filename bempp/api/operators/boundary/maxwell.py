@@ -17,10 +17,10 @@ def electric_field(
     """Assemble the electric field boundary operator."""
 
     if domain.identifier != "rwg0":
-        raise ValueError(f"Domain space must be an RWG type function space.")
+        raise ValueError("Domain space must be an RWG type function space.")
 
     if dual_to_range.identifier != "snc0":
-        raise ValueError(f"Dual to range space must be an SNC type function space.")
+        raise ValueError("Dual to range space must be an SNC type function space.")
 
     return _common.create_operator(
         "maxwell_electric_field_boundary",
@@ -51,10 +51,10 @@ def magnetic_field(
     """Assemble the magnetic field boundary operator."""
 
     if domain.identifier != "rwg0":
-        raise ValueError(f"Domain space must be an RWG type function space.")
+        raise ValueError("Domain space must be an RWG type function space.")
 
     if dual_to_range.identifier != "snc0":
-        raise ValueError(f"Dual to range space must be an SNC type function space.")
+        raise ValueError("Dual to range space must be an SNC type function space.")
 
     return _common.create_operator(
         "maxwell_magnetic_field_boundary",

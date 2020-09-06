@@ -18,7 +18,7 @@ def electric_field(
     import bempp.api
 
     if space.identifier != "rwg0":
-        raise ValueError(f"Space must be an RWG type function space.")
+        raise ValueError("Space must be an RWG type function space.")
 
     if precision is None:
         precision = bempp.api.DEFAULT_PRECISION
@@ -57,7 +57,7 @@ def magnetic_field(
     import bempp.api
 
     if space.identifier != "rwg0":
-        raise ValueError(f"Space must be an RWG type function space.")
+        raise ValueError("Space must be an RWG type function space.")
 
     if precision is None:
         precision = bempp.api.DEFAULT_PRECISION
