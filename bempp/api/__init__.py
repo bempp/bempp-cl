@@ -244,6 +244,7 @@ if _platform.system() == "Darwin":
 else:
     try:
         from bempp.core.opencl_kernels import find_cpu_driver
+
         cpu_driver_exists = find_cpu_driver()
     except:
         cpu_driver_exists = False
