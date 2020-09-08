@@ -32,6 +32,7 @@ def device_interface(request):
     """Not needed anymore. We once set the default device in a session fixture."""
     return None
 
+
 @pytest.fixture(scope="session", autouse=True)
 def set_default_device_interface(request):
     value = request.config.getoption("--device")
@@ -43,7 +44,6 @@ def set_default_device_interface(request):
         bempp.api.DEFAULT_DEVICE_INTERFACE = "opencl"
     else:
         raise ValueError("device must be one of: 'numba', 'opencl'")
-
 
 
 @pytest.fixture(scope="session", autouse=True)
