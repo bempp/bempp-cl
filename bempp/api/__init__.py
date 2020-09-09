@@ -242,12 +242,17 @@ USE_JIT = True
 if _platform.system() == "Darwin":
     DEFAULT_DEVICE_INTERFACE = "numba"
 else:
-    from bempp.core.opencl_kernels import find_cpu_driver
+    try:
+        from bempp.core.opencl_kernels import find_cpu_driver
 
-    if find_cpu_driver() is None:
-        DEFAULT_DEVICE_INTERFACE = "numba"
-    else:
+        cpu_driver_exists = find_cpu_driver()
+    except:
+        cpu_driver_exists = False
+
+    if cpu_driver_exists:
         DEFAULT_DEVICE_INTERFACE = "opencl"
+    else:
+        DEFAULT_DEVICE_INTERFACE = "numba"
 
 if DEFAULT_DEVICE_INTERFACE == "numba":
     log(

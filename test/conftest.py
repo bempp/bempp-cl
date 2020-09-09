@@ -23,16 +23,27 @@ def pytest_addoption(parser):
         help="Valid values: single double",
     )
     parser.addoption(
-        "--device", action="store", default="opencl", help="Valid values: numba opencl",
+        "--device", action="store", default="auto", help="Valid values: numba opencl",
     )
 
 
 @pytest.fixture()
 def device_interface(request):
+    """Not needed anymore. We once set the default device in a session fixture."""
+    return None
+
+
+@pytest.fixture(scope="session", autouse=True)
+def set_default_device_interface(request):
     value = request.config.getoption("--device")
-    if value not in ["numba", "opencl"]:
+    if value == "auto":
+        return
+    elif value == "numba":
+        bempp.api.DEFAULT_DEVICE_INTERFACE = "numba"
+    elif value == "opencl":
+        bempp.api.DEFAULT_DEVICE_INTERFACE = "opencl"
+    else:
         raise ValueError("device must be one of: 'numba', 'opencl'")
-    return value
 
 
 @pytest.fixture(scope="session", autouse=True)
