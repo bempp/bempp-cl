@@ -72,7 +72,6 @@ def magnetic_field(
     )
 
 
-
 def multitrace_operator(
     grid,
     wavenumber,
@@ -181,7 +180,6 @@ def multitrace_operator(
             bc_target = bc
             rbc_target = rbc
 
-
         domain = [rwg, bc]
         range_ = [rwg_target, bc_target]
         dual_to_range = [rbc_target, snc_target]
@@ -223,6 +221,7 @@ def multitrace_operator(
         device_interface=device_interface,
         precision=precision,
     )
+
 
 def _multitrace_operator_impl(
     domain,
@@ -287,7 +286,7 @@ def _multitrace_operator_impl(
 
     blocked = BlockedOperator(2, 2)
     blocked[0, 0] = magnetic1
-    blocked[0, 1] = (1. / rho) * electric1
+    blocked[0, 1] = (1.0 / rho) * electric1
     blocked[1, 0] = -rho * electric2
     blocked[1, 1] = magnetic2
 
