@@ -126,3 +126,5 @@ notebooks/laplace/mixed_dirichlet_neumann_laplace_solution.msh
 text/grid/grids/testoutput*
 
 .exafmm/*
+
+*.DONTUPLOAD
