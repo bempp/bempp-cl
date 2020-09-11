@@ -28,7 +28,9 @@ def singular_assembler(
         operator_descriptor, mode="singular"
     )
 
-    precision = operator_descriptor.precision
+    # Perform Numba assembly always in double precision
+    # precision = operator_descriptor.precision
+    precision = "double"
     dtype = get_type(precision).real
 
     numba_assembly_function(
@@ -70,7 +72,9 @@ def dense_assembler(
     order = parameters.quadrature.regular
     quad_points, quad_weights = rule(order)
 
-    precision = operator_descriptor.precision
+    # Perform Numba assembly always in double precision
+    # precision = operator_descriptor.precision
+    precision = "double"
 
     data_type = get_type(precision).real
 
@@ -129,7 +133,9 @@ def potential_assembler(
 
     quad_points, quad_weights = rule(parameters.quadrature.regular)
 
-    precision = operator_descriptor.precision
+    # Perform Numba assembly always in double precision
+    # precision = operator_descriptor.precision
+    precision = "double"
 
     dtype = _np.dtype(get_type(precision).real)
 

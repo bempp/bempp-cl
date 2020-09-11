@@ -142,6 +142,6 @@ class Helpers(object):
     def default_tolerance(precision):
         """Given a precision return default tolerance."""
         if precision == "single":
-            return 5e-4
+            return 6e-4
         if precision == "double":
             return 1e-10
