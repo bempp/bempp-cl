@@ -284,7 +284,6 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
 
     def get_arrays(self):
         """Return the arrays."""
-        from bempp.api.utils.helpers import get_type
 
         test_indices, trial_indices = self._vectorize_indices()
         test_points, trial_points = self._vectorize_points()
