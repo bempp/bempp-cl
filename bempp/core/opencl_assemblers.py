@@ -399,7 +399,9 @@ def potential_assembler(
     )
 
     points_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=points.ravel(order="F").astype(dtype)
+        ctx,
+        mf.READ_ONLY | mf.COPY_HOST_PTR,
+        hostbuf=points.ravel(order="F").astype(dtype),
     )
 
     grid_buffer = _cl.Buffer(
