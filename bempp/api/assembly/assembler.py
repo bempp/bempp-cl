@@ -9,6 +9,7 @@ def _create_assembler(
     from bempp.core.dense_assembler import DenseAssembler
     from bempp.core.diagonal_assembler import DiagonalAssembler
     from bempp.api.fmm.fmm_assembler import FmmAssembler
+    from bempp.api import check_for_fmm
 
     # from bempp.core.numba.dense_assembler import DenseAssembler
     from bempp.core.sparse_assembler import SparseAssembler
@@ -29,6 +30,10 @@ def _create_assembler(
     if identifier == "sparse":
         return SparseAssembler(domain, dual_to_range, parameters)
     if identifier == "fmm":
+        if not check_for_fmm():
+            raise ValueError(
+                "No compatible FMM library found. Please install Exafmm from github.com/exafmm/exafmm-t."
+            )
         return FmmAssembler(domain, dual_to_range, parameters)
     else:
         raise ValueError("Unknown assembler type.")
@@ -183,6 +188,11 @@ def select_potential_implementation(
         )
     elif assembler == "fmm":
         from bempp.api.fmm.fmm_assembler import FmmPotentialAssembler
+
+        if not bempp.api.check_for_fmm():
+            raise ValueError(
+                "No compatible FMM library found. Please install Exafmm from github.com/exafmm/exafmm-t."
+            )
 
         return FmmPotentialAssembler(
             space, operator_descriptor, points, device_interface, parameters

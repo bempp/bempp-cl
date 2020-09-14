@@ -103,7 +103,7 @@ def assemble_singular_part(
         trial_offsets,
         weights_offsets,
         number_of_quad_points,
-    ] = rule.get_arrays(precision)
+    ] = rule.get_arrays()
 
     if is_complex:
         result_type = get_type(precision).complex
@@ -282,11 +282,8 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
         """Return the number of quadrature points for given adjacency."""
         return _duffy_galerkin.number_of_quadrature_points(self.order, adjacency)
 
-    def get_arrays(self, precision):
+    def get_arrays(self):
         """Return the arrays."""
-        from bempp.api.utils.helpers import get_type
-
-        types = get_type(precision)
 
         test_indices, trial_indices = self._vectorize_indices()
         test_points, trial_points = self._vectorize_points()
@@ -298,9 +295,9 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
         self._trial_indices = trial_indices
 
         arrays = [
-            test_points.astype(types.real),
-            trial_points.astype(types.real),
-            weights.astype(types.real),
+            test_points,
+            trial_points,
+            weights,
             test_indices,
             trial_indices,
             test_offsets,

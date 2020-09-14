@@ -100,7 +100,10 @@ def assemble_sparse(
     nshape_test = dual_to_range.number_of_shape_functions
     nshape_trial = domain.number_of_shape_functions
 
-    precision = operator_descriptor.precision
+    # Always assemble in double precision for sparse ops
+    # precision = operator_descriptor.precision
+
+    precision = "double"
 
     if operator_descriptor.is_complex:
         result_type = get_type(precision).complex
