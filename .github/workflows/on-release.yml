@@ -15,4 +15,4 @@ jobs:
     - name: Install PyGitHub
       uses: pip3 install PyGitHub
     - name: Update website
-      uses: python3 .github/scripts/update_website.py $BEMPPBOT_GITHUB_TOKEN
+      uses: python3 .github/scripts/update_website.py ${{ secrets.BEMPPBOT_GITHUB_TOKEN }}
