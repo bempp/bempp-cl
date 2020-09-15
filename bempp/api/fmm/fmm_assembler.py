@@ -660,7 +660,8 @@ def compute_rwg_div_transform(space, quadrature_order):
     return (
         aslinearoperator(
             coo_matrix(
-                (data, (iind, jind)), shape=(npoints * number_of_elements, dof_count),
+                (data, (iind, jind)),
+                shape=(npoints * number_of_elements, dof_count),
             ).tocsr()
         )
         @ aslinearoperator(space.map_to_localised_space)
@@ -669,7 +670,8 @@ def compute_rwg_div_transform(space, quadrature_order):
         @ aslinearoperator(space.map_to_localised_space.T)
         @ aslinearoperator(
             coo_matrix(
-                (data, (jind, iind)), shape=(dof_count, npoints * number_of_elements),
+                (data, (jind, iind)),
+                shape=(dof_count, npoints * number_of_elements),
             ).tocsr()
         ),
     )
