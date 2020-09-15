@@ -84,8 +84,3 @@ jobs:
         name: Install Bempp
       - run: python3 -m pytest --durations=50 test/unit
         name: Run Bempp unit tests
-  test-secrets:
-    name: test github secrets
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo ${{ secrets.test }}
