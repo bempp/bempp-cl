@@ -62,15 +62,11 @@ jobs:
         name: Run flake8 checks
       - run: python3 -m pydocstyle bempp/api
         name: Run pydocstyle checks
-      - uses: RojerGS/python-black-check@master
-        with:
-          line-length: '88'
-          path: 'bempp'
+      - run: | 
+            black --line-length 88 --check bempp
         name: Run black checks in bempp
-      - uses: RojerGS/python-black-check@master
-        with:
-          line-length: '88'
-          path: 'test'
+      - run: | 
+            black --line-length 88 --check test
         name: Run black checks on tests
   build-and-test-with-exafmm:
     name: Build and run tests with ExaFMM
