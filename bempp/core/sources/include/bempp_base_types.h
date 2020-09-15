@@ -71,7 +71,9 @@ typedef struct Geometry
 #define PRINT_REAL(A, INFO) printf(INFO" %e \n", A)
 
 /* Define Assignment of trial indices for vectorized dense assembly. */
-#if VEC_LENGTH == 4
+#if VEC_LENGTH == 1
+#define REALTYPEVEC REALTYPE
+#elif VEC_LENGTH == 4
 #define REALTYPEVEC REALTYPE4
 #define DEFINE_TRIAL_INDICES_REGULAR_ASSEMBLY \
   size_t trialIndex[4] = {trialIndices[offset + 4 * (gid[1] - offset) + 0], \

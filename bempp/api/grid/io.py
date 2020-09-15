@@ -90,12 +90,6 @@ def export(
     else:
         gmsh = False
 
-    if extension == ".vtk":
-        if write_binary:
-            file_format = "vtk-binary"
-        else:
-            file_format = "vtk-ascii"
-
     if grid is not None and grid_function is not None:
         raise ValueError("Exactly one of 'grid' and 'grid_function' must be supplied.")
 
@@ -144,7 +138,7 @@ def export(
         )
         cell_data["gmsh:geometrical"] = geom_indices.reshape((1, -1))
     else:
-        cell_data["domain_index"] = grid.domain_indices.astype("int32").reshape((-1, 1))
+        cell_data["domain_index"] = grid.domain_indices.astype("int32").reshape((1, -1))
 
     _meshio.write_points_cells(
         filename,

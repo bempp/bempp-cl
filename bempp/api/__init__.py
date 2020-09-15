@@ -217,6 +217,19 @@ def _gmsh_path():
     return gmp
 
 
+def check_for_fmm():
+    """Return true of compatible FMM found."""
+    exafmm_found = False
+    try:
+        import exafmm
+    except:
+        exafmm_found = False
+    else:
+        exafmm_found = True
+
+    return exafmm_found
+
+
 def _get_version():
     """Get version string."""
     from bempp import version

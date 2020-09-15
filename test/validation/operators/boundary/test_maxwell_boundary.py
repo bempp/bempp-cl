@@ -126,8 +126,8 @@ def test_maxwell_electric_field_bc_sphere(
     bempp.api.GLOBAL_PARAMETERS.fmm.dense_evaluation = False
 
     if precision == "single":
-        rtol = 1e-5
-        atol = 1e-6
+        rtol = 1e-4
+        atol = 5e-6
     else:
         rtol = 1e-10
         atol = 1e-14

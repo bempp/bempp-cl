@@ -63,13 +63,13 @@ def singular_assembler(
         ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=domain.normal_multipliers
     )
     test_points_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=test_points
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=test_points.astype(dtype)
     )
     trial_points_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=trial_points
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=trial_points.astype(dtype)
     )
     quad_weights_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=quad_weights
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=quad_weights.astype(dtype)
     )
     test_elements_buffer = _cl.Buffer(
         ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=test_elements
@@ -399,7 +399,9 @@ def potential_assembler(
     )
 
     points_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=points.ravel(order="F")
+        ctx,
+        mf.READ_ONLY | mf.COPY_HOST_PTR,
+        hostbuf=points.ravel(order="F").astype(dtype),
     )
 
     grid_buffer = _cl.Buffer(

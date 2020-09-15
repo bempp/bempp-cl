@@ -13,6 +13,6 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - name: Install PyGitHub
-      uses: pip3 install PyGitHub
+      run: pip3 install PyGitHub
     - name: Update website
-      uses: python3 .github/scripts/update_website.py ${{ secrets.BEMPPBOT_GITHUB_TOKEN }}
+      run: python3 .github/scripts/update_website.py ${{ secrets.BEMPPBOT_GITHUB_TOKEN }}
