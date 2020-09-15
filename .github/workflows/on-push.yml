@@ -64,10 +64,10 @@ jobs:
       - run: python3 -m pydocstyle bempp/api
         name: Run pydocstyle checks
       - run: | 
-            black --line-length 88 --check bempp
+            python3 -m black --line-length 88 --check bempp
         name: Run black checks in bempp
       - run: | 
-            black --line-length 88 --check test
+            python3 -m black --line-length 88 --check test
         name: Run black checks on tests
   build-and-test-with-exafmm:
     name: Build and run tests with ExaFMM
