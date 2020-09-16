@@ -138,11 +138,13 @@ def assemble_sparse(
     jrange = _np.arange(nshape_trial)
 
     i_ind = _np.tile(_np.repeat(irange, nshape_trial), len(elements)) + _np.repeat(
-        elements * nshape_test, nshape_test * nshape_trial,
+        elements * nshape_test,
+        nshape_test * nshape_trial,
     )
 
     j_ind = _np.tile(_np.tile(jrange, nshape_test), len(elements)) + _np.repeat(
-        elements * nshape_trial, nshape_test * nshape_trial,
+        elements * nshape_trial,
+        nshape_test * nshape_trial,
     )
 
     return i_ind, j_ind, result

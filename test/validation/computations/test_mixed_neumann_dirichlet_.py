@@ -142,10 +142,12 @@ def test_laplace_mixed_neumann_dirichlet(helpers, precision):
         neumann_space_neumann_segment, global_neumann_space, global_neumann_space
     )
 
-    dirichlet_imbedding_dirichlet_segment = bempp.api.operators.boundary.sparse.identity(
-        dirichlet_space_dirichlet_segment,
-        global_dirichlet_space,
-        global_dirichlet_space,
+    dirichlet_imbedding_dirichlet_segment = (
+        bempp.api.operators.boundary.sparse.identity(
+            dirichlet_space_dirichlet_segment,
+            global_dirichlet_space,
+            global_dirichlet_space,
+        )
     )
 
     dirichlet_imbedding_neumann_segment = bempp.api.operators.boundary.sparse.identity(
