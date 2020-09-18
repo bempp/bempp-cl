@@ -383,7 +383,10 @@ class GridFunction(object):
 
             op = InverseSparseDiscreteBoundaryOperator(
                 identity(
-                    self.space, self.space, self.dual_space, parameters=self.parameters,
+                    self.space,
+                    self.space,
+                    self.dual_space,
+                    parameters=self.parameters,
                 )
                 .weak_form()
                 .A.tocsc()

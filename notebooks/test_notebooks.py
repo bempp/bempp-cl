@@ -5,7 +5,7 @@ from nbconvert.preprocessors import ExecutePreprocessor
 
 # Get all the noteboooks in each folder
 # Notebooks in this list will be skipped as the problems are very large
-large_problems = ["maxwell_dielectric.ipynb", "reentrant_cube_capacity.ipynb"]
+large_problems = ["reentrant_cube_capacity.ipynb"]
 
 notebooks = []
 for dir in ["laplace", "helmholtz", "maxwell"]:

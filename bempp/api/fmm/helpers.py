@@ -549,7 +549,9 @@ def get_local_interaction_evaluator_opencl(
     max_nneighbors = _np.max(_np.diff(grid.element_neighbors.indexptr))
 
     grid_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid.as_array.astype(dtype),
+        ctx,
+        mf.READ_ONLY | mf.COPY_HOST_PTR,
+        hostbuf=grid.as_array.astype(dtype),
     )
 
     # elements_buffer = _cl.Buffer(
@@ -559,11 +561,15 @@ def get_local_interaction_evaluator_opencl(
     # )
 
     points_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=local_points.ravel(order="F"),
+        ctx,
+        mf.READ_ONLY | mf.COPY_HOST_PTR,
+        hostbuf=local_points.ravel(order="F"),
     )
 
     neighbor_indices_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid.element_neighbors.indices,
+        ctx,
+        mf.READ_ONLY | mf.COPY_HOST_PTR,
+        hostbuf=grid.element_neighbors.indices,
     )
 
     neighbor_indexptr_buffer = _cl.Buffer(

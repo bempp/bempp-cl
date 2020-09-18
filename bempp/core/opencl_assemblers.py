@@ -405,7 +405,9 @@ def potential_assembler(
     )
 
     grid_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=space.grid.as_array.astype(dtype),
+        ctx,
+        mf.READ_ONLY | mf.COPY_HOST_PTR,
+        hostbuf=space.grid.as_array.astype(dtype),
     )
 
     # elements_buffer = _cl.Buffer(
@@ -425,7 +427,9 @@ def potential_assembler(
     )
 
     result_buffer = _cl.Buffer(
-        ctx, mf.READ_WRITE, size=result_type.itemsize * kernel_dimension * npoints,
+        ctx,
+        mf.READ_WRITE,
+        size=result_type.itemsize * kernel_dimension * npoints,
     )
 
     coefficients_buffer = _cl.Buffer(
@@ -439,7 +443,11 @@ def potential_assembler(
             * (nelements // WORKGROUP_SIZE_POTENTIAL)
             * result_type.itemsize
         )
-        sum_buffer = _cl.Buffer(ctx, mf.READ_WRITE, size=sum_size,)
+        sum_buffer = _cl.Buffer(
+            ctx,
+            mf.READ_WRITE,
+            size=sum_size,
+        )
 
     if not kernel_options:
         kernel_options = [0.0]

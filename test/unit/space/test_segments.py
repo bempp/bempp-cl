@@ -34,7 +34,11 @@ def test_segment_space(space_info, helpers, precision):
     )
 
     space1 = bempp.api.function_space(
-        grid, space_info[0], space_info[1], segments=[1], include_boundary_dofs=False,
+        grid,
+        space_info[0],
+        space_info[1],
+        segments=[1],
+        include_boundary_dofs=False,
     )
     fun1 = bempp.api.GridFunction(
         space1, coefficients=_np.ones(space1.global_dof_count)

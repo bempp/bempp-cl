@@ -2161,7 +2161,11 @@ def maxwell_efield_regular_assembler(
         for test_point_index in range(n_quad_points):
             test_global_point = test_global_points[:, test_point_index]
             kernel_values = kernel_evaluator(
-                test_global_point, trial_global_points, None, None, kernel_parameters,
+                test_global_point,
+                trial_global_points,
+                None,
+                None,
+                kernel_parameters,
             )
 
             for index in range(n_trial_elements * n_quad_points):
@@ -2281,7 +2285,11 @@ def maxwell_efield_singular(
         )[0]
 
         kernel_values = kernel_evaluator(
-            test_global_points, trial_global_points, None, None, kernel_parameters,
+            test_global_points,
+            trial_global_points,
+            None,
+            None,
+            kernel_parameters,
         )
 
         for test_fun_index in range(nshape_test):
@@ -2384,7 +2392,11 @@ def maxwell_mfield_singular(
         )[0]
 
         kernel_values = kernel_evaluator(
-            test_global_points, trial_global_points, None, None, kernel_parameters,
+            test_global_points,
+            trial_global_points,
+            None,
+            None,
+            kernel_parameters,
         )
 
         for test_fun_index in range(nshape_test):
@@ -2510,7 +2522,11 @@ def maxwell_mfield_regular_assembler(
         for test_point_index in range(n_quad_points):
             test_global_point = test_global_points[:, test_point_index].copy()
             kernel_values = kernel_evaluator(
-                test_global_point, trial_global_points, None, None, kernel_parameters,
+                test_global_point,
+                trial_global_points,
+                None,
+                None,
+                kernel_parameters,
             )
 
             for index in range(n_trial_elements * n_quad_points):
