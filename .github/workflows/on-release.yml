@@ -16,6 +16,7 @@ jobs:
       run: pip3 install PyGitHub
     - name: Update website
       run: python3 .github/scripts/update_website.py ${{ secrets.bemppbot_github_token }}
+
   build-and-publish-docker:
     name: Build and publish testing environment docker image
     runs-on: ubuntu-latest
@@ -35,3 +36,18 @@ jobs:
           tags: ${{ steps.tag_name.outputs.SOURCE_TAG }}
           target: lab
           cache_froms: bempp/cl-notebook:${{ steps.tag_name.outputs.SOURCE_TAG }}
+
+  tweet:
+    name: Tweet about latest version
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Get tag name
+        id: tag_name
+        run: |
+          echo ::set-output name=SOURCE_TAG::${GITHUB_REF#refs/tags/}
+      - name: Install twitter api
+        steps: pip3 install twitter
+      - name: Tweet
+        run: python3 .github/scripts/tweet.py ${{ steps.tag_name.outputs.SOURCE_TAG }} ${{ secrets.twitter1 }} ${{ secrets.twitter2 }} ${{ secrets.twitter3 }} ${{ secrets.twitter4 }}
