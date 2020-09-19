@@ -85,7 +85,7 @@ jobs:
         name: Run Bempp unit tests
 
   check-version-number:
-    name: Check that all version numbers agree
+    name: Check version numbers
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
