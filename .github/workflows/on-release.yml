@@ -16,3 +16,22 @@ jobs:
       run: pip3 install PyGitHub
     - name: Update website
       run: python3 .github/scripts/update_website.py ${{ secrets.bemppbot_github_token }}
+  build-and-publish-docker:
+    name: Build and publish testing environment docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Get tag name
+        id: tag_name
+        run: |
+          echo ::set-output name=SOURCE_TAG::${GITHUB_REF#refs/tags/}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: bempp/cl-notebook
+          tags: ${{ steps.tag_name.outputs.SOURCE_TAG }}
+          target: lab
+          cache_froms: bempp/cl-notebook:${{ steps.tag_name.outputs.SOURCE_TAG }}
