@@ -86,7 +86,7 @@ jobs:
 
   check-version-number:
     name: Check that all version numbers agree
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - name: Install PyGitHub
