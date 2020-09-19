@@ -26,5 +26,5 @@
   "keywords": "Python, OpenCL, boundary element method, partial differential equations, integral equations, numerical analysis",
   "license": "MIT",
   "title": "Bempp-cl",
-  "version": "v0.2.2"
+  "version": "v0.1.1"
 }
