@@ -70,6 +70,7 @@ jobs:
       - run: | 
             python3 -m black --line-length 88 --check test
         name: Run black checks on tests
+
   build-and-test-with-exafmm:
     name: Build and run tests with ExaFMM
     needs: build-and-publish-docker
@@ -82,3 +83,13 @@ jobs:
         name: Install Bempp
       - run: python3 -m pytest --durations=50 test/unit
         name: Run Bempp unit tests
+
+  check-version-number:
+    name: Check version numbers
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install PyGitHub
+        run: pip3 install PyGitHub
+      - name: Check and update version numbers
+        run: python3 .github/scripts/update_version_number.py ${{ secrets.bemppbot_github_token }} ${GITHUB_REF##*/}
