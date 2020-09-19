@@ -91,5 +91,5 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install PyGitHub
         run: pip3 install PyGitHub
-      - name: Update website
+      - name: Check and update version numbers
         run: python3 .github/scripts/update_version_number.py ${{ secrets.bemppbot_github_token }} ${GITHUB_REF##*/}
