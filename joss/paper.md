@@ -37,10 +37,12 @@ functionality gradually moved from C++ to Python with only a few core routines r
 of efforts to fully move to Python, and is an almost complete rewrite of Bempp.
 
 # Statement of need
-Bempp-cl provides a way to formulate a wide variety of problems in a way that closely matches the mathematical formulation.
-For more complex formulations such as Calder\'on preconditioned Maxwell [@maxwellbempp], Bempp-cl contains an operator algebra
-[@operatoralg] that allows the products of operators to be easily obtained and discretised. Bempp-cl uses PyOpenCL [@pyopencl]
-to just-in-time compile its computational kernels on a wide range of CPU and GPU devices and modern architectures.
+Bempp-cl provides a comprehensive collection of routines for the assembly of boundary integral operators to solve a wide
+range of relevant application problems. It contains an operator algebra that allows a straight-forward implementation of
+complex operator preconditioned systems of boundary integral equations [@operatoralg] and in particular implements
+everything that is required for Calder\'on preconditioned Maxwell [@maxwellbempp] problems. Bempp-cl uses PyOpenCL [@pyopencl]
+to just-in-time compile its computational kernels on a wide range of CPU and GPU devices and modern architectures. Alternatively,
+a fallback Numba implementation is provided.
 
 # An overview of Bempp features
 Bempp-cl is divided into two parts: `bempp.api` and `bempp.core`.
@@ -77,6 +79,8 @@ Boundary operators for Laplace, Helmholtz, modified Helmholtz and Maxwell proble
 can create single layer, double layer, adjoint double layer and hypersingular operators. For Maxwell problems, both electric 
 field and magnetic field operators can be used.
 
+## Discretisation and solvers
+Operators are assembled using OpenCL or Numba based dense assembly, or via interface to fast multipole methods.
 Internally, Bempp-cl uses PyOpenCL [@pyopencl] to just-in-time compile its operator assembly routines on a wide range of CPU
 and GPU compute devices. On systems without OpenCL support, Numba [@numba] is used to just-in-time compile
 Python-based assembly kernels, giving a slower but still viable alternative to OpenCL.
@@ -85,9 +89,7 @@ Bempp-cl provides an interface to the Exafmm-t library [@exafmm] for faster asse
 requirements using the fast multipole method (FMM). The interface to Exafmm-t is writting in a generic way so that other
 FMM libraries or alternative matrix compression techniques could be used in future. 
 
-## Discretisation and solvers
-Operators are assembled using OpenCL or Numba based dense assembly, or via interface to fast multipole methods (FMM, see next 
-section). The submodule `bempp.api.linalg` contains wrapped versions of SciPy's [@scipy] LU, CG, and GMRes solvers. By using 
+The submodule `bempp.api.linalg` contains wrapped versions of SciPy's [@scipy] LU, CG, and GMRes solvers. By using 
 SciPy's `LinearOperator` interface, Bempp-cl's boundary operators can easily be used with other iterative solvers.
 
 ## Potential and far field operators
