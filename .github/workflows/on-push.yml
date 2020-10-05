@@ -92,6 +92,6 @@ jobs:
       - name: Install PyGitHub
         run: pip3 install PyGitHub
       - name: Debug branch name
-        run: echo ${GITHUB_REF##*/}
+        run: echo ${GITHUB_REF#refs/heads/}
       - name: Check and update version numbers
-        run: python3 .github/scripts/update_version_number.py ${{ secrets.bemppbot_github_token }} ${GITHUB_REF##*/}
+        run: python3 .github/scripts/update_version_number.py ${{ secrets.bemppbot_github_token }} ${GITHUB_REF#refs/heads/}
