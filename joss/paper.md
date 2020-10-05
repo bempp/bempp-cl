@@ -23,7 +23,6 @@ bibliography: paper.bib
 ---
 
 # Summary
-
 The boundary element method (BEM) is a numerical method for approximating the solution of certain types of partial 
 differential equations (PDEs) in homogeneous bounded or unbounded domains. The method finds the approximation by discretising 
 a boundary integral equation that can be derived from the PDE. The mathematical background of BEM is covered in, for example, 
@@ -35,18 +34,15 @@ user to use BEM to solve a variety of problems, including problems in electrosta
 
 Bempp-cl began life as BEM++, and was a Python library with a C++ computational core. The ++ slowly changed into pp as 
 functionality gradually moved from C++ to Python with only a few core routines remaining in C++. Bempp-cl is the culmination 
-of efforts to fully move to Python, and is an almost complete rewrite of Bempp/
-
-In this paper, we give an overview of the functionality of Bempp-cl and present highlights of the library's recent developments.
-An overview of the original version of the library is presented in @bemppold. Full documentation of the library can be found
-online at ``bempp.com`` and in @bempphandbook.
+of efforts to fully move to Python, and is an almost complete rewrite of Bempp.
 
 # Statement of need
-
-
+Bempp-cl provides a way to formulate a wide variety of problems in a way that closely matches the mathematical formulation.
+For more complex formulations such as Calder\'on preconditioned Maxwell [@maxwellbempp], Bempp-cl contains an operator algebra
+[@operatoralg] that allows the products of operators to be easily obtained and discretised. Bempp-cl uses PyOpenCL [@pyopencl]
+to just-in-time compile its computational kernels on a wide range of CPU and GPU devices and modern architectures.
 
 # An overview of Bempp features
-
 Bempp-cl is divided into two parts: `bempp.api` and `bempp.core`.
 The user interface of the library is contained in `bempp.api`.
 The core assembly routines of the library are contained in `bempp.core`. The majority of users of Bempp-cl are unlikely to need
@@ -79,9 +75,7 @@ created using the `bempp.api.function_space` command.
 Boundary operators for Laplace, Helmholtz, modified Helmholtz and Maxwell problems can be found in the 
 `bempp.api.operators.boundary` submodule, as well as sparse identity operators. For Laplace and Helmholtz problems, Bempp-cl 
 can create single layer, double layer, adjoint double layer and hypersingular operators. For Maxwell problems, both electric 
-field and magnetic field operators can be used. For formulations involving the product of operators, such as Calder\'on 
-preconditioned Maxwell problems [@maxwellbempp], Bempp-cl contains an operator algebra that allows the product to be easily 
-obtained. This operator algebra is described in detail in @operatoralg.
+field and magnetic field operators can be used.
 
 Internally, Bempp-cl uses PyOpenCL [@pyopencl] to just-in-time compile its operator assembly routines on a wide range of CPU
 and GPU compute devices. On systems without OpenCL support, Numba [@numba] is used to just-in-time compile
@@ -101,9 +95,8 @@ Potential and far fiels operators for the evaluation at points in the domain or 
 included in the `bempp.api.operators.potential` and `bempp.api.operators.far_field` submodules.
 
 ## Further information
-The [Bempp-cl repository](https://github.com/bempp/bempp-cl) contains a growing list of example Jupyter notebooks. Moreover, 
-on the [Bempp hompepage](https://bempp.com) an in-development Bempp-cl handbook is hosted that contains details about the 
-functionality of Bempp-cl.
+Full documentation of the library, including a number of example Jupyter notebooks, can be found online at ``bempp.com`` and in
+in the in-development Bempp Handbook [@bempphandbook].
 
 # Acknowledgements
 We would like to thank the Exafmm team [@exafmm], and here in particular Lorena Barba and Tingyu Wang for their efforts to 
