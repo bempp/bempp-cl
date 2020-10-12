@@ -307,6 +307,10 @@ def bc_function_space(
     """Define a space of BC functions."""
     from .space import SpaceBuilder
 
+    if len(grid.vertices[0]) - len(grid.edges[0]) + len(grid.elements[0]):
+        # Grid is a screen, not a polyhedron
+        raise ValueError("BC spaces not yet supported on screens")
+
     bary_grid = grid.barycentric_refinement
 
     coarse_space = rwg0_function_space(
@@ -354,6 +358,10 @@ def rbc_function_space(
 ):
     """Define a space of RBC functions."""
     from .space import SpaceBuilder
+
+    if len(grid.vertices[0]) - len(grid.edges[0]) + len(grid.elements[0]):
+        # Grid is a screen, not a polyhedron
+        raise ValueError("BC spaces not yet supported on screens")
 
     bary_grid = grid.barycentric_refinement
 
