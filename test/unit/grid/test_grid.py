@@ -3,6 +3,7 @@
 # pylint: disable=redefined-outer-name
 
 import numpy as np
+import bempp.api
 import pytest
 
 
@@ -44,7 +45,6 @@ def test_as_array(two_element_grid):
 def test_edge_adjacency():
     """Check edge connectivity information for a small sphere."""
     # pylint: disable=too-many-locals
-    import bempp.api
     from bempp.api.grid.grid import get_element_to_element_matrix
 
     small_sphere = bempp.api.shapes.regular_sphere(3)
@@ -78,7 +78,6 @@ def test_edge_adjacency():
 def test_vertex_adjacency():
     """Check vertex connectivity information for a small sphere."""
     # pylint: disable=too-many-locals
-    import bempp.api
     from bempp.api.grid.grid import get_element_to_element_matrix
 
     small_sphere = bempp.api.shapes.regular_sphere(3)

@@ -5,14 +5,13 @@
 
 import numpy as _np
 import pytest
+import bempp.api
 
 pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
 
 def test_p1_color_map():
     """Test if the color map for p1 spaces is correct."""
-    import bempp.api
-
     grid = bempp.api.shapes.cube()
 
     space = bempp.api.function_space(grid, "P", 1)
@@ -29,8 +28,6 @@ def test_p1_color_map():
 
 def test_rwg_color_map():
     """Test if the color map for RWG spaces is correct."""
-    import bempp.api
-
     grid = bempp.api.shapes.cube()
 
     space = bempp.api.function_space(grid, "RWG", 0)
@@ -47,8 +44,6 @@ def test_rwg_color_map():
 
 def test_p1_open_segment():
     """Check a P1 open segment."""
-    import bempp.api
-
     grid = bempp.api.shapes.cube()
 
     space = bempp.api.function_space(grid, "P", 1, segments=[1])
@@ -89,8 +84,6 @@ def test_p1_open_segment():
 
 def test_p1_extended_segment():
     """Check a P1 extended segment."""
-    import bempp.api
-
     grid = bempp.api.shapes.cube()
 
     space = bempp.api.function_space(
@@ -125,8 +118,6 @@ def test_p1_extended_segment():
 
 def test_p1_closed_segment():
     """Check a P1 closed segment."""
-    import bempp.api
-
     grid = bempp.api.shapes.cube()
 
     space = bempp.api.function_space(
@@ -161,8 +152,6 @@ def test_p1_closed_segment():
 
 def test_rwg_open_segment():
     """Check an RWG open segment."""
-    import bempp.api
-
     grid = bempp.api.shapes.cube()
 
     space = bempp.api.function_space(grid, "RWG", 0, segments=[1])
@@ -199,8 +188,6 @@ def test_rwg_open_segment():
 
 def test_rwg_closed_segment():
     """Check an RWG closed segment."""
-    import bempp.api
-
     grid = bempp.api.shapes.cube()
 
     space = bempp.api.function_space(
@@ -216,8 +203,6 @@ def test_rwg_closed_segment():
 
 def test_snc_closed_segment():
     """Check an SNC closed segment."""
-    import bempp.api
-
     grid = bempp.api.shapes.cube()
 
     space = bempp.api.function_space(
@@ -233,8 +218,6 @@ def test_snc_closed_segment():
 
 def test_snc_open_segment():
     """Check an SNC open segment."""
-    import bempp.api
-
     grid = bempp.api.shapes.cube()
 
     space = bempp.api.function_space(grid, "SNC", 0, segments=[1])
@@ -271,8 +254,6 @@ def test_snc_open_segment():
 
 def test_dp1_closed_segment():
     """Check an DP1 closed segment."""
-    import bempp.api
-
     grid = bempp.api.shapes.cube()
 
     space = bempp.api.function_space(grid, "DP", 1, segments=[1])
@@ -282,3 +263,20 @@ def test_dp1_closed_segment():
             assert _np.all(space.local_multipliers[elem_index] != 0)
         else:
             assert _np.all(space.local_multipliers[elem_index] == 0)
+
+
+@pytest.mark.parametrize("grid", [
+    bempp.api.shapes.sphere(h=0.5),
+    bempp.api.shapes.cube(h=0.5),
+    bempp.api.shapes.shapes.screen(_np.array([(1, 1, 0), (0, 1, 0), (0, 0, 0), (1, 0, 0)]), h=0.5)])
+@pytest.mark.parametrize("space_type", [("DP", 0), ("DP", 1), ("P", 1), ("DUAL", 0), ("DUAL", 1),
+                                        ("RWG", 0), ("SNC", 0), ("BC", 0), ("RBC", 0)])
+def test_local2global(grid, space_type):
+    """Check that data in local2global and global2local agree."""
+    space = bempp.api.function_space(grid, *space_type)
+    test_local2global = _np.full_like(space.local2global, -1)
+    for i, locals in enumerate(space.global2local):
+        for cell, dof in locals:
+            assert space.local2global[cell][dof] == i
+            test_local2global[cell][dof] = i
+    assert _np.allclose(space.local2global, test_local2global)
