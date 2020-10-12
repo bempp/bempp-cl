@@ -434,7 +434,7 @@ class FunctionSpace(object):
     def cell_dofs(self, cell_index):
         """Return the DOF numbers associated with the cell."""
         return [
-            -1 if _np.isclose(j, 0) else i
+            None if _np.isclose(j, 0) else i
             for i, j in zip(
                 self.local2global[cell_index], self.local_multipliers[cell_index]
             )
