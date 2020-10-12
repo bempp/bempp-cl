@@ -16,7 +16,7 @@ def test_import(filename, folder):
     bempp.api.grid.io.import_grid(os.path.join(folder, filename))
 
 
-@pytest.mark.parametrize("filename", ["testoutput_cube.msh"])
+@pytest.mark.parametrize("filename", ["testoutput_cube.msh", "test_output_cube.vtk"])
 def test_export(filename, folder):
     """Return geometries of two element grid."""
     grid = bempp.api.shapes.cube(h=0.5)
