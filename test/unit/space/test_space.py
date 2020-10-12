@@ -263,38 +263,3 @@ def test_dp1_closed_segment():
             assert _np.all(space.local_multipliers[elem_index] != 0)
         else:
             assert _np.all(space.local_multipliers[elem_index] == 0)
-
-
-@pytest.mark.parametrize(
-    "grid",
-    [
-        bempp.api.shapes.sphere(h=0.5),
-        bempp.api.shapes.cube(h=0.5),
-        bempp.api.shapes.shapes.screen(
-            _np.array([(1, 1, 0), (0, 1, 0), (0, 0, 0), (1, 0, 0)]), h=0.5
-        ),
-    ],
-)
-@pytest.mark.parametrize(
-    "space_type",
-    [
-        ("DP", 0),
-        ("DP", 1),
-        ("P", 1),
-        ("DUAL", 0),
-        ("DUAL", 1),
-        ("RWG", 0),
-        ("SNC", 0),
-        ("BC", 0),
-        ("RBC", 0),
-    ],
-)
-def test_local2global(grid, space_type):
-    """Check that data in local2global and global2local agree."""
-    space = bempp.api.function_space(grid, *space_type)
-    test_local2global = _np.full_like(space.local2global, -1)
-    for i, locals in enumerate(space.global2local):
-        for cell, dof in locals:
-            assert space.local2global[cell][dof] == i
-            test_local2global[cell][dof] = i
-    assert _np.allclose(space.local2global, test_local2global)
