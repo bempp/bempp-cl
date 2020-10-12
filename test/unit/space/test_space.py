@@ -9,11 +9,20 @@ import bempp.api
 
 pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
+grids = pytest.mark.parametrize(
+    "grid",
+    [
+        bempp.api.shapes.cube(),
+        bempp.api.shapes.screen(
+            _np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]]), h=0.2
+        ),
+    ],
+)
 
-def test_p1_color_map():
+
+@grids
+def test_p1_color_map(grid):
     """Test if the color map for p1 spaces is correct."""
-    grid = bempp.api.shapes.cube()
-
     space = bempp.api.function_space(grid, "P", 1)
 
     colors_unique = True
@@ -26,10 +35,9 @@ def test_p1_color_map():
     assert colors_unique
 
 
-def test_rwg_color_map():
+@grids
+def test_rwg_color_map(grid):
     """Test if the color map for RWG spaces is correct."""
-    grid = bempp.api.shapes.cube()
-
     space = bempp.api.function_space(grid, "RWG", 0)
 
     colors_unique = True
@@ -42,10 +50,9 @@ def test_rwg_color_map():
     assert colors_unique
 
 
-def test_p1_open_segment():
+@grids
+def test_p1_open_segment(grid):
     """Check a P1 open segment."""
-    grid = bempp.api.shapes.cube()
-
     space = bempp.api.function_space(grid, "P", 1, segments=[1])
 
     dofs_empty = True
@@ -82,10 +89,9 @@ def test_p1_open_segment():
     assert boundary_dofs_empty
 
 
-def test_p1_extended_segment():
+@grids
+def test_p1_extended_segment(grid):
     """Check a P1 extended segment."""
-    grid = bempp.api.shapes.cube()
-
     space = bempp.api.function_space(
         grid,
         "P",
@@ -116,10 +122,9 @@ def test_p1_extended_segment():
                 assert space.local_multipliers[elem_index, local_index] == 0
 
 
-def test_p1_closed_segment():
+@grids
+def test_p1_closed_segment(grid):
     """Check a P1 closed segment."""
-    grid = bempp.api.shapes.cube()
-
     space = bempp.api.function_space(
         grid, "P", 1, segments=[1], include_boundary_dofs=True
     )
@@ -150,10 +155,9 @@ def test_p1_closed_segment():
     assert boundary_dofs_included
 
 
-def test_rwg_open_segment():
+@grids
+def test_rwg_open_segment(grid):
     """Check an RWG open segment."""
-    grid = bempp.api.shapes.cube()
-
     space = bempp.api.function_space(grid, "RWG", 0, segments=[1])
 
     dofs_empty = True
@@ -186,10 +190,9 @@ def test_rwg_open_segment():
     assert boundary_dofs_empty
 
 
-def test_rwg_closed_segment():
+@grids
+def test_rwg_closed_segment(grid):
     """Check an RWG closed segment."""
-    grid = bempp.api.shapes.cube()
-
     space = bempp.api.function_space(
         grid, "RWG", 0, segments=[1], include_boundary_dofs=True
     )
@@ -201,10 +204,9 @@ def test_rwg_closed_segment():
             assert _np.all(space.local_multipliers[elem_index] == 0)
 
 
-def test_snc_closed_segment():
+@grids
+def test_snc_closed_segment(grid):
     """Check an SNC closed segment."""
-    grid = bempp.api.shapes.cube()
-
     space = bempp.api.function_space(
         grid, "SNC", 0, segments=[1], include_boundary_dofs=True
     )
@@ -216,10 +218,9 @@ def test_snc_closed_segment():
             assert _np.all(space.local_multipliers[elem_index] == 0)
 
 
-def test_snc_open_segment():
+@grids
+def test_snc_open_segment(grid):
     """Check an SNC open segment."""
-    grid = bempp.api.shapes.cube()
-
     space = bempp.api.function_space(grid, "SNC", 0, segments=[1])
 
     dofs_empty = True
@@ -252,10 +253,9 @@ def test_snc_open_segment():
     assert boundary_dofs_empty
 
 
-def test_dp1_closed_segment():
+@grids
+def test_dp1_closed_segment(grid):
     """Check an DP1 closed segment."""
-    grid = bempp.api.shapes.cube()
-
     space = bempp.api.function_space(grid, "DP", 1, segments=[1])
 
     for elem_index in range(grid.number_of_elements):

@@ -38,15 +38,24 @@ def test_local2global(
     grid, space_type, include_boundary_dofs, truncate_at_segment_edge
 ):
     """Check that data in local2global and global2local agree."""
+    if len(grid.vertices[0]) - len(grid.edges[0]) + len(grid.elements[0]) != 2:
+        # grid is a screen, not a polyhedron
+        if space_type[0] in ["BC", "RBC"]:
+            print("BC spaces not yet supported on screens")
+            return
+
     space = bempp.api.function_space(
         grid,
         *space_type,
         include_boundary_dofs=include_boundary_dofs,
         truncate_at_segment_edge=truncate_at_segment_edge
     )
-    test_local2global = _np.full_like(space.local2global, -1)
+    test_local2global = _np.full(space.local2global.shape, False, dtype=_np.bool)
     for i, locals in enumerate(space.global2local):
         for cell, dof in locals:
             assert space.local2global[cell][dof] == i
-            test_local2global[cell][dof] = i
-    assert _np.allclose(space.local2global, test_local2global)
+            test_local2global[cell][dof] = True
+    for i, globals in enumerate(test_local2global):
+        for j, dof in enumerate(globals):
+            if not dof:
+                assert space.local_multipliers[i][j] == 0
