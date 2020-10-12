@@ -58,5 +58,5 @@ def test_local2global(
     for i, globals in enumerate(test_local2global):
         for j, dof in enumerate(globals):
             if dof == -1:
-                assert space.local_multipliers[i][j] == 0
+                assert _np.isclose(space.local_multipliers[i][j], 0)
         assert (globals == space.cell_dofs(i)).all()
