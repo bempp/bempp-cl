@@ -50,12 +50,13 @@ def test_local2global(
         include_boundary_dofs=include_boundary_dofs,
         truncate_at_segment_edge=truncate_at_segment_edge
     )
-    test_local2global = _np.full(space.local2global.shape, False, dtype=_np.bool)
+    test_local2global = _np.full(space.local2global.shape, -1, dtype=_np.int32)
     for i, locals in enumerate(space.global2local):
         for cell, dof in locals:
             assert space.local2global[cell][dof] == i
-            test_local2global[cell][dof] = True
+            test_local2global[cell][dof] = i
     for i, globals in enumerate(test_local2global):
         for j, dof in enumerate(globals):
-            if not dof:
+            if dof == -1:
                 assert space.local_multipliers[i][j] == 0
+        assert (globals == space.cell_dofs(i)).all()
