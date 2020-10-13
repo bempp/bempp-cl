@@ -10,9 +10,12 @@ def cleanup_fmm_tmp():
     """Clean up the FMM tmp directory."""
     from pathlib import Path
 
-    if FMM_TMP_DIR is not None:
-        for tmp_file in Path(FMM_TMP_DIR).glob("*.tmp"):
-            tmp_file.unlink()
+    try:
+        if FMM_TMP_DIR is not None:
+            for tmp_file in Path(FMM_TMP_DIR).glob("*.tmp"):
+                tmp_file.unlink()
+    except:
+        print("Could not delete FMM temporary files.")
 
 
 class ExafmmInterface(object):
