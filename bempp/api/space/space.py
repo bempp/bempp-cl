@@ -431,6 +431,15 @@ class FunctionSpace(object):
         """Return order of the space."""
         return self._order
 
+    def cell_dofs(self, cell_index):
+        """Return the DOF numbers associated with the cell."""
+        return [
+            None if _np.isclose(j, 0) else i
+            for i, j in zip(
+                self.local2global[cell_index], self.local_multipliers[cell_index]
+            )
+        ]
+
     @property
     def local2global(self):
         """Return local to global map."""
