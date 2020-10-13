@@ -460,7 +460,7 @@ class GridFunction(object):
         if dual_space == self._dual_space and self._projections is not None:
             return self._projections
 
-        ident = get_mass_matrix(self.space, dual_space).weak_form()
+        ident = get_mass_matrix(self.space, dual_space)
         return ident * self.coefficients
 
     def project_to_space(self, space):
