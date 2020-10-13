@@ -123,7 +123,7 @@ venv.bak/
 notebooks/laplace/mixed_dirichlet_neumann_laplace_solution.msh
 
 # Ignore test output
-text/grid/grids/testoutput*
+testoutput*
 
 .exafmm/*
 
