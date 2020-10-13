@@ -376,21 +376,9 @@ class GridFunction(object):
     def coefficients(self):
         """Return coefficient vector."""
         if self._coefficients is None:
-            from bempp.api.operators.boundary.sparse import identity
-            from bempp.api.assembly.discrete_boundary_operator import (
-                InverseSparseDiscreteBoundaryOperator,
-            )
+            from bempp.api.utils.helpers import get_inverse_mass_matrix
 
-            op = InverseSparseDiscreteBoundaryOperator(
-                identity(
-                    self.space,
-                    self.space,
-                    self.dual_space,
-                    parameters=self.parameters,
-                )
-                .weak_form()
-                .A.tocsc()
-            )
+            op = get_inverse_mass_matrix(self.space, self.dual_space)
             self._coefficients = op @ self._projections
             self._representation = "primal"
 
@@ -465,6 +453,7 @@ class GridFunction(object):
 
         """
         import bempp.api
+        from bempp.api.utils.helpers import get_mass_matrix
 
         if dual_space is None:
             dual_space = self.dual_space
@@ -472,16 +461,15 @@ class GridFunction(object):
         if dual_space == self._dual_space and self._projections is not None:
             return self._projections
 
-        ident = bempp.api.operators.boundary.sparse.identity(
-            self.space, self.space, dual_space
-        ).weak_form()
+        ident = get_mass_matrix(self.space, dual_space).weak_form()
         return ident * self.coefficients
 
     def project_to_space(self, space):
         """Return an L^2 projection on another space."""
-        from bempp.api.operators.boundary.sparse import identity
 
-        ident = identity(self.space, self.space, space).weak_form()
+        from bempp.api.utils.helpers import get_mass_matrix
+
+        ident = get_mass_matrix(self.space, space)
 
         return GridFunction(space, projections=ident @ self.coefficients)
 

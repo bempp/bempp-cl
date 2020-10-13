@@ -43,21 +43,14 @@ class BoundaryOperator(object):
 
     def strong_form(self):
         """Return a discrete operator  that maps into the range space."""
+        from bempp.api.utils.helpers import get_inverse_mass_matrix
+        
         if self._range_map is None:
 
             # This is the most frequent case and we cache the mass
             # matrix from the space object.
-            if self.range == self.dual_to_range:
-                self._range_map = self.dual_to_range.inverse_mass_matrix()
-            else:
-                from bempp.api.assembly.discrete_boundary_operator import (
-                    InverseSparseDiscreteBoundaryOperator,
-                )
-                from bempp.api.operators.boundary.sparse import identity
-
-                self._range_map = InverseSparseDiscreteBoundaryOperator(
-                    identity(self.range, self.range, self.dual_to_range).weak_form()
-                )
+            self._range_map = get_inverse_mass_matrix(
+                self.range, self.dual_to_range)
 
         return self._range_map * self.weak_form()
 
