@@ -22,7 +22,9 @@ for line in config.decoded_content.decode("utf8").split("\n"):
     else:
         new_config.append(line)
 
-repo.update_file("_config.yml", "Update version number", "\n".join(new_config), sha=config.sha)
+repo.update_file(
+    "_config.yml", "Update version number", "\n".join(new_config), sha=config.sha
+)
 
 old_changelog = repo.get_contents("changelog.md")
 
@@ -32,4 +34,6 @@ new_changelog += "(https://github.com/bempp/bempp-cl/releases/tag/" + tag + ")\n
 new_changelog += changelog.replace("\r\n", "\n")
 new_changelog += old_changelog.decoded_content.decode("utf8").split("---", 3)[2]
 
-repo.update_file("changelog.md", "Add to changelog", new_changelog, sha=old_changelog.sha)
+repo.update_file(
+    "changelog.md", "Add to changelog", new_changelog, sha=old_changelog.sha
+)
