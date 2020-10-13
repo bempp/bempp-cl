@@ -452,7 +452,6 @@ class GridFunction(object):
             A vector of projections onto the dual space.
 
         """
-        import bempp.api
         from bempp.api.utils.helpers import get_mass_matrix
 
         if dual_space is None:
