@@ -46,6 +46,8 @@ class BlockedOperatorBase(object):
             Usually the strong form is cached. If this parameter is set to
             `true` the strong form is recomputed.
         """
+        from bempp.api.utils.helpers import get_inverse_mass_matrix
+
         if self._range_map is None:
 
             nrows = len(self.range_spaces)
@@ -53,26 +55,9 @@ class BlockedOperatorBase(object):
             _range_ops = _np.empty((nrows, nrows), dtype="O")
 
             for index in range(nrows):
-
-                # This is the most frequent case and we cache the mass
-                # matrix from the space object.
-                if self.range_spaces[index] == self.dual_to_range_spaces[index]:
-                    _range_ops[index, index] = self.dual_to_range_spaces[
-                        index
-                    ].inverse_mass_matrix()
-                else:
-                    from bempp.api.operators.boundary.sparse import identity
-                    from bempp.api.assembly.discrete_boundary_operator import (
-                        InverseSparseDiscreteBoundaryOperator,
-                    )
-
-                    _range_ops[index, index] = InverseSparseDiscreteBoundaryOperator(
-                        identity(
-                            self.range_spaces[index],
-                            self.range_spaces[index],
-                            self.dual_to_range_spaces[index],
-                        ).weak_form()
-                    )
+                _range_ops[index, index] = get_inverse_mass_matrix(
+                    self.range_spaces[index], self.dual_to_range_spaces[index]
+                )
 
             self._range_map = BlockedDiscreteOperator(_range_ops)
 

@@ -127,3 +127,40 @@ def numba_decorate(fun):
             fastmath=True,
             boundscheck=False,
         )(fun)
+
+
+def get_mass_matrix(domain, dual_to_range):
+    """
+    Directly get a mass matrix.
+
+    Frequently, operations need a discrete mass matrix.
+    This method provides it and if possible uses the
+    mass matrix attribute from the corresponding function
+    space in order to allow quick caching.
+
+    """
+    from bempp.api.operators.boundary.sparse import identity
+
+    if domain == dual_to_range:
+        return domain.mass_matrix()
+    else:
+        return identity(domain, domain, dual_to_range).weak_form()
+
+
+def get_inverse_mass_matrix(domain, dual_to_range):
+    """
+    Quickly get an inverse mass matrix operator.
+
+    Uses the cached version from a function space if
+    possible.
+    """
+    from bempp.api.assembly.discrete_boundary_operator import (
+        InverseSparseDiscreteBoundaryOperator,
+    )
+
+    if domain == dual_to_range:
+        return domain.inverse_mass_matrix()
+    else:
+        return InverseSparseDiscreteBoundaryOperator(
+            get_mass_matrix(domain, dual_to_range)
+        )
