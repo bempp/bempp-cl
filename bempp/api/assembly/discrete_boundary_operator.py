@@ -436,6 +436,7 @@ class ZeroDiscreteBoundaryOperator(_DiscreteOperatorBase):
 
     def _matmat(self, x):
         return _np.zeros((self.shape[0], x.shape[1]), dtype="float64")
+
     @property
     def A(self):
         """Return as dense."""
