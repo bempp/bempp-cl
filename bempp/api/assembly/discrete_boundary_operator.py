@@ -440,7 +440,8 @@ class ZeroDiscreteBoundaryOperator(_DiscreteOperatorBase):
     @property
     def A(self):
         """Return as dense."""
-        return _np.zeros((self.shape[0], self.shape[1]), dtype="float64")
+        from scipy.sparse import csc_matrix
+        return csc_matrix((self.shape[0], self.shape[1]), dtype="float64")
 
 
 class DiscreteRankOneOperator(_DiscreteOperatorBase):
