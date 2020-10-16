@@ -441,6 +441,7 @@ class ZeroDiscreteBoundaryOperator(_DiscreteOperatorBase):
     def A(self):
         """Return as dense."""
         from scipy.sparse import csc_matrix
+
         return csc_matrix((self.shape[0], self.shape[1]), dtype="float64")
 
 
