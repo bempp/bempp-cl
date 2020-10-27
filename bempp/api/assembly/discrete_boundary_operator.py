@@ -437,6 +437,13 @@ class ZeroDiscreteBoundaryOperator(_DiscreteOperatorBase):
     def _matmat(self, x):
         return _np.zeros((self.shape[0], x.shape[1]), dtype="float64")
 
+    @property
+    def A(self):
+        """Return as dense."""
+        from scipy.sparse import csc_matrix
+
+        return csc_matrix((self.shape[0], self.shape[1]), dtype="float64")
+
 
 class DiscreteRankOneOperator(_DiscreteOperatorBase):
     """Creates a discrete rank one operator.
