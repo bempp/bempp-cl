@@ -95,7 +95,7 @@ jobs:
         name: Run black checks on CI scripts
 
   build-and-test-with-exafmm:
-    name: Build and run tests with ExaFMM
+    name: Build Bempp and run tests
     needs:
       - build-and-publish-docker
       - get-branch
