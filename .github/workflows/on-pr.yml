@@ -29,22 +29,10 @@ jobs:
     name: Build and run tests with ExaFMM
     runs-on: ubuntu-latest
     container:
-      image: bempp/cl-dev-env:with-exafmm
+      image: bempp/cl-dev-env:latest
     steps:
       - uses: actions/checkout@v2
       - run: python3 setup.py install
         name: Install Bempp
       - run: python3 -m pytest --durations=50 test/unit
         name: Run Bempp unit tests
-
-  check-version-number:
-    name: Check version numbers
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install PyGitHub
-        run: pip3 install PyGitHub
-      - name: Debug branch name
-        run: echo ${GITHUB_REF#refs/heads/}
-      - name: Check and update version numbers
-        run: python3 .github/scripts/update_version_number.py ${{ secrets.bemppbot_github_token }} ${GITHUB_REF#refs/heads/}
