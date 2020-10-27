@@ -1,4 +1,4 @@
-on: pull-request
+on: pull_request
 
 jobs:
   style-checks:
