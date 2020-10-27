@@ -26,7 +26,7 @@ jobs:
         name: Run black checks on CI scripts
 
   build-and-test-with-exafmm:
-    name: Build and run tests with ExaFMM
+    name: Run tests
     runs-on: ubuntu-latest
     container:
       image: bempp/cl-dev-env:latest
