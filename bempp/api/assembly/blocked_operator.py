@@ -688,7 +688,10 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
     @property
     def A(self):
         """TODO: add docstring."""
-        from bempp.api.assembly.discrete_boundary_operator import SparseDiscreteBoundaryOperator, ZeroDiscreteBoundaryOperator
+        from bempp.api.assembly.discrete_boundary_operator import (
+            SparseDiscreteBoundaryOperator,
+            ZeroDiscreteBoundaryOperator,
+        )
 
         rows = []
         for i in range(self._ndims[0]):
@@ -696,7 +699,9 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
             for j in range(self._ndims[1]):
                 op = self[i, j]
                 temp = op.A
-                if isinstance(op, SparseDiscreteBoundaryOperator) or isinstance(op, ZeroDiscreteBoundaryOperator):
+                if isinstance(op, SparseDiscreteBoundaryOperator) or isinstance(
+                    op, ZeroDiscreteBoundaryOperator
+                ):
                     temp = temp.A
                 row.append(temp)
             rows.append(_np.hstack(row))
