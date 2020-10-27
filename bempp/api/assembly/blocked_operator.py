@@ -694,9 +694,9 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
         for i in range(self._ndims[0]):
             row = []
             for j in range(self._ndims[1]):
-                op = self[i,j]
+                op = self[i, j]
                 temp = op.A
-                if isinstance(op,SparseDiscreteBoundaryOperator) or isinstance(op,ZeroDiscreteBoundaryOperator):
+                if isinstance(op, SparseDiscreteBoundaryOperator) or isinstance(op, ZeroDiscreteBoundaryOperator):
                     temp = temp.A
                 row.append(temp)
             rows.append(_np.hstack(row))
