@@ -691,6 +691,7 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
         from bempp.api.assembly.discrete_boundary_operator import (
             SparseDiscreteBoundaryOperator,
             ZeroDiscreteBoundaryOperator,
+            InverseSparseDiscreteBoundaryOperator,
         )
 
         rows = []
@@ -698,13 +699,18 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
             row = []
             for j in range(self._ndims[1]):
                 op = self[i, j]
-                temp = op.A
+
                 if isinstance(op, SparseDiscreteBoundaryOperator) or isinstance(
                     op, ZeroDiscreteBoundaryOperator
                 ):
-                    temp = temp.A
+                    temp = op.A.A
+                elif isinstance(op, InverseSparseDiscreteBoundaryOperator):
+                    temp = op.A()
+                else:
+                    temp = op.A
                 row.append(temp)
             rows.append(_np.hstack(row))
+
         return _np.vstack(rows)
 
     def _transpose(self):
