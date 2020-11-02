@@ -45,7 +45,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/cache/Dockerfile
-          key: ${{ runner.os }}-Dockerfile-${{ needs.get-branch.outputs.tag }}-${{ hashFiles('Dockerfile') }}
+          key: ${{ runner.os }}-Dockerfile-${{ needs.get-branch.outputs.tag//\/_}}-${{ hashFiles('Dockerfile') }}
       - name: touch ~/cache/Dockerfile
         run: touch ~/cache/Dockerfile
       - name: compare Dockerfile with cache
