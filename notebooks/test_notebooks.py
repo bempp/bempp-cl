@@ -9,9 +9,10 @@ large_problems = ["reentrant_cube_capacity.ipynb"]
 
 notebooks = []
 for dir in ["laplace", "helmholtz", "maxwell"]:
-    for i in os.listdir(os.path.join("notebooks", dir)):
+    path = os.path.join(os.path.dirname(os.path.realpath(__file__)), dir)
+    for i in os.listdir(path):
         if i.endswith(".ipynb") and i not in large_problems:
-            notebooks.append((os.path.join("notebooks", dir), i))
+            notebooks.append((path, i))
 
 
 @pytest.mark.parametrize(("path", "notebook"), notebooks)
