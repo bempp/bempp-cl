@@ -291,14 +291,98 @@ def ellipsoid(r1=1, r2=1, r3=1, origin=(0, 0, 0), h=0.1):
     Ruled Surface(28) = {27};
     Surface Loop(29) = {28,26,16,14,20,24,22,18};
     Volume(30) = {29};
-    Physical Surface(1) = {14};
-    Physical Surface(2) = {16};
-    Physical Surface(3) = {18};
-    Physical Surface(4) = {20};
-    Physical Surface(5) = {22};
-    Physical Surface(6) = {24};
-    Physical Surface(7) = {26};
-    Physical Surface(8) = {28};
+    Physical Surface(10) = {28,26,16,14,20,24,22,18};
+    Mesh.Algorithm = 6;
+    """
+
+    geometry = (
+        "r1 = "
+        + str(r1)
+        + ";\n"
+        + "r2 = "
+        + str(r2)
+        + ";\n"
+        + "r3 = "
+        + str(r3)
+        + ";\n"
+        + "orig0 = "
+        + str(origin[0])
+        + ";\n"
+        + "orig1 = "
+        + str(origin[1])
+        + ";\n"
+        + "orig2 = "
+        + str(origin[2])
+        + ";\n"
+        + "cl = "
+        + str(h)
+        + ";\n"
+        + stub
+    )
+
+    return __generate_grid_from_geo_string(geometry)
+
+
+def multitrace_ellipsoid(r1=1, r2=1, r3=1, origin=(0, 0, 0), h=0.1):
+    """
+    Return an ellipsoid grid.
+
+    Parameters
+    ----------
+    r1 : float
+        Radius of first major axis
+    r2 : float
+        Radius of second major axis
+    r3 : float
+        Radius of third major axis
+    origin : tuple
+        Tuple specifying the origin of the ellipsoid
+    h : float
+        Element size.
+    """
+    stub = """
+    Point(1) = {orig0,orig1,orig2,cl};
+    Point(2) = {orig0+r1,orig1,orig2,cl};
+    Point(3) = {orig0,orig1+r2,orig2,cl};
+    Ellipse(1) = {2,1,2,3};
+    Point(4) = {orig0-r1,orig1,orig2,cl};
+    Point(5) = {orig0,orig1-r2,orig2,cl};
+    Ellipse(2) = {3,1,4,4};
+    Ellipse(3) = {4,1,4,5};
+    Ellipse(4) = {5,1,2,2};
+    Point(6) = {orig0,orig1,orig2-r3,cl};
+    Point(7) = {orig0,orig1,orig2+r3,cl};
+    Ellipse(5) = {3,1,3,6};
+    Ellipse(6) = {6,1,5,5};
+    Ellipse(7) = {5,1,5,7};
+    Ellipse(8) = {7,1,3,3};
+    Ellipse(9) = {2,1,2,7};
+    Ellipse(10) = {7,1,4,4};
+    Ellipse(11) = {4,1,4,6};
+    Ellipse(12) = {6,1,2,2};
+    Line Loop(13) = {2,8,-10};
+    Ruled Surface(14) = {13};
+    Line Loop(100) = {5,6,7,8};
+    Ruled Surface(101) = {-100};
+    Line Loop(15) = {10,3,7};
+    Ruled Surface(16) = {15};
+    Line Loop(17) = {-8,-9,1};
+    Ruled Surface(18) = {17};
+    Line Loop(19) = {-11,-2,5};
+    Ruled Surface(20) = {19};
+    Line Loop(21) = {-5,-12,-1};
+    Ruled Surface(22) = {21};
+    Line Loop(23) = {-3,11,6};
+    Ruled Surface(24) = {23};
+    Line Loop(25) = {-7,4,9};
+    Ruled Surface(26) = {25};
+    Line Loop(27) = {-4,12,-6};
+    Ruled Surface(28) = {27};
+    Surface Loop(29) = {28,26,16,14,20,24,22,18};
+    Volume(30) = {29};
+    Physical Surface(10) = {14,16,24,20};
+    Physical Surface(20) = {18,22,26,28};
+    Physical Surface(21) = {101};
     Mesh.Algorithm = 6;
     """
 
@@ -345,6 +429,23 @@ def sphere(r=1, origin=(0, 0, 0), h=0.1):
 
     """
     return ellipsoid(r1=r, r2=r, r3=r, origin=origin, h=h)
+
+
+def multitrace_sphere(r=1, origin=(0, 0, 0), h=0.1):
+    """
+    Return a multitrace sphere grid.
+
+    Parameters
+    ----------
+    r : float
+        Radius of the sphere.
+    origin : tuple
+        Center of the sphere.
+    h : float
+        Element size.
+
+    """
+    return multitrace_ellipsoid(r1=r, r2=r, r3=r, origin=origin, h=h)
 
 
 def rectangle_with_hole(a=1, b=1, hole_radius=0.2, h=0.1):
