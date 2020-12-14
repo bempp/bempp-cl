@@ -382,7 +382,7 @@ def multitrace_ellipsoid(r1=1, r2=1, r3=1, origin=(0, 0, 0), h=0.1):
     Volume(30) = {29};
     Physical Surface(10) = {14,16,24,20};
     Physical Surface(20) = {18,22,26,28};
-    Physical Surface(21) = {101};
+    Physical Surface(12) = {101};
     Mesh.Algorithm = 6;
     """
 
