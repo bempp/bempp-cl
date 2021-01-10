@@ -559,7 +559,7 @@ class GridFunction(object):
 
         return _integrate(
             self.grid_coefficients,
-            self.space.grid.data,
+            self.space.grid.data("double"),
             self.space.support_elements,
             self.space.local2global,
             self.space.local_multipliers,

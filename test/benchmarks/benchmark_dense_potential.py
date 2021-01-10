@@ -26,9 +26,10 @@ def laplace_potential_dense_large_p0_benchmark(benchmark, default_parameters):
     )
 
     coefficients = np.random.randn(space.global_dof_count)
+    grid_fun = bempp.api.GridFunction(space, coefficients=coefficients)
 
     fun = lambda: single_layer(space, points, parameters=default_parameters).evaluate(
-        coefficients
+        grid_fun
     )
 
     benchmark(fun)
@@ -55,8 +56,10 @@ def helmholtz_potential_dense_large_p0_benchmark(benchmark, default_parameters):
         space.global_dof_count
     )
 
+    grid_fun = bempp.api.GridFunction(space, coefficients=coefficients)
+
     fun = lambda: single_layer(
         space, points, 2.5, parameters=default_parameters
-    ).evaluate(coefficients)
+    ).evaluate(grid_fun)
 
     benchmark(fun)
