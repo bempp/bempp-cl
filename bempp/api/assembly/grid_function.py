@@ -559,7 +559,7 @@ class GridFunction(object):
 
         return _integrate(
             self.grid_coefficients,
-            self.space.grid.data,
+            self.space.grid.data('double'),
             self.space.support_elements,
             self.space.local2global,
             self.space.local_multipliers,
@@ -727,6 +727,7 @@ def _integrate(
 ):
     """Integrate a grid function over a grid."""
     result = _np.zeros(codomain_dimension, dtype=coefficients.dtype)
+
 
     for index in support_elements:
         element_vals = evaluate_on_element(

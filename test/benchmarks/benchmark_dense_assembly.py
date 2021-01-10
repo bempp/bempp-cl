@@ -100,14 +100,15 @@ def maxwell_electric_field_dense_large_benchmark(benchmark, default_parameters):
     from bempp.api import function_space
 
     grid = bempp.api.shapes.regular_sphere(5)
-    space = function_space(grid, "RWG", 0)
+    rwg = function_space(grid, "RWG", 0)
+    snc = function_space(grid, "SNC", 0)
 
     wavenumber = 2.5
 
     fun = lambda: electric_field(
-        space,
-        space,
-        space,
+        rwg,
+        rwg,
+        snc,
         wavenumber,
         assembler="dense",
         parameters=default_parameters,
@@ -122,14 +123,15 @@ def maxwell_magnetic_field_dense_large_benchmark(benchmark, default_parameters):
     from bempp.api import function_space
 
     grid = bempp.api.shapes.regular_sphere(5)
-    space = function_space(grid, "RWG", 0)
+    rwg = function_space(grid, "RWG", 0)
+    snc = function_space(grid, "SNC", 0)
 
     wavenumber = 2.5
 
     fun = lambda: magnetic_field(
-        space,
-        space,
-        space,
+        rwg,
+        rwg,
+        snc,
         wavenumber,
         assembler="dense",
         parameters=default_parameters,
