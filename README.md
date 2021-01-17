@@ -20,6 +20,8 @@ python setup.py install
 Full installation instuctions, including installation of dependencies, can be found at
 [bempp.com/installation.html](https://bempp.com/installation.html).
 
+On Arch Linux bempp-cl can be installed using the [AUR package](https://aur.archlinux.org/packages/python-bempp-cl).
+
 ## Documentation
 Full documentation of Bempp can be found at [bempp.com/documentation](https://bempp.com/documentation/index.html)
 and in [the Bempp Handbook](https://bempp.com/handbook).
