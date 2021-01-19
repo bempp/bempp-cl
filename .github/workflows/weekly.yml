@@ -1,0 +1,20 @@
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+
+jobs:
+  build-and-publish-docker:
+    name: Build and publish notebook docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: bempp/cl-notebook
+          tags: latest
+          target: lab
+          cache_froms: bempp/cl-notebook:latest
