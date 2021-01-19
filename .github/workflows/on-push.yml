@@ -16,7 +16,7 @@ jobs:
             then
               echo ::set-output name=tag::latest
             else
-              echo ::set-output name=tag::${GITHUB_REF#refs/*//\//_}
+              echo ::set-output name=tag::${${GITHUB_REF#refs/*/}/\//_}
             fi
 
   check-version-number:
