@@ -39,3 +39,11 @@ workflows:
           filters:
             branches:
               only: master
+    nightly:
+      triggers:
+        - schedule:
+          cron: "0 7 * * 1"
+          filters:
+            branches:
+              only:
+                - master
