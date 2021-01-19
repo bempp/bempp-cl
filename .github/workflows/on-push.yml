@@ -37,7 +37,7 @@ jobs:
     needs: get-branch
     steps:
       - name: echo tag
-        uses: echo "${{needs.get-branch.outputs.tag}}"
+        run: echo "${{ needs.get-branch.outputs.tag }}"
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Make cache folder
