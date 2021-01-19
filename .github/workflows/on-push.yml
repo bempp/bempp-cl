@@ -45,7 +45,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/cache/Dockerfile
-          key: ${{ runner.os }}-Dockerfile-${{needs.get-branch.outputs.tag/\/_}}-${{ hashFiles('Dockerfile') }}
+          key: ${{ runner.os }}-Dockerfile-${{needs.get-branch.outputs.tag}}-${{ hashFiles('Dockerfile') }}
       - name: touch ~/cache/Dockerfile
         run: touch ~/cache/Dockerfile
       - name: compare Dockerfile with cache
@@ -65,7 +65,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: bempp/cl-dev-env
-          tags: ${{needs.get-branch.outputs.tag/\/_}}
+          tags: ${{needs.get-branch.outputs.tag}}
           target: bempp-dev-env-with-exafmm
           cache_froms: bempp/cl-dev-env
         if: steps.diff.outputs.changed == 'yes'
