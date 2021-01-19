@@ -24,6 +24,16 @@ Full installation instuctions, including installation of dependencies, can be fo
 Full documentation of Bempp can be found at [bempp.com/documentation](https://bempp.com/documentation/index.html)
 and in [the Bempp Handbook](https://bempp.com/handbook).
 
+## Testing
+The functionality of the library can be tested by running:
+```bash
+python -m pytest test/unit
+```
+Larger validation tests that compare the output with the previous version of Bempp can be run with:
+```bash
+python -m pytest test/validation
+```
+
 ## Getting help
 Errors in the library should be added to the [GitHub issue tracker](https://github.com/bempp/bempp-cl/issues).
 
