@@ -28,6 +28,8 @@ differential equations (PDEs) in homogeneous bounded or unbounded domains. The m
 a boundary integral equation that can be derived from the PDE. The mathematical background of BEM is covered in, for example, 
 @Stein07 or @McLean. Typical applications of BEM include electrostatic problems, and acoustic and electromagnetic scattering.
 
+EXTRA BACKGROUND PARAGRAPH
+
 Bempp-cl is an open-source boundary element method library that can be used to assemble all the standard integral kernels for
 Laplace, Helmholtz, modified Helmholtz, and Maxwell problems. The library has a user-friendly Python interface that allows the
 user to use BEM to solve a variety of problems, including problems in electrostatics, acoustics and electromagnetics.
@@ -43,6 +45,16 @@ complex operator preconditioned systems of boundary integral equations [@operato
 everything that is required for Calderón preconditioned Maxwell [@maxwellbempp] problems. Bempp-cl uses PyOpenCL [@pyopencl]
 to just-in-time compile its computational kernels on a wide range of CPU and GPU devices and modern architectures. Alternatively,
 a fallback Numba implementation is provided.
+
+WHY OPENCL and NUMBA
+
+TARGET AUDIENCE
+
+A few boundary element method libraries are available. The most popular is BETL [@BETL], a C++ library that is available for
+free for academic use, but not under a standard open source license. A number of other libraries exist designed
+for specific applications, such as PyGBe (for biomolecular electrostatics) [@PyGBe] and (abem for acoustics) [@abem].
+Bempp-cl offers a good alternative to these libraries by being applicable to a wide range of problems while remaining fully open
+source.
 
 # An overview of Bempp features
 Bempp-cl is divided into two parts: `bempp.api` and `bempp.core`.
