@@ -474,7 +474,6 @@ def potential_assembler(
         ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=kernel_options_array
     )
 
-
     def evaluator(x):
         """Evaluate a potential."""
         result = _np.empty(kernel_dimension * npoints, dtype=result_type)
@@ -533,7 +532,6 @@ def potential_assembler(
                     kernel_options_buffer,
                     global_offset=(0, main_size),
                 )
-
 
             _cl.enqueue_copy(queue, result, result_buffer)
 
