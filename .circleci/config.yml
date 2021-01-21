@@ -3,12 +3,12 @@ version: 2.1
 jobs:
   large-tests:
     docker:
-      - image: bempp/cl-dev-env:with-exafmm
+      - image: bempp/cl-dev-env:latest
     steps:
       - checkout
       - run:
           command: |
-              pip3 install pytest
+              pip3 install pytest pytest-xdist
               apt update
               apt install jupyter -y
           name: Install pytest and jupyter
@@ -26,7 +26,7 @@ jobs:
           name: Run example notebooks
   run-benchmarks:
     docker:
-      - image: bempp/cl-dev-env:with-exafmm
+      - image: bempp/cl-dev-env:latest
     steps:
       - checkout
       # TODO: run benchmarks and upload timings somewhere
