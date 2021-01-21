@@ -1,5 +1,9 @@
 # pylint: disable-msg=too-many-arguments
-"""Definition of Grid functions in Bempp."""
+"""Definition of Grid functions in Bempp.
+
+Documentation of the functionality of this module and examples
+can be found at https://bempp.com/handbook/api/grid_functions.html
+"""
 
 import numba as _numba
 import numpy as _np

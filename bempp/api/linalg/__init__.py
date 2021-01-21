@@ -1,7 +1,7 @@
 """Linear solvers.
 
-Documentation of this module can be found at
-https://bempp.com/handbook/api/solvers.html
+Documentation of the functionality of this module and examples
+can be found at https://bempp.com/handbook/api/solvers.html
 """
 
 from .iterative_solvers import gmres
