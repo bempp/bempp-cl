@@ -1,3 +1,5 @@
+"""FMM helper functions."""
+
 import numpy as _np
 import numba as _numba
 
@@ -9,7 +11,6 @@ M_INV_4PI = 1.0 / (4 * _np.pi)
 )
 def laplace_kernel(target_points, source_points, kernel_parameters, dtype, result_type):
     """Evaluate the Laplace kernel."""
-
     ntargets = target_points.shape[1]
     nsources = source_points.shape[1]
     m_inv_4pi = dtype.type(M_INV_4PI)
@@ -49,7 +50,6 @@ def modified_helmholtz_kernel(
     target_points, source_points, kernel_parameters, dtype, result_type
 ):
     """Evaluate the modified Helmholtz kernel."""
-
     ntargets = target_points.shape[1]
     nsources = source_points.shape[1]
     m_inv_4pi = dtype.type(M_INV_4PI)
@@ -93,7 +93,6 @@ def helmholtz_kernel(
     target_points, source_points, kernel_parameters, dtype, result_type
 ):
     """Evaluate the Laplace kernel."""
-
     ntargets = target_points.shape[1]
     nsources = source_points.shape[1]
     m_inv_4pi = dtype.type(M_INV_4PI)
@@ -153,7 +152,7 @@ def helmholtz_kernel(
 def get_local_interaction_operator(
     grid, local_points, kernel_function, kernel_parameters, precision, is_complex
 ):
-
+    """Get the local interaction operator."""
     import bempp.api
     from bempp.api import GLOBAL_PARAMETERS
     from bempp.api.utils.helpers import get_type
@@ -449,7 +448,6 @@ def map_space_to_points_impl(
     number_of_shape_functions,
 ):
     """Numba accelerated computational parts for point map."""
-
     number_of_local_points = local_points.shape[1]
     number_of_support_elements = len(support_elements)
 
@@ -602,7 +600,6 @@ def get_local_interaction_evaluator_opencl(
 
     def evaluator(coeffs):
         """Actually evaluate the near-field correction."""
-
         result = _np.empty(4 * ncoeffs, dtype=result_type)
         with bempp.api.Timer(message="Singular Corrections Evaluator"):
             with _cl.CommandQueue(ctx, device=device) as queue:

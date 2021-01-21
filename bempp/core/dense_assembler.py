@@ -1,5 +1,6 @@
-import numpy as _np
+"""Dense assembly."""
 
+import numpy as _np
 from bempp.api.assembly import assembler as _assembler
 
 

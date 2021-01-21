@@ -145,7 +145,6 @@ class PotentialAssembler(object):
         parameters,
     ):
         """Interface for potential operators."""
-
         self.space = space
         self.points = points
         self.kernel_dimension = operator_descriptor.kernel_dimension

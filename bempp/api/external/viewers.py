@@ -4,7 +4,7 @@ import numpy as _np
 
 def visualize(obj, mode="node", transformation=None):
     """
-    Main visualization method.
+    Create a visualisation.
 
     Attributes
     ----------

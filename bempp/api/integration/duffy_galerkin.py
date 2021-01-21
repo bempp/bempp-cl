@@ -259,9 +259,7 @@ def remap_points_shared_vertex(points, vertex_id):
     By default the Duffy rules assume that the two triangles meet
     at vertex 0. This method transforms the Duffy integration
     points depending on which vertex they meet.
-
     """
-
     if vertex_id == 0:
         return points
 
@@ -285,9 +283,7 @@ def remap_points_shared_edge(points, shared_vertex1, shared_vertex2):
     By default the Duffy rules assume that the two triangles meet
     at edge 0. This method transforms the Duffy integration
     points depending on which edge they meet.
-
     """
-
     # Get the shared vertices
 
     v0 = shared_vertex1

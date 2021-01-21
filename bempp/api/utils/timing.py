@@ -4,13 +4,13 @@ import time as _time
 
 
 def timeit(message):
-    """Decorator to time a method in Bempp."""
+    """Time a method in Bempp."""
 
     def timeit_impl(fun):
-        """Implementation of timeit."""
+        """Return an implementation of timeit."""
 
         def timed_fun(*args, **kwargs):
-            """The actual timer function."""
+            """Time something."""
             from bempp.api import GLOBAL_PARAMETERS
             from bempp.api import log
 
@@ -33,15 +33,17 @@ class Timer:
     """Context manager to measure time in Bempp."""
 
     def __init__(self):
-        """Constructor."""
+        """Construct."""
         self.start = 0
         self.end = 0
         self.interval = 0
 
     def __enter__(self):
+        """Enter."""
         self.start = _time.time()
         return self
 
     def __exit__(self, *args):
+        """Exit."""
         self.end = _time.time()
         self.interval = self.end - self.start

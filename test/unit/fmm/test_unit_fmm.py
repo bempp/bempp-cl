@@ -3,12 +3,15 @@
 import numpy as np
 import pytest
 import bempp.api
-from bempp.api import function_space
+from bempp.api import function_space, check_for_fmm
 from bempp.api.operators.boundary import laplace, helmholtz
 
 
 def test_laplace_single_layer():
     """Test dense assembler for the Laplace operators."""
+    if not check_for_fmm():
+        pytest.skip("ExaFMM must be installed to run this test.")
+
     grid = bempp.api.shapes.regular_sphere(2)
     space = function_space(grid, "DP", 0)
 
@@ -27,6 +30,9 @@ def test_laplace_single_layer():
 @pytest.mark.parametrize("wavenumber", [2.5])  # , 2.5 + 1j])
 def test_helmholtz_single_layer(wavenumber):
     """Test dense assembler for the Laplace operators."""
+    if not check_for_fmm():
+        pytest.skip("ExaFMM must be installed to run this test.")
+
     grid = bempp.api.shapes.regular_sphere(2)
     space = function_space(grid, "DP", 0)
 

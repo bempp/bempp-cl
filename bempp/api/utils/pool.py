@@ -275,7 +275,7 @@ def has_key(key):
 
 
 def is_worker():
-    """Returns true if called from worker process."""
+    """Return true if called from worker process."""
     return _IN_WORKER is True
 
 
@@ -361,7 +361,6 @@ def starmap(fun, args):
 
 def execute(fun, *args):
     """Execute function with the same arguments on all workers."""
-
     if len(args) == 0:
         return _POOL.map(fun)
     else:

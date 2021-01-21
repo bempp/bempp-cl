@@ -44,7 +44,7 @@ def __generate_grid_from_gmsh_string(gmsh_string):
 
 
 def __generate_grid_from_geo_string(geo_string):
-    """Helper routine that implements the grid generation."""
+    """Create a grid from a gmsh geo string."""
     import os
     import subprocess
     import bempp.api
@@ -78,7 +78,7 @@ def __generate_grid_from_geo_string(geo_string):
 
 def screen(corners, h=0.1):
     """
-    Creates a screen.
+    Create a screen.
 
     Parameters
     ----------
@@ -406,7 +406,7 @@ def rectangle_with_hole(a=1, b=1, hole_radius=0.2, h=0.1):
 
 def reentrant_cube(h=0.1, refinement_factor=0.2):
     """
-    A reentrant corner in 3d.
+    Create a reentrant corner in 3d.
 
     Parameters
     ----------
@@ -1051,7 +1051,7 @@ Physical Surface(1) = {518, 520, 750, 718, 516, 714, 748, 603, 491, 489, 487, 60
 
 def cylinders(h=1.0, z=1.0, r=[0.5, 1, 1.5, 1.7], square=False):
     """
-    Creates a sequence of concentric cylindrical or cuboidal objects.
+    Create a sequence of concentric cylindrical or cuboidal objects.
 
     Parameters
     ----------

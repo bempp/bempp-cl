@@ -12,12 +12,11 @@ class _DiscreteOperatorBase(_LinearOperator):
     """Discrete boundary operator base."""
 
     def __init__(self, dtype, shape):
-        """Constructor. Should not be called directly."""
+        """Construct. Should not be called directly."""
         super().__init__(dtype, shape)
 
     def __add__(self, other):
         """Sum of two operators."""
-
         if isinstance(other, _DiscreteOperatorBase):
             return _SumDiscreteOperator(self, other)
         else:
@@ -33,7 +32,6 @@ class _DiscreteOperatorBase(_LinearOperator):
 
     def dot(self, other):
         """Product with other objects."""
-
         if isinstance(other, _DiscreteOperatorBase):
             return _ProductDiscreteOperator(self, other)
         elif _np.isscalar(other):
@@ -69,7 +67,6 @@ class _ScaledDiscreteOperator(_DiscreteOperatorBase):
     @property
     def A(self):
         """Return matrix."""
-
         return self._alpha * self._op.A
 
 
@@ -77,8 +74,7 @@ class _SumDiscreteOperator(_DiscreteOperatorBase):
     """Return a sum operator."""
 
     def __init__(self, op1, op2):
-        """Constructor."""
-
+        """Construct."""
         if op1.shape != op2.shape:
             raise ValueError(
                 f"Operators have incompatible shapes {op1.shape} != {op2.shape}"
@@ -98,7 +94,6 @@ class _SumDiscreteOperator(_DiscreteOperatorBase):
     @property
     def A(self):
         """Return matrix representation."""
-
         res1, res2 = _get_dense(self._op1.A, self._op2.A)
 
         return res1 + res2
@@ -108,8 +103,7 @@ class _ProductDiscreteOperator(_DiscreteOperatorBase):
     """Product of two operators."""
 
     def __init__(self, op1, op2):
-        """Constructor."""
-
+        """Construct the product of two operators."""
         if op1.shape[1] != op2.shape[0]:
             raise ValueError(
                 f"Incompatible dimensions shapes for multiplication with {op1.shape} and {op2.shape}"
@@ -129,7 +123,6 @@ class _ProductDiscreteOperator(_DiscreteOperatorBase):
     @property
     def A(self):
         """Return matrix representation."""
-
         res1, res2 = _get_dense(self._op1.A, self._op2.A)
 
         return res1 @ res2
@@ -139,13 +132,13 @@ class GenericDiscreteBoundaryOperator(_DiscreteOperatorBase):
     """Discrete boundary operator that implements a matvec routine."""
 
     def __init__(self, evaluator):
-        """Constructor for discrete boundary operator."""
-
+        """Construct discrete boundary operator."""
         super().__init__(evaluator.dtype, evaluator.shape)
         self._evaluator = evaluator
         self._is_complex = self.dtype == "complex128" or self.dtype == "complex64"
 
     def _matvec(self, x):
+        """Mutliply the operator by a vector."""
         if self._is_complex:
             return self._evaluator.matvec(x)
         if _np.iscomplexobj(x):
@@ -172,12 +165,12 @@ class DenseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     """
 
     def __init__(self, impl):
-        """Constructor. Should not be called by the user."""
+        """Construct. Should not be called by the user."""
         self._impl = impl
         super().__init__(impl.dtype, impl.shape)
 
     def _matmat(self, x):
-
+        """Multiply the operator by a matrix or operator."""
         if _np.iscomplexobj(x) and not _np.iscomplexobj(self.A):
             return self.A.dot(_np.real(x).astype(self.dtype)) + 1j * self.A.dot(
                 _np.imag(x).astype(self.dtype)
@@ -185,15 +178,18 @@ class DenseDiscreteBoundaryOperator(_DiscreteOperatorBase):
         return self.A.dot(x.astype(self.dtype))
 
     def __add__(self, other):
+        """Add two operators."""
         if isinstance(other, DenseDiscreteBoundaryOperator):
             return DenseDiscreteBoundaryOperator(self.A + other.A)
         else:
             return super().__add__(other)
 
     def __neg__(self):
+        """Negate the operator."""
         return DenseDiscreteBoundaryOperator(-self.A)
 
     def __mul__(self, other):
+        """Multiply."""
         return self.dot(other)
 
     def dot(self, other):
@@ -217,6 +213,7 @@ class DenseDiscreteBoundaryOperator(_DiscreteOperatorBase):
         return super().dot(other)
 
     def __rmul__(self, other):
+        """Multiply."""
         if _np.isscalar(other):
             return DenseDiscreteBoundaryOperator(self.A * other)
         else:
@@ -248,20 +245,20 @@ class DiagonalOperator(_DiscreteOperatorBase):
     """
 
     def __init__(self, values, shape=None):
-        """Constructor. Should not be called by the user."""
+        """Construct. Should not be called by the user."""
         self._values = values.ravel()
         if shape is None:
             shape = (len(values), len(values))
         super().__init__(values.dtype, shape)
 
     def _matvec(self, x):
-
+        """Multiply the operator by a vector."""
         vec_shape = x.shape
 
         return (self._values * x.ravel()).reshape(vec_shape)
 
     def __add__(self, other):
-
+        """Add."""
         if self.shape != other.shape:
             raise ValueError(f"Incompatible dimensions: {self.shape} != {other.shape}")
         if isinstance(other, DiagonalOperator):
@@ -270,9 +267,11 @@ class DiagonalOperator(_DiscreteOperatorBase):
             return super().__add__(other)
 
     def __neg__(self):
+        """Negate."""
         return DiagonalOperator(-self.A)
 
     def __mul__(self, other):
+        """Multiply."""
         return self.dot(other)
 
     def dot(self, other):
@@ -290,6 +289,7 @@ class DiagonalOperator(_DiscreteOperatorBase):
         return super().dot(other)
 
     def __rmul__(self, other):
+        """Multiply."""
         if _np.isscalar(other):
             return DiagonalOperator(self.A * other)
         else:
@@ -321,7 +321,7 @@ class SparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     """
 
     def __init__(self, impl):
-        """Constructor. Should not e called by the user."""
+        """Construct. Should not be called by the user."""
         super(SparseDiscreteBoundaryOperator, self).__init__(impl.dtype, impl.shape)
         self._impl = impl
 
@@ -340,15 +340,18 @@ class SparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
         return SparseDiscreteBoundaryOperator(self.A.transpose().conjugate())
 
     def __add__(self, other):
+        """Add."""
         if isinstance(other, SparseDiscreteBoundaryOperator):
             return SparseDiscreteBoundaryOperator(self.A + other.A)
         else:
             return super().__add__(other)
 
     def __neg__(self):
+        """Negate."""
         return SparseDiscreteBoundaryOperator(-self.A)
 
     def __mul__(self, other):
+        """Multiply."""
         if isinstance(other, SparseDiscreteBoundaryOperator):
             return SparseDiscreteBoundaryOperator(self.A * other.A)
         else:
@@ -362,6 +365,7 @@ class SparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
             return super().dot(other)
 
     def __rmul__(self, other):
+        """Multiply."""
         if _np.isscalar(other):
             return SparseDiscreteBoundaryOperator(self.A * other)
         else:
@@ -394,19 +398,17 @@ class InverseSparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     """
 
     def __init__(self, operator):
-
+        """Create a inverse sparse operator."""
         self._solver = _Solver(operator)
         self._operator = operator
         super().__init__(self._solver.dtype, self._solver.shape)
 
     def _matmat(self, vec):
         """Implemententation of matvec."""
-
         return self._solver.solve(vec)
 
     def A(self):
         """Return dense representation."""
-
         eye = _np.eye(self.shape[1])
 
         return self @ eye
@@ -435,6 +437,7 @@ class ZeroDiscreteBoundaryOperator(_DiscreteOperatorBase):
         )
 
     def _matmat(self, x):
+        """Multiply operator by a matrix."""
         return _np.zeros((self.shape[0], x.shape[1]), dtype="float64")
 
     @property
@@ -476,19 +479,23 @@ class DiscreteRankOneOperator(_DiscreteOperatorBase):
         super().__init__(dtype, shape)
 
     def _matvec(self, x):
+        """Multiply operator by a vector."""
         if x.ndim > 1:
             return _np.outer(self._column, _np.dot(self._row, x))
         else:
             return self._column * _np.dot(self._row, x)
 
     def _rmatvec(self, x):
+        """Multiply."""
         # pylint: disable=protected-access
         return self._adjoint()._matvec(x)
 
     def _transpoe(self):
+        """Find the transpose."""
         return DiscreteRankOneOperator(self._row, self._column)
 
     def _adjoint(self):
+        """Find the adjoint."""
         return DiscreteRankOneOperator(self._row.conjugate(), self._column.conjugate())
 
     @property
@@ -532,7 +539,7 @@ class _Solver(object):  # pylint: disable=too-few-public-methods
     # pylint: disable=too-many-locals
     @_timeit
     def __init__(self, operator):
-
+        """Create a solver."""
         from scipy.sparse import csc_matrix
 
         if isinstance(operator, SparseDiscreteBoundaryOperator):
@@ -593,7 +600,6 @@ class _Solver(object):  # pylint: disable=too-few-public-methods
     @_timeit
     def solve(self, rhs):
         """Solve with right-hand side mat."""
-
         if self._dtype == "float64" and _np.iscomplexobj(rhs):
             return self.solve(_np.real(rhs)) + 1j * self.solve(_np.imag(rhs))
 

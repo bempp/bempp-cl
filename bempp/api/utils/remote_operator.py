@@ -18,7 +18,7 @@ class Message:
     """Messages for remote workers."""
 
     def __init__(self, status, operator_tag=None, is_complex=False, nelements=None):
-
+        """Create message."""
         self.status = status
         self.is_complex = is_complex
         self.operator_tag = operator_tag
@@ -29,6 +29,7 @@ class RemoteManager:
     """Manage remote worker execution."""
 
     def __init__(self):
+        """Create manager."""
         self._op_data = {}
         self._op_location = {}
         self._tags = {}
@@ -37,7 +38,6 @@ class RemoteManager:
 
     def register(self, op):
         """Register operator for remote execution."""
-
         tag = self._tags_counter
         rank = self._rank_counter
 
@@ -51,8 +51,7 @@ class RemoteManager:
             self._rank_counter = 1
 
     def execute_worker(self):
-        """Only execute on workers."""
-
+        """Execute on workers."""
         while True:
             msg, tag, data = self.receive_data(0)
 
@@ -86,7 +85,6 @@ class RemoteManager:
 
     def send_error(self, msg, operator_tag):
         """Send error message to master."""
-
         COMM.send(Message(msg, operator_tag=operator_tag), dest=0)
 
     def receive_data(self, source):
@@ -108,7 +106,6 @@ class RemoteManager:
 
     def submit_computation(self, op, x):
         """Submit computation to operator."""
-
         tag = self._tags[op]
         rank = self._op_location[tag]
 
@@ -116,7 +113,6 @@ class RemoteManager:
 
     def receive_result(self, op):
         """Receive result from a specific operator."""
-
         tag = self._tags[op]
         rank = self._op_location[tag]
         _, _, data = self.receive_data(rank)
@@ -124,14 +120,12 @@ class RemoteManager:
 
     def assemble(self, op):
         """Assemble a given remote operator."""
-
         tag = self._tags[op]
         rank = self._op_location[tag]
         self.send_data("ASSEMBLE", rank, tag)
 
     def barrier(self):
-        """Barrier operation for workers."""
-
+        """Use barrier operation for workers."""
         for rank in range(1, MPI_SIZE):
             self.send_data("SYNCHRONIZE", rank, 0)
             msg, _, _ = self.receive_data(rank)
@@ -143,7 +137,6 @@ class RemoteManager:
 
     def get_operator_dtype(self, tag):
         """Get dtype of remote operator."""
-
         rank = self._op_location[tag]
         self.send_data("GET_DTYPE", rank, tag)
         msg, _, _ = self.receive_data(rank)
@@ -151,7 +144,6 @@ class RemoteManager:
 
     def shutdown(self):
         """Shutdown all workers."""
-
         if MPI_SIZE == 0:
             return
 
@@ -168,7 +160,6 @@ class RemoteManager:
         ranks. This allows to distribute the computations effectively
         on the ranks.
         """
-
         output = []
 
         tags_with_indices = {index: tag for index, tag in enumerate(tags)}
@@ -189,7 +180,6 @@ class RemoteManager:
 
     def assemble_parallel(self, ops):
         """Assemble a list of operators in parallel."""
-
         tags = [self._tags[op] for op in ops]
         grouped_indices = self._group_by_rank(tags)
 
@@ -250,7 +240,6 @@ class RemoteBlockedOperator(_BlockedOperator):
 
     def __init__(self, m, n):
         """Initialize an m x n remote blocked operator."""
-
         super().__init__(m, n)
 
     def _assemble(self):
@@ -356,11 +345,13 @@ class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
         return (op.dual_to_range.global_dof_count, op.domain.global_dof_count)
 
     def _fill_complete(self):
+        """Check if the fill is complete."""
         if (-1 in self._rows) or (-1 in self._cols):
             return False
         return True
 
     def _matvec(self, x):
+        """Perform matrix vector multiplication."""
         from bempp.api.utils.data_types import combined_type
 
         if not self._fill_complete():
@@ -407,9 +398,11 @@ class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
         return res
 
     def _get_row_dimensions(self):
+        """Return the number of rows."""
         return self._rows
 
     def _get_column_dimensions(self):
+        """Return the number of columns."""
         return self._cols
 
     @property

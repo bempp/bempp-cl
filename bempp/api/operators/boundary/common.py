@@ -19,7 +19,7 @@ def create_operator(
     precision,
     is_complex,
 ):
-    """Generic instantiation of operators."""
+    """Create a generic operator."""
     from bempp.api.operators import OperatorDescriptor
     import bempp.api
 
@@ -79,7 +79,7 @@ def create_multitrace_operator(
     device_interface,
     precision,
 ):
-    """Generic instantiation of operators."""
+    """Create a generic operator."""
     from bempp.api.operators import MultitraceOperatorDescriptor
     import bempp.api
 

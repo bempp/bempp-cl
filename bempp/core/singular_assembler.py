@@ -1,3 +1,5 @@
+"""Singular assembly."""
+
 import numpy as _np
 
 from bempp.api.assembly import assembler as _assembler
@@ -16,7 +18,6 @@ class SingularAssembler(_assembler.AssemblerBase):
     def assemble(
         self, operator_descriptor, device_interface, precision, *args, **kwargs
     ):
-
         """Assemble the singular part."""
         from bempp.api.assembly.discrete_boundary_operator import (
             SparseDiscreteBoundaryOperator,
@@ -171,7 +172,6 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
 
     def __init__(self, grid, order, test_support, trial_support):
         """Initialize singular quadrature rule."""
-
         self._grid = grid
         self._order = order
         self._test_indices = None
@@ -284,7 +284,6 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
 
     def get_arrays(self):
         """Return the arrays."""
-
         test_indices, trial_indices = self._vectorize_indices()
         test_points, trial_points = self._vectorize_points()
         weights = self._vectorize_weights()
@@ -311,6 +310,7 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
     def _collect_remapped_quad_points_for_edge_adjacent_rule(self, quad_points):
         """
         Remap quad points for edge adjacent quadrature rules.
+
         Given a 2xN array of quadrature points, return all possible
         combinations of remapped rules, according to the following
         order
@@ -335,6 +335,7 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
     def _collect_remapped_quad_points_for_vertex_adjacent_rule(self, quad_points):
         """
         Remap quad points for vertex adjacent quadrature rules.
+
         Given a 2xN array of quadrature points, return all possible
         combinations of remapped rules, according to the following
         order
@@ -352,7 +353,6 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
 
     def _compute_edge_offsets(self):
         """Compute offsets for the edge based rule."""
-
         ncoincident = self.number_of_points("coincident")
         nedge_adjacent = self.number_of_points("edge_adjacent")
 
@@ -421,7 +421,6 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
 
     def _vectorize_points(self):
         """Return an array of all quadrature points for all different rules."""
-
         test_points = _np.hstack(
             [
                 self.coincident_rule.test_points,
