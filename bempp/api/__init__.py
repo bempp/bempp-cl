@@ -275,5 +275,8 @@ if DEFAULT_DEVICE_INTERFACE == "numba":
 DEFAULT_PRECISION = "double"
 VECTORIZATION_MODE = "auto"
 
+BOUNDARY_OPERATOR_DEVICE_TYPE = "cpu"
+POTENTIAL_OPERATOR_DEVICE_TYPE = "gpu"
+
 
 ALL = -1  # Useful global identifier

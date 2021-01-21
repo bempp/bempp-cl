@@ -1,4 +1,7 @@
-"""Actual implementation of OpenCL assemblers."""
+"""
+Actual implementation of OpenCL assemblers.
+"""
+
 import numpy as _np
 import pyopencl as _cl
 
@@ -330,6 +333,7 @@ def potential_assembler(
     device_interface, space, operator_descriptor, points, parameters
 ):
     """Assemble dense with OpenCL."""
+    import bempp.api
     from bempp.api.integration.triangle_gauss import rule
     from bempp.api.utils.helpers import get_type
     from bempp.core.opencl_kernels import get_kernel_from_name
@@ -340,9 +344,27 @@ def potential_assembler(
         get_vector_width,
     )
 
+    if bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE == "gpu":
+        device_type = "gpu"
+    elif bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE == "cpu":
+        device_type = "cpu"
+    else:
+        raise RuntimeError(
+            f"Unknown device type {bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE}"
+        )
+
     mf = _cl.mem_flags
-    ctx = default_context()
-    device = default_device()
+    ctx = default_context(device_type)
+    device = default_device(device_type)
+
+    if bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE == "gpu":
+        device_type = "gpu"
+    elif bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE == "cpu":
+        device_type = "cpu"
+    else:
+        raise RuntimeError(
+            f"Unknown device type {bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE}"
+        )
 
     quad_points, quad_weights = rule(parameters.quadrature.regular)
 
@@ -359,7 +381,7 @@ def potential_assembler(
 
     indices = space.support_elements
     nelements = len(indices)
-    vector_width = get_vector_width(precision)
+    vector_width = get_vector_width(precision, device_type=device_type)
     npoints = points.shape[1]
     remainder_size = nelements % WORKGROUP_SIZE_POTENTIAL
     main_size = nelements - remainder_size
@@ -382,14 +404,16 @@ def potential_assembler(
 
     if main_size > 0:
         main_kernel = get_kernel_from_operator_descriptor(
-            operator_descriptor, options, "potential"
+            operator_descriptor, options, "potential", device_type=device_type
         )
-        sum_kernel = get_kernel_from_name("sum_for_potential_novec", options, precision)
+        sum_kernel = get_kernel_from_name(
+            "sum_for_potential_novec", options, precision, device_type=device_type
+        )
 
     if remainder_size > 0:
         options["WORKGROUP_SIZE"] = remainder_size
         remainder_kernel = get_kernel_from_operator_descriptor(
-            operator_descriptor, options, "potential", force_novec=True
+            operator_descriptor, options, "potential", force_novec=True, device_type=device_type,
         )
 
     indices_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=indices)
@@ -405,9 +429,7 @@ def potential_assembler(
     )
 
     grid_buffer = _cl.Buffer(
-        ctx,
-        mf.READ_ONLY | mf.COPY_HOST_PTR,
-        hostbuf=space.grid.as_array.astype(dtype),
+        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=space.grid.as_array.astype(dtype)
     )
 
     # elements_buffer = _cl.Buffer(
@@ -427,9 +449,7 @@ def potential_assembler(
     )
 
     result_buffer = _cl.Buffer(
-        ctx,
-        mf.READ_WRITE,
-        size=result_type.itemsize * kernel_dimension * npoints,
+        ctx, mf.READ_WRITE, size=result_type.itemsize * kernel_dimension * npoints
     )
 
     coefficients_buffer = _cl.Buffer(
@@ -443,11 +463,7 @@ def potential_assembler(
             * (nelements // WORKGROUP_SIZE_POTENTIAL)
             * result_type.itemsize
         )
-        sum_buffer = _cl.Buffer(
-            ctx,
-            mf.READ_WRITE,
-            size=sum_size,
-        )
+        sum_buffer = _cl.Buffer(ctx, mf.READ_WRITE, size=sum_size)
 
     if not kernel_options:
         kernel_options = [0.0]
@@ -458,9 +474,11 @@ def potential_assembler(
         ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=kernel_options_array
     )
 
+
     def evaluator(x):
         """Evaluate a potential."""
         result = _np.empty(kernel_dimension * npoints, dtype=result_type)
+
         with _cl.CommandQueue(ctx, device=device) as queue:
             _cl.enqueue_copy(queue, coefficients_buffer, x.astype(result_type))
             _cl.enqueue_fill_buffer(
@@ -470,8 +488,11 @@ def potential_assembler(
                 0,
                 kernel_dimension * npoints * result_type.itemsize,
             )
+
             if main_size > 0:
                 _cl.enqueue_fill_buffer(queue, sum_buffer, _np.uint8(0), 0, sum_size)
+                queue.finish()
+
                 main_kernel(
                     queue,
                     (npoints, main_size // vector_width),
@@ -513,7 +534,9 @@ def potential_assembler(
                     global_offset=(0, main_size),
                 )
 
+
             _cl.enqueue_copy(queue, result, result_buffer)
+
         return result
 
     return evaluator
