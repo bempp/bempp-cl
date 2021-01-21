@@ -12,6 +12,7 @@ import collections as _collections
 
 def timeit(fun):
     """Time a method in Bempp."""
+
     @_functools.wraps(fun)
     def timed_fun(*args, **kwargs):
         """Time an operation."""
@@ -35,6 +36,7 @@ def jit_logger(name):
 
     def closure(func):
         """Closure that has the name variable."""
+
         def inner(*args, **kwargs):
             origsigs = set(func.signatures)
             result = func(*args, **kwargs)
