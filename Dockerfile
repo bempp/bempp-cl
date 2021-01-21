@@ -138,5 +138,3 @@ RUN chmod +x /tini && \
 EXPOSE 8888/tcp
 
 ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
-
-#

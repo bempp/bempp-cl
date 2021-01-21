@@ -39,3 +39,12 @@ workflows:
           filters:
             branches:
               only: master
+  weekly:
+    jobs:
+      - large-tests
+    triggers:
+      - schedule:
+          cron: "0 7 * * 1"
+          filters:
+            branches:
+              only: master

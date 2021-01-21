@@ -26,7 +26,7 @@ class BlockedOperatorBase(object):
     """Base class for blocked operators."""
 
     def __init__(self):
-        """Base class for blocked operators."""
+        """Create base class for blocked operators."""
         self._weak_form = None
         self._range_map = None
         self._cached = None
@@ -65,22 +65,22 @@ class BlockedOperatorBase(object):
 
     @property
     def ndims(self):
-        """Number of block rows and block columns."""
+        """Return number of block rows and block columns."""
         return (len(self.range_spaces), len(self.domain_spaces))
 
     @property
     def range_spaces(self):
-        """A list of range spaces of the blocked operator."""
+        """Return a list of range spaces of the blocked operator."""
         raise NotImplementedError()
 
     @property
     def dual_to_range_spaces(self):
-        """A list of dual to range spaces of the blocked operator."""
+        """Return a list of dual to range spaces of the blocked operator."""
         raise NotImplementedError()
 
     @property
     def domain_spaces(self):
-        """A list of domain spaces of the blocked operator."""
+        """Return a list of domain spaces of the blocked operator."""
         raise NotImplementedError()
 
     def __add__(self, other):
@@ -138,11 +138,11 @@ class BlockedOperatorBase(object):
             return NotImplemented
 
     def __matmul__(self, other):
-        """Matrix multiplication notation."""
+        """Multiply two operators."""
         return self.__mul__(other)
 
     def __rmul__(self, other):
-        """Right multiplication."""
+        """Multiply two operators."""
         if _np.isscalar(other):
             return self.__mul__(other)
         else:
@@ -273,7 +273,7 @@ class GeneralizedBlockedOperator(BlockedOperatorBase):
         from collections.abc import Iterable
 
         def make_blocked(operator):
-            """Turns a BoundaryOperator into a 1x1 blocked operator."""
+            """Turn a BoundaryOperator into a 1x1 blocked operator."""
             blocked_operator = BlockedOperator(1, 1)
             blocked_operator[0, 0] = operator
             return blocked_operator
@@ -369,7 +369,6 @@ class MultitraceOperatorFromAssembler(BlockedOperatorBase):
         multitrace_operator_descriptor,
     ):
         """Generate operator from assembler."""
-
         self._domain_spaces = tuple(domain_spaces)
         self._range_spaces = tuple(range_spaces)
         self._dual_to_range_spaces = tuple(dual_to_range_spaces)
@@ -384,17 +383,17 @@ class MultitraceOperatorFromAssembler(BlockedOperatorBase):
 
     @property
     def range_spaces(self):
-        """A list of range spaces of the blocked operator."""
+        """Return a list of range spaces of the blocked operator."""
         return self._range_spaces
 
     @property
     def dual_to_range_spaces(self):
-        """A list of dual to range spaces of the blocked operator."""
+        """Return a list of dual to range spaces of the blocked operator."""
         return self._dual_to_range_spaces
 
     @property
     def domain_spaces(self):
-        """A list of domain spaces of the blocked operator."""
+        """Return a list of domain spaces of the blocked operator."""
         return self._domain_spaces
 
 
@@ -440,7 +439,6 @@ class ProductBlockedOperator(BlockedOperatorBase):
 
     def __init__(self, op1, op2):
         """Construct the blocked operator product op1 * op2."""
-
         if op2.range_spaces != op1.domain_spaces:
             raise ValueError("Incompatible spaces for multiplication.")
 

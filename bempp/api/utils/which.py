@@ -5,7 +5,7 @@
 
 
 def which(program):
-    """The Unix which command in Python."""
+    """Run the Unix which command in Python."""
     import os
 
     def is_exe(fpath):

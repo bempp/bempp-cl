@@ -24,7 +24,7 @@ def singular_assembler(
     kernel_options,
     result,
 ):
-    """OpenCL assembler for the singular part of integral operators."""
+    """Assemble singular part of integral operators with OpenCL."""
     from bempp.api.utils.helpers import get_type
     from bempp.core.opencl_kernels import get_kernel_from_operator_descriptor
     from bempp.core.opencl_kernels import default_context, default_device

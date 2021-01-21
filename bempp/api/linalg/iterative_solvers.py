@@ -19,7 +19,7 @@ class IterationCounter(object):
         self._rhs = rhs
 
     def __call__(self, x):
-        """TODO: add docstring."""
+        """Call."""
         from bempp.api import log
 
         self._count += 1
@@ -54,7 +54,7 @@ def gmres(
     return_residuals=False,
     return_iteration_count=False,
 ):
-    """Interface to the scipy.sparse.linalg.gmres function.
+    """Perform GMRES solve via interface to scipy.
 
     This function behaves like the scipy.sparse.linalg.gmres function. But
     instead of a linear operator and a vector b it takes a boundary operator
@@ -102,7 +102,7 @@ def cg(
     return_residuals=False,
     return_iteration_count=False,
 ):
-    """Interface to the scipy.sparse.linalg.cg function.
+    """Perform CG solve via interface to scipy.
 
     This function behaves like the scipy.sparse.linalg.cg function. But
     instead of a linear operator and a vector b it takes a boundary operator
@@ -172,7 +172,7 @@ def _gmres_single_op_imp(
     return_residuals=False,
     return_iteration_count=False,
 ):
-    """Implementation for single operators."""
+    """Run implementation of GMRES for single operators."""
     from bempp.api.assembly.grid_function import GridFunction
 
     import scipy.sparse.linalg
@@ -234,7 +234,7 @@ def _gmres_block_op_imp(
     return_residuals=False,
     return_iteration_count=False,
 ):
-    """Implementation for blocked operators."""
+    """Run implementation of GMRES for blocked operators."""
     import scipy.sparse.linalg
 
     import bempp.api

@@ -8,8 +8,7 @@ class PotentialOperator(object):
     """
 
     def __init__(self, potential_evaluator):
-        """Constructor. Should not be called by the user."""
-
+        """Construct. Should not be called by the user."""
         self._evaluator = potential_evaluator
 
     def evaluate(self, grid_fun):
@@ -23,7 +22,6 @@ class PotentialOperator(object):
             which the potential is applied to.
 
         """
-
         return self._evaluator.evaluate(grid_fun.coefficients)
 
     def _is_compatible(self, other):
@@ -40,13 +38,14 @@ class PotentialOperator(object):
         )
 
     def __add__(self, obj):
-
+        """Add."""
         if not self._is_compatible(obj):
             raise ValueError("Potential operators not compatible.")
 
         return _SumPotentialOperator(self, obj)
 
     def __mul__(self, obj):
+        """Multiply."""
         import numpy as np
         from bempp.api import GridFunction
 
@@ -58,11 +57,11 @@ class PotentialOperator(object):
             return NotImplemented
 
     def __matmul__(self, obj):
+        """Multiply."""
         return self.__mul__(obj)
 
     def __rmul__(self, obj):
         """Reverse multiply."""
-
         import numpy as np
 
         if np.isscalar(obj):
@@ -71,11 +70,11 @@ class PotentialOperator(object):
             return NotImplemented
 
     def __neg__(self):
-
+        """Negate."""
         return self.__mul__(-1.0)
 
     def __sub__(self, other):
-
+        """Subtract."""
         return self.__add__(-other)
 
     @property
@@ -85,7 +84,7 @@ class PotentialOperator(object):
 
     @property
     def component_count(self):
-        """Number of components of the potential (1 for scalar potentials)."""
+        """Return number of components of the potential (1 for scalar potentials)."""
         return self._evaluator.kernel_dimension
 
     @property
@@ -113,7 +112,6 @@ class _ScaledPotentialOperator(PotentialOperator):
             which the potential is applied to.
 
         """
-
         return self._alpha * self._op.evaluate(grid_fun)
 
     @property
@@ -123,7 +121,7 @@ class _ScaledPotentialOperator(PotentialOperator):
 
     @property
     def component_count(self):
-        """Number of components of the potential (1 for scalar potentials)."""
+        """Return number of components of the potential (1 for scalar potentials)."""
         return self._op.component_count
 
     @property
@@ -136,7 +134,7 @@ class _SumPotentialOperator(PotentialOperator):
     """Sum of two potential operators."""
 
     def __init__(self, op1, op2):
-
+        """Create sum of two potential operators."""
         if not op1._is__compatible(op2):
             raise ValueError("Potential operators are not compatible.")
 
@@ -154,7 +152,6 @@ class _SumPotentialOperator(PotentialOperator):
             which the potential is applied to.
 
         """
-
         return self._op1.evaluate(grid_fun) + self._op2.evaluate(grid_fun)
 
     @property
@@ -164,7 +161,7 @@ class _SumPotentialOperator(PotentialOperator):
 
     @property
     def component_count(self):
-        """Number of components of the potential (1 for scalar potentials)."""
+        """Return number of components of the potential (1 for scalar potentials)."""
         return self._op1.component_count
 
     @property

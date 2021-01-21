@@ -1,3 +1,4 @@
+"""Interface to DOLFIN for FEM-BEM coupling."""
 import dolfin as _dolfin
 
 
@@ -20,7 +21,7 @@ def boundary_grid_from_fenics_mesh(fenics_mesh):
 
 
 def fenics_to_bempp_trace_data(fenics_space):
-    """Returns tuple (space,trace_matrix)."""
+    """Return tuple (space,trace_matrix)."""
     family, degree = fenics_space_info(fenics_space)
 
     if family == "Lagrange":
@@ -38,7 +39,7 @@ def fenics_to_bempp_trace_data(fenics_space):
 
 
 def fenics_space_info(fenics_space):
-    """Returns tuple (family,degree) containing information about a FEniCS space."""
+    """Return tuple (family,degree) containing information about a FEniCS space."""
     element = fenics_space.ufl_element()
     family = element.family()
     degree = element.degree()
@@ -46,7 +47,7 @@ def fenics_space_info(fenics_space):
 
 
 class FenicsOperator(object):
-    """Wraps a FEniCS Operator into a Bempp operator."""
+    """Wrap a FEniCS Operator into a Bempp operator."""
 
     def __init__(self, fenics_weak_form):
         """Construct an operator from a weak form in FEniCS."""

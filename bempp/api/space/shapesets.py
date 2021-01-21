@@ -9,7 +9,6 @@ class Shapeset(object):
 
     def __init__(self, identifier):
         """Define a shapeset from its identifier."""
-
         data = _SHAPESETS[identifier]
 
         self._evaluate = data["evaluate"]
@@ -35,7 +34,7 @@ class Shapeset(object):
 
     @property
     def identifier(self):
-        """Identifier of this shapeset."""
+        """Return identifier of this shapeset."""
         return self._identifier
 
     @property

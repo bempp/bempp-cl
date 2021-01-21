@@ -1,4 +1,5 @@
 """Routines for import and export."""
+
 import meshio as _meshio
 import numpy as _np
 
@@ -38,7 +39,7 @@ def export(
     write_binary=True,
 ):
     """
-    Exporter for grids and grid functions.
+    Export grids and grid functions.
 
     This method internally uses the meshio library. For a full
     list of supported data types see
