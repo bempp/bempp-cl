@@ -44,7 +44,7 @@ workflows:
       - large-tests
     triggers:
       - schedule:
-        cron: "0 7 * * 1"
-        filters:
-          branches:
-            only: master
+          cron: "0 7 * * 1"
+          filters:
+            branches:
+              only: master
