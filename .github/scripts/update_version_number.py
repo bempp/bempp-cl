@@ -25,7 +25,7 @@ if v2 > version:
     version = v2
 
 vfile3 = bempp.get_contents("bempp/version.py", branch.commit.sha)
-v3 = tuple(int(i) for i in vfile3.decoded_content.split(b'"')[1].split(b"."))
+v3 = tuple(int(i) for i in vfile3.decoded_content.split("\n", 1)[1].split(b'"')[1].split(b"."))
 if v3 > version:
     version = v3
 
@@ -52,7 +52,7 @@ if v3 != version:
     bempp.update_file(
         "bempp/version.py",
         "Update version number",
-        '__version__ = "' + v_str + '"\n',
+        '"""Set the version number."""\n\n__version__ = "' + v_str + '"\n',
         sha=vfile3.sha,
         branch=branch_name,
     )
