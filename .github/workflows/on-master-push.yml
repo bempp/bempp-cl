@@ -22,6 +22,5 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tage: bempp/cl-notebook:latest
+          tags: bempp/cl-notebook:latest
           target: lab
-          cache_froms: bempp/cl-notebook:latest
