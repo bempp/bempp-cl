@@ -26,7 +26,7 @@ if v2 > version:
 
 vfile3 = bempp.get_contents("bempp/version.py", branch.commit.sha)
 v3 = tuple(
-    int(i) for i in vfile3.decoded_content.split("\n", 1)[1].split(b'"')[1].split(b".")
+    int(i) for i in vfile3.decoded_content.split(b"\n", 1)[1].split(b'"')[1].split(b".")
 )
 if v3 > version:
     version = v3
