@@ -42,7 +42,7 @@ Helmholtz equation, and Maxwell's equations respectively) by writing the problem
 calculate the scattered field due to an electromagnetic wave colliding with a series of screens by solving
 \begin{align*}
 \nabla\times\nabla\times \mathbf{E} -k^2 \mathbf{E} &= 0,\\
-\boldsymbol{\nu}\times\mathbf{E}&=0 &&\text{on the screens},
+\boldsymbol{\nu}\times\mathbf{E}&=0\text{ on the screens},
 \end{align*}
 where $\mathbf{E}$ is the sum of a scattered field $\mathbf{E}^\text{s}$ and an incident field $\mathbf{E}^\text{inc}$,
 and $\boldsymbol{\nu}$ is the direction normal to the screen. (Additionally, we must impose the Silver--Müller radiation condition
