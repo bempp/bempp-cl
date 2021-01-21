@@ -28,7 +28,17 @@ differential equations (PDEs) in homogeneous bounded or unbounded domains. The m
 a boundary integral equation that can be derived from the PDE. The mathematical background of BEM is covered in, for example, 
 @Stein07 or @McLean. Typical applications of BEM include electrostatic problems, and acoustic and electromagnetic scattering.
 
-EXTRA BACKGROUND PARAGRAPH
+For each of these applications, BEM involves approximating the solution of a partial differential equation (Laplace's equation, the
+Helmholtz equation, and Maxwell's equations respectively) by writing the problem in boundary integral form. For example, we could
+calculate the scattered field due to an electromagnetic wave colliding with a series of screens by solving
+\begin{align*}
+\nabla\times\nabla\times \mathbf{E} -k^2 \mathbf{E} &= 0,\\
+\boldsymbol{\nu}\times\mathbf{E}&=0 &&\text{on the screens},
+\end{align*}
+where $\mathbf{E}$ is the sum of a scattered field $\mathbf{E}^\text{s}$ and an incident field $\mathbf{E}^\text{inc}$,
+and $\boldsymbol{\nu}$ is the direction normal to the screen. (Additionally, we must impose the Silver--Müller radiation condition
+to ensure that the problem has a unique solution.) This problem is solved, and the full method is derived,
+in one of the tutorials available on the Bempp website [@Bempp-maxwell-example].
 
 Bempp-cl is an open-source boundary element method library that can be used to assemble all the standard integral kernels for
 Laplace, Helmholtz, modified Helmholtz, and Maxwell problems. The library has a user-friendly Python interface that allows the
@@ -46,15 +56,19 @@ everything that is required for Calderón preconditioned Maxwell [@maxwellbempp]
 to just-in-time compile its computational kernels on a wide range of CPU and GPU devices and modern architectures. Alternatively,
 a fallback Numba implementation is provided.
 
-WHY OPENCL and NUMBA
+OpenCL is used as it is able to compile C-based kernels to run on a wide range of CPU and GPU devices, without the need to
+write device specific code. Numba is offered as an alternative as it is easily available on all platforms and provides a
+version of the library that is significantly faster than using pure Python.
 
-TARGET AUDIENCE
+Bempp-cl is aimed at those interested in using boundary element method to solve problems, particularly those from a mathematical background.
+The syntax of library is designed to closely resemble the boundary integral representation of the problem being solved, making
+implementing a problem simple once this representation is known.
 
-A few boundary element method libraries are available. The most popular is BETL [@BETL], a C++ library that is available for
-free for academic use, but not under a standard open source license. A number of other libraries exist designed
-for specific applications, such as PyGBe (for biomolecular electrostatics) [@PyGBe] and (abem for acoustics) [@abem].
-Bempp-cl offers a good alternative to these libraries by being applicable to a wide range of problems while remaining fully open
-source.
+There are only a small number of alternative boundary element method softwares available.
+The most popular is BETL [@BETL], a C++ library that is available for free for academic use, but not under a standard open source license.
+A number of other libraries exist designed for specific applications, such as PyGBe (for biomolecular electrostatics) [@PyGBe]
+and (abem for acoustics) [@abem].
+Bempp-cl can be used for a much wider range of problems than these specialised libraries, and is fully open source.
 
 # An overview of Bempp features
 Bempp-cl is divided into two parts: `bempp.api` and `bempp.core`.
