@@ -8,7 +8,6 @@ jobs:
       - checkout
       - run:
           command: |
-              pip3 install pytest pytest-xdist
               apt update
               apt install jupyter -y
           name: Install pytest and jupyter
