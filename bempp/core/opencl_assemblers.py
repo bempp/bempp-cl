@@ -413,7 +413,11 @@ def potential_assembler(
     if remainder_size > 0:
         options["WORKGROUP_SIZE"] = remainder_size
         remainder_kernel = get_kernel_from_operator_descriptor(
-            operator_descriptor, options, "potential", force_novec=True, device_type=device_type,
+            operator_descriptor,
+            options,
+            "potential",
+            force_novec=True,
+            device_type=device_type,
         )
 
     indices_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=indices)
