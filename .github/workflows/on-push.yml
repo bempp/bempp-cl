@@ -80,9 +80,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: sudo apt-get install -y python3-setuptools
-      - run: pip3 install black>=20.8
-      - run: pip3 install pydocstyle flake8
+      - run: |
+            sudo apt-get install -y python3-setuptools
+            pip3 install black>=20.8
+            pip3 install pydocstyle flake8
+        name: Install Python style tools
       - run: |
             python3 -m flake8 bempp
             python3 -m flake8 test
@@ -110,6 +112,6 @@ jobs:
       - uses: actions/checkout@v2
       - run: python3 setup.py install
         name: Install Bempp
-      - run: python3 -m pytest --durations=50 test/unit
+      - run: python3 -m pytest -n4 --durations=50 test/unit
         name: Run Bempp unit tests
 

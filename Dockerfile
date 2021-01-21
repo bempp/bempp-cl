@@ -86,7 +86,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 
 # Install Python packages (via pip)
 RUN pip3 install --no-cache-dir numba meshio>=4.0.16 && \
-    pip3 install --no-cache-dir flake8 pytest pydocstyle
+    pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
 
 # Download Install Gmsh SDK
 RUN cd /usr/local && \
