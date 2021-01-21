@@ -36,10 +36,10 @@ Bempp-cl began life as BEM++, and was a Python library with a C++ computational 
 functionality gradually moved from C++ to Python with only a few core routines remaining in C++. Bempp-cl is the culmination 
 of efforts to fully move to Python, and is an almost complete rewrite of Bempp.
 
-For each of the applications mentions above, the boundary element method involves approximating the solution of a partial
-differential equation (Laplace's equation, the
-Helmholtz equation, and Maxwell's equations respectively) by writing the problem in boundary integral form. For example, we could
-calculate the scattered field due to an electromagnetic wave colliding with a series of screens by solving
+For each of the applications mentioned above, the boundary element method involves approximating the solution of a partial
+differential equation (Laplace's equation, the Helmholtz equation, and Maxwell's equations respectively) by writing the problem
+in boundary integral form, then discretising. For example, we could calculate the scattered field due to an electromagnetic wave
+colliding with a series of screens by solving
 \begin{align*}
 \nabla\times\nabla\times \mathbf{E} -k^2 \mathbf{E} &= 0,\\
 \boldsymbol{\nu}\times\mathbf{E}&=0\text{ on the screens},
