@@ -1,3 +1,5 @@
+"""Kernels for assembly using Numba."""
+
 import numba as _numba
 import numpy as _np
 
@@ -90,7 +92,6 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
 )
 def get_piola_transform(grid_data, elements, local_points):
     """Compute the Piola transform."""
-
     npoints = local_points.shape[1]
     nelements = len(elements)
     result = _np.zeros((nelements, 3, 3, npoints), dtype=local_points.dtype)
@@ -111,7 +112,6 @@ def get_piola_transform(grid_data, elements, local_points):
 )
 def get_edge_lengths(grid_data, elements):
     """Compute the edge lengths for the given elements."""
-
     nelements = len(elements)
     result = _np.zeros((nelements, 3), dtype=grid_data.vertices.dtype)
 
@@ -187,7 +187,7 @@ def elements_adjacent(elements, index1, index2):
 def laplace_single_layer_regular(
     test_point, trial_points, test_normal, trial_normals, kernel_parameters
 ):
-    """Laplace single layer for regular kernels."""
+    """Evaluate Laplace single layer for regular kernels."""
     npoints = trial_points.shape[1]
     dtype = trial_points.dtype
     output = _np.zeros(npoints, dtype=dtype)
@@ -206,7 +206,7 @@ def laplace_single_layer_regular(
 def laplace_double_layer_regular(
     test_point, trial_points, test_normal, trial_normals, kernel_parameters
 ):
-    """Laplace double layer for regular kernels."""
+    """Evaluate Laplace double layer for regular kernels."""
     npoints = trial_points.shape[1]
     dtype = trial_points.dtype
     output = _np.zeros(npoints, dtype=dtype)
@@ -233,7 +233,7 @@ def laplace_double_layer_regular(
 def laplace_adjoint_double_layer_regular(
     test_point, trial_points, test_normal, trial_normals, kernel_parameters
 ):
-    """Laplace adjoint double layer for regular kernels."""
+    """Evaluate Laplace adjoint double layer for regular kernels."""
     npoints = trial_points.shape[1]
     dtype = trial_points.dtype
     output = _np.zeros(npoints, dtype=dtype)
@@ -260,7 +260,7 @@ def laplace_adjoint_double_layer_regular(
 def laplace_single_layer_singular(
     test_points, trial_points, test_normal, trial_normal, kernel_parameters
 ):
-    """Laplace single layer for singular kernels."""
+    """Evaluate Laplace single layer for singular kernels."""
     npoints = trial_points.shape[1]
     dtype = trial_points.dtype
     output = _np.zeros(npoints, dtype=dtype)
@@ -279,7 +279,7 @@ def laplace_single_layer_singular(
 def laplace_double_layer_singular(
     test_points, trial_points, test_normal, trial_normal, kernel_parameters
 ):
-    """Laplace double layer for singular kernels."""
+    """Evaluate Laplace double layer for singular kernels."""
     npoints = trial_points.shape[1]
     dtype = trial_points.dtype
     output = _np.zeros(npoints, dtype=dtype)
@@ -306,7 +306,7 @@ def laplace_double_layer_singular(
 def laplace_adjoint_double_layer_singular(
     test_points, trial_points, test_normal, trial_normal, kernel_parameters
 ):
-    """Laplace adjoint double layer for singular kernels."""
+    """Evaluate Laplace adjoint double layer for singular kernels."""
     npoints = trial_points.shape[1]
     dtype = trial_points.dtype
     output = _np.zeros(npoints, dtype=dtype)
@@ -333,7 +333,7 @@ def laplace_adjoint_double_layer_singular(
 def helmholtz_single_layer_regular(
     test_point, trial_points, test_normal, trial_normals, kernel_parameters
 ):
-    """Helmholtz single layer for regular kernels."""
+    """Evaluate Helmholtz single layer for regular kernels."""
     wavenumber_real = kernel_parameters[0]
     wavenumber_imag = kernel_parameters[1]
     npoints = trial_points.shape[1]
@@ -363,7 +363,7 @@ def helmholtz_single_layer_regular(
 def helmholtz_double_layer_regular(
     test_point, trial_points, test_normal, trial_normals, kernel_parameters
 ):
-    """Helmholtz double layer for regular kernels."""
+    """Evaluate Helmholtz double layer for regular kernels."""
     wavenumber_real = kernel_parameters[0]
     wavenumber_imag = kernel_parameters[1]
     npoints = trial_points.shape[1]
@@ -410,7 +410,7 @@ def helmholtz_double_layer_regular(
 def helmholtz_adjoint_double_layer_regular(
     test_point, trial_points, test_normal, trial_normals, kernel_parameters
 ):
-    """Helmholtz adjoint double layer for regular kernels."""
+    """Evaluate Helmholtz adjoint double layer for regular kernels."""
     wavenumber_real = kernel_parameters[0]
     wavenumber_imag = kernel_parameters[1]
     npoints = trial_points.shape[1]
@@ -457,7 +457,7 @@ def helmholtz_adjoint_double_layer_regular(
 def helmholtz_far_field_single_layer(
     test_point, trial_points, test_normal, trial_normals, kernel_parameters
 ):
-    """Helmholtz single layer for regular kernels."""
+    """Evaluate Helmholtz single layer for regular kernels."""
     npoints = trial_points.shape[1]
     dtype = trial_points.dtype
 
@@ -484,7 +484,7 @@ def helmholtz_far_field_single_layer(
 def helmholtz_far_field_double_layer(
     test_point, trial_points, test_normal, trial_normals, kernel_parameters
 ):
-    """Helmholtz single layer for regular kernels."""
+    """Evaluate Helmholtz single layer for regular kernels."""
     npoints = trial_points.shape[1]
     dtype = trial_points.dtype
 
@@ -522,7 +522,7 @@ def helmholtz_far_field_double_layer(
 def helmholtz_single_layer_singular(
     test_points, trial_points, test_normal, trial_normal, kernel_parameters
 ):
-    """Helmholtz single layer for regular kernels."""
+    """Evaluate Helmholtz single layer for regular kernels."""
     wavenumber_real = kernel_parameters[0]
     wavenumber_imag = kernel_parameters[1]
     npoints = trial_points.shape[1]
@@ -552,7 +552,7 @@ def helmholtz_single_layer_singular(
 def helmholtz_double_layer_singular(
     test_points, trial_points, test_normal, trial_normal, kernel_parameters
 ):
-    """Helmholtz double layer for singular kernels."""
+    """Evaluate Helmholtz double layer for singular kernels."""
     wavenumber_real = kernel_parameters[0]
     wavenumber_imag = kernel_parameters[1]
     npoints = trial_points.shape[1]
@@ -598,7 +598,7 @@ def helmholtz_double_layer_singular(
 def helmholtz_adjoint_double_layer_singular(
     test_points, trial_points, test_normal, trial_normal, kernel_parameters
 ):
-    """Helmholtz adjoint double layer for singular kernels."""
+    """Evaluate Helmholtz adjoint double layer for singular kernels."""
     wavenumber_real = kernel_parameters[0]
     wavenumber_imag = kernel_parameters[1]
     npoints = trial_points.shape[1]
@@ -644,7 +644,7 @@ def helmholtz_adjoint_double_layer_singular(
 def modified_helmholtz_single_layer_regular(
     test_points, trial_points, test_normal, trial_normal, kernel_parameters
 ):
-    """Modified Helmholtz single layer for regular kernels."""
+    """Evaluate Modified Helmholtz single layer for regular kernels."""
     npoints = trial_points.shape[1]
     dtype = trial_points.dtype
     dist = _np.zeros(npoints, dtype=dtype)
@@ -669,7 +669,7 @@ def modified_helmholtz_single_layer_regular(
 def modified_helmholtz_single_layer_singular(
     test_points, trial_points, test_normal, trial_normal, kernel_parameters
 ):
-    """Modified Helmholtz single layer for singular kernels."""
+    """Evaluate Modified Helmholtz single layer for singular kernels."""
     npoints = trial_points.shape[1]
     dtype = trial_points.dtype
     dist = _np.zeros(npoints, dtype=dtype)
@@ -694,7 +694,7 @@ def modified_helmholtz_single_layer_singular(
 def modified_helmholtz_double_layer_regular(
     test_points, trial_points, test_normal, trial_normal, kernel_parameters
 ):
-    """Modified Helmholtz double layer for regular kernels."""
+    """Evaluate Modified Helmholtz double layer for regular kernels."""
     npoints = trial_points.shape[1]
     dtype = trial_points.dtype
     diff = _np.zeros((3, npoints), dtype=dtype)
@@ -731,7 +731,7 @@ def modified_helmholtz_double_layer_regular(
 def modified_helmholtz_double_layer_singular(
     test_points, trial_points, test_normal, trial_normal, kernel_parameters
 ):
-    """Modified Helmholtz double layer for singular kernels."""
+    """Evaluate Modified Helmholtz double layer for singular kernels."""
     npoints = trial_points.shape[1]
     dtype = trial_points.dtype
     diff = _np.zeros((3, npoints), dtype=dtype)
@@ -768,7 +768,7 @@ def modified_helmholtz_double_layer_singular(
 def modified_helmholtz_adjoint_double_layer_regular(
     test_points, trial_points, test_normal, trial_normal, kernel_parameters
 ):
-    """Modified Helmholtz adjoint double layer for regular kernels."""
+    """Evaluate Modified Helmholtz adjoint double layer for regular kernels."""
     npoints = trial_points.shape[1]
     dtype = trial_points.dtype
     diff = _np.zeros((3, npoints), dtype=dtype)
@@ -805,7 +805,7 @@ def modified_helmholtz_adjoint_double_layer_regular(
 def modified_helmholtz_adjoint_double_layer_singular(
     test_points, trial_points, test_normal, trial_normal, kernel_parameters
 ):
-    """Modified Helmholtz adjoint double layer for singular kernels."""
+    """Evaluate Modified Helmholtz adjoint double layer for singular kernels."""
     npoints = trial_points.shape[1]
     dtype = trial_points.dtype
     diff = _np.zeros((3, npoints), dtype=dtype)
@@ -857,7 +857,7 @@ def l2_identity_kernel(
     trial_basis_evaluate,
     result,
 ):
-
+    """Evaluate kernel for L2 identity."""
     element = elements[element_index]
 
     local_test_fun_values = test_basis_evaluate(
@@ -917,6 +917,7 @@ def default_sparse_kernel(
     kernel_evaluator,
     result,
 ):
+    """Evaluate default sparse kernel."""
     # n_quad_points = len(quad_weights)
 
     nelements = len(elements)
@@ -967,6 +968,7 @@ def default_scalar_regular_kernel(
     trial_shapeset,
     result,
 ):
+    """Evaulate default scalar kernel."""
     # Compute global points
     result_type = result.dtype
     n_quad_points = len(quad_weights)
@@ -1097,6 +1099,7 @@ def laplace_hypersingular_regular(
     trial_shapeset,
     result,
 ):
+    """Evaluate Laplace hypersingular kernel."""
     # Compute global points
     dtype = test_grid_data.vertices.dtype
     result_type = result.dtype
@@ -1263,6 +1266,7 @@ def helmholtz_hypersingular_regular(
     trial_shapeset,
     result,
 ):
+    """Evaluate Helmholtz hypersingular kernel."""
     # Compute global points
     wavenumber = kernel_parameters[0] + 1j * kernel_parameters[1]
     dtype = test_grid_data.vertices.dtype
@@ -1438,6 +1442,7 @@ def modified_helmholtz_hypersingular_regular(
     trial_shapeset,
     result,
 ):
+    """Evaluate Modified Helmholtz hypersingular kernel."""
     # Compute global points
     wavenumber = kernel_parameters[0]
     dtype = test_grid_data.vertices.dtype
@@ -1612,7 +1617,7 @@ def default_scalar_singular_kernel(
     kernel_parameters,
     result,
 ):
-    """Singular evaluator."""
+    """Evaluate singular kernel."""
     nelements = len(test_elements)
 
     for index in _numba.prange(nelements):
@@ -1686,7 +1691,7 @@ def laplace_hypersingular_singular(
     kernel_parameters,
     result,
 ):
-    """Singular evaluator."""
+    """Evaluate Laplace hypersingular singular kernel."""
     dtype = grid_data.vertices.dtype
     nelements = len(test_elements)
 
@@ -1791,8 +1796,7 @@ def helmholtz_hypersingular_singular(
     kernel_parameters,
     result,
 ):
-    """Singular evaluator."""
-
+    """Evaluate Helmholtz hypersingular singular kernel."""
     dtype = grid_data.vertices.dtype
     nelements = len(test_elements)
 
@@ -1908,7 +1912,6 @@ def modified_helmholtz_hypersingular_singular(
     result,
 ):
     """Singular evaluator."""
-
     dtype = grid_data.vertices.dtype
     nelements = len(test_elements)
 
@@ -2019,7 +2022,6 @@ def default_scalar_potential_kernel(
     support_elements,
 ):
     """Implement a scalar potential kernel."""
-
     result = _np.zeros((kernel_dimension, points.shape[1]), dtype=result_type)
     n_support_elements = len(support_elements)
     number_of_quad_points = len(quad_weights)
@@ -2102,6 +2104,7 @@ def maxwell_efield_regular_assembler(
     trial_shapeset,
     result,
 ):
+    """Evaluate Maxwell electric field kernel."""
     wavenumber = kernel_parameters[0] + 1j * kernel_parameters[1]
     result_type = result.dtype
     n_quad_points = len(quad_weights)
@@ -2462,6 +2465,7 @@ def maxwell_mfield_regular_assembler(
     trial_shapeset,
     result,
 ):
+    """Evaluate Maxwell magnetic field kernel."""
     wavenumber = kernel_parameters[0] + 1j * kernel_parameters[1]
     dtype = test_grid_data.vertices.dtype
     result_type = result.dtype

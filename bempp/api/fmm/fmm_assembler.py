@@ -9,7 +9,6 @@ _FMM_POTENTIAL_CACHE = {}
 
 def get_mode_from_operator_identifier(identifier):
     """Get the Fmm mode from the operator identifier."""
-
     descriptor = identifier.split("_")[0]
 
     if descriptor == "laplace":
@@ -48,6 +47,7 @@ def get_fmm_interface(domain, dual_to_range, mode, wavenumber):
 
 
 def get_fmm_potential_interface(space, points, mode, wavenumber):
+    """Get an Fmm potential instance."""
     import bempp.api
 
     global _FMM_POTENTIAL_CACHE
@@ -83,7 +83,6 @@ def create_evaluator(
     operator_descriptor, fmm_interface, domain, dual_to_range, parameters
 ):
     """Return an Fmm evaluator for the requested kernel."""
-
     if operator_descriptor.assembly_type == "default_scalar":
         return make_default_scalar(
             operator_descriptor, fmm_interface, domain, dual_to_range
@@ -104,7 +103,6 @@ def create_evaluator(
 
 def create_potential_evaluator(operator_descriptor, fmm_interface, space, parameters):
     """Select an Fmm Potential Evaluator."""
-
     if operator_descriptor.assembly_type == "default_scalar":
         return make_default_scalar_potential(operator_descriptor, fmm_interface, space)
     elif operator_descriptor.assembly_type == "maxwell_electric_field":
@@ -126,7 +124,6 @@ class FmmPotentialAssembler(object):
         self, space, operator_descriptor, points, device_interface, parameters
     ):
         """Initialise FMM Potential Assembler."""
-
         mode = get_mode_from_operator_identifier(operator_descriptor.identifier)
 
         if mode == "laplace":
@@ -216,7 +213,6 @@ class FmmAssembler(_assembler.AssemblerBase):
 
     def matvec(self, x):
         """Perform a matvec."""
-
         ndim = len(x.shape)
 
         if ndim > 2:
@@ -264,7 +260,6 @@ def make_scalar_hypersingular(
 
     def evaluate_laplace_hypersingular(x):
         """Evaluate the Laplace hypersingular kernel."""
-
         fmm_res0 = (
             target_curls_trans[0] @ fmm_interface.evaluate(source_curls[0] @ x)[:, 0]
         )
@@ -279,7 +274,6 @@ def make_scalar_hypersingular(
 
     def evaluate_helmholtz_hypersingular(x):
         """Evaluate the Helmholtz hypersingular kernel."""
-
         wavenumber = (
             operator_descriptor.options[0] + 1j * operator_descriptor.options[1]
         )
@@ -316,7 +310,6 @@ def make_scalar_hypersingular(
 
     def evaluate_modified_helmholtz_hypersingular(x):
         """Evaluate the modified Helmholtz hypersingular kernel."""
-
         wavenumber = operator_descriptor.options[0]
         x_transformed = source_map @ x
 
@@ -394,7 +387,6 @@ def make_default_scalar(operator_descriptor, fmm_interface, domain, dual_to_rang
 
     def evaluate_double_layer(x):
         """Actually evaluate double layer."""
-
         x_transformed = source_map @ x
 
         fmm_res1 = fmm_interface.evaluate(source_normals[:, 0] * x_transformed)[:, 1]
@@ -492,7 +484,6 @@ def compute_p1_curl_transformation_impl(
     grid_data, support_elements, normal_multipliers, quad_points, weights
 ):
     """Implement the curl transformation."""
-
     number_of_quad_points = quad_points.shape[1]
     number_of_support_elements = len(support_elements)
 
@@ -689,7 +680,6 @@ def compute_rwg_div_transform_impl(
     weights,
 ):
     """Implement the RWG basis div transformation."""
-
     number_of_quad_points = quad_points.shape[1]
     number_of_support_elements = len(support_elements)
 
@@ -778,7 +768,6 @@ def make_maxwell_electric_field_boundary(
 
     def evaluate(x):
         """Evaluate the electric field operator."""
-
         result = _np.zeros(dual_to_range.global_dof_count, dtype=_np.complex128)
 
         for index in range(3):
@@ -818,7 +807,6 @@ def make_maxwell_magnetic_field_boundary(
 
     def evaluate(x):
         """Evaluate the magnetic field operator."""
-
         result = _np.zeros(dual_to_range.global_dof_count, dtype=_np.complex128)
 
         vals = [
@@ -828,7 +816,6 @@ def make_maxwell_magnetic_field_boundary(
         ]
 
         # Now compute the curl
-
         curl_val = _np.hstack(
             [
                 (vals[2][:, 1] - vals[1][:, 2]).reshape(-1, 1),
@@ -838,7 +825,6 @@ def make_maxwell_magnetic_field_boundary(
         )
 
         # Finally, compute the negative inner product
-
         result = -(
             dual_rwg_map[0] @ curl_val[:, 0]
             + dual_rwg_map[1] @ curl_val[:, 1]
@@ -863,7 +849,6 @@ def make_maxwell_electric_field_potential(operator_descriptor, fmm_interface, sp
 
     def evaluate(x):
         """Evaluate the potential operator."""
-
         res = (
             1j
             * wavenumber
@@ -895,7 +880,6 @@ def make_maxwell_magnetic_field_potential(operator_descriptor, fmm_interface, sp
 
     def evaluate(x):
         """Evaluate the potential operator."""
-
         vals = [
             fmm_interface.evaluate(rwg_map[0] @ x)[:, 1:],
             fmm_interface.evaluate(rwg_map[1] @ x)[:, 1:],
@@ -903,7 +887,6 @@ def make_maxwell_magnetic_field_potential(operator_descriptor, fmm_interface, sp
         ]
 
         # Now compute the curl
-
         curl_val = _np.vstack(
             [
                 (vals[2][:, 1] - vals[1][:, 2]),

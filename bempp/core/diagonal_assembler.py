@@ -1,3 +1,5 @@
+"""Diagonal assembly."""
+
 from bempp.api.assembly import assembler as _assembler
 
 

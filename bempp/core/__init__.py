@@ -1,0 +1,1 @@
+"""Core Bempp assembly routines."""

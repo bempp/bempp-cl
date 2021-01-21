@@ -5,7 +5,7 @@ class BoundaryOperator(object):
     """A base class for boundary operators."""
 
     def __init__(self, domain, range_, dual_to_range, parameters):
-        """Constructor should only be called through derived class."""
+        """Construct. Should only be called through derived class."""
         self._domain = domain
         self._range = range_
         self._dual_to_range = dual_to_range
@@ -35,14 +35,13 @@ class BoundaryOperator(object):
 
     def weak_form(self):
         """Return the weak form (assemble if necessary)."""
-
         if not self._cached:
             self._cached = self._assemble()
 
         return self._cached
 
     def strong_form(self):
-        """Return a discrete operator  that maps into the range space."""
+        """Return a discrete operator that maps into the range space."""
         from bempp.api.utils.helpers import get_inverse_mass_matrix
 
         if self._range_map is None:
@@ -76,12 +75,11 @@ class BoundaryOperator(object):
             return NotImplemented
 
     def __matmul__(self, other):
-        """Matrix multiplication notation."""
-
+        """Multiply by another operator."""
         return self.__mul__(other)
 
     def __rmul__(self, other):
-
+        """Multiply by another operator."""
         import numpy as np
 
         if np.isscalar(other):
@@ -94,11 +92,11 @@ class BoundaryOperator(object):
         return _SumBoundaryOperator(self, other)
 
     def __neg__(self):
-
+        """Negate an operator."""
         return self.__mul__(-1.0)
 
     def __sub__(self, other):
-
+        """Subtract two operators."""
         return self.__add__(-other)
 
 
@@ -224,6 +222,7 @@ class ZeroBoundaryOperator(BoundaryOperator):
         )
 
     def __iadd__(self, other):
+        """Add."""
         if (
             self.domain != other.domain
             or self.range != other.range
@@ -234,6 +233,7 @@ class ZeroBoundaryOperator(BoundaryOperator):
         return other
 
     def __isub__(self, other):
+        """Subtract."""
         if (
             self.domain != other.domain
             or self.range != other.range

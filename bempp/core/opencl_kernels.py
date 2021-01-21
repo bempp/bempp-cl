@@ -13,7 +13,6 @@ _DEFAULT_CONTEXT = None
 
 def select_cl_kernel(operator_descriptor, mode):
     """Select OpenCL kernel."""
-
     singular_assemblers = {
         "default_scalar": "evaluate_dense_singular",
         "laplace_hypersingular": "evaluate_dense_laplace_hypersingular_singular",
@@ -110,7 +109,6 @@ def get_kernel_compile_options(options, precision):
 
 def build_program(assembly_function, options, precision):
     """Build the kernel and return it."""
-
     file_name = assembly_function + ".cl"
     kernel_file = _os.path.join(_KERNEL_PATH, file_name)
 
@@ -128,7 +126,6 @@ def get_kernel_from_operator_descriptor(
     operator_descriptor, options, mode, force_novec=False
 ):
     """Return compiled kernel from operator descriptor."""
-
     precision = operator_descriptor.precision
     assembly_function, kernel_name = select_cl_kernel(operator_descriptor, mode=mode)
 
@@ -148,7 +145,6 @@ def get_kernel_from_operator_descriptor(
 
 def get_kernel_from_name(name, options, precision="double"):
     """Return compiled kernel from name."""
-
     vec_length = get_vector_width(precision)
     vec_string = get_vec_string(precision)
 
@@ -203,7 +199,6 @@ def default_device():
 
 def default_context():
     """Return default context."""
-
     if _DEFAULT_CONTEXT is None:
         default_device()
 
@@ -212,7 +207,6 @@ def default_context():
 
 def find_cpu_driver():
     """Find the first available CPU OpenCL driver."""
-
     for platform in _cl.get_platforms():
         ctx = _cl.Context(
             dev_type=_cl.device_type.ALL,
@@ -267,7 +261,6 @@ def show_available_platforms_and_devices():
 
 def get_native_vector_width(device, precision):
     """Get default vector width for device."""
-
     if precision == "single":
         return device.native_vector_width_float
     elif precision == "double":

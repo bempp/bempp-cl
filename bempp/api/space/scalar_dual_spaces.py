@@ -1,3 +1,5 @@
+"""Define scalar spaces on the dual grid."""
+
 import numpy as _np
 from bempp.api import log
 

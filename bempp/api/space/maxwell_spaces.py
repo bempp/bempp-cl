@@ -608,7 +608,6 @@ def _compute_rwg0_space_data(
     truncate_at_segment_edge,
 ):
     """Compute the local2global map for the space."""
-
     local2global_map = _np.zeros((number_of_elements, 3), dtype=_np.uint32)
     local_multipliers = _np.zeros((number_of_elements, 3), dtype=_np.float64)
     edge_dofs = -_np.ones(number_of_edges, dtype=_np.int32)
@@ -684,7 +683,6 @@ def _compute_rwg0_space_data(
 @_numba.njit(cache=True)
 def generate_rwg0_map(grid_data, support_elements, local_coords, coeffs):
     """Actually generate the sparse matrix data."""
-
     number_of_elements = len(support_elements)
 
     coarse_dofs = _np.empty(3 * 18 * number_of_elements, dtype=_np.uint32)

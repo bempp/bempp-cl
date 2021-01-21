@@ -7,21 +7,20 @@ import numpy as _np
 
 def callable(*args, complex=False, jit=True, parameterized=False, vectorized=False):
     """Wrap a callable for Bempp."""
-
     if vectorized:
 
         def wrap(f):
-            """Vectorized wrapper function."""
+            """Wrap a functions (vectorised)."""
             if parameterized:
 
                 def wrapper_callable(x, n, domain_index, res, parameters):
-                    """Wrapper callable."""
+                    """Call the wrapped callable."""
                     f(x, n, domain_index, res, parameters)
 
             else:
 
                 def wrapper_callable(x, n, domain_index, res, parameters):
-                    """Wrapper callable."""
+                    """Call the wrapped callable."""
                     f(x, n, domain_index, res)
 
             wrapper_callable.bempp_type = "complex" if complex else "real"
@@ -30,7 +29,6 @@ def callable(*args, complex=False, jit=True, parameterized=False, vectorized=Fal
             return wrapper_callable
 
     else:
-
         if complex:
             wrap_type = _numba.complex128[:]
         else:
@@ -49,19 +47,19 @@ def callable(*args, complex=False, jit=True, parameterized=False, vectorized=Fal
             signature = signature_not_parameterized
 
         def wrap(f):
-            """Actual wrapper."""
+            """Wrap a function."""
             if not jit:
                 if parameterized:
 
                     def wrapper_callable(x, n, domain_index, res, parameters):
-                        """Callable for object mode."""
+                        """Call using object mode."""
                         with _numba.objmode():
                             f(x, n, domain_index, res, parameters)
 
                 else:
 
                     def wrapper_callable(x, n, domain_index, res, parameters):
-                        """Callable for object mode."""
+                        """Call using object mode."""
                         with _numba.objmode():
                             f(x, n, domain_index, res)
 
@@ -70,13 +68,13 @@ def callable(*args, complex=False, jit=True, parameterized=False, vectorized=Fal
                 if parameterized:
 
                     def wrapper_callable(x, n, domain_index, res, parameters):
-                        """Standard callable."""
+                        """Call a wrapped function."""
                         f_jit(x, n, domain_index, res, parameters)
 
                 else:
 
                     def wrapper_callable(x, n, domain_index, res, parameters):
-                        """Callable for object mode."""
+                        """Call a wrapped function."""
                         f_jit(x, n, domain_index, res)
 
             njit_wrapper = _numba.njit(signature_parameterized)(wrapper_callable)
@@ -94,13 +92,11 @@ def callable(*args, complex=False, jit=True, parameterized=False, vectorized=Fal
 
 def real_callable(*args, jit=True):
     """Wrap function as a real Numba callable."""
-
     return callable(*args, complex=False, jit=jit)
 
 
 def complex_callable(*args, jit=True):
     """Wrap function as a complex Numba callable."""
-
     return callable(*args, complex=True, jit=jit)
 
 
@@ -387,7 +383,6 @@ class GridFunction(object):
     @property
     def grid_coefficients(self):
         """Return grid coefficients."""
-
         if self._grid_coefficients is None:
             self._grid_coefficients = self.space.dof_transformation @ self.coefficients
 
@@ -465,7 +460,6 @@ class GridFunction(object):
 
     def project_to_space(self, space):
         """Return an L^2 projection on another space."""
-
         from bempp.api.utils.helpers import get_mass_matrix
 
         ident = get_mass_matrix(self.space, space)
@@ -573,7 +567,7 @@ class GridFunction(object):
         )
 
     def l2_norm(self):
-        """L^2 norm of the function."""
+        """Calculate the L^2 norm of the function."""
         import numpy as np
 
         # L2-Norm on the whole space
@@ -583,7 +577,6 @@ class GridFunction(object):
 
     def __add__(self, other):
         """Add two grid functions."""
-
         if self.space != other.space:
             raise ValueError("Spaces are not identical.")
 
@@ -600,6 +593,7 @@ class GridFunction(object):
         )
 
     def __mul__(self, alpha):
+        """Multiply a grid function."""
         import numpy as np
 
         if np.isscalar(alpha):
@@ -620,6 +614,7 @@ class GridFunction(object):
             return NotImplemented
 
     def __rmul__(self, alpha):
+        """Multiply a grid function."""
         import numpy as np
 
         if np.isscalar(alpha):
@@ -628,15 +623,19 @@ class GridFunction(object):
             return NotImplemented
 
     def __div__(self, alpha):
+        """Divide a grid function."""
         return self * (1.0 / alpha)
 
     def __truediv__(self, alpha):
+        """Divide a grid function."""
         return self.__div__(alpha)
 
     def __neg__(self):
+        """Negate a grid function."""
         return self.__mul__(-1.0)
 
     def __sub__(self, other):
+        """Subtract grid functions."""
         if self.space != other.space:
             raise ValueError("Spaces are not identical.")
 
@@ -760,7 +759,6 @@ def get_function_quadrature_information(
     grid_data, support_elements, normal_multipliers, quad_points
 ):
     """Return vectorized version of quad_points, normals and domain_indices."""
-
     nelements = len(support_elements)
     nlocal = quad_points.shape[1]
     npoints = nlocal * nelements
@@ -802,7 +800,6 @@ def _project_function(
     function_parameters,
 ):
     """Project a Numba callable onto a grid."""
-
     npoints = points.shape[1]
     global_points = _np.empty((3, npoints), dtype=_np.float64)
     fvalues = _np.empty((codomain_dimension, npoints), dtype=projections.dtype)
@@ -868,7 +865,6 @@ def _project_function_vectorized(
     function_parameters,
 ):
     """Project a Numba callable onto a grid."""
-
     npoints = points.shape[1]
 
     for index, element in enumerate(support_elements):

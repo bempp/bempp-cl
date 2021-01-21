@@ -1,4 +1,5 @@
 """The basic grid class."""
+
 from bempp.helpers import timeit as _timeit
 import collections as _collections
 
@@ -170,12 +171,12 @@ class Grid(object):
 
     @property
     def number_of_vertices(self):
-        """Number of vertices."""
+        """Return number of vertices."""
         return self._vertices.shape[1]
 
     @property
     def number_of_edges(self):
-        """Number of edges."""
+        """Return number of edges."""
         return self._edges.shape[1]
 
     @property
@@ -211,7 +212,7 @@ class Grid(object):
     @property
     def element_edges(self):
         """
-        Returns an array of edge indices for each element.
+        Return an array of edge indices for each element.
 
         element_edges[i, j] is the index of the ith edge
         in the jth element.
@@ -227,7 +228,7 @@ class Grid(object):
     @property
     def as_array(self):
         """
-        Converts the grid to an array.
+        Convert the grid to an array.
 
         For a grid with N elements returns a 1d array with
         9 * N entries. The three nodes for element with index e
@@ -246,7 +247,6 @@ class Grid(object):
         contains (xmax, ymax, zmax).
 
         """
-
         box = _np.empty((3, 2), dtype="float64")
         box[:, 0] = _np.min(self.vertices, axis=1)
         box[:, 1] = _np.max(self.vertices, axis=1)
@@ -347,7 +347,6 @@ class Grid(object):
 
     def entity_count(self, codim):
         """Return the number of entities of given codimension."""
-
         if codim == 0:
             return self.number_of_elements
         if codim == 1:
@@ -435,7 +434,6 @@ class Grid(object):
 
     def refine(self):
         """Return a new grid with all elements refined."""
-
         new_number_of_vertices = self.number_of_edges + self.number_of_vertices
 
         new_vertices = _np.empty(
@@ -508,7 +506,6 @@ class Grid(object):
         two nodes associated with the jth edge.
 
         """
-
         # The following would be better defined inside the njitted routiine.
         # But Numba then throws an error that it cannot find the UniTuple type.
         edge_tuple_to_index = _numba.typed.Dict.empty(
@@ -576,7 +573,6 @@ class Grid(object):
 
     def _compute_geometric_quantities(self):
         """Compute geometric quantities for the grid."""
-
         element_vertices = self.vertices.T[self.elements.flatten(order="F")]
         indexptr = 3 * _np.arange(self.number_of_elements)
         indices = _np.repeat(indexptr, 2) + _np.tile([1, 2], self.number_of_elements)
@@ -722,7 +718,7 @@ class GridDataDouble(object):
         element_neighbor_indices,
         element_neighbor_indexptr,
     ):
-
+        """Create a GridDataDouble."""
         self.vertices = vertices
         self.elements = elements
         self.edges = edges
@@ -786,7 +782,7 @@ class GridDataFloat(object):
         element_neighbor_indices,
         element_neighbor_indexptr,
     ):
-        """TODO: add a docstring."""
+        """Create a GridDataFloat."""
         self.vertices = vertices
         self.elements = elements
         self.edges = edges
@@ -917,8 +913,7 @@ class Element(object):
         return iterator
 
     def __eq__(self, other):
-        """Equality comparison of elements."""
-
+        """Check if elements are equal."""
         if isinstance(other, Element):
             if other.grid == self.grid and other.index == self.index:
                 return True
@@ -932,7 +927,7 @@ class Vertex(object):
     """Provides a view onto a vertex of the grid."""
 
     def __init__(self, grid, index):
-
+        """Create a vertex."""
         self._grid = grid
         self._index = index
 
@@ -951,7 +946,7 @@ class EdgeGeometry(object):
     """Implementation of a geometry for edges."""
 
     def __init__(self, corners):
-
+        """Create edge geometry."""
         self._corners = corners
         self._volume = _np.linalg.norm(corners[:, 1] - corners[:, 0])
 
@@ -970,14 +965,13 @@ class Edge(object):
     """Provides a view onto an edge of the grid."""
 
     def __init__(self, grid, index):
-        """Describes an edge."""
-
+        """Create an edge."""
         self._grid = grid
         self._index = index
 
     @property
     def index(self):
-        """Index of the edge."""
+        """Return the index of the edge."""
         return self._index
 
     @property
@@ -1117,7 +1111,6 @@ def _find_vertex_adjacency(elements, test_indices, trial_indices):
     numbers (0, 1 or 2).
 
     """
-
     number_of_indices = len(test_indices)
     adjacency = _np.zeros((4, number_of_indices), dtype=_np.int32)
 
@@ -1146,7 +1139,6 @@ def _find_edge_adjacency(elements, elem0_indices, elem1_indices):
     numbers (0, 1 or 2).
 
     """
-
     number_of_indices = len(elem0_indices)
 
     adjacency = _np.zeros((6, number_of_indices), dtype=_np.int32)
@@ -1207,7 +1199,7 @@ def _sort_values(val1, val2):
 @_numba.njit()
 def _vertices_from_edge_index(element, local_index):
     """
-    Returns the vertices associated with an edge.
+    Return the vertices associated with an edge.
 
     Element is 3-tupel with the vertex indices.
     Sorts the returned vertices in ascending order.
@@ -1219,7 +1211,6 @@ def _vertices_from_edge_index(element, local_index):
 
 def grid_from_segments(grid, segments):
     """Return new grid from segments of existing grid."""
-
     element_in_new_grid = _np.zeros(grid.number_of_elements, dtype=_np.bool)
 
     for elem in range(grid.number_of_elements):
@@ -1308,7 +1299,6 @@ def _create_barycentric_connectivity_array(
 
 def barycentric_refinement(grid):
     """Return the barycentric refinement of a given grid."""
-
     new_vertices, new_elements = _create_barycentric_connectivity_array(
         grid.vertices,
         grid.elements,

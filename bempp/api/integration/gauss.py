@@ -1,3 +1,5 @@
+"""Gauss integration rules."""
+
 # This file is based on the Hyena file gausstria.hpp,
 # which was released under the MIT License for the Bempp project.
 # The original license message is below

@@ -11,11 +11,10 @@ import collections as _collections
 
 
 def timeit(fun):
-    """Decorator to time a method in Bempp"""
-
+    """Time a method in Bempp."""
     @_functools.wraps(fun)
     def timed_fun(*args, **kwargs):
-        """The actual timer function."""
+        """Time an operation."""
         from bempp.api import log
 
         start_time = _time.time()
@@ -31,12 +30,11 @@ IndexList = _collections.namedtuple("IndexList", ["indices", "indexptr"])
 
 
 def jit_logger(name):
-    """Emit a log message whenever Numba jits somethings."""
+    """Emit a log message whenever Numba jits something."""
     import bempp.api
 
     def closure(func):
         """Closure that has the name variable."""
-
         def inner(*args, **kwargs):
             origsigs = set(func.signatures)
             result = func(*args, **kwargs)

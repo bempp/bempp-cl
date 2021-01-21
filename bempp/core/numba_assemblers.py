@@ -153,7 +153,6 @@ def potential_assembler(
 
     def evaluator(x):
         """Actually evaluate the potential."""
-
         return numba_assembly_function(
             dtype,
             result_type,

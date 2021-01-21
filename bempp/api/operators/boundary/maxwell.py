@@ -15,7 +15,6 @@ def electric_field(
     precision=None,
 ):
     """Assemble the electric field boundary operator."""
-
     if domain.identifier != "rwg0":
         raise ValueError("Domain space must be an RWG type function space.")
 
@@ -49,7 +48,6 @@ def magnetic_field(
     precision=None,
 ):
     """Assemble the magnetic field boundary operator."""
-
     if domain.identifier != "rwg0":
         raise ValueError("Domain space must be an RWG type function space.")
 
