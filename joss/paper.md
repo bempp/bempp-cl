@@ -28,7 +28,16 @@ differential equations (PDEs) in homogeneous bounded or unbounded domains. The m
 a boundary integral equation that can be derived from the PDE. The mathematical background of BEM is covered in, for example, 
 @Stein07 or @McLean. Typical applications of BEM include electrostatic problems, and acoustic and electromagnetic scattering.
 
-For each of these applications, BEM involves approximating the solution of a partial differential equation (Laplace's equation, the
+Bempp-cl is an open-source boundary element method library that can be used to assemble all the standard integral kernels for
+Laplace, Helmholtz, modified Helmholtz, and Maxwell problems. The library has a user-friendly Python interface that allows the
+user to use BEM to solve a variety of problems, including problems in electrostatics, acoustics and electromagnetics.
+
+Bempp-cl began life as BEM++, and was a Python library with a C++ computational core. The ++ slowly changed into pp as 
+functionality gradually moved from C++ to Python with only a few core routines remaining in C++. Bempp-cl is the culmination 
+of efforts to fully move to Python, and is an almost complete rewrite of Bempp.
+
+For each of the applications mentions above, the boundary element method involves approximating the solution of a partial
+differential equation (Laplace's equation, the
 Helmholtz equation, and Maxwell's equations respectively) by writing the problem in boundary integral form. For example, we could
 calculate the scattered field due to an electromagnetic wave colliding with a series of screens by solving
 \begin{align*}
@@ -38,15 +47,9 @@ calculate the scattered field due to an electromagnetic wave colliding with a se
 where $\mathbf{E}$ is the sum of a scattered field $\mathbf{E}^\text{s}$ and an incident field $\mathbf{E}^\text{inc}$,
 and $\boldsymbol{\nu}$ is the direction normal to the screen. (Additionally, we must impose the Silver--Müller radiation condition
 to ensure that the problem has a unique solution.) This problem is solved, and the full method is derived,
-in one of the tutorials available on the Bempp website [@Bempp-maxwell-example].
+in one of the tutorials available on the Bempp website [@Bempp-maxwell-example]. The solution to this problem is shown below.
 
-Bempp-cl is an open-source boundary element method library that can be used to assemble all the standard integral kernels for
-Laplace, Helmholtz, modified Helmholtz, and Maxwell problems. The library has a user-friendly Python interface that allows the
-user to use BEM to solve a variety of problems, including problems in electrostatics, acoustics and electromagnetics.
-
-Bempp-cl began life as BEM++, and was a Python library with a C++ computational core. The ++ slowly changed into pp as 
-functionality gradually moved from C++ to Python with only a few core routines remaining in C++. Bempp-cl is the culmination 
-of efforts to fully move to Python, and is an almost complete rewrite of Bempp.
+![An electromagnetic wave scattering off three screens.](maxwell_sol.png){ width=50% }
 
 # Statement of need
 Bempp-cl provides a comprehensive collection of routines for the assembly of boundary integral operators to solve a wide
