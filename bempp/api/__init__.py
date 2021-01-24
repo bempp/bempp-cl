@@ -253,17 +253,27 @@ except NameError:
 
 USE_JIT = True
 
+CPU_OPENCL_DRIVER_FOUND = False
+GPU_OPENCL_DRIVER_FOUND = False
+
 if _platform.system() == "Darwin":
     DEFAULT_DEVICE_INTERFACE = "numba"
 else:
     try:
         from bempp.core.opencl_kernels import find_cpu_driver
 
-        cpu_driver_exists = find_cpu_driver()
+        CPU_OPENCL_DRIVER_FOUND = find_cpu_driver()
     except:
-        cpu_driver_exists = False
+        pass
 
-    if cpu_driver_exists:
+    try:
+        from bempp.core.opencl_kernels import find_gpu_driver
+
+        GPU_OPENCL_DRIVER_FOUND = find_gpu_driver()
+    except:
+        pass
+
+    if CPU_OPENCL_DRIVER_FOUND:
         DEFAULT_DEVICE_INTERFACE = "opencl"
     else:
         DEFAULT_DEVICE_INTERFACE = "numba"
@@ -276,5 +286,7 @@ if DEFAULT_DEVICE_INTERFACE == "numba":
 DEFAULT_PRECISION = "double"
 VECTORIZATION_MODE = "auto"
 
+BOUNDARY_OPERATOR_DEVICE_TYPE = "cpu"
+POTENTIAL_OPERATOR_DEVICE_TYPE = "cpu"
 
 ALL = -1  # Useful global identifier
