@@ -58,6 +58,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     jupyter \
     wget && \
     apt-get -y install \
+    libfftw3-dev \
     libfltk-gl1.3 \
     libfltk-images1.3 \
     libfltk1.3 \
@@ -143,6 +144,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     jupyter \
     wget && \
     apt-get -y install \
+    libfftw3-dev \
     libfltk-gl1.3 \
     libfltk-images1.3 \
     libfltk1.3 \
@@ -204,8 +206,9 @@ ARG EXAFMM_VERSION
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
-    apt-get -y install \
+    apt-get install \
     python3-pyopencl \
+    libfftw3-dev \
     pkg-config \
     python-is-python3 \
     && \
@@ -217,7 +220,7 @@ RUN pip3 install --no-cache-dir meshio>=4.0.16
 
 # Install FEniCSx componenets
 RUN pip3 install --no-cache-dir ipython && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/basix.git && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
 
@@ -248,9 +251,6 @@ ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH \
         PYTHONPATH=/usr/local/dolfinx-complex/lib/python3.8/dist-packages:$PYTHONPATH
 
 # Download and install ExaFMM
-RUN apt update && apt install libfftw3-dev -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 RUN wget -nc --quiet https://github.com/exafmm/exafmm-t/archive/v${EXAFMM_VERSION}.tar.gz && \
     tar -xf v${EXAFMM_VERSION}.tar.gz && \
     cd exafmm-t-${EXAFMM_VERSION} && \
