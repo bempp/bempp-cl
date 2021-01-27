@@ -28,9 +28,9 @@ def pytest_addoption(parser):
         default="auto",
         help="Valid values: numba opencl",
     )
-    parser.addoption("--has-dolfin", type="int" default=0)
-    parser.addoption("--has-dolfinx", type="int" default=0)
-    parser.addoption("--has-exafmm", type="int" default=0)
+    parser.addoption("--has-dolfin", type="int", default=0)
+    parser.addoption("--has-dolfinx", type="int", default=0)
+    parser.addoption("--has-exafmm", type="int", default=0)
 
 
 @pytest.fixture
