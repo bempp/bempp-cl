@@ -13,46 +13,31 @@
 #   Jan Blechta <blechta@karlin.mff.cuni.cz>
 #
 
-ARG GMSH_VERSION=4.6.0
+ARG DOLFINX_CMAKE_CXX_FLAGS
+ARG DOLFINX_CMAKE_BUILD_TYPE=Release
 ARG TINI_VERSION=0.19.0
 ARG EXAFMM_VERSION=v0.1.0
-ARG MAKEFLAGS
+ARG PETSC_ARCH=linux-gnu-complex-32
 
 ########################################
 
-FROM ubuntu:20.04 as bempp-dev-env
+FROM dolfinx/dev-env as bempp-dev-env
 LABEL maintainer="Bempp <bempp@googlegroups.org>"
 LABEL description="Bempp-cl development environment"
 
-ARG GMSH_VERSION
-ARG MAKEFLAGS
+ARG DOLFINX_CMAKE_BUILD_TYPE
+ARG PETSC_ARCH
 
 WORKDIR /tmp
 
 # Install dependencies available via apt-get.
-# - First set of packages are required to build and run Bempp-cl.
-# - Second set of packages are recommended and/or required to build
-#   documentation or tests.
-# - Third set of packages are optional, but required to run gmsh
-#   pre-built binaries.
-# - Fourth set of packages are optional, required for meshio.
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
-    cmake \
-    git \
-    ipython3 \
+    python3-pyopencl \
     pkg-config \
     python-is-python3 \
-    python3-dev \
-    python3-matplotlib \
-    python3-mpi4py \
-    python3-numpy \
-    python3-pip \
-    python3-pyopencl \
-    python3-scipy \
-    python3-setuptools \
     jupyter \
     wget && \
     apt-get -y install \
@@ -76,25 +61,44 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libraw19 \
     libtbb2 \
     libxcursor1 \
-    libxinerama1 && \
-    apt-get -y install \
-    python3-dolfin && \
-    apt-get -y install \
-    python3-lxml && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    libxinerama1
 
 # Install Python packages (via pip)
 RUN pip3 install --no-cache-dir numba meshio>=4.0.16 && \
     pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
 
-# Download Install Gmsh SDK
-RUN cd /usr/local && \
-    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
-    tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
-    rm gmsh-${GMSH_VERSION}-Linux64-sdk.tgz
+# Install FEniCSx componenets
+RUN pip3 install --no-cache-dir ipython && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/basix.git && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
 
-ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
+# Install DOLFIN-X
+RUN	 git clone https://github.com/FEniCS/dolfinx.git && \
+	 cd dolfinx/ && \
+	 mkdir -p build && \
+	 cd build && \
+	 PETSC_ARCH=${PETSC_ARCH} cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} ../cpp/ && \
+	 ninja -j3 install
+
+# Build Python layer
+RUN cd dolfinx/python && \
+	pip3 -v install .
+
+# Use FEniCSx in complex by default.
+ENV LD_LIBRARY_PATH=/usr/local/dolfinx/lib:$LD_LIBRARY_PATH \
+        PATH=/usr/local/dolfinx/bin:$PATH \
+        PKG_CONFIG_PATH=/usr/local/dolfinx/lib/pkgconfig:$PKG_CONFIG_PATH \
+        PETSC_ARCH=${PETSC_ARCH} \
+        PYTHONPATH=/usr/local/dolfinx/lib/python3.8/dist-packages:$PYTHONPATH
+
+# Install older DOLFIN
+RUN apt-get -y install python3-dolfin
+
+# Clean
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 
 WORKDIR /root
 
