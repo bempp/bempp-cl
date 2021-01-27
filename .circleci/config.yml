@@ -8,8 +8,8 @@ jobs:
       - checkout
       - run:
           command: |
-              apt update
-              apt install jupyter -y
+              apt-get -yq update
+              apt-get -y install jupyter
           name: Install pytest and jupyter
       - run:
           command: python3 setup.py install
@@ -20,9 +20,59 @@ jobs:
       - run:
           command: python3 -m pytest -n2 --durations=10 test/validation --has-dolfin 0 --has-dolfinx 0 --has-exafmm 1
           name: Run Bempp validation tests
+
+  run-notebooks:
+    docker:
+      - image: bempp/cl-dev-env:latest
+    steps:
+      - checkout
+      - run:
+          command: |
+              apt-get -yq update
+              apt-get -y install jupyter
+          name: Install pytest and jupyter
+      - run:
+          command: python3 setup.py install
+          name: Install Bempp
+      - run:
       - run:
           command: python3 -m pytest -n2 --durations=10 notebooks/test_notebooks.py --has-dolfin 0 --has-dolfinx 0 --has-exafmm 1
           name: Run example notebooks
+  run-notebooks-dolfin:
+    docker:
+      - image: bempp/cl-dev-env-with-dolfin:latest
+    steps:
+      - checkout
+      - run:
+          command: |
+              apt-get -yq update
+              apt-get -y install jupyter
+          name: Install pytest and jupyter
+      - run:
+          command: python3 setup.py install
+          name: Install Bempp
+      - run:
+      - run:
+          command: python3 -m pytest -n2 --durations=10 notebooks/test_notebooks.py --has-dolfin 1 --has-dolfinx 0 --has-exafmm 1
+          name: Run example notebooks
+  run-notebooks:
+    docker:
+      - image: bempp/cl-dev-env-with-dolfinx:latest
+    steps:
+      - checkout
+      - run:
+          command: |
+              apt-get -yq update
+              apt-get -y install jupyter
+          name: Install pytest and jupyter
+      - run:
+          command: python3 setup.py install
+          name: Install Bempp
+      - run:
+      - run:
+          command: python3 -m pytest -n2 --durations=10 notebooks/test_notebooks.py --has-dolfin 0 --has-dolfinx 1 --has-exafmm 1
+          name: Run example notebooks
+
   run-benchmarks:
     docker:
       - image: bempp/cl-dev-env:latest

@@ -109,3 +109,28 @@ def p1_trace(fenics_space):
 
     # Now return everything
     return space, trace_matrix
+
+
+class FenicsOperator(object):
+    """Wrap a FEniCS-X Operator into a Bempp operator."""
+
+    def __init__(self, fenics_weak_form):
+        """Construct an operator from a weak form in FEniCS."""
+        self._fenics_weak_form = fenics_weak_form
+        self._sparse_mat = None
+
+    def weak_form(self):
+        """Return the weak form."""
+        from bempp.api.assembly.discrete_boundary_operator import (
+            SparseDiscreteBoundaryOperator,
+        )
+        from dolfinx.fem import assemble_matrix
+        from scipy.sparse import csr_matrix
+
+        if self._sparse_mat is None:
+            mat = assemble_matrix(self._fenics_weak_form)
+            mat.assemble()
+            (indptr, indices, data) = mat.getValuesCSR()
+            self._sparse_mat = csr_matrix((data, indices, indptr), shape=mat.size)
+
+        return SparseDiscreteBoundaryOperator(self._sparse_mat)
