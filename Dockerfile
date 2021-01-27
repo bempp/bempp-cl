@@ -97,11 +97,11 @@ RUN cd /usr/local && \
 
 ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
 
-WORKDIR /root
-
-WORKDIR /tmp
 RUN git clone -b v${EXAFMM_VERSION} https://github.com/exafmm/exafmm-t.git
 RUN cd exafmm-t && sed -i 's/march=native/march=ivybridge/g' ./setup.py && python3 setup.py install
+
+# Clear /tmp
+RUN rm -rf /tmp/*
 
 WORKDIR /root
 
@@ -185,11 +185,11 @@ RUN cd /usr/local && \
 
 ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
 
-WORKDIR /root
-
-WORKDIR /tmp
 RUN git clone -b v${EXAFMM_VERSION} https://github.com/exafmm/exafmm-t.git
 RUN cd exafmm-t && sed -i 's/march=native/march=ivybridge/g' ./setup.py && python3 setup.py install
+
+# Clear /tmp
+RUN rm -rf /tmp/*
 
 WORKDIR /root
 
@@ -202,6 +202,8 @@ LABEL description="Bempp-cl development environment with FEniCS-X"
 ARG DOLFINX_MAKEFLAGS
 ARG BEMPP_VERSION
 ARG EXAFMM_VERSION
+
+WORKDIR /tmp
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
