@@ -7,9 +7,9 @@ from bempp.api import function_space, check_for_fmm
 from bempp.api.operators.boundary import laplace, helmholtz
 
 
-def test_laplace_single_layer(allow_external_skips):
+def test_laplace_single_layer(has_exafmm):
     """Test dense assembler for the Laplace operators."""
-    if allow_external_skips and not check_for_fmm():
+    if not has_exafmm and not check_for_fmm():
         pytest.skip("ExaFMM must be installed to run this test.")
 
     grid = bempp.api.shapes.regular_sphere(2)
@@ -28,9 +28,9 @@ def test_laplace_single_layer(allow_external_skips):
 
 
 @pytest.mark.parametrize("wavenumber", [2.5])  # , 2.5 + 1j])
-def test_helmholtz_single_layer(allow_external_skips, wavenumber):
+def test_helmholtz_single_layer(has_exafmm, wavenumber):
     """Test dense assembler for the Laplace operators."""
-    if allow_external_skips and not check_for_fmm():
+    if not has_exafmm and not check_for_fmm():
         pytest.skip("ExaFMM must be installed to run this test.")
 
     grid = bempp.api.shapes.regular_sphere(2)

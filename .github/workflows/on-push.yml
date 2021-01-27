@@ -75,8 +75,18 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
+          tags: bempp/cl-dev-env-with-dolfin:${{ needs.get-branch.outputs.tag }}
+          target: bempp-dev-env-with-dolfin
+        if: steps.diff.outputs.changed == 'yes'
+        with:
+          push: true
+          tags: bempp/cl-dev-env-with-dolfinx:${{ needs.get-branch.outputs.tag }}
+          target: bempp-dev-env-with-dolfinx
+        if: steps.diff.outputs.changed == 'yes'
+        with:
+          push: true
           tags: bempp/cl-dev-env:${{ needs.get-branch.outputs.tag }}
-          target: bempp-dev-env-with-exafmm
+          target: bempp-dev-env
         if: steps.diff.outputs.changed == 'yes'
   
   style-checks:
@@ -105,17 +115,31 @@ jobs:
             python3 -m black --line-length 88 --check .github/scripts
         name: Run black checks on CI scripts
 
-  build-and-test-with-exafmm:
+  build-and-test-with-dolfin:
     name: Build Bempp and run tests
     needs:
       - build-and-publish-docker
       - get-branch
     runs-on: ubuntu-latest
-    container: bempp/cl-dev-env:${{ needs.get-branch.outputs.tag }}
+    container: bempp/cl-dev-env-with-dolfin:${{ needs.get-branch.outputs.tag }}
     steps:
       - uses: actions/checkout@v2
       - run: python3 setup.py install
         name: Install Bempp
-      - run: python3 -m pytest -n4 --durations=50 test/unit --allow-external-skips False
+      - run: python3 -m pytest -n4 --durations=50 test/unit --has-dolfin 1 --has-dolfinx 0 --has-exafmm 1
+        name: Run Bempp unit tests
+
+  build-and-test-with-dolfinx:
+    name: Build Bempp and run tests
+    needs:
+      - build-and-publish-docker
+      - get-branch
+    runs-on: ubuntu-latest
+    container: bempp/cl-dev-env-with-dolfinx:${{ needs.get-branch.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v2
+      - run: python3 setup.py install
+        name: Install Bempp
+      - run: python3 -m pytest -n4 --durations=50 test/unit --has-dolfin 0 --has-dolfinx 1 --has-exafmm 1
         name: Run Bempp unit tests
 

@@ -4,15 +4,15 @@ import pytest
 import numpy as np
 
 
-def test_p1_trace(allow_external_skips):
+def test_p1_trace(has_dolfin):
     """Test the trace of a P1 Dolfin function."""
-    if allow_external_skips:
+    if has_dolfin:
+        import dolfin
+    else:
         try:
             import dolfin
         except ImportError:
             pytest.skip("DOLFIN must be installed to run this test")
-    else:
-        import dolfin
     import bempp.api
     from bempp.api.external.fenics import fenics_to_bempp_trace_data
 
@@ -38,15 +38,15 @@ def test_p1_trace(allow_external_skips):
         assert np.allclose(bempp_val.T[0], fenics_val)
 
 
-def test_nc1_trace(allow_external_skips):
+def test_nc1_trace(has_dolfin):
     """Test the trace of a (N1curl, 1) Dolfin function."""
-    if allow_external_skips:
+    if has_dolfin:
+        import dolfin
+    else:
         try:
             import dolfin
         except ImportError:
             pytest.skip("DOLFIN must be installed to run this test")
-    else:
-        import dolfin
     import bempp.api
     from bempp.api.external.fenics import fenics_to_bempp_trace_data
 
