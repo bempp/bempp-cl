@@ -37,7 +37,6 @@ def test_p1_trace(has_dolfinx):
         mid = cell.geometry.centroid
         bempp_val = bempp_fun.evaluate(cell.index, np.array([[1 / 3], [1 / 3]]))
 
-        fenics_cell = dolfinx.geometry.compute_closest_entity(
-            tree, mid, fenics_mesh)[0]
+        fenics_cell = dolfinx.geometry.compute_closest_entity(tree, mid, fenics_mesh)[0]
         fenics_val = fenics_fun.eval([mid.T], [fenics_cell])
         assert np.isclose(bempp_val[0, 0], fenics_val[0])
