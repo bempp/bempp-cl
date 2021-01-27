@@ -16,10 +16,18 @@ for dir in ["laplace", "helmholtz", "maxwell"]:
 
 
 @pytest.mark.parametrize(("path", "notebook"), notebooks)
-def test_notebook(path, notebook, has_dolfin, has_dolfinx):
+def test_notebook(path, notebook, has_dolfin, has_dolfinx, dolfin_books_only):
     if not has_dolfin and notebook.endswith("dolfin.ipynb"):
-        pytest.skip()
+        try:
+            import dolfin
+        except ImportError:
+            pytest.skip()
     if not has_dolfinx and notebook.endswith("dolfinx.ipynb"):
+        try:
+            import dolfinx
+        except ImportError:
+            pytest.skip()
+    if dolfin_books_only and "dolfin" not in notebook:
         pytest.skip()
 
     with open(os.path.join(path, notebook)) as f:

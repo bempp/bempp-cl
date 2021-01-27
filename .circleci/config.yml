@@ -53,7 +53,7 @@ jobs:
           name: Install Bempp
       - run:
       - run:
-          command: python3 -m pytest -n2 --durations=10 notebooks/test_notebooks.py --has-dolfin 1 --has-dolfinx 0 --has-exafmm 1
+          command: python3 -m pytest -n2 notebooks/test_notebooks.py --has-dolfin 1 --has-dolfinx 0 --has-exafmm 1 --dolfin-books-only 1
           name: Run example notebooks
   run-notebooks:
     docker:
@@ -70,7 +70,7 @@ jobs:
           name: Install Bempp
       - run:
       - run:
-          command: python3 -m pytest -n2 --durations=10 notebooks/test_notebooks.py --has-dolfin 0 --has-dolfinx 1 --has-exafmm 1
+          command: python3 -m pytest -n2 notebooks/test_notebooks.py --has-dolfin 0 --has-dolfinx 1 --has-exafmm 1 --dolfin-books-only 1
           name: Run example notebooks
 
   run-benchmarks:

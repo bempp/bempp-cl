@@ -218,7 +218,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir meshio>=4.0.16
+RUN pip3 install --no-cache-dir meshio>=4.0.16 && \
+    pip3 install --upgrade six
 
 # Install FEniCSx componenets
 RUN pip3 install --no-cache-dir ipython && \
@@ -265,7 +266,7 @@ WORKDIR /root
 
 ########################################
 
-FROM bempp-dev-env-with-dolfin as lab
+FROM bempp-dev-env-with-dolfinx as lab
 LABEL description="Bempp Jupyter Lab"
 
 WORKDIR /tmp
