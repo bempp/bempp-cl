@@ -49,7 +49,7 @@ jobs:
       - run:
           command: python3 -m pytest -n2 notebooks/test_notebooks.py --has-dolfin 1 --has-dolfinx 0 --has-exafmm 1 --dolfin-books-only 1
           name: Run example notebooks
-  run-notebooks:
+  run-notebooks-dolfinx:
     docker:
       - image: bempp/cl-dev-env-with-dolfinx:latest
     steps:
