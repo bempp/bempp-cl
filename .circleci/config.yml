@@ -15,13 +15,13 @@ jobs:
           command: python3 setup.py install
           name: Install Bempp
       - run:
-          command: python3 -m pytest -n4 --durations=10 test/unit
+          command: python3 -m pytest -n4 --durations=10 test/unit --allow-external-skips False
           name: Run Bempp unit tests
       - run:
-          command: python3 -m pytest -n2 --durations=10 test/validation
+          command: python3 -m pytest -n2 --durations=10 test/validation --allow-external-skips False
           name: Run Bempp validation tests
       - run:
-          command: python3 -m pytest -n2 --durations=10 notebooks/test_notebooks.py
+          command: python3 -m pytest -n2 --durations=10 notebooks/test_notebooks.py --allow-external-skips False
           name: Run example notebooks
   run-benchmarks:
     docker:

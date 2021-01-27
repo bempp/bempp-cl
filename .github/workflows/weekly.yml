@@ -49,6 +49,6 @@ jobs:
       - uses: actions/checkout@v2
       - run: python3 setup.py install
         name: Install Bempp
-      - run: python3 -m pytest -n4 --durations=50 test/unit
+      - run: python3 -m pytest -n4 --durations=50 test/unit --allow-external-skips False
         name: Run Bempp unit tests
 
