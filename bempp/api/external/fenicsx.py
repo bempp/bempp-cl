@@ -61,7 +61,6 @@ def p1_trace(fenics_space):
     matrix that maps the coefficients of a FEniCS function to its boundary
     trace coefficients in the corresponding Bempp space.
     """
-
     import bempp.api
     from scipy.sparse import coo_matrix
     import numpy as np
