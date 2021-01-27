@@ -28,6 +28,13 @@ def pytest_addoption(parser):
         default="auto",
         help="Valid values: numba opencl",
     )
+    parser.addoption("--allow-external-skips",
+                     help="Set this to \"False\" to prevent skipping tests using external libraries.")
+
+
+@pytest.fixture
+def allow_external_skips(request):
+    return request.config.getoption("--allow-external-skips") != "False"
 
 
 @pytest.fixture()
