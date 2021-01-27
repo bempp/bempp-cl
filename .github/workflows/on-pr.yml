@@ -1,3 +1,5 @@
+name: Run tests and style checks
+
 on: pull_request
 
 jobs:
