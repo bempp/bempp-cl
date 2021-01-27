@@ -24,7 +24,7 @@ def test_p1_trace(allow_external_skips):
 
     bempp_space, trace_matrix = fenics_to_bempp_trace_data(fenics_space)
 
-    fenics_coeffs = np.random.rand(fenics_space.dim)
+    fenics_coeffs = np.random.rand(space.dofmap.index_map.size_global)
     bempp_coeffs = trace_matrix @ fenics_coeffs
 
     fenics_fun = dolfinx.Function(fenics_space)

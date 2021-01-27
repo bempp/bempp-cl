@@ -36,6 +36,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
     python3-pyopencl \
+    python3-mpi4py \
     pkg-config \
     python-is-python3 \
     jupyter \
@@ -98,7 +99,6 @@ RUN apt-get -y install python3-dolfin
 # Clean
 RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
 
 WORKDIR /root
 
