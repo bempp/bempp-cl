@@ -206,7 +206,7 @@ ARG EXAFMM_VERSION
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
-    apt-get install \
+    apt-get -y install \
     python3-pyopencl \
     libfftw3-dev \
     pkg-config \
