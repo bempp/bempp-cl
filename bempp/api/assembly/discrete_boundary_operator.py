@@ -50,6 +50,14 @@ class _DiscreteOperatorBase(_LinearOperator):
         else:
             return NotImplemented
 
+    def to_dense(self):
+        """Return dense matrix."""
+        raise NotImplementedError()
+
+    def to_sparse(self):
+        """Return sparse matrix if operator is sparse."""
+        raise NotImplementedError()
+
 
 class _ScaledDiscreteOperator(_DiscreteOperatorBase):
     """Return a scaled operator."""
@@ -64,10 +72,13 @@ class _ScaledDiscreteOperator(_DiscreteOperatorBase):
         """Matvec."""
         return self._alpha * (self._op @ x)
 
-    @property
-    def A(self):
-        """Return matrix."""
-        return self._alpha * self._op.A
+    def to_dense(self):
+        """Return dense matrix."""
+        return self._alpha * self._op.to_dense()
+
+    def to_sparse(self):
+        """Return sparse matrix if operator is sparse."""
+        return self._alpha * self._op.to_sparse()
 
 
 class _SumDiscreteOperator(_DiscreteOperatorBase):
@@ -91,12 +102,13 @@ class _SumDiscreteOperator(_DiscreteOperatorBase):
         """Evaluate matvec."""
         return self._op1 @ x + self._op2 @ x
 
-    @property
-    def A(self):
-        """Return matrix representation."""
-        res1, res2 = _get_dense(self._op1.A, self._op2.A)
+    def to_dense(self):
+        """Return dense matrix."""
+        return self._op1.to_dense() + self._op2.to_dense()
 
-        return res1 + res2
+    def to_sparse(self):
+        """Return sparse matrix if operator is sparse."""
+        return self._op1.to_sparse() + self._op2.to_sparse()
 
 
 class _ProductDiscreteOperator(_DiscreteOperatorBase):
@@ -120,12 +132,13 @@ class _ProductDiscreteOperator(_DiscreteOperatorBase):
         """Evaluate matvec."""
         return self._op1 @ (self._op2 @ x)
 
-    @property
-    def A(self):
-        """Return matrix representation."""
-        res1, res2 = _get_dense(self._op1.A, self._op2.A)
+    def to_dense(self):
+        """Return dense matrix."""
+        return self._op1.to_dense() @ self._op2.to_dense()
 
-        return res1 @ res2
+    def to_sparse(self):
+        """Return sparse matrix if operator is sparse."""
+        return self._op1.to_sparse() @ self._op2.to_sparse()
 
 
 class GenericDiscreteBoundaryOperator(_DiscreteOperatorBase):
@@ -148,10 +161,13 @@ class GenericDiscreteBoundaryOperator(_DiscreteOperatorBase):
         else:
             return self._evaluator.matvec(x)
 
-    @property
-    def A(self):
-        """Convert to dense."""
+    def to_dense(self):
+        """Return dense matrix."""
         return self @ _np.eye(self.shape[1])
+
+    def to_sparse(self):
+        """Return sparse matrix if operator is sparse."""
+        raise ValueError("This matrix is not sparse.")
 
 
 class DenseDiscreteBoundaryOperator(_DiscreteOperatorBase):
@@ -227,11 +243,13 @@ class DenseDiscreteBoundaryOperator(_DiscreteOperatorBase):
         """Adjoint of the operator."""
         return DenseDiscreteBoundaryOperator(self.A.conjugate().transpose())
 
-    # pylint: disable=invalid-name
-    @property
-    def A(self):
-        """Return the underlying array."""
+    def to_dense(self):
+        """Return dense matrix."""
         return self._impl
+
+    def to_sparse(self):
+        """Return sparse matrix if operator is sparse."""
+        raise ValueError("This matrix is not sparse.")
 
 
 class DiagonalOperator(_DiscreteOperatorBase):
@@ -303,11 +321,13 @@ class DiagonalOperator(_DiscreteOperatorBase):
         """Adjoint of the operator."""
         return DiagonalOperator(self.A.conjugate())
 
-    # pylint: disable=invalid-name
-    @property
-    def A(self):
-        """Return the underlying array."""
-        return self._values
+    def to_dense(self):
+        """Return dense matrix."""
+        return _np.diag(self._values)
+
+    def to_sparse(self):
+        """Return sparse matrix if operator is sparse."""
+        return scipy.sparse.diags(self._values)
 
 
 class SparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
@@ -371,9 +391,12 @@ class SparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
         else:
             return NotImplemented
 
-    @property
-    def A(self):
-        """Return the underlying Scipy sparse matrix."""
+    def to_dense(self):
+        """Return dense matrix."""
+        return self._impl.todense()
+
+    def to_sparse(self):
+        """Return sparse matrix if operator is sparse."""
         return self._impl
 
 
@@ -407,11 +430,14 @@ class InverseSparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
         """Implemententation of matvec."""
         return self._solver.solve(vec)
 
-    def A(self):
-        """Return dense representation."""
+    def to_dense(self):
+        """Return dense matrix."""
         eye = _np.eye(self.shape[1])
-
         return self @ eye
+
+    def to_sparse(self):
+        """Return sparse matrix if operator is sparse."""
+        raise ValueError("This matrix is not sparse.")
 
 
 class ZeroDiscreteBoundaryOperator(_DiscreteOperatorBase):
@@ -440,12 +466,14 @@ class ZeroDiscreteBoundaryOperator(_DiscreteOperatorBase):
         """Multiply operator by a matrix."""
         return _np.zeros((self.shape[0], x.shape[1]), dtype="float64")
 
-    @property
-    def A(self):
-        """Return as dense."""
-        from scipy.sparse import csc_matrix
+    def to_dense(self):
+        """Return dense matrix."""
+        return _np.zeros(self.shape)
 
-        return csc_matrix((self.shape[0], self.shape[1]), dtype="float64")
+    def to_sparse(self):
+        """Return sparse matrix if operator is sparse."""
+        from scipy.sparse import csc_matrix
+        return csc_matrix(self.shape, dtype="float64")
 
 
 class DiscreteRankOneOperator(_DiscreteOperatorBase):
@@ -498,10 +526,13 @@ class DiscreteRankOneOperator(_DiscreteOperatorBase):
         """Find the adjoint."""
         return DiscreteRankOneOperator(self._row.conjugate(), self._column.conjugate())
 
-    @property
-    def A(self):
-        """Return as dense."""
+    def to_dense(self):
+        """Return dense matrix."""
         return _np.outer(self._column, self._row)
+
+    def to_sparse(self):
+        """Return sparse matrix if operator is sparse."""
+        raise ValueError("This matrix is not sparse.")
 
 
 def as_matrix(operator):
@@ -524,13 +555,7 @@ def as_matrix(operator):
     the assembler type.
 
     """
-    from numpy import eye
-
-    if hasattr(operator, "A"):
-        return operator.A
-
-    cols = operator.shape[1]
-    return operator @ eye(cols)
+    return operator.to_dense()
 
 
 class _Solver(object):  # pylint: disable=too-few-public-methods
@@ -614,31 +639,3 @@ class _Solver(object):  # pylint: disable=too-few-public-methods
     def dtype(self):
         """Return the dtype."""
         return self._dtype
-
-
-def _get_dense(A, B):
-    """
-    Convert to dense if necessary.
-
-    If exactly one of A or B are sparse matrices,
-    both are returned as dense. If both are sparse,
-    then both are returned as sparse.
-
-    """
-    a_is_sparse = False
-    b_is_sparse = False
-
-    if not isinstance(A, _np.ndarray):
-        a_is_sparse = True
-    if not isinstance(B, _np.ndarray):
-        b_is_sparse = True
-
-    if a_is_sparse and b_is_sparse:
-        return A, B
-
-    if a_is_sparse:
-        A = A.todense()
-    if b_is_sparse:
-        B = B.todense()
-
-    return A, B
