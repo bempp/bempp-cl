@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   large-tests:
     docker:
-      - image: bempp/cl-dev-env:latest
+      - image: bempp/cl-dev-env:mscroggs_dolfinx-coupling
     steps:
       - checkout
       - run:
@@ -17,7 +17,7 @@ jobs:
           name: Run Bempp validation tests
   run-notebooks:
     docker:
-      - image: bempp/cl-dev-env:latest
+      - image: bempp/cl-dev-env:mscroggs_dolfinx-coupling
     steps:
       - checkout
       - run:
@@ -33,7 +33,7 @@ jobs:
           name: Run example notebooks
   run-notebooks-dolfin:
     docker:
-      - image: bempp/cl-dev-env-with-dolfin:latest
+      - image: bempp/cl-dev-env-with-dolfin:mscroggs_dolfinx-coupling
     steps:
       - checkout
       - run:
@@ -49,7 +49,7 @@ jobs:
           name: Run example notebooks
   run-notebooks-dolfinx:
     docker:
-      - image: bempp/cl-dev-env-with-dolfinx:latest
+      - image: bempp/cl-dev-env-with-dolfinx:mscroggs_dolfinx-coupling
     steps:
       - checkout
       - run:
@@ -65,7 +65,7 @@ jobs:
           name: Run example notebooks
   run-benchmarks:
     docker:
-      - image: bempp/cl-dev-env:latest
+      - image: bempp/cl-dev-env:mscroggs_dolfinx-coupling
     steps:
       - checkout
       # TODO: run benchmarks and upload timings somewhere
