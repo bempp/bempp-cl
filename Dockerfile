@@ -273,6 +273,7 @@ WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
 RUN cd bempp-cl && python3 setup.py install
 RUN cp -r bempp-cl/notebooks /root/example_notebooks
+RUN rm /root/example_notebooks/conftest.py /root/example_notebooks/test_notebooks.py
 
 WORKDIR /root
 
