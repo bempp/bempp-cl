@@ -4,11 +4,11 @@ import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 
 # Get all the noteboooks in each folder
-# Notebooks in this list will be skipped as the problems are very large
-large_problems = ["reentrant_cube_capacity.ipynb"]
+# Notebooks in this list will be skipped as the problems are very large or require GPUs
+large_problems = ["reentrant_cube_capacity.ipynb", "opencl_benchmark.ipynb"]
 
 notebooks = []
-for dir in ["laplace", "helmholtz", "maxwell"]:
+for dir in ["laplace", "helmholtz", "maxwell", "other"]:
     path = os.path.join(os.path.dirname(os.path.realpath(__file__)), dir)
     for i in os.listdir(path):
         if i.endswith(".ipynb") and i not in large_problems:
