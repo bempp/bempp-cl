@@ -188,9 +188,9 @@ class DenseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     def _matmat(self, x):
         """Multiply the operator by a matrix or operator."""
         if _np.iscomplexobj(x) and not _np.iscomplexobj(self.to_dense()):
-            return self.to_dense().dot(_np.real(x).astype(self.dtype)) + 1j * self.to_dense().dot(
-                _np.imag(x).astype(self.dtype)
-            )
+            return self.to_dense().dot(
+                _np.real(x).astype(self.dtype)
+            ) + 1j * self.to_dense().dot(_np.imag(x).astype(self.dtype))
         return self.to_dense().dot(x.astype(self.dtype))
 
     def __add__(self, other):
@@ -303,9 +303,13 @@ class DiagonalOperator(_DiscreteOperatorBase):
                 # Necessary to ensure that scalar multiplication does not change
                 # precision to double precision.
                 if _np.iscomplexobj(other):
-                    return DiagonalOperator(self.get_diagonal() * _np.dtype("complex64").type(other))
+                    return DiagonalOperator(
+                        self.get_diagonal() * _np.dtype("complex64").type(other)
+                    )
                 else:
-                    return DiagonalOperator(self.get_diagonal() * _np.dtype("float32").type(other))
+                    return DiagonalOperator(
+                        self.get_diagonal() * _np.dtype("float32").type(other)
+                    )
             else:
                 return DiagonalOperator(self.get_diagonal() * other)
         return super().dot(other)
@@ -332,6 +336,7 @@ class DiagonalOperator(_DiscreteOperatorBase):
     def to_sparse(self):
         """Return sparse matrix if operator is sparse."""
         from scipy.sparse import diags
+
         return diags(self._values)
 
 
@@ -353,7 +358,9 @@ class SparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     def _matmat(self, vec):
         """Multiply the operator with a numpy vector or matrix x."""
         if self.dtype == "float64" and _np.iscomplexobj(vec):
-            return self.to_sparse() * _np.real(vec) + 1j * (self.to_sparse() * _np.imag(vec))
+            return self.to_sparse() * _np.real(vec) + 1j * (
+                self.to_sparse() * _np.imag(vec)
+            )
         return self.to_sparse() * vec
 
     def _transpose(self):
@@ -478,6 +485,7 @@ class ZeroDiscreteBoundaryOperator(_DiscreteOperatorBase):
     def to_sparse(self):
         """Return sparse matrix if operator is sparse."""
         from scipy.sparse import csc_matrix
+
         return csc_matrix(self.shape, dtype="float64")
 
 

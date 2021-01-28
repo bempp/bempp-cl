@@ -30,7 +30,8 @@ def test_sparse_identity_p0_p0(
             device_interface=device_interface,
             precision=precision,
         )
-        .weak_form().to_dense()
+        .weak_form()
+        .to_dense()
     )
 
     _np.testing.assert_allclose(actual, expected, helpers.default_tolerance(precision))

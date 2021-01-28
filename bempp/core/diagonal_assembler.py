@@ -37,7 +37,9 @@ class DiagonalAssembler(_assembler.AssemblerBase):
             self.domain.identifier == self.dual_to_range.identifier
             and self.dual_to_range.identifier == "p0_discontinuous"
         ):
-            values = operator_descriptor.singular_part.weak_form().to_sparse().diagonal()
+            values = (
+                operator_descriptor.singular_part.weak_form().to_sparse().diagonal()
+            )
         else:
             raise ValueError(
                 "Only spaces of type 'p0_discontinuous' or 'p1_continuous' supported for diagonal assembly."
