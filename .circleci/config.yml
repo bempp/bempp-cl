@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   large-tests:
     docker:
-      - image: bempp/cl-dev-env:mscroggs_dolfinx-coupling
+      - image: bempp/cl-dev-env:latest
     steps:
       - checkout
       - run:
@@ -17,7 +17,7 @@ jobs:
           name: Run Bempp validation tests
   run-notebooks:
     docker:
-      - image: bempp/cl-dev-env:mscroggs_dolfinx-coupling
+      - image: bempp/cl-dev-env:latest
     steps:
       - checkout
       - run:
@@ -29,11 +29,11 @@ jobs:
           command: python3 setup.py install
           name: Install Bempp
       - run:
-          command: python3 -m pytest -n2 --durations=10 notebooks/test_notebooks.py --has-dolfin 0 --has-dolfinx 0 --has-exafmm 1
+          command: python3 -m pytest --durations=10 notebooks/test_notebooks.py --has-dolfin 0 --has-dolfinx 0 --has-exafmm 1
           name: Run example notebooks
   run-notebooks-dolfin:
     docker:
-      - image: bempp/cl-dev-env-with-dolfin:mscroggs_dolfinx-coupling
+      - image: bempp/cl-dev-env-with-dolfin:latest
     steps:
       - checkout
       - run:
@@ -45,11 +45,11 @@ jobs:
           command: python3 setup.py install
           name: Install Bempp
       - run:
-          command: python3 -m pytest -n2 notebooks/test_notebooks.py --has-dolfin 1 --has-dolfinx 0 --has-exafmm 1 --dolfin-books-only 1
+          command: python3 -m pytest notebooks/test_notebooks.py --has-dolfin 1 --has-dolfinx 0 --has-exafmm 1 --dolfin-books-only 1
           name: Run example notebooks
   run-notebooks-dolfinx:
     docker:
-      - image: bempp/cl-dev-env-with-dolfinx:mscroggs_dolfinx-coupling
+      - image: bempp/cl-dev-env-with-dolfinx:latest
     steps:
       - checkout
       - run:
@@ -61,11 +61,11 @@ jobs:
           command: python3 setup.py install
           name: Install Bempp
       - run:
-          command: python3 -m pytest -n2 notebooks/test_notebooks.py --has-dolfin 0 --has-dolfinx 1 --has-exafmm 1 --dolfin-books-only 1
+          command: python3 -m pytest notebooks/test_notebooks.py --has-dolfin 0 --has-dolfinx 1 --has-exafmm 1 --dolfin-books-only 1
           name: Run example notebooks
   run-benchmarks:
     docker:
-      - image: bempp/cl-dev-env:mscroggs_dolfinx-coupling
+      - image: bempp/cl-dev-env:latest
     steps:
       - checkout
       # TODO: run benchmarks and upload timings somewhere
