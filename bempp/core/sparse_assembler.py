@@ -1,3 +1,5 @@
+"""Sparse assembly."""
+
 import numpy as _np
 
 from bempp.api.assembly import assembler as _assembler
@@ -82,9 +84,7 @@ def assemble_sparse(
     numba_assembly_function,
     numba_kernel_function,
 ):
-    """
-    Really assemble the operator.
-    """
+    """Actually assemble the operator."""
     import bempp.api
     from bempp.api.integration.triangle_gauss import rule as regular_rule
     from bempp.api.utils.helpers import get_type

@@ -39,7 +39,6 @@ class Octree(object):
         vertices : np.ndarray
             An (3, N) float64 array of N vertices
         """
-
         self._lbound = lbound
         self._ubound = ubound
         self._maximum_level = maximum_level
@@ -98,7 +97,7 @@ class Octree(object):
 
     @property
     def non_empty_nodes_by_level(self):
-        """Returns the non-empty nodes by level."""
+        """Return the non-empty nodes by level."""
         return self._level_nodes
 
     @property
@@ -137,7 +136,6 @@ class Octree(object):
 
     def children(self, node_index):
         """Return an iterator over the child indices."""
-
         first = node_index << 3
         last = 7 + (node_index << 3)
         return list(range(first, 1 + last))
@@ -167,7 +165,6 @@ class Octree(object):
         The method returns a tuple (lbound, ubound) which define
         the lower and upper corners of a node given by its Morton index.
         """
-
         indices = _np.array(de_morton(morton_index))
         nnodes_along_dimension = self.nodes_per_side(level)
 
@@ -185,7 +182,7 @@ class Octree(object):
         return self.diameter / (1.0 * self.nodes_per_side(self.maximum_level))
 
     def _assign_nodes(self, vertices):
-        """Computes leaf-nodes and parents."""
+        """Compute leaf-nodes and parents."""
         nvertices = vertices.shape[1]
         node_indices = _np.empty(nvertices, dtype=_np.uint32)
 
@@ -240,7 +237,6 @@ class Octree(object):
         the node itself). If a near field node does not exist or is empty
         then the value -1 is stored, otherwise the node number.
         """
-
         self._near_field_nodes = _np.empty(27 * len(self._level_nodes), _np.int32)
 
         count = 0
@@ -269,13 +265,16 @@ class Octree(object):
                             count += 1
 
     def _compute_interaction_list(self):
-        """Computes the interaction list for each non empty node."""
+        """Compute the interaction list for each non empty node."""
         pass
 
 
 @_numba.njit
 def _make_unique(ar):
-    """An implementation of Numpy unique for Numba."""
+    """Find unique elements.
+
+    An implementation of Numpy unique for Numba.
+    """
     sorted_ar = _np.sort(ar)
     unique_lst = [sorted_ar[0]]
     for elem in sorted_ar:
@@ -287,14 +286,12 @@ def _make_unique(ar):
 @_numba.njit(cache=True)
 def _in_range(n1, n2, n3, bound):  # pylint: disable=C0103
     """Check if 0 <= n1, n2, n3 < bound."""
-
     return n1 >= 0 and n1 < bound and n2 >= 0 and n2 < bound and n3 >= 0 and n3 < bound
 
 
 @_numba.njit(cache=True)
 def morton(indices):
     """Encode an integer tuple (i1, i2, i3) via Morton encoding."""
-
     # pylint: disable=C0103
     x, y, z = indices
     return _dilate(x) | (_dilate(y) << 1) | (_dilate(z) << 2)
@@ -313,7 +310,6 @@ def de_morton(index):
 @_numba.njit(cache=True)
 def _neighbors(node_index, level):
     """Return a list of neighbors of a given node."""
-
     sides = 1 << level
 
     ind1, ind2, ind3 = de_morton(node_index)

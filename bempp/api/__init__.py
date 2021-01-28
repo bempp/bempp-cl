@@ -92,7 +92,6 @@ GLOBAL_PARAMETERS = DefaultParameters()
 
 def _init_logger():
     """Initialize the Bempp logger."""
-
     _logging.addLevelName(11, "TIMING")
     logger = _logging.getLogger("bempp")
     logger.setLevel(DEBUG)
@@ -159,7 +158,7 @@ class Timer:
     """Context manager to measure time in Bempp."""
 
     def __init__(self, enable_log=True, message="", level="timing"):
-        """Constructor."""
+        """Construct."""
         self.start = 0
         self.end = 0
         self.interval = 0
@@ -168,12 +167,14 @@ class Timer:
         self.message = message
 
     def __enter__(self):
+        """Enter."""
         if self.enable_log:
             log("Start operation: " + self.message, level=self.level)
         self.start = _time.time()
         return self
 
     def __exit__(self, *args):
+        """Exit."""
         self.end = _time.time()
         self.interval = self.end - self.start
         if self.enable_log:
@@ -252,17 +253,27 @@ except NameError:
 
 USE_JIT = True
 
+CPU_OPENCL_DRIVER_FOUND = False
+GPU_OPENCL_DRIVER_FOUND = False
+
 if _platform.system() == "Darwin":
     DEFAULT_DEVICE_INTERFACE = "numba"
 else:
     try:
         from bempp.core.opencl_kernels import find_cpu_driver
 
-        cpu_driver_exists = find_cpu_driver()
+        CPU_OPENCL_DRIVER_FOUND = find_cpu_driver()
     except:
-        cpu_driver_exists = False
+        pass
 
-    if cpu_driver_exists:
+    try:
+        from bempp.core.opencl_kernels import find_gpu_driver
+
+        GPU_OPENCL_DRIVER_FOUND = find_gpu_driver()
+    except:
+        pass
+
+    if CPU_OPENCL_DRIVER_FOUND:
         DEFAULT_DEVICE_INTERFACE = "opencl"
     else:
         DEFAULT_DEVICE_INTERFACE = "numba"
@@ -275,5 +286,7 @@ if DEFAULT_DEVICE_INTERFACE == "numba":
 DEFAULT_PRECISION = "double"
 VECTORIZATION_MODE = "auto"
 
+BOUNDARY_OPERATOR_DEVICE_TYPE = "cpu"
+POTENTIAL_OPERATOR_DEVICE_TYPE = "cpu"
 
 ALL = -1  # Useful global identifier

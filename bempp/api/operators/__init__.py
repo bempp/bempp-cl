@@ -21,7 +21,6 @@ MultitraceOperatorDescriptor = _collections.namedtuple(
 
 def _add_wavenumber(options, wavenumber, identifier="WAVENUMBER"):
     """Add a real/complex wavenumber to an options array."""
-
     if _np.iscomplexobj(wavenumber):
         options[identifier + "_REAL"] = 1.0 * _np.real(wavenumber)
         options[identifier + "_COMPLEX"] = 1.0 * _np.imag(wavenumber)

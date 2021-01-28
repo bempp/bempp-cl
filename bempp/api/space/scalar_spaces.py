@@ -325,7 +325,6 @@ def p1_barycentric_continuous_function_space(coarse_space):
 @_numba.njit(cache=True)
 def generate_p1_map(grid_data, support_elements, coeffs):
     """Actually generate the sparse matrix data."""
-
     number_of_elements = len(support_elements)
 
     coarse_dofs = _np.empty(3 * 18 * number_of_elements, dtype=_np.uint32)

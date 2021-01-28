@@ -1,3 +1,5 @@
+name: Run tests and style checks
+
 on: push
 
 jobs:
@@ -16,7 +18,8 @@ jobs:
             then
               echo ::set-output name=tag::latest
             else
-              echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+              the_tag=${GITHUB_REF#refs/*/}
+              echo ::set-output name=tag::${the_tag/\//_}
             fi
 
   check-version-number:
@@ -45,7 +48,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/cache/Dockerfile
-          key: ${{ runner.os }}-Dockerfile-${{ hashFiles('Dockerfile') }}
+          key: ${{ runner.os }}-Dockerfile-${{ needs.get-branch.outputs.tag }}-${{ hashFiles('Dockerfile') }}
       - name: touch ~/cache/Dockerfile
         run: touch ~/cache/Dockerfile
       - name: compare Dockerfile with cache
@@ -59,15 +62,35 @@ jobs:
       - name: Copy Dockerfile to ~/cache/Dockerfile
         run: cp Dockerfile ~/cache/Dockerfile
 
-      - name: Build and push testing Docker image with exafmm
-        uses: docker/build-push-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+        if: steps.diff.outputs.changed == 'yes'
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: bempp/cl-dev-env
-          tags: ${{ needs.get-branch.outputs.tag }}
-          target: bempp-dev-env-with-exafmm
-          cache_froms: bempp/cl-dev-env
+        if: steps.diff.outputs.changed == 'yes'
+      - name: Build and push testing Docker image with dolfin
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/cl-dev-env-with-dolfin:${{ needs.get-branch.outputs.tag }}
+          target: bempp-dev-env-with-dolfin
+        if: steps.diff.outputs.changed == 'yes'
+      - name: Build and push testing Docker image with dolfinx
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/cl-dev-env-with-dolfinx:${{ needs.get-branch.outputs.tag }}
+          target: bempp-dev-env-with-dolfinx
+        if: steps.diff.outputs.changed == 'yes'
+      - name: Build and push testing Docker image
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/cl-dev-env:${{ needs.get-branch.outputs.tag }}
+          target: bempp-dev-env
         if: steps.diff.outputs.changed == 'yes'
   
   style-checks:
@@ -75,9 +98,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: sudo apt-get install -y python3-setuptools
-      - run: pip3 install black>=20.8
-      - run: pip3 install pydocstyle flake8
+      - run: |
+            sudo apt-get install -y python3-setuptools
+            pip3 install black>=20.8
+            pip3 install pydocstyle flake8
+        name: Install Python style tools
       - run: |
             python3 -m flake8 bempp
             python3 -m flake8 test
@@ -94,17 +119,31 @@ jobs:
             python3 -m black --line-length 88 --check .github/scripts
         name: Run black checks on CI scripts
 
-  build-and-test-with-exafmm:
+  build-and-test-with-dolfin:
     name: Build Bempp and run tests
     needs:
       - build-and-publish-docker
       - get-branch
     runs-on: ubuntu-latest
-    container: bempp/cl-dev-env:${{ needs.get-branch.outputs.tag }}
+    container: bempp/cl-dev-env-with-dolfin:${{ needs.get-branch.outputs.tag }}
     steps:
       - uses: actions/checkout@v2
       - run: python3 setup.py install
         name: Install Bempp
-      - run: python3 -m pytest --durations=50 test/unit
+      - run: python3 -m pytest -n4 --durations=50 test/unit --has-dolfin 1 --has-dolfinx 0 --has-exafmm 1
+        name: Run Bempp unit tests
+
+  build-and-test-with-dolfinx:
+    name: Build Bempp and run tests
+    needs:
+      - build-and-publish-docker
+      - get-branch
+    runs-on: ubuntu-latest
+    container: bempp/cl-dev-env-with-dolfinx:${{ needs.get-branch.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v2
+      - run: python3 setup.py install
+        name: Install Bempp
+      - run: python3 -m pytest -n4 --durations=50 test/unit --has-dolfin 0 --has-dolfinx 1 --has-exafmm 1
         name: Run Bempp unit tests
 

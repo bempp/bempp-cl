@@ -7,13 +7,15 @@ _CURRENT_PATH = _os.path.dirname(_os.path.realpath(__file__))
 _INCLUDE_PATH = _os.path.abspath(_os.path.join(_CURRENT_PATH, "./sources/include"))
 _KERNEL_PATH = _os.path.abspath(_os.path.join(_CURRENT_PATH, "./sources/kernels"))
 
-_DEFAULT_DEVICE = None
-_DEFAULT_CONTEXT = None
+_DEFAULT_CPU_DEVICE = None
+_DEFAULT_CPU_CONTEXT = None
+
+_DEFAULT_GPU_DEVICE = None
+_DEFAULT_GPU_CONTEXT = None
 
 
 def select_cl_kernel(operator_descriptor, mode):
     """Select OpenCL kernel."""
-
     singular_assemblers = {
         "default_scalar": "evaluate_dense_singular",
         "laplace_hypersingular": "evaluate_dense_laplace_hypersingular_singular",
@@ -108,9 +110,8 @@ def get_kernel_compile_options(options, precision):
     return compile_options
 
 
-def build_program(assembly_function, options, precision):
+def build_program(assembly_function, options, precision, device_type="cpu"):
     """Build the kernel and return it."""
-
     file_name = assembly_function + ".cl"
     kernel_file = _os.path.join(_KERNEL_PATH, file_name)
 
@@ -118,22 +119,21 @@ def build_program(assembly_function, options, precision):
     kernel_options = get_kernel_compile_options(options, precision)
 
     return (
-        _cl.Program(default_context(), kernel_string)
+        _cl.Program(default_context(device_type), kernel_string)
         .build(options=kernel_options)
         .kernel_function
     )
 
 
 def get_kernel_from_operator_descriptor(
-    operator_descriptor, options, mode, force_novec=False
+    operator_descriptor, options, mode, force_novec=False, device_type="cpu"
 ):
     """Return compiled kernel from operator descriptor."""
-
     precision = operator_descriptor.precision
     assembly_function, kernel_name = select_cl_kernel(operator_descriptor, mode=mode)
 
-    vec_length = get_vector_width(precision)
-    vec_string = get_vec_string(precision)
+    vec_length = get_vector_width(precision, device_type)
+    vec_string = get_vec_string(precision, device_type)
 
     if not mode == "singular":
         if force_novec or vec_length == 1:
@@ -143,77 +143,138 @@ def get_kernel_from_operator_descriptor(
     options["KERNEL_FUNCTION"] = kernel_name
     options["VEC_LENGTH"] = vec_length
     options["VEC_STRING"] = vec_string
-    return build_program(assembly_function, options, precision)
+    return build_program(assembly_function, options, precision, device_type)
 
 
-def get_kernel_from_name(name, options, precision="double"):
+def get_kernel_from_name(name, options, precision="double", device_type="cpu"):
     """Return compiled kernel from name."""
 
-    vec_length = get_vector_width(precision)
-    vec_string = get_vec_string(precision)
+    vec_length = get_vector_width(precision, device_type)
+    vec_string = get_vec_string(precision, device_type)
 
     options["VEC_LENGTH"] = vec_length
     options["VEC_STRING"] = vec_string
-    return build_program(name, options, precision)
+    return build_program(name, options, precision, device_type)
 
 
-def get_vector_width(precision):
+def get_vector_width(precision, device_type="cpu"):
     """Return vector width."""
     import bempp.api
 
     mode_to_length = {"novec": 1, "vec4": 4, "vec8": 8, "vec16": 16}
 
     if bempp.api.VECTORIZATION_MODE == "auto":
-        return get_native_vector_width(default_device(), precision)
+        return get_native_vector_width(default_device(device_type), precision)
     else:
         return mode_to_length[bempp.api.VECTORIZATION_MODE]
 
 
-def get_vec_string(precision):
+def get_vec_string(precision, device_type="cpu"):
     """Return vectorisation string."""
     vec_strings = {1: "novec", 4: "vec4", 8: "vec8", 16: "vec16"}
 
-    return vec_strings[get_vector_width(precision)]
+    return vec_strings[get_vector_width(precision, device_type)]
 
 
-def default_device():
-    """Return the default device."""
+def default_cpu_device():
+    """Return the default CPU device."""
     import bempp.api
     import os
 
     # pylint: disable=W0603
-    global _DEFAULT_DEVICE
-    global _DEFAULT_CONTEXT
+    global _DEFAULT_CPU_DEVICE
+    global _DEFAULT_CPU_CONTEXT
 
-    if _DEFAULT_DEVICE is None:
-        if "PYOPENCL_CTX" not in os.environ:
-            pair = find_cpu_driver()
-            if pair is not None:
-                _DEFAULT_CONTEXT = pair[0]
-                _DEFAULT_DEVICE = pair[1]
-                bempp.api.log(f"OpenCL Device set to: {_DEFAULT_DEVICE.name}")
-                return _DEFAULT_DEVICE
-        context = _cl.create_some_context(interactive=False)
-        _DEFAULT_CONTEXT = context
-        _DEFAULT_DEVICE = context.devices[0]
-        bempp.api.log(f"OpenCL Device set to: {_DEFAULT_DEVICE.name}")
+    if "BEMPP_CPU_DRIVER" in os.environ:
+        name = os.environ["BEMPP_CPU_DRIVER"]
+    else:
+        name = None
 
-    return _DEFAULT_DEVICE
+    if _DEFAULT_CPU_DEVICE is None:
+        pair = find_cpu_driver(name)
+        if pair is not None:
+            _DEFAULT_CPU_CONTEXT = pair[0]
+            _DEFAULT_CPU_DEVICE = pair[1]
+            bempp.api.log(f"OpenCL CPU Device set to: {_DEFAULT_CPU_DEVICE.name}")
+            return _DEFAULT_CPU_DEVICE
+        else:
+            raise RuntimeError("Could not find a suitable OpenCL CPU driver.")
 
-
-def default_context():
-    """Return default context."""
-
-    if _DEFAULT_CONTEXT is None:
-        default_device()
-
-    return _DEFAULT_CONTEXT
+    return _DEFAULT_CPU_DEVICE
 
 
-def find_cpu_driver():
+def default_gpu_device():
+    """Return the default GPU device."""
+    import bempp.api
+    import os
+
+    # pylint: disable=W0603
+    global _DEFAULT_GPU_DEVICE
+    global _DEFAULT_GPU_CONTEXT
+
+    if "BEMPP_GPU_DRIVER" in os.environ:
+        name = os.environ["BEMPP_GPU_DRIVER"]
+    else:
+        name = None
+
+    if _DEFAULT_GPU_DEVICE is None:
+        pair = find_gpu_driver(name)
+        if pair is not None:
+            _DEFAULT_GPU_CONTEXT = pair[0]
+            _DEFAULT_GPU_DEVICE = pair[1]
+            bempp.api.log(f"OpenCL GPU Device set to: {_DEFAULT_GPU_DEVICE.name}")
+            return _DEFAULT_GPU_DEVICE
+        else:
+            raise RuntimeError("Could not find a suitable OpenCL GPU driver.")
+
+    return _DEFAULT_GPU_DEVICE
+
+
+def default_device(device_type="cpu"):
+    """Return default device."""
+
+    if device_type == "cpu":
+        return default_cpu_device()
+    elif device_type == "gpu":
+        return default_gpu_device()
+    else:
+        raise ValueError(f"Unknown value for 'mode' = {device_type}.")
+
+
+def default_context(device_type="cpu"):
+    """Return the default context"""
+
+    if device_type == "cpu":
+        return default_cpu_context()
+    elif device_type == "gpu":
+        return default_gpu_context()
+    else:
+        raise ValueError(f"Unknown value for 'mode' = {device_type}.")
+
+
+def default_cpu_context():
+    """Return default CPU context."""
+
+    if _DEFAULT_CPU_CONTEXT is None:
+        default_cpu_device()
+
+    return _DEFAULT_CPU_CONTEXT
+
+
+def default_gpu_context():
+    """Return default GPU context."""
+
+    if _DEFAULT_GPU_CONTEXT is None:
+        default_gpu_device()
+
+    return _DEFAULT_GPU_CONTEXT
+
+
+def find_cpu_driver(name=None):
     """Find the first available CPU OpenCL driver."""
-
     for platform in _cl.get_platforms():
+        if name and name not in platform.name:
+            continue
         ctx = _cl.Context(
             dev_type=_cl.device_type.ALL,
             properties=[(_cl.context_properties.PLATFORM, platform)],
@@ -224,27 +285,69 @@ def find_cpu_driver():
     return None
 
 
-def set_default_device(platform_index, device_index):
-    """Set the default device."""
+def find_gpu_driver(name=None):
+    """Find the first available GPU OpenCL driver."""
+
+    for platform in _cl.get_platforms():
+        if name and name not in platform.name:
+            continue
+        ctx = _cl.Context(
+            dev_type=_cl.device_type.ALL,
+            properties=[(_cl.context_properties.PLATFORM, platform)],
+        )
+        for device in ctx.devices:
+            if device.type == _cl.device_type.GPU:
+                return ctx, device
+    return None
+
+
+def set_default_cpu_device(platform_index, device_index):
+    """Set the default CPU device."""
     import bempp.api
 
     # pylint: disable=W0603
-    global _DEFAULT_DEVICE
-    global _DEFAULT_CONTEXT
+    global _DEFAULT_CPU_DEVICE
+    global _DEFAULT_CPU_CONTEXT
 
     platform = _cl.get_platforms()[platform_index]
     device = platform.get_devices()[device_index]
-    _DEFAULT_CONTEXT = _cl.Context(
+    _DEFAULT_CPU_CONTEXT = _cl.Context(
         devices=[device], properties=[(_cl.context_properties.PLATFORM, platform)]
     )
-    _DEFAULT_DEVICE = _DEFAULT_CONTEXT.devices[0]
+    _DEFAULT_CPU_DEVICE = _DEFAULT_CPU_CONTEXT.devices[0]
 
-    vector_width_single = _DEFAULT_DEVICE.native_vector_width_float
-    vector_width_double = _DEFAULT_DEVICE.native_vector_width_double
+    vector_width_single = _DEFAULT_CPU_DEVICE.native_vector_width_float
+    vector_width_double = _DEFAULT_CPU_DEVICE.native_vector_width_double
 
     bempp.api.log(
-        f"Default device: {_DEFAULT_DEVICE.name}. "
-        + f"Device Type: {_DEFAULT_DEVICE.type}. "
+        f"Default CPU device: {_DEFAULT_CPU_DEVICE.name}. "
+        + f"Device Type: {_DEFAULT_CPU_DEVICE.type}. "
+        + f"Native vector width: {vector_width_single} (single) / "
+        + f"{vector_width_double} (double)."
+    )
+
+
+def set_default_gpu_device(platform_index, device_index):
+    """Set the default GPU device."""
+    import bempp.api
+
+    # pylint: disable=W0603
+    global _DEFAULT_GPU_DEVICE
+    global _DEFAULT_GPU_CONTEXT
+
+    platform = _cl.get_platforms()[platform_index]
+    device = platform.get_devices()[device_index]
+    _DEFAULT_GPU_CONTEXT = _cl.Context(
+        devices=[device], properties=[(_cl.context_properties.PLATFORM, platform)]
+    )
+    _DEFAULT_GPU_DEVICE = _DEFAULT_CPU_CONTEXT.devices[0]
+
+    vector_width_single = _DEFAULT_GPU_DEVICE.native_vector_width_float
+    vector_width_double = _DEFAULT_GPU_DEVICE.native_vector_width_double
+
+    bempp.api.log(
+        f"Default GPU device: {_DEFAULT_GPU_DEVICE.name}. "
+        + f"Device Type: {_DEFAULT_GPU_DEVICE.type}. "
         + f"Native vector width: {vector_width_single} (single) / "
         + f"{vector_width_double} (double)."
     )
@@ -267,7 +370,6 @@ def show_available_platforms_and_devices():
 
 def get_native_vector_width(device, precision):
     """Get default vector width for device."""
-
     if precision == "single":
         return device.native_vector_width_float
     elif precision == "double":

@@ -29,7 +29,6 @@ class DensePotentialAssembler(object):
 
         def potential_evaluator(x):
             """Evaluate the potential."""
-
             x_transformed = self.space.map_to_full_grid @ (
                 self.space.dof_transformation @ x
             )

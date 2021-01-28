@@ -310,7 +310,6 @@ class FunctionSpace(object):
         collocation_points,
     ):
         """Initialize the space."""
-
         from .shapesets import Shapeset
         from scipy.sparse import coo_matrix
         from bempp.api.utils.helpers import create_unique_id
@@ -471,7 +470,7 @@ class FunctionSpace(object):
 
     @property
     def number_of_support_elements(self):
-        """The number of elements that form the support."""
+        """Return the number of elements that form the support."""
         return self._number_of_support_elements
 
     @property
@@ -526,23 +525,21 @@ class FunctionSpace(object):
     @property
     def map_to_localised_space(self):
         """Return a sparse matrix that maps dofs to localised space."""
-
         return self._map_to_localised_space
 
     @property
     def map_to_full_grid(self):
         """Return a sparse matrix that maps dofs to localised space on full grid."""
-
         return self._map_to_full_grid
 
     @property
     def dof_transformation(self):
-        """Transformation from global dofs to space dofs."""
+        """Return transformation from global dofs to space dofs."""
         return self._dof_transformation
 
     @property
     def requires_dof_transformation(self):
-        """True if the dof transformation matrix is not the identity."""
+        """Return true if the dof transformation matrix is not the identity."""
         return self._requires_dof_transformation
 
     @property
@@ -599,14 +596,13 @@ class FunctionSpace(object):
         is the quadrature order of the underlying quadrature rule. If
         'return_transpose' is true then then transpose of the operator is returned.
         """
-
         return map_space_to_points(
             self, quadrature_order=quadrature_order, return_transpose=return_transpose
         )
 
     def get_elements_by_color(self):
         """
-        Returns color sorted elements and their index positions.
+        Return color sorted elements and their index positions.
 
         This method returns a tuple (sorted_indices, indexptr) so that
         all element indices with color i are contained in
@@ -647,7 +643,6 @@ class FunctionSpace(object):
 
     def mass_matrix(self):
         """Return the mass matrix associated with this space."""
-
         if self._mass_matrix is None:
             from bempp.api.operators.boundary.sparse import identity
 
@@ -657,7 +652,6 @@ class FunctionSpace(object):
 
     def inverse_mass_matrix(self):
         """Return the inverse mass matrix for this space."""
-
         from bempp.api.assembly.discrete_boundary_operator import (
             InverseSparseDiscreteBoundaryOperator,
         )
@@ -696,7 +690,6 @@ class FunctionSpace(object):
 
     def _compute_color_map(self):
         """Compute the color map."""
-
         self._color_map = -_np.ones(self.grid.number_of_elements, dtype=_np.int32)
         for element_index in self.support_elements:
             neighbors = {element_index}
@@ -735,7 +728,6 @@ class FunctionSpace(object):
 
 def return_compatible_representation(*args):
     """Return representation of spaces on same grid."""
-
     # Check if at least one space is barycentric.
     is_barycentric = any([space.is_barycentric for space in args])
 
@@ -751,7 +743,6 @@ def return_compatible_representation(*args):
 
 def check_if_compatible(space1, space2):
     """Return true if two spaces are compatible."""
-
     if space1.id == space2.id:
         return True
 
@@ -828,8 +819,7 @@ def map_space_to_points_impl(
     weights,
     number_of_shape_functions,
 ):
-    """Numba accelerated computational parts for point map."""
-
+    """Run Numba accelerated computational parts for point map."""
     number_of_local_points = local_points.shape[1]
     number_of_support_elements = len(support_elements)
 
@@ -869,8 +859,7 @@ def map_space_to_points_impl(
 
 
 def _process_segments(grid, support_elements, segments, swapped_normals):
-    """Pocess information from support_elements and segments vars."""
-
+    """Process information from support_elements and segments vars."""
     if support_elements is not None and segments is not None:
         raise ValueError(
             "Only one of 'support_elements' and 'segments' must be nonzero."
@@ -904,7 +893,6 @@ def _process_segments(grid, support_elements, segments, swapped_normals):
 
 def invert_local2global(local2global_map, local_multipliers):
     """Obtain the global to local dof map from the local to global map."""
-
     global_dof_count = 1 + _np.max(local2global_map)
     number_of_elements = len(local2global_map)
 
@@ -922,8 +910,7 @@ def invert_local2global(local2global_map, local_multipliers):
 
 
 def make_localised_space(space):
-    """Given a space object. Return the associated localised space."""
-
+    """Return the associated localised space."""
     number_of_elements = space.grid.number_of_elements
     support_size = space.number_of_support_elements
     local_size = space.number_of_shape_functions
@@ -968,6 +955,7 @@ def _space_scatter_worker(
     degree,
     kwargs,
 ):
+    """Copy a space to a worker."""
     import bempp.api
     from bempp.api.utils import pool
 

@@ -17,9 +17,7 @@ def align_array(arr, dtype, order):
 
     If order='F' use Fortran order. If order='C' use
     C order.
-
     """
-
     if order == "F":
         requirements = ["A", "F", "O", "E"]
     elif order == "C":
@@ -32,10 +30,10 @@ def align_array(arr, dtype, order):
 
 def assign_parameters(parameters):
     """
-    Assigns a parameter object based on input.
+    Assign a parameter object based on input.
 
     If parameters is None return the global_parameters object.
-    Otherewise, return the parameters object again.
+    Otherwise, return the parameters object again.
 
     """
     import bempp.api
@@ -50,7 +48,6 @@ def assign_parameters(parameters):
 
 def promote_to_double_precision(array):
     """Convert an array to real or complex double precision."""
-
     if array.dtype == "float32":
         return array.astype("float64", copy=False)
     if array.dtype == "complex64":
@@ -60,13 +57,11 @@ def promote_to_double_precision(array):
 
 def serialise_list_of_lists(array):
     """
-    Serialises a list of lists (or other iterable).
+    Serialise a list of lists (or other iterable).
 
     Returns a tuple (new_array, index_ptr), such
     that array[j] = new_array[index_ptr[j] : index_ptr[j + 1]]
-
     """
-
     new_list = []
     index_ptr = [0]
 
@@ -94,7 +89,7 @@ class MemProfiler:
     """Context manager to measure mem usage in bytes."""
 
     def __init__(self):
-        """Constructor."""
+        """Construct."""
         import psutil
         import os
 
@@ -104,16 +99,18 @@ class MemProfiler:
         self.interval = 0
 
     def __enter__(self):
+        """Enter."""
         self.start = self._process.memory_info()[0]
         return self
 
     def __exit__(self, *args):
+        """Exit."""
         self.end = self._process.memory_info()[0]
         self.interval = self.end - self.start
 
 
 def numba_decorate(fun):
-    """Numba decorator for functions."""
+    """Decorate a function for Numba."""
     import bempp.api
     import numba
 

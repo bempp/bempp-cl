@@ -33,7 +33,6 @@ def duffy_rule_on_reference_triangle(order):
 
 def singular_collocation_rule_piecewise_const(order):
     """Singular collocation integral for one singularity on unit triangle barycenter."""
-
     duffy_points, duffy_weights = duffy_rule_on_reference_triangle(order)
     npoints = len(duffy_weights)
 

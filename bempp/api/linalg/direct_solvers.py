@@ -20,7 +20,7 @@ def compute_lu_factors(A):
 
 
 def lu(A, b, lu_factor=None):
-    """Simple direct solver interface.
+    """Perform an LU solve.
 
     This function takes an operator and a grid function,
     converts the operator into a dense matrix and solves

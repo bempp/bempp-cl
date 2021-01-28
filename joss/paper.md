@@ -24,7 +24,7 @@ bibliography: paper.bib
 
 # Summary
 The boundary element method (BEM) is a numerical method for approximating the solution of certain types of partial 
-differential equations (PDEs) in homogeneous bounded or unbounded domains. The method finds the approximation by discretising 
+differential equations (PDEs) in homogeneous bounded or unbounded domains. The method finds an approximation by discretising 
 a boundary integral equation that can be derived from the PDE. The mathematical background of BEM is covered in, for example, 
 @Stein07 or @McLean. Typical applications of BEM include electrostatic problems, and acoustic and electromagnetic scattering.
 
@@ -36,13 +36,42 @@ Bempp-cl began life as BEM++, and was a Python library with a C++ computational 
 functionality gradually moved from C++ to Python with only a few core routines remaining in C++. Bempp-cl is the culmination 
 of efforts to fully move to Python, and is an almost complete rewrite of Bempp.
 
+For each of the applications mentioned above, the boundary element method involves approximating the solution of a partial
+differential equation (Laplace's equation, the Helmholtz equation, and Maxwell's equations respectively) by writing the problem
+in boundary integral form, then discretising. For example, we could calculate the scattered field due to an electromagnetic wave
+colliding with a series of screens by solving
+\begin{align*}
+\nabla\times\nabla\times \mathbf{E} -k^2 \mathbf{E} &= 0,\\
+\boldsymbol{\nu}\times\mathbf{E}&=0\text{ on the screens},
+\end{align*}
+where $\mathbf{E}$ is the sum of a scattered field $\mathbf{E}^\text{s}$ and an incident field $\mathbf{E}^\text{inc}$,
+and $\boldsymbol{\nu}$ is the direction normal to the screen. (Additionally, we must impose the Silver--Müller radiation condition
+to ensure that the problem has a unique solution.) This problem is solved, and the full method is derived,
+in one of the tutorials available on the Bempp website [@Bempp-maxwell-example]. The solution to this problem is shown below.
+
+![An electromagnetic wave scattering off three screens.](maxwell_sol.png){ width=50% }
+
 # Statement of need
 Bempp-cl provides a comprehensive collection of routines for the assembly of boundary integral operators to solve a wide
 range of relevant application problems. It contains an operator algebra that allows a straight-forward implementation of
 complex operator preconditioned systems of boundary integral equations [@operatoralg] and in particular implements
-everything that is required for Calder\'on preconditioned Maxwell [@maxwellbempp] problems. Bempp-cl uses PyOpenCL [@pyopencl]
+everything that is required for Calderón preconditioned Maxwell [@maxwellbempp] problems. Bempp-cl uses PyOpenCL [@pyopencl]
 to just-in-time compile its computational kernels on a wide range of CPU and GPU devices and modern architectures. Alternatively,
 a fallback Numba implementation is provided.
+
+OpenCL is used as it is able to compile C-based kernels to run on a wide range of CPU and GPU devices, without the need to
+write device specific code. Numba is offered as an alternative as it is easily available on all platforms and provides a
+version of the library that is significantly faster than using pure Python.
+
+Bempp-cl is aimed at those interested in using boundary element method to solve problems, particularly those from a mathematical background.
+The syntax of library is designed to closely resemble the boundary integral representation of the problem being solved, making
+implementing a problem simple once this representation is known.
+
+There are only a small number of alternative boundary element method softwares available.
+The most popular is BETL [@BETL], a C++ library that is available for free for academic use, but not under a standard open source license.
+A number of other libraries exist designed for specific applications, such as PyGBe (for biomolecular electrostatics) [@PyGBe]
+and (abem for acoustics) [@abem].
+Bempp-cl can be used for a much wider range of problems than these specialised libraries, and is fully open source.
 
 # An overview of Bempp features
 Bempp-cl is divided into two parts: `bempp.api` and `bempp.core`.
@@ -86,18 +115,18 @@ and GPU compute devices. On systems without OpenCL support, Numba [@numba] is us
 Python-based assembly kernels, giving a slower but still viable alternative to OpenCL.
 
 Bempp-cl provides an interface to the Exafmm-t library [@exafmm] for faster assembly of larger problems with lower memory
-requirements using the fast multipole method (FMM). The interface to Exafmm-t is writting in a generic way so that other
+requirements using the fast multipole method (FMM). The interface to Exafmm-t is written in a generic way so that other
 FMM libraries or alternative matrix compression techniques could be used in future. 
 
 The submodule `bempp.api.linalg` contains wrapped versions of SciPy's [@scipy] LU, CG, and GMRes solvers. By using 
 SciPy's `LinearOperator` interface, Bempp-cl's boundary operators can easily be used with other iterative solvers.
 
 ## Potential and far field operators
-Potential and far fiels operators for the evaluation at points in the domain or the asymptotic behavior at infinity are 
+Potential and far field operators for the evaluation at points in the domain or the asymptotic behavior at infinity are 
 included in the `bempp.api.operators.potential` and `bempp.api.operators.far_field` submodules.
 
 ## Further information
-Full documentation of the library, including a number of example Jupyter notebooks, can be found online at ``bempp.com`` and in
+Full documentation of the library, including a number of example Jupyter notebooks, can be found online at ``bempp.com`` and
 in the in-development Bempp Handbook [@bempphandbook].
 
 # Acknowledgements

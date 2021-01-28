@@ -303,7 +303,6 @@ def evaluate_helmholtz_kernel_on_interpolation_points(pointsx, pointsy, wavenumb
 @_numba.njit(cache=True)
 def chebychev_tensor_points_3d(lbound, ubound, nodes):
     """Create Chebychev points associated with a 3d tensor grid."""
-
     points_i = lbound[0] + 0.5 * (ubound[0] - lbound[0]) * (1 + nodes)
     points_j = lbound[1] + 0.5 * (ubound[1] - lbound[1]) * (1 + nodes)
     points_k = lbound[2] + 0.5 * (ubound[2] - lbound[2]) * (1 + nodes)
@@ -370,7 +369,6 @@ def evaluate_tensor_interp_polynomial(nodes, weights, values, evaluation_points)
     evaluation_points : Numpy array
         (N x 3) array of N evaluation points in 3 dimension.
     """
-
     npoints = len(evaluation_points)
     nterms = len(nodes)
 
@@ -401,7 +399,6 @@ def evaluate_tensor_interp_polynomial(nodes, weights, values, evaluation_points)
 
 def chebychev_differentiation_matrix(nodes, weights):
     """Return a Chebychev differentiation matrix."""
-
     nterms = len(nodes)
     if nterms == 1:
         return _np.array([0.0])
