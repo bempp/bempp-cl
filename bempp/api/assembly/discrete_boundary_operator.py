@@ -269,24 +269,28 @@ class DiagonalOperator(_DiscreteOperatorBase):
             shape = (len(values), len(values))
         super().__init__(values.dtype, shape)
 
+    def get_diagonal(self):
+        """Get the diagonal values."""
+        return self._values
+
     def _matvec(self, x):
         """Multiply the operator by a vector."""
         vec_shape = x.shape
 
-        return (self._values * x.ravel()).reshape(vec_shape)
+        return (self.get_diagonal() * x.ravel()).reshape(vec_shape)
 
     def __add__(self, other):
         """Add."""
         if self.shape != other.shape:
             raise ValueError(f"Incompatible dimensions: {self.shape} != {other.shape}")
         if isinstance(other, DiagonalOperator):
-            return DiagonalOperator(self._values + other._values)
+            return DiagonalOperator(self.get_diagonal() + other.get_diagonal())
         else:
             return super().__add__(other)
 
     def __neg__(self):
         """Negate."""
-        return DiagonalOperator(-self._values)
+        return DiagonalOperator(-self.get_diagonal())
 
     def __mul__(self, other):
         """Multiply."""
@@ -295,21 +299,21 @@ class DiagonalOperator(_DiscreteOperatorBase):
     def dot(self, other):
         """Product with other objects."""
         if _np.isscalar(other):
-            if self._values.dtype in ["float32", "complex64"]:
+            if self.get_diagonal().dtype in ["float32", "complex64"]:
                 # Necessary to ensure that scalar multiplication does not change
                 # precision to double precision.
                 if _np.iscomplexobj(other):
-                    return DiagonalOperator(self._values * _np.dtype("complex64").type(other))
+                    return DiagonalOperator(self.get_diagonal() * _np.dtype("complex64").type(other))
                 else:
-                    return DiagonalOperator(self._values * _np.dtype("float32").type(other))
+                    return DiagonalOperator(self.get_diagonal() * _np.dtype("float32").type(other))
             else:
-                return DiagonalOperator(self._values * other)
+                return DiagonalOperator(self.get_diagonal() * other)
         return super().dot(other)
 
     def __rmul__(self, other):
         """Multiply."""
         if _np.isscalar(other):
-            return DiagonalOperator(self._values * other)
+            return DiagonalOperator(self.get_diagonal() * other)
         else:
             return NotImplemented
 
@@ -327,7 +331,8 @@ class DiagonalOperator(_DiscreteOperatorBase):
 
     def to_sparse(self):
         """Return sparse matrix if operator is sparse."""
-        return scipy.sparse.diags(self._values)
+        from scipy.sparse import diags
+        return diags(self._values)
 
 
 class SparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
