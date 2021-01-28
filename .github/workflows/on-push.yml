@@ -124,6 +124,7 @@ jobs:
     needs:
       - build-and-publish-docker
       - get-branch
+      - style-checks
     runs-on: ubuntu-latest
     container: bempp/cl-dev-env-with-dolfin:${{ needs.get-branch.outputs.tag }}
     steps:
@@ -138,6 +139,7 @@ jobs:
     needs:
       - build-and-publish-docker
       - get-branch
+      - style-checks
     runs-on: ubuntu-latest
     container: bempp/cl-dev-env-with-dolfinx:${{ needs.get-branch.outputs.tag }}
     steps:
