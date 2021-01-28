@@ -187,22 +187,22 @@ class DenseDiscreteBoundaryOperator(_DiscreteOperatorBase):
 
     def _matmat(self, x):
         """Multiply the operator by a matrix or operator."""
-        if _np.iscomplexobj(x) and not _np.iscomplexobj(self.A):
-            return self.A.dot(_np.real(x).astype(self.dtype)) + 1j * self.A.dot(
+        if _np.iscomplexobj(x) and not _np.iscomplexobj(self.to_dense()):
+            return self.to_dense().dot(_np.real(x).astype(self.dtype)) + 1j * self.to_dense().dot(
                 _np.imag(x).astype(self.dtype)
             )
-        return self.A.dot(x.astype(self.dtype))
+        return self.to_dense().dot(x.astype(self.dtype))
 
     def __add__(self, other):
         """Add two operators."""
         if isinstance(other, DenseDiscreteBoundaryOperator):
-            return DenseDiscreteBoundaryOperator(self.A + other.A)
+            return DenseDiscreteBoundaryOperator(self.to_dense() + other.to_dense())
         else:
             return super().__add__(other)
 
     def __neg__(self):
         """Negate the operator."""
-        return DenseDiscreteBoundaryOperator(-self.A)
+        return DenseDiscreteBoundaryOperator(-self.to_dense())
 
     def __mul__(self, other):
         """Multiply."""
@@ -211,37 +211,37 @@ class DenseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     def dot(self, other):
         """Form the product with another object."""
         if isinstance(other, DenseDiscreteBoundaryOperator):
-            return DenseDiscreteBoundaryOperator(self.A.dot(other.A))
+            return DenseDiscreteBoundaryOperator(self.to_dense().dot(other.to_dense()))
         if _np.isscalar(other):
-            if self.A.dtype in ["float32", "complex64"]:
+            if self._impl.dtype in ["float32", "complex64"]:
                 # Necessary to ensure that scalar multiplication does not change
                 # precision to double precision.
                 if _np.iscomplexobj(other):
                     return DenseDiscreteBoundaryOperator(
-                        self.A * _np.dtype("complex64").type(other)
+                        self.to_dense() * _np.dtype("complex64").type(other)
                     )
                 else:
                     return DenseDiscreteBoundaryOperator(
-                        self.A * _np.dtype("float32").type(other)
+                        self.to_dense() * _np.dtype("float32").type(other)
                     )
             else:
-                return DenseDiscreteBoundaryOperator(self.A * other)
+                return DenseDiscreteBoundaryOperator(self.to_dense() * other)
         return super().dot(other)
 
     def __rmul__(self, other):
         """Multiply."""
         if _np.isscalar(other):
-            return DenseDiscreteBoundaryOperator(self.A * other)
+            return DenseDiscreteBoundaryOperator(self.to_dense() * other)
         else:
             return NotImplemented
 
     def _transpose(self):
         """Transpose of the operator."""
-        return DenseDiscreteBoundaryOperator(self.A.T)
+        return DenseDiscreteBoundaryOperator(self.to_dense().T)
 
     def _adjoint(self):
         """Adjoint of the operator."""
-        return DenseDiscreteBoundaryOperator(self.A.conjugate().transpose())
+        return DenseDiscreteBoundaryOperator(self.to_dense().conjugate().transpose())
 
     def to_dense(self):
         """Return dense matrix."""
@@ -280,13 +280,13 @@ class DiagonalOperator(_DiscreteOperatorBase):
         if self.shape != other.shape:
             raise ValueError(f"Incompatible dimensions: {self.shape} != {other.shape}")
         if isinstance(other, DiagonalOperator):
-            return DiagonalOperator(self.A + other.A)
+            return DiagonalOperator(self._values + other._values)
         else:
             return super().__add__(other)
 
     def __neg__(self):
         """Negate."""
-        return DiagonalOperator(-self.A)
+        return DiagonalOperator(-self._values)
 
     def __mul__(self, other):
         """Multiply."""
@@ -295,21 +295,21 @@ class DiagonalOperator(_DiscreteOperatorBase):
     def dot(self, other):
         """Product with other objects."""
         if _np.isscalar(other):
-            if self.A.dtype in ["float32", "complex64"]:
+            if self._values.dtype in ["float32", "complex64"]:
                 # Necessary to ensure that scalar multiplication does not change
                 # precision to double precision.
                 if _np.iscomplexobj(other):
-                    return DiagonalOperator(self.A * _np.dtype("complex64").type(other))
+                    return DiagonalOperator(self._values * _np.dtype("complex64").type(other))
                 else:
-                    return DiagonalOperator(self.A * _np.dtype("float32").type(other))
+                    return DiagonalOperator(self._values * _np.dtype("float32").type(other))
             else:
-                return DiagonalOperator(self.A * other)
+                return DiagonalOperator(self._values * other)
         return super().dot(other)
 
     def __rmul__(self, other):
         """Multiply."""
         if _np.isscalar(other):
-            return DiagonalOperator(self.A * other)
+            return DiagonalOperator(self._values * other)
         else:
             return NotImplemented
 
@@ -319,7 +319,7 @@ class DiagonalOperator(_DiscreteOperatorBase):
 
     def _adjoint(self):
         """Adjoint of the operator."""
-        return DiagonalOperator(self.A.conjugate())
+        return DiagonalOperator(self._values.conjugate())
 
     def to_dense(self):
         """Return dense matrix."""
@@ -348,46 +348,46 @@ class SparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     def _matmat(self, vec):
         """Multiply the operator with a numpy vector or matrix x."""
         if self.dtype == "float64" and _np.iscomplexobj(vec):
-            return self.A * _np.real(vec) + 1j * (self.A * _np.imag(vec))
-        return self.A * vec
+            return self.to_sparse() * _np.real(vec) + 1j * (self.to_sparse() * _np.imag(vec))
+        return self.to_sparse() * vec
 
     def _transpose(self):
         """Return the transpose of the discrete operator."""
-        return SparseDiscreteBoundaryOperator(self.A.transpose())
+        return SparseDiscreteBoundaryOperator(self.to_sparse().transpose())
 
     def _adjoint(self):
         """Return the adjoint of the discrete operator."""
-        return SparseDiscreteBoundaryOperator(self.A.transpose().conjugate())
+        return SparseDiscreteBoundaryOperator(self.to_sparse().transpose().conjugate())
 
     def __add__(self, other):
         """Add."""
         if isinstance(other, SparseDiscreteBoundaryOperator):
-            return SparseDiscreteBoundaryOperator(self.A + other.A)
+            return SparseDiscreteBoundaryOperator(self.to_sparse() + other.to_sparse())
         else:
             return super().__add__(other)
 
     def __neg__(self):
         """Negate."""
-        return SparseDiscreteBoundaryOperator(-self.A)
+        return SparseDiscreteBoundaryOperator(-self.to_sparse())
 
     def __mul__(self, other):
         """Multiply."""
         if isinstance(other, SparseDiscreteBoundaryOperator):
-            return SparseDiscreteBoundaryOperator(self.A * other.A)
+            return SparseDiscreteBoundaryOperator(self.to_sparse() * other.to_sparse())
         else:
             return super().__mul__(other)
 
     def dot(self, other):
         """Product with other objects."""
         if _np.isscalar(other):
-            return SparseDiscreteBoundaryOperator(self.A * other)
+            return SparseDiscreteBoundaryOperator(self.to_sparse() * other)
         else:
             return super().dot(other)
 
     def __rmul__(self, other):
         """Multiply."""
         if _np.isscalar(other):
-            return SparseDiscreteBoundaryOperator(self.A * other)
+            return SparseDiscreteBoundaryOperator(self.to_sparse() * other)
         else:
             return NotImplemented
 
@@ -568,7 +568,7 @@ class _Solver(object):  # pylint: disable=too-few-public-methods
         from scipy.sparse import csc_matrix
 
         if isinstance(operator, SparseDiscreteBoundaryOperator):
-            mat = operator.A
+            mat = operator.to_sparse()
         elif isinstance(operator, csc_matrix):
             mat = operator
         else:

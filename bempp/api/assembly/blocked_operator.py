@@ -537,14 +537,11 @@ class GeneralizedDiscreteBlockedOperator(_DiscreteOperatorBase):
 
         super().__init__(dtype, shape)
 
-    @property
-    def A(self):
-        """TODO: add docstring."""
+    def to_dense(self):
+        """Return dense matrix."""
         rows = []
         for row in self._operators:
-            rows.append([])
-            for op in row:
-                rows[-1].append(op.A)
+            rows.append([op.to_dense() for op in row])
         return _np.block(rows)
 
     def _matmat(self, other):
@@ -683,25 +680,11 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
     def _get_column_dimensions(self):
         return self._cols
 
-    @property
-    def A(self):
-        """TODO: add docstring."""
-        from bempp.api.assembly.discrete_boundary_operator import (
-            SparseDiscreteBoundaryOperator,
-            ZeroDiscreteBoundaryOperator,
-        )
-
+    def to_dense(self):
+        """Return dense matrix."""
         rows = []
         for i in range(self._ndims[0]):
-            row = []
-            for j in range(self._ndims[1]):
-                op = self[i, j]
-                temp = op.A
-                if isinstance(op, SparseDiscreteBoundaryOperator) or isinstance(
-                    op, ZeroDiscreteBoundaryOperator
-                ):
-                    temp = temp.A
-                row.append(temp)
+            row = [self[i, j].to_dense() for j in range(self._ndims[1])]
             rows.append(_np.hstack(row))
         return _np.vstack(rows)
 

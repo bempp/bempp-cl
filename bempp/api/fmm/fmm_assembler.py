@@ -242,7 +242,7 @@ def make_scalar_hypersingular(
         bempp.api.GLOBAL_PARAMETERS.quadrature.regular, return_transpose=True
     )
 
-    singular_part = operator_descriptor.singular_part.weak_form().A
+    singular_part = operator_descriptor.singular_part.weak_form().to_sparse()
 
     source_normals = get_normals(domain, npoints)
     target_normals = get_normals(dual_to_range, npoints)
@@ -364,7 +364,7 @@ def make_default_scalar(operator_descriptor, fmm_interface, domain, dual_to_rang
         bempp.api.GLOBAL_PARAMETERS.quadrature.regular, return_transpose=True
     )
 
-    singular_part = operator_descriptor.singular_part.weak_form().A
+    singular_part = operator_descriptor.singular_part.weak_form().to_sparse()
 
     source_normals = get_normals(domain, npoints)
     target_normals = get_normals(dual_to_range, npoints)
@@ -764,7 +764,7 @@ def make_maxwell_electric_field_boundary(
     if domain != dual_to_range:
         _, dual_rwg_map = compute_rwg_basis_transform(dual_to_range, order)
         _, dual_div_map = compute_rwg_div_transform(dual_to_range, order)
-    singular_part = operator_descriptor.singular_part.weak_form().A
+    singular_part = operator_descriptor.singular_part.weak_form().to_sparse()
 
     def evaluate(x):
         """Evaluate the electric field operator."""
@@ -803,7 +803,7 @@ def make_maxwell_magnetic_field_boundary(
         _, dual_rwg_map = compute_rwg_basis_transform(dual_to_range, order)
         _, dual_div_map = compute_rwg_div_transform(dual_to_range, order)
 
-    singular_part = operator_descriptor.singular_part.weak_form().A
+    singular_part = operator_descriptor.singular_part.weak_form().to_sparse()
 
     def evaluate(x):
         """Evaluate the magnetic field operator."""

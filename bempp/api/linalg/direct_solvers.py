@@ -49,7 +49,7 @@ def lu(A, b, lu_factor=None):
         if lu_factor is not None:
             sol = lu_solve(lu_factor, vec)
         else:
-            mat = A.weak_form().A
+            mat = A.weak_form().to_dense()
             sol = solve(mat, vec)
         return grid_function_list_from_coefficients(sol, A.domain_spaces)
     else:
@@ -57,6 +57,6 @@ def lu(A, b, lu_factor=None):
         if lu_factor is not None:
             sol = lu_solve(lu_factor, vec)
         else:
-            mat = A.weak_form().A
+            mat = A.weak_form().to_dense()
             sol = solve(mat, vec)
         return GridFunction(A.domain, coefficients=sol)
