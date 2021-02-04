@@ -301,6 +301,37 @@ def find_gpu_driver(name=None):
     return None
 
 
+def set_default_cpu_device_by_name(name):
+    """
+    Set default CPU device by name.
+
+    This method looks for the given string in the available OpenCL
+    drivers and picks the first one that contains the given search
+    string.
+
+    """
+    import bempp.api
+
+    global _DEFAULT_CPU_CONTEXT
+    global _DEFAULT_CPU_DEVICE
+
+    try:
+        context, device = find_cpu_driver(name)
+    except:
+        raise RuntimeError("No CPU driver with given name found.")
+
+    _DEFAULT_CPU_CONTEXT = context
+    _DEFAULT_CPU_DEVICE = device
+    vector_width_single = _DEFAULT_CPU_DEVICE.native_vector_width_float
+    vector_width_double = _DEFAULT_CPU_DEVICE.native_vector_width_double
+
+    bempp.api.log(
+        f"Default CPU device: {_DEFAULT_CPU_DEVICE.name}. "
+        + f"Native vector width: {vector_width_single} (single) / "
+        + f"{vector_width_double} (double)."
+    )
+
+
 def set_default_cpu_device(platform_index, device_index):
     """Set the default CPU device."""
     import bempp.api
@@ -321,7 +352,36 @@ def set_default_cpu_device(platform_index, device_index):
 
     bempp.api.log(
         f"Default CPU device: {_DEFAULT_CPU_DEVICE.name}. "
-        + f"Device Type: {_DEFAULT_CPU_DEVICE.type}. "
+        + f"Native vector width: {vector_width_single} (single) / "
+        + f"{vector_width_double} (double)."
+    )
+
+def set_default_gpu_device_by_name(name):
+    """
+    Set default GPU device by name.
+
+    This method looks for the given string in the available OpenCL
+    drivers and picks the first one that contains the given search
+    string.
+
+    """
+    import bempp.api
+
+    global _DEFAULT_GPU_CONTEXT
+    global _DEFAULT_GPU_DEVICE
+
+    try:
+        context, device = find_gpu_driver(name)
+    except:
+        raise RuntimeError("No GPU driver with given name found.")
+
+    _DEFAULT_GPU_CONTEXT = context
+    _DEFAULT_GPU_DEVICE = device
+    vector_width_single = _DEFAULT_GPU_DEVICE.native_vector_width_float
+    vector_width_double = _DEFAULT_GPU_DEVICE.native_vector_width_double
+
+    bempp.api.log(
+        f"Default GPU device: {_DEFAULT_GPU_DEVICE.name}. "
         + f"Native vector width: {vector_width_single} (single) / "
         + f"{vector_width_double} (double)."
     )
@@ -347,7 +407,6 @@ def set_default_gpu_device(platform_index, device_index):
 
     bempp.api.log(
         f"Default GPU device: {_DEFAULT_GPU_DEVICE.name}. "
-        + f"Device Type: {_DEFAULT_GPU_DEVICE.type}. "
         + f"Native vector width: {vector_width_single} (single) / "
         + f"{vector_width_double} (double)."
     )

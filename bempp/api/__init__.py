@@ -69,6 +69,17 @@ warnings.simplefilter("ignore", category=NumbaPendingDeprecationWarning)
 warnings.simplefilter("ignore", category=NumbaPerformanceWarning)
 
 
+## Try importing OpenCL routines
+
+try:
+    from bempp.core.opencl_kernels import set_default_cpu_device
+    from bempp.core.opencl_kernels import set_default_cpu_device_by_name
+    from bempp.core.opencl_kernels import set_default_gpu_device_by_name
+    from bempp.core.opencl_kernels import set_default_gpu_device
+except:
+    pass
+
+
 CONSOLE_LOGGING_HANDLER = None
 DEFAULT_LOGGING_FORMAT = "%(name)s:%(levelname)s: %(message)s"
 DEBUG = _logging.DEBUG
