@@ -356,6 +356,7 @@ def set_default_cpu_device(platform_index, device_index):
         + f"{vector_width_double} (double)."
     )
 
+
 def set_default_gpu_device_by_name(name):
     """
     Set default GPU device by name.
@@ -371,7 +372,8 @@ def set_default_gpu_device_by_name(name):
     global _DEFAULT_GPU_DEVICE
 
     try:
-        context, device = find_gpu_driver(name)
+        pair = find_gpu_driver(name)
+        context, device = pair[0], pair[1]
     except:
         raise RuntimeError("No GPU driver with given name found.")
 
