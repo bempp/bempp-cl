@@ -72,6 +72,8 @@ def select_cl_kernel(operator_descriptor, mode):
             potential_assemblers[operator_descriptor.assembly_type],
             kernels[operator_descriptor.kernel_type],
         )
+    else:
+        raise ValueError(f"Unknown mode {mode}")
 
 
 def get_kernel_compile_options(options, precision):
@@ -191,15 +193,13 @@ def default_cpu_device():
         name = None
 
     if _DEFAULT_CPU_DEVICE is None:
-        pair = find_cpu_driver(name)
-        if pair is not None:
-            _DEFAULT_CPU_CONTEXT = pair[0]
-            _DEFAULT_CPU_DEVICE = pair[1]
-            bempp.api.log(f"OpenCL CPU Device set to: {_DEFAULT_CPU_DEVICE.name}")
-            return _DEFAULT_CPU_DEVICE
-        else:
-            raise RuntimeError("Could not find a suitable OpenCL CPU driver.")
-
+        try:
+            ctx, device = find_cpu_driver(name)
+        except:
+            raise RuntimeError("Could not find suitable OpenCL CPU driver.")
+        _DEFAULT_CPU_CONTEXT = ctx
+        _DEFAULT_CPU_DEVICE = device
+        bempp.api.log(f"OpenCL CPU Device set to: {_DEFAULT_CPU_DEVICE.name}")
     return _DEFAULT_CPU_DEVICE
 
 
@@ -218,15 +218,13 @@ def default_gpu_device():
         name = None
 
     if _DEFAULT_GPU_DEVICE is None:
-        pair = find_gpu_driver(name)
-        if pair is not None:
-            _DEFAULT_GPU_CONTEXT = pair[0]
-            _DEFAULT_GPU_DEVICE = pair[1]
-            bempp.api.log(f"OpenCL GPU Device set to: {_DEFAULT_GPU_DEVICE.name}")
-            return _DEFAULT_GPU_DEVICE
-        else:
+        try:
+            ctx, device = find_gpu_driver(name)
+        except:
             raise RuntimeError("Could not find a suitable OpenCL GPU driver.")
-
+        _DEFAULT_GPU_CONTEXT = ctx
+        _DEFAULT_GPU_DEVICE = device
+        bempp.api.log(f"OpenCL GPU Device set to: {_DEFAULT_GPU_DEVICE.name}")
     return _DEFAULT_GPU_DEVICE
 
 
@@ -272,7 +270,12 @@ def default_gpu_context():
 
 def find_cpu_driver(name=None):
     """Find the first available CPU OpenCL driver."""
+    found = False
+    ctx = None
+    device = None
     for platform in _cl.get_platforms():
+        if found:
+            break
         if name and name not in platform.name:
             continue
         ctx = _cl.Context(
@@ -281,14 +284,21 @@ def find_cpu_driver(name=None):
         )
         for device in ctx.devices:
             if device.type == _cl.device_type.CPU:
-                return ctx, device
-    return None
+                found = True
+    if not found:
+        raise ValueError(f"Could not find CPU driver containing name {name}.")
+    return ctx, device
 
 
 def find_gpu_driver(name=None):
     """Find the first available GPU OpenCL driver."""
 
+    found = False
+    ctx = None
+    device = None
     for platform in _cl.get_platforms():
+        if found:
+            break
         if name and name not in platform.name:
             continue
         ctx = _cl.Context(
@@ -297,8 +307,10 @@ def find_gpu_driver(name=None):
         )
         for device in ctx.devices:
             if device.type == _cl.device_type.GPU:
-                return ctx, device
-    return None
+                found = True
+    if not found:
+        raise ValueError(f"Could not find GPU driver containing name {name}.")
+    return ctx, device
 
 
 def set_default_cpu_device_by_name(name):
