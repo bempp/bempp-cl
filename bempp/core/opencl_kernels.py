@@ -165,6 +165,8 @@ def get_vector_width(precision, device_type="cpu"):
 
     mode_to_length = {"novec": 1, "vec4": 4, "vec8": 8, "vec16": 16}
 
+    if device_type == "gpu":
+        return 1
     if bempp.api.VECTORIZATION_MODE == "auto":
         return get_native_vector_width(default_device(device_type), precision)
     else:
