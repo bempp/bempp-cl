@@ -210,6 +210,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
     python3-pyopencl \
+    python3-matplotlib \
     libfftw3-dev \
     pkg-config \
     python-is-python3 \
