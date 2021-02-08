@@ -243,7 +243,7 @@ RUN git clone --depth 1 https://github.com/fenics/dolfinx.git && \
     cd build && \
     PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex ../cpp && \
     ninja ${DOLFINX_MAKEFLAGS} install && \
-    . /usr/local/dolfinx-complex/share/dolfinx/dolfinx.conf && \
+    . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
     PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
 
