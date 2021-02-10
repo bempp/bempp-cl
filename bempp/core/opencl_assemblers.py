@@ -137,6 +137,7 @@ def dense_assembler(
     device_interface, operator_descriptor, domain, dual_to_range, parameters, result
 ):
     """Assemble dense with OpenCL."""
+    import bempp.api
     from bempp.api.integration.triangle_gauss import rule
     from bempp.api.utils.helpers import get_type
     from bempp.core.opencl_kernels import get_kernel_from_operator_descriptor
@@ -146,9 +147,18 @@ def dense_assembler(
         get_vector_width,
     )
 
+    if bempp.api.BOUNDARY_OPERATOR_DEVICE_TYPE == "gpu":
+        device_type = "gpu"
+    elif bempp.api.BOUNDARY_OPERATOR_DEVICE_TYPE == "cpu":
+        device_type = "cpu"
+    else:
+        raise RuntimeError(
+            f"Unknown device type {bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE}"
+        )
+
     mf = _cl.mem_flags
-    ctx = default_context()
-    device = default_device()
+    ctx = default_context(device_type)
+    device = default_device(device_type)
 
     precision = operator_descriptor.precision
     dtype = get_type(precision).real
@@ -176,10 +186,14 @@ def dense_assembler(
         options["COMPLEX_KERNEL"] = None
 
     main_kernel = get_kernel_from_operator_descriptor(
-        operator_descriptor, options, "regular"
+        operator_descriptor, options, "regular", device_type=device_type
     )
     remainder_kernel = get_kernel_from_operator_descriptor(
-        operator_descriptor, options, "regular", force_novec=True
+        operator_descriptor,
+        options,
+        "regular",
+        force_novec=True,
+        device_type=device_type,
     )
 
     test_indices_buffer = _cl.Buffer(
@@ -257,7 +271,7 @@ def dense_assembler(
         ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=kernel_options_array
     )
 
-    vector_width = get_vector_width(precision)
+    vector_width = get_vector_width(precision, device_type=device_type)
 
     def kernel_runner(
         queue,
@@ -356,15 +370,6 @@ def potential_assembler(
     mf = _cl.mem_flags
     ctx = default_context(device_type)
     device = default_device(device_type)
-
-    if bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE == "gpu":
-        device_type = "gpu"
-    elif bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE == "cpu":
-        device_type = "cpu"
-    else:
-        raise RuntimeError(
-            f"Unknown device type {bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE}"
-        )
 
     quad_points, quad_weights = rule(parameters.quadrature.regular)
 

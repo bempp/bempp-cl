@@ -72,6 +72,8 @@ def select_cl_kernel(operator_descriptor, mode):
             potential_assemblers[operator_descriptor.assembly_type],
             kernels[operator_descriptor.kernel_type],
         )
+    else:
+        raise ValueError(f"Unknown mode {mode}")
 
 
 def get_kernel_compile_options(options, precision):
@@ -163,6 +165,8 @@ def get_vector_width(precision, device_type="cpu"):
 
     mode_to_length = {"novec": 1, "vec4": 4, "vec8": 8, "vec16": 16}
 
+    if device_type == "gpu":
+        return 1
     if bempp.api.VECTORIZATION_MODE == "auto":
         return get_native_vector_width(default_device(device_type), precision)
     else:
@@ -191,15 +195,13 @@ def default_cpu_device():
         name = None
 
     if _DEFAULT_CPU_DEVICE is None:
-        pair = find_cpu_driver(name)
-        if pair is not None:
-            _DEFAULT_CPU_CONTEXT = pair[0]
-            _DEFAULT_CPU_DEVICE = pair[1]
-            bempp.api.log(f"OpenCL CPU Device set to: {_DEFAULT_CPU_DEVICE.name}")
-            return _DEFAULT_CPU_DEVICE
-        else:
-            raise RuntimeError("Could not find a suitable OpenCL CPU driver.")
-
+        try:
+            ctx, device = find_cpu_driver(name)
+        except:
+            raise RuntimeError("Could not find suitable OpenCL CPU driver.")
+        _DEFAULT_CPU_CONTEXT = ctx
+        _DEFAULT_CPU_DEVICE = device
+        bempp.api.log(f"OpenCL CPU Device set to: {_DEFAULT_CPU_DEVICE.name}")
     return _DEFAULT_CPU_DEVICE
 
 
@@ -218,15 +220,13 @@ def default_gpu_device():
         name = None
 
     if _DEFAULT_GPU_DEVICE is None:
-        pair = find_gpu_driver(name)
-        if pair is not None:
-            _DEFAULT_GPU_CONTEXT = pair[0]
-            _DEFAULT_GPU_DEVICE = pair[1]
-            bempp.api.log(f"OpenCL GPU Device set to: {_DEFAULT_GPU_DEVICE.name}")
-            return _DEFAULT_GPU_DEVICE
-        else:
+        try:
+            ctx, device = find_gpu_driver(name)
+        except:
             raise RuntimeError("Could not find a suitable OpenCL GPU driver.")
-
+        _DEFAULT_GPU_CONTEXT = ctx
+        _DEFAULT_GPU_DEVICE = device
+        bempp.api.log(f"OpenCL GPU Device set to: {_DEFAULT_GPU_DEVICE.name}")
     return _DEFAULT_GPU_DEVICE
 
 
@@ -272,7 +272,12 @@ def default_gpu_context():
 
 def find_cpu_driver(name=None):
     """Find the first available CPU OpenCL driver."""
+    found = False
+    ctx = None
+    device = None
     for platform in _cl.get_platforms():
+        if found:
+            break
         if name and name not in platform.name:
             continue
         ctx = _cl.Context(
@@ -281,14 +286,21 @@ def find_cpu_driver(name=None):
         )
         for device in ctx.devices:
             if device.type == _cl.device_type.CPU:
-                return ctx, device
-    return None
+                found = True
+    if not found:
+        raise ValueError(f"Could not find CPU driver containing name {name}.")
+    return ctx, device
 
 
 def find_gpu_driver(name=None):
     """Find the first available GPU OpenCL driver."""
 
+    found = False
+    ctx = None
+    device = None
     for platform in _cl.get_platforms():
+        if found:
+            break
         if name and name not in platform.name:
             continue
         ctx = _cl.Context(
@@ -297,8 +309,41 @@ def find_gpu_driver(name=None):
         )
         for device in ctx.devices:
             if device.type == _cl.device_type.GPU:
-                return ctx, device
-    return None
+                found = True
+    if not found:
+        raise ValueError(f"Could not find GPU driver containing name {name}.")
+    return ctx, device
+
+
+def set_default_cpu_device_by_name(name):
+    """
+    Set default CPU device by name.
+
+    This method looks for the given string in the available OpenCL
+    drivers and picks the first one that contains the given search
+    string.
+
+    """
+    import bempp.api
+
+    global _DEFAULT_CPU_CONTEXT
+    global _DEFAULT_CPU_DEVICE
+
+    try:
+        context, device = find_cpu_driver(name)
+    except:
+        raise RuntimeError("No CPU driver with given name found.")
+
+    _DEFAULT_CPU_CONTEXT = context
+    _DEFAULT_CPU_DEVICE = device
+    vector_width_single = _DEFAULT_CPU_DEVICE.native_vector_width_float
+    vector_width_double = _DEFAULT_CPU_DEVICE.native_vector_width_double
+
+    bempp.api.log(
+        f"Default CPU device: {_DEFAULT_CPU_DEVICE.name}. "
+        + f"Native vector width: {vector_width_single} (single) / "
+        + f"{vector_width_double} (double)."
+    )
 
 
 def set_default_cpu_device(platform_index, device_index):
@@ -321,7 +366,38 @@ def set_default_cpu_device(platform_index, device_index):
 
     bempp.api.log(
         f"Default CPU device: {_DEFAULT_CPU_DEVICE.name}. "
-        + f"Device Type: {_DEFAULT_CPU_DEVICE.type}. "
+        + f"Native vector width: {vector_width_single} (single) / "
+        + f"{vector_width_double} (double)."
+    )
+
+
+def set_default_gpu_device_by_name(name):
+    """
+    Set default GPU device by name.
+
+    This method looks for the given string in the available OpenCL
+    drivers and picks the first one that contains the given search
+    string.
+
+    """
+    import bempp.api
+
+    global _DEFAULT_GPU_CONTEXT
+    global _DEFAULT_GPU_DEVICE
+
+    try:
+        pair = find_gpu_driver(name)
+        context, device = pair[0], pair[1]
+    except:
+        raise RuntimeError("No GPU driver with given name found.")
+
+    _DEFAULT_GPU_CONTEXT = context
+    _DEFAULT_GPU_DEVICE = device
+    vector_width_single = _DEFAULT_GPU_DEVICE.native_vector_width_float
+    vector_width_double = _DEFAULT_GPU_DEVICE.native_vector_width_double
+
+    bempp.api.log(
+        f"Default GPU device: {_DEFAULT_GPU_DEVICE.name}. "
         + f"Native vector width: {vector_width_single} (single) / "
         + f"{vector_width_double} (double)."
     )
@@ -347,7 +423,6 @@ def set_default_gpu_device(platform_index, device_index):
 
     bempp.api.log(
         f"Default GPU device: {_DEFAULT_GPU_DEVICE.name}. "
-        + f"Device Type: {_DEFAULT_GPU_DEVICE.type}. "
         + f"Native vector width: {vector_width_single} (single) / "
         + f"{vector_width_double} (double)."
     )
