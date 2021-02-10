@@ -414,6 +414,16 @@ class SparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
         else:
             return NotImplemented
 
+    @property
+    def A(self):
+        """Return dense matrix."""
+        warnings.warn(
+            "operator.A is deprecated and will be removed in a "
+            "future version. Use operator.to_dense() instead.",
+            DeprecationWarning,
+        )
+        return self.to_sparse()
+
     def to_dense(self):
         """Return dense matrix."""
         return self._impl.todense()
