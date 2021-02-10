@@ -54,9 +54,11 @@ class _DiscreteOperatorBase(_LinearOperator):
     @property
     def A(self):
         """Return dense matrix."""
-        warnings.warn("operator.A is deprecated and will be removed in a "
-                      "future version. Use operator.to_dense() instead.",
-                      DeprecationWarning)
+        warnings.warn(
+            "operator.A is deprecated and will be removed in a "
+            "future version. Use operator.to_dense() instead.",
+            DeprecationWarning,
+        )
         return self.to_dense()
 
     def to_dense(self):
