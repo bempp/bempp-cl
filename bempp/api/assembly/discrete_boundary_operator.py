@@ -1,5 +1,6 @@
 """Data structures for assembled boundary operators."""
 
+import warnings
 import numpy as _np
 from bempp.helpers import timeit as _timeit
 from scipy.sparse.linalg.interface import LinearOperator as _LinearOperator
@@ -49,6 +50,14 @@ class _DiscreteOperatorBase(_LinearOperator):
             return _ScaledDiscreteOperator(self, other)
         else:
             return NotImplemented
+
+    @property
+    def A(self):
+        """Return dense matrix."""
+        warnings.warn("operator.A is deprecated and will be removed in a "
+                      "future version. Use operator.to_dense() instead.",
+                      DeprecationWarning)
+        return self.to_dense()
 
     def to_dense(self):
         """Return dense matrix."""
