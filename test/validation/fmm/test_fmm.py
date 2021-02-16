@@ -120,6 +120,7 @@ def test_helmholtz_boundary_fmm_complex(helpers):
 
 def test_helmholtz_potential_fmm(helpers, grid):
     """Test Helmholtz potential operators."""
+    pytest.skip()
     space = bempp.api.function_space(grid, "P", 1)
     vec = helpers.load_npy_data("fmm_p1_vec")
     grid_fun = bempp.api.GridFunction(space, coefficients=vec)
