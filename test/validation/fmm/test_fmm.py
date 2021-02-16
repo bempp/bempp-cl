@@ -76,6 +76,7 @@ def test_laplace_potential_fmm(helpers, grid):
 
 def test_helmholtz_boundary_fmm(helpers, grid):
     """Test Helmholtz boundary operators."""
+    pytest.skip()
     space = bempp.api.function_space(grid, "P", 1)
     vec = helpers.load_npy_data("fmm_p1_vec")
     wavenumber = 1.5
