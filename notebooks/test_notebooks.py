@@ -15,8 +15,8 @@ for dir in ["laplace", "helmholtz", "maxwell", "other"]:
 @pytest.mark.parametrize(("path", "notebook"), notebooks)
 def test_notebook(path, notebook, has_dolfin, has_dolfinx, dolfin_books_only):
     # Notebooks in this list will be skipped as the problems are very large or require GPUs
-    if notebook ["reentrant_cube_capacity.ipynb", "opencl_benchmark.ipynb",
-                 "laplace-dirichlet_weak_imposition.ipynb"]:
+    if notebook in ["reentrant_cube_capacity.ipynb", "opencl_benchmark.ipynb",
+                    "laplace-dirichlet_weak_imposition.ipynb"]:
         pytest.skip()
 
     if not has_dolfin and notebook.endswith("dolfin.ipynb"):
