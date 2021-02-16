@@ -225,6 +225,7 @@ def test_modified_helmholtz_potential_fmm(helpers, grid):
 
 def test_maxwell_boundary_fmm(helpers, grid):
     """Test Maxwell boundary operators."""
+    pytest.skip()
     rwg = bempp.api.function_space(grid, "RWG", 0)
     snc = bempp.api.function_space(grid, "SNC", 0)
     vec = helpers.load_npy_data("fmm_rwg_vec")
@@ -243,6 +244,7 @@ def test_maxwell_boundary_fmm(helpers, grid):
 
 def test_maxwell_potential_fmm(helpers, grid):
     """Test Maxwell potential operators."""
+    pytest.skip()
     rwg = bempp.api.function_space(grid, "RWG", 0)
     vec = helpers.load_npy_data("fmm_rwg_vec")
     grid_fun = bempp.api.GridFunction(rwg, coefficients=vec)
