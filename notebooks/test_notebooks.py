@@ -4,19 +4,21 @@ import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 
 # Get all the noteboooks in each folder
-# Notebooks in this list will be skipped as the problems are very large or require GPUs
-large_problems = ["reentrant_cube_capacity.ipynb", "opencl_benchmark.ipynb"]
-
 notebooks = []
 for dir in ["laplace", "helmholtz", "maxwell", "other"]:
     path = os.path.join(os.path.dirname(os.path.realpath(__file__)), dir)
     for i in os.listdir(path):
-        if i.endswith(".ipynb") and i not in large_problems:
+        if i.endswith(".ipynb"):
             notebooks.append((path, i))
 
 
 @pytest.mark.parametrize(("path", "notebook"), notebooks)
 def test_notebook(path, notebook, has_dolfin, has_dolfinx, dolfin_books_only):
+    # Notebooks in this list will be skipped as the problems are very large or require GPUs
+    if notebook in ["reentrant_cube_capacity.ipynb", "opencl_benchmark.ipynb",
+                    "dirichlet_weak_imposition.ipynb"]:
+        pytest.skip()
+
     if not has_dolfin and notebook.endswith("dolfin.ipynb"):
         try:
             import dolfin
