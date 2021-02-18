@@ -64,14 +64,19 @@ write device specific code. Numba is offered as an alternative as it is easily a
 version of the library that is significantly faster than using pure Python.
 
 Bempp-cl is aimed at those interested in using boundary element method to solve problems, particularly those from a mathematical background.
-The syntax of library is designed to closely resemble the boundary integral representation of the problem being solved, making
-implementing a problem simple once this representation is known.
+The syntax of the library is designed to closely resemble the boundary integral representation of the problem being solved, making
+the implementation of a problem simple once this representation is known.
 
 There are only a small number of alternative boundary element method softwares available.
-The most popular is BETL [@BETL], a C++ library that is available for free for academic use, but not under a standard open source license.
-A number of other libraries exist designed for specific applications, such as PyGBe (for biomolecular electrostatics) [@PyGBe]
-and (abem for acoustics) [@abem].
-Bempp-cl can be used for a much wider range of problems than these specialised libraries, and is fully open source.
+The most popular is BETL [@BETL], a C++ template library that is available for free for academic use only.
+As a Python library, Bempp-cl is easier to interface with other popular libraries with Python interfaces---for example,
+is can be used alongside the finite element method library FEniCS [@fenicsbook] to solve coupled finite and boundary element
+problems [@fembemexample].
+Bempp-cl also benefits from being fully open source library and available under an MIT license.
+
+A number of other libraries exist designed for specific applications, such as PyGBe for biomolecular electrostatics [@PyGBe]
+and abem for acoustics [@abem]. Bempp-cl can be used for a much wider range of problems than these specialised libraries.
+
 
 # An overview of Bempp features
 Bempp-cl is divided into two parts: `bempp.api` and `bempp.core`.
