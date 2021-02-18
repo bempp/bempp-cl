@@ -73,7 +73,6 @@ As a Python library, Bempp-cl is easier to interface with other popular librarie
 is can be used alongside the finite element method library FEniCS [@fenicsbook] to solve coupled finite and boundary element
 problems [@fembemexample].
 Bempp-cl also benefits from being fully open source library and available under an MIT license.
-
 A number of other libraries exist designed for specific applications, such as PyGBe for biomolecular electrostatics [@PyGBe]
 and abem for acoustics [@abem]. Bempp-cl can be used for a much wider range of problems than these specialised libraries.
 
