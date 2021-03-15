@@ -229,7 +229,7 @@ RUN git clone https://github.com/FEniCS/basix.git basix-src && \
     cmake --build build && \
     cmake --install build && \
     cd python && \
-    pip install .
+    pip3 install .
 
 # Install FEniCSx components
 RUN pip3 install --no-cache-dir ipython && \
