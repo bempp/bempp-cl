@@ -227,7 +227,7 @@ RUN git clone https://github.com/FEniCS/basix.git basix-src && \
     cd basix-src && \
     mkdir build && cd build && \
     cmake .. && \
-    sudo make install && \
+    make install && \
     cd ../python && \
     pip3 install .
 
