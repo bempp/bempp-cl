@@ -225,9 +225,9 @@ RUN pip3 install --no-cache-dir meshio>=4.0.16 && \
 # Install Basix
 RUN git clone https://github.com/FEniCS/basix.git basix-src && \
     cd basix-src && \
-    cmake -G Ninja -B build-dir -S ./basix
-    cmake --build build-dir
-    cmake --install build-dir
+    cmake -G Ninja -B build-dir -S ./basix && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
     pip3 install ./basix/python
 
 # Install FEniCSx components
