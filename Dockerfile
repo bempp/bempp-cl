@@ -225,7 +225,7 @@ RUN pip3 install --no-cache-dir meshio>=4.0.16 && \
 # Install Basix
 RUN git clone https://github.com/FEniCS/basix.git basix-src && \
     cd basix-src && \
-    cmake -G Ninja -B build-dir -S . && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DXTENSOR_ENABLE_ASSERT -B build-dir -S . && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     pip3 install ./python
