@@ -222,11 +222,19 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 RUN pip3 install --no-cache-dir meshio>=4.0.16 && \
     pip3 install --upgrade six
 
-# Install FEniCSx componenets
+# Install FEniCSx components
 RUN pip3 install --no-cache-dir ipython && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/basix.git && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
+
+# Install Basix
+RUN git clone https://github.com/FEniCS/basix.git basix-src && \
+    cd basix-src && \
+    cmake -B build -S . && \
+    cmake --build build && \
+    cmake --install build && \
+    cd python && \
+    pip install .
 
 # Install FEniCS-X
 RUN git clone --depth 1 https://github.com/fenics/dolfinx.git && \
