@@ -153,7 +153,7 @@ def dense_assembler(
         device_type = "cpu"
     else:
         raise RuntimeError(
-            f"Unknown device type {bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE}"
+            f"Unknown device type {bempp.api.BOUNDARY_OPERATOR_DEVICE_TYPE}"
         )
 
     mf = _cl.mem_flags
