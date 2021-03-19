@@ -1,4 +1,7 @@
 # Bempp-cl
+[![Documentation Status](https://readthedocs.org/projects/bempp-cl/badge/?version=latest)](https://bempp-cl.readthedocs.io/en/latest/?badge=latest)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.02879/status.svg)](https://doi.org/10.21105/joss.02879)
+
 Bempp-cl is an open-source boundary element method library that can be used to assemble all the standard integral kernels for
 Laplace, Helmholtz, modified Helmholtz, and Maxwell problems. The library has a user-friendly Python interface that allows the
 user to use BEM to solve a variety of problems, including problems in electrostatics, acoustics and electromagnetics.
