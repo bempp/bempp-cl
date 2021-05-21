@@ -239,7 +239,7 @@ RUN pip3 install --no-cache-dir ipython && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@${FENICSX_VERSION}
 
 # Install FEniCSx
-RUN git clone --depth 1 https://github.com/fenics/dolfinx.git && \
+RUN git clone --depth 1 --branch ${FENICSX_VERSION} https://github.com/fenics/dolfinx.git && \
     cd dolfinx && \
     mkdir build && \
     cd build && \
