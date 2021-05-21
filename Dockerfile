@@ -17,6 +17,7 @@ ARG GMSH_VERSION=4.6.0
 ARG TINI_VERSION=0.19.0
 ARG EXAFMM_VERSION=0.1.0
 ARG FENICSX_VERSION=0.1.0
+ARG FENICSX_UFL_VERSION=2021.1.1
 ARG MAKEFLAGS
 
 
@@ -234,7 +235,7 @@ RUN git clone --depth 1 --branch ${FENICSX_VERSION} https://github.com/FEniCS/ba
 
 # Install FEniCSx components
 RUN pip3 install --no-cache-dir ipython && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_VERSION} && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_UFL_VERSION} && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@${FENICSX_VERSION}
 
 # Install FEniCSx
