@@ -29,7 +29,7 @@ class _DiscreteOperatorBase(_LinearOperator):
 
     def __sub__(self, other):
         """Subtraction."""
-        return self.__add__(self, -other)
+        return self.__add__(-other)
 
     def dot(self, other):
         """Product with other objects."""
