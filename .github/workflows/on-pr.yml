@@ -28,7 +28,7 @@ jobs:
         name: Run black checks on CI scripts
 
   build-and-test-with-dolfin:
-    name: Build Bempp and run tests
+    name: Build Bempp and run tests with DOLFIN
     runs-on: ubuntu-latest
     container: bempp/cl-dev-env-with-dolfin:latest
     steps:
@@ -39,7 +39,7 @@ jobs:
         name: Run Bempp unit tests
 
   build-and-test-with-dolfinx:
-    name: Build Bempp and run tests
+    name: Build Bempp and run tests with DOLFINx
     runs-on: ubuntu-latest
     container: bempp/cl-dev-env-with-dolfinx:latest
     steps:
