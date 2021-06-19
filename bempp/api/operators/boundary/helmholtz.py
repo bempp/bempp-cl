@@ -462,9 +462,7 @@ class _OsrcNtD(_BoundaryOperator):
 
 
 def _pade_coeffs(n, theta):
-    """
-    Compute the coefficients of the Pade series expansion.
-    """
+    """Compute the coefficients of the Pade series expansion."""
     aj = _np.zeros(n)
     bj = _np.zeros(n)
     for jj in range(1, n + 1):
