@@ -88,3 +88,35 @@ def sigma_identity(
         )
     elif parameters.assembly.discretization_type == "collocation":
         raise ValueError("Not yet implemented.")
+
+
+def laplace_beltrami(
+    domain,
+    range_,
+    dual_to_range,
+    parameters=None,
+    device_interface=None,
+    precision=None,
+):
+    """Assemble the negative Laplace-Beltrami operator."""
+    if domain.shapeset.identifier != "p1_discontinuous":
+        raise ValueError("Domain shapeset must be of type 'p1_discontinuous'.")
+
+    if dual_to_range.shapeset.identifier != "p1_discontinuous":
+        raise ValueError("Dual to range shapeset must be of type 'p1_discontinuous'.")
+
+    return _common.create_operator(
+        "laplace_beltrami",
+        domain,
+        range_,
+        dual_to_range,
+        parameters,
+        "sparse",
+        [],
+        "laplace_beltrami",
+        "default_sparse",
+        device_interface,
+        precision,
+        False,
+    )
+
