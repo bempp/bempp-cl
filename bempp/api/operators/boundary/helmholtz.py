@@ -368,8 +368,7 @@ class _OsrcDtN(_BoundaryOperator):
 
         series = c0 * mass
         for i in range(npade):
-            element = (alpha[i] / (dk ** 2) * stiff *
-                       InverseSparseDiscreteBoundaryOperator(mass - beta[i] / (dk ** 2) * stiff))
+            element = (alpha[i] / (dk ** 2) * stiff * InverseSparseDiscreteBoundaryOperator(mass - beta[i] / (dk ** 2) * stiff))
             series -= element * mass
         operator = 1.0j * wavenumber * series
 
@@ -400,7 +399,7 @@ def osrc_ntd(
 
 
 class _OsrcNtD(_BoundaryOperator):
-    """Implementation of the OSRC DtN operator."""
+    """Implementation of the OSRC NtD operator."""
 
     def __init__(self, space, parameters,
                  operator_options,
@@ -455,11 +454,9 @@ class _OsrcNtD(_BoundaryOperator):
 
         series = c0 * mass
         for i in range(npade):
-            element = (alpha[i] / (dk ** 2) * stiff *
-                       InverseSparseDiscreteBoundaryOperator(mass - beta[i] / (dk ** 2) * stiff))
+            element = (alpha[i] / (dk ** 2) * stiff * InverseSparseDiscreteBoundaryOperator(mass - beta[i] / (dk ** 2) * stiff))
             series -= element * mass
-        operator = 1.0 / (1.0j * wavenumber) * (
-                mass * InverseSparseDiscreteBoundaryOperator(mass - 1.0 / (dk ** 2) * stiff) * series)
+        operator = 1.0 / (1.0j * wavenumber) * (mass * InverseSparseDiscreteBoundaryOperator(mass - 1.0 / (dk ** 2) * stiff) * series)
 
         return operator
 
@@ -473,8 +470,7 @@ def _pade_coeffs(n, theta):
     for jj in range(1, n + 1):
         aj[jj - 1] = (2.0 / (2.0 * n + 1.0) * _np.sin(jj * _np.pi / (2.0 * n + 1.0)) ** 2)
         bj[jj - 1] = _np.cos(jj * _np.pi / (2.0 * n + 1.0)) ** 2
-    c0t = _np.exp(1.0j * theta / 2.0) * (
-            1.0 + _np.sum((aj * (_np.exp(-1j * theta) - 1.0)) / (1.0 + bj * (_np.exp(-1.0j * theta) - 1.0))))
+    c0t = _np.exp(1.0j * theta / 2.0) * (1.0 + _np.sum((aj * (_np.exp(-1j * theta) - 1.0)) / (1.0 + bj * (_np.exp(-1.0j * theta) - 1.0))))
     ajt = _np.exp(-1.0j * theta / 2.0) * aj / ((1.0 + bj * (_np.exp(-1.0j * theta) - 1.0)) ** 2)
     bjt = _np.exp(-1.0j * theta) * bj / (1.0 + bj * (_np.exp(-1.0j * theta) - 1.0))
 

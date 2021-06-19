@@ -119,4 +119,3 @@ def laplace_beltrami(
         precision,
         False,
     )
-
