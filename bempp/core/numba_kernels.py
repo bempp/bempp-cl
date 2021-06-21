@@ -952,10 +952,16 @@ def laplace_beltrami_kernel(
                 for grad_index in range(3):
                     for quad_index in range(n_quad_points):
                         result[
-                            nshape * element_index + test_index * nshape_trial + trial_index
+                            nshape * element_index
+                            + test_index * nshape_trial
+                            + trial_index
                         ] += (
-                            local_test_fun_values[dim_index, grad_index, test_index, quad_index]
-                            * local_trial_fun_values[dim_index, grad_index, trial_index, quad_index]
+                            local_test_fun_values[
+                                dim_index, grad_index, test_index, quad_index
+                            ]
+                            * local_trial_fun_values[
+                                dim_index, grad_index, trial_index, quad_index
+                            ]
                             * quad_weights[quad_index]
                             * integration_element
                         )

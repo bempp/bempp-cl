@@ -114,7 +114,7 @@ def assemble_sparse(
         nshape_test * nshape_trial * number_of_elements, dtype=result_type
     )
 
-    if operator_descriptor.identifier == 'laplace_beltrami':
+    if operator_descriptor.identifier == "laplace_beltrami":
         dual_to_range_shapeset_evaluation = dual_to_range.shapeset.gradient
         domain_shapeset_evaluation = domain.shapeset.gradient
         dual_to_range_numba_evaluation = dual_to_range.numba_surface_gradient
