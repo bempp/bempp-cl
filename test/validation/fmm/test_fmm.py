@@ -74,9 +74,10 @@ def test_laplace_potential_fmm(helpers, grid):
     bempp.api.clear_fmm_cache()
 
 
-def test_helmholtz_boundary_fmm(helpers, grid):
+def test_helmholtz_boundary_fmm(helpers, grid, skip):
     """Test Helmholtz boundary operators."""
-    pytest.skip()
+    if skip == "circleci":
+        pytest.skip()
     space = bempp.api.function_space(grid, "P", 1)
     vec = helpers.load_npy_data("fmm_p1_vec")
     wavenumber = 1.5
@@ -118,9 +119,10 @@ def test_helmholtz_boundary_fmm_complex(helpers):
     bempp.api.clear_fmm_cache()
 
 
-def test_helmholtz_potential_fmm(helpers, grid):
+def test_helmholtz_potential_fmm(helpers, grid, skip):
     """Test Helmholtz potential operators."""
-    pytest.skip()
+    if skip == "circleci":
+        pytest.skip()
     space = bempp.api.function_space(grid, "P", 1)
     vec = helpers.load_npy_data("fmm_p1_vec")
     grid_fun = bempp.api.GridFunction(space, coefficients=vec)
@@ -169,8 +171,11 @@ def test_helmholtz_potential_fmm_complex(helpers):
     bempp.api.clear_fmm_cache()
 
 
-def test_modified_helmholtz_boundary_fmm(helpers, grid):
+def test_modified_helmholtz_boundary_fmm(helpers, grid, skip):
     """Test modified Helmholtz boundary operators."""
+    if skip == "circleci":
+        pytest.skip()
+
     space = bempp.api.function_space(grid, "P", 1)
     vec = helpers.load_npy_data("fmm_p1_vec")
     wavenumber = 1.5
@@ -225,9 +230,10 @@ def test_modified_helmholtz_potential_fmm(helpers, grid):
     bempp.api.clear_fmm_cache()
 
 
-def test_maxwell_boundary_fmm(helpers, grid):
+def test_maxwell_boundary_fmm(helpers, grid, skip):
     """Test Maxwell boundary operators."""
-    pytest.skip()
+    if skip == "circleci":
+        pytest.skip()
     rwg = bempp.api.function_space(grid, "RWG", 0)
     snc = bempp.api.function_space(grid, "SNC", 0)
     vec = helpers.load_npy_data("fmm_rwg_vec")
@@ -244,9 +250,10 @@ def test_maxwell_boundary_fmm(helpers, grid):
     bempp.api.clear_fmm_cache()
 
 
-def test_maxwell_potential_fmm(helpers, grid):
+def test_maxwell_potential_fmm(helpers, grid, skip):
     """Test Maxwell potential operators."""
-    pytest.skip()
+    if skip == "circleci":
+        pytest.skip()
     rwg = bempp.api.function_space(grid, "RWG", 0)
     vec = helpers.load_npy_data("fmm_rwg_vec")
     grid_fun = bempp.api.GridFunction(rwg, coefficients=vec)
