@@ -31,6 +31,7 @@ def pytest_addoption(parser):
     parser.addoption("--has-dolfin", type="int", default=0)
     parser.addoption("--has-dolfinx", type="int", default=0)
     parser.addoption("--has-exafmm", type="int", default=0)
+    parser.addoption("--skip", default=None)
 
 
 @pytest.fixture
@@ -46,6 +47,11 @@ def has_dolfinx(request):
 @pytest.fixture
 def has_exafmm(request):
     return request.config.getoption("--has-exafmm") > 0
+
+
+@pytest.fixture
+def skip(request):
+    return request.config.getoption("--skip")
 
 
 @pytest.fixture()
