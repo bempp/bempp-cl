@@ -16,7 +16,7 @@ def singular_assembler_dispatcher(device_interface, *args):
         singular_assembler(device_interface, *args)
 
     else:
-        raise ValueError("Unknown assembler.")
+        raise ValueError("Device interface must be one of 'numba', 'opencl'.")
 
 
 def dense_assembler_dispatcher(device_interface, *args):
@@ -34,7 +34,7 @@ def dense_assembler_dispatcher(device_interface, *args):
         dense_assembler(device_interface, *args)
 
     else:
-        raise ValueError("Unknown assembler.")
+        raise ValueError("Device interface must be one of 'numba', 'opencl'.")
 
 
 def potential_dispatcher(device_interface, *args):
@@ -52,4 +52,4 @@ def potential_dispatcher(device_interface, *args):
         return potential_assembler(device_interface, *args)
 
     else:
-        raise ValueError("Unknown assembler.")
+        raise ValueError("Device interface must be one of 'numba', 'opencl'.")
