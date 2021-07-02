@@ -20,6 +20,18 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push Docker image with FEniCS
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/bempp-cl-with-dolfin:latest
+          target: with-dolfin
+      - name: Build and push Docker image with FEniCSx
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/bempp-cl-with-dolfinx:latest
+          target: with-dolfinx
       - name: Build and push notebook Docker image
         uses: docker/build-push-action@v2
         with:
