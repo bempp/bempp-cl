@@ -277,6 +277,28 @@ WORKDIR /root
 
 ########################################
 
+FROM bempp-dev-env-with-dolfinx as with-dolfinx
+LABEL description="Bempp-cl environment with FEniCSx"
+
+WORKDIR /tmp
+RUN git clone https://github.com/bempp/bempp-cl
+RUN cd bempp-cl && python3 setup.py install
+
+WORKDIR /root
+
+########################################
+
+FROM bempp-dev-env-with-dolfin as with-dolfin
+LABEL description="Bempp-cl environment with FEniCS"
+
+WORKDIR /tmp
+RUN git clone https://github.com/bempp/bempp-cl
+RUN cd bempp-cl && python3 setup.py install
+
+WORKDIR /root
+
+########################################
+
 FROM bempp-dev-env-with-dolfinx as lab
 LABEL description="Bempp Jupyter Lab"
 
