@@ -277,7 +277,7 @@ WORKDIR /root
 
 ########################################
 
-FROM bempp-dev-env-with-dolfinx as bempp-cl-with-dolfinx
+FROM bempp-dev-env-with-dolfinx as with-dolfinx
 LABEL description="Bempp-cl environment with FEniCSx"
 
 WORKDIR /tmp
@@ -288,7 +288,7 @@ WORKDIR /root
 
 ########################################
 
-FROM bempp-dev-env-with-dolfin as bempp-cl-with-dolfin
+FROM bempp-dev-env-with-dolfin as with-dolfin
 LABEL description="Bempp-cl environment with FEniCS"
 
 WORKDIR /tmp
