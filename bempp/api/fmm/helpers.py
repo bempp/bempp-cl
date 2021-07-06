@@ -150,7 +150,13 @@ def helmholtz_kernel(
 
 
 def get_local_interaction_operator(
-    grid, local_points, kernel_function, kernel_parameters, precision, is_complex
+    grid,
+    local_points,
+    kernel_function,
+    kernel_parameters,
+    precision,
+    is_complex,
+    device_interface=None,
 ):
     """Get the local interaction operator."""
     import bempp.api
@@ -192,7 +198,9 @@ def get_local_interaction_operator(
         )
 
     elif GLOBAL_PARAMETERS.fmm.near_field_representation == "evaluate":
-        if bempp.api.DEFAULT_DEVICE_INTERFACE == "numba":
+        if device_interface is None:
+            device_interface = bempp.api.DEFAULT_DEVICE_INTERFACE
+        if device_interface == "numba":
             evaluator = get_local_interaction_evaluator_numba(
                 grid.data(precision),
                 local_points.astype(dtype),
@@ -204,7 +212,7 @@ def get_local_interaction_operator(
             return LinearOperator(
                 shape=(rows, cols), matvec=evaluator, dtype=result_type
             )
-        elif bempp.api.DEFAULT_DEVICE_INTERFACE == "opencl":
+        elif device_interface == "opencl":
             evaluator = get_local_interaction_evaluator_opencl(
                 grid,
                 local_points.astype(dtype),
@@ -217,9 +225,7 @@ def get_local_interaction_operator(
                 shape=(rows, cols), matvec=evaluator, dtype=result_type
             )
         else:
-            raise ValueError(
-                "DEFAULT_DEVICE_INTERFACE must be one of 'numba', 'opencl'."
-            )
+            raise ValueError("Device interface must be one of 'numba', 'opencl'.")
     else:
         raise ValueError("Unknown value for near_field_representation.")
 
