@@ -191,7 +191,13 @@ class ExafmmInterface(object):
 
     @classmethod
     def from_grid(
-        cls, source_grid, mode, wavenumber=None, target_grid=None, precision="double"
+        cls,
+        source_grid,
+        mode,
+        wavenumber=None,
+        target_grid=None,
+        precision="double",
+        device_interface=None,
     ):
         """
         Initialise an Exafmm instance from a given source and target grid.
@@ -210,6 +216,9 @@ class ExafmmInterface(object):
         precision : string
             Either 'single' or 'double'. Currently, the Fmm is always
             executed in double precision.
+        device_interface : string
+            Either 'numba' or 'opencl'. If not provided, the DEFAULT_DEVICE_INTERFACE
+            will be used for the calculation of local interactions.
         """
         import bempp.api
         from bempp.api.integration.triangle_gauss import rule
@@ -247,6 +256,7 @@ class ExafmmInterface(object):
                     np.array([], dtype="float64"),
                     precision,
                     False,
+                    device_interface,
                 )
             elif mode == "helmholtz":
                 singular_correction = get_local_interaction_operator(
@@ -258,6 +268,7 @@ class ExafmmInterface(object):
                     ),
                     precision,
                     True,
+                    device_interface,
                 )
             elif mode == "modified_helmholtz":
                 singular_correction = get_local_interaction_operator(
@@ -267,6 +278,7 @@ class ExafmmInterface(object):
                     np.array([wavenumber], dtype="float64"),
                     precision,
                     False,
+                    device_interface,
                 )
         return cls(
             source_points,
