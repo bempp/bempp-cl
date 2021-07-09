@@ -41,6 +41,25 @@ jobs:
           tags: bempp/cl-notebook:${{ steps.tag_name.outputs.SOURCE_TAG }}
           target: lab
 
+  build-and-publish-pypi:
+    name: Build and publish to PyPI
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@master
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+    - name: Build a binary wheel and a source tarball
+      run: |
+        pip install wheel
+        python setup.py bdist_wheel
+        python setup.py sdist --formats=gztar
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        password: ${{ secrets.pypi_password }}
+
   tweet:
     name: Tweet about latest version
     runs-on: ubuntu-20.04
