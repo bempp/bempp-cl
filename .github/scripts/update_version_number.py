@@ -6,7 +6,7 @@ from github import Github
 access_key = sys.argv[-2]
 branch_name = sys.argv[-1]
 
-if not branchname.startswith("refs/tags"):
+if not branch_name.startswith("refs/tags"):
     git = Github(access_key)
 
     bempp = git.get_repo("bempp/bempp-cl")
