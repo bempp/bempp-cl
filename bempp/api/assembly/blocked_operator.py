@@ -647,6 +647,35 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
             return False
         return True
 
+    def _matvec(self, x):
+        from bempp.api.utils.data_types import combined_type
+
+        if not self._fill_complete():
+            raise ValueError("Not all rows or columns contain operators.")
+
+        if x.ndim > 1:
+            return self._matmat(x)
+
+        row_dim = 0
+        res = _np.zeros(self.shape[0], dtype=combined_type(self.dtype, x.dtype))
+
+        for i in range(self._ndims[0]):
+            col_dim = 0
+            local_res = res[row_dim : row_dim + self._rows[i]]
+            for j in range(self._ndims[1]):
+                local_x = x[col_dim : col_dim + self._cols[j]]
+                op_is_complex = _np.iscomplexobj(self._operators[i, j].dtype.type(1))
+                if _np.iscomplexobj(x) and not op_is_complex:
+                    local_res += self._operators[i, j].dot(
+                        _np.real(local_x)
+                    ) + 1j * self._operators[i, j].dot(_np.imag(local_x))
+                else:
+                    local_res += self._operators[i, j].dot(local_x)
+                col_dim += self._cols[j]
+            row_dim += self._rows[i]
+
+        return res
+
     def _matmat(self, x):
         from bempp.api.utils.data_types import combined_type
 
