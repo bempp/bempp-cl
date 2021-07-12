@@ -51,6 +51,10 @@ for line in old_meta_lines:
         newline = line.split("sha256")[0]
         newline += f"sha256: {hash}"
         new_meta_lines.append(newline)
+    elif "number" in line:
+        newline = line.split("number")[0]
+        newline += "number: 0\n"
+        new_meta_lines.append(newline)
     else:
         new_meta_lines.append(line)
 
