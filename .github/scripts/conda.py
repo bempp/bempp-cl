@@ -12,7 +12,9 @@ git = github.Github(access_key)
 symfem = git.get_repo("bempp/bempp-cl")
 branch = symfem.get_branch("master")
 
-version = symfem.get_contents("VERSION", branch.commit.sha).decoded_content.decode().strip()
+version = (
+    symfem.get_contents("VERSION", branch.commit.sha).decoded_content.decode().strip()
+)
 
 
 os.system(f"wget https://github.com/bempp/bempp-cl/archive/v{version}.tar.gz")
@@ -44,7 +46,7 @@ old_meta_lines = old_meta.decoded_content.decode().split("\n")
 new_meta_lines = []
 for line in old_meta_lines:
     if line.startswith("{% set version"):
-        new_meta_lines.append(f"{{% set version = \"{version}\" %}}")
+        new_meta_lines.append(f'{{% set version = "{version}" %}}')
     elif "sha256" in line:
         newline = line.split("sha256")[0]
         newline += f"sha256: {hash}"
@@ -52,7 +54,13 @@ for line in old_meta_lines:
     else:
         new_meta_lines.append(line)
 
-fork.update_file("recipe/meta.yaml", "Update version", "\n".join(new_meta_lines), sha=old_meta.sha)
+fork.update_file(
+    "recipe/meta.yaml", "Update version", "\n".join(new_meta_lines), sha=old_meta.sha
+)
 
-upstream_feedstock.create_pull(title=f"Update version to {version} [testing, please close]",
-                               body="", base="master", head="bemppbot:master")
+upstream_feedstock.create_pull(
+    title=f"Update version to {version} [testing, please close]",
+    body="",
+    base="master",
+    head="bemppbot:master",
+)
