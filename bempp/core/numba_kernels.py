@@ -61,7 +61,10 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
         "modified_helmholtz_adjoint_double_layer": modified_helmholtz_adjoint_double_layer_singular,
     }
 
-    kernel_functions_sparse = {"l2_identity": l2_identity_kernel}
+    kernel_functions_sparse = {
+        "l2_identity": l2_identity_kernel,
+        "laplace_beltrami": laplace_beltrami_kernel,
+    }
 
     if mode == "regular":
         return (
@@ -894,6 +897,74 @@ def l2_identity_kernel(
                         * quad_weights[quad_index]
                         * integration_element
                     )
+
+
+@_numba.jit(
+    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
+)
+def laplace_beltrami_kernel(
+    grid_data,
+    nshape_test,
+    nshape_trial,
+    element_index,
+    elements,
+    quad_points,
+    quad_weights,
+    test_normal_multipliers,
+    trial_normal_multipliers,
+    test_multipliers,
+    trial_multipliers,
+    test_shapeset_gradient,
+    trial_shapeset_gradient,
+    test_basis_gradient,
+    trial_basis_gradient,
+    result,
+):
+    """Evaluate kernel for Laplace-Beltrami."""
+
+    element = elements[element_index]
+
+    local_test_fun_values = test_basis_gradient(
+        element,
+        test_shapeset_gradient,
+        quad_points,
+        grid_data,
+        test_multipliers,
+        test_normal_multipliers,
+    )
+    local_trial_fun_values = trial_basis_gradient(
+        element,
+        trial_shapeset_gradient,
+        quad_points,
+        grid_data,
+        trial_multipliers,
+        trial_normal_multipliers,
+    )
+
+    nshape = nshape_test * nshape_trial
+    dimension = local_test_fun_values.shape[0]
+    n_quad_points = local_test_fun_values.shape[3]
+    integration_element = grid_data.integration_elements[element]
+
+    for test_index in range(nshape_test):
+        for trial_index in range(nshape_trial):
+            for dim_index in range(dimension):
+                for grad_index in range(3):
+                    for quad_index in range(n_quad_points):
+                        result[
+                            nshape * element_index
+                            + test_index * nshape_trial
+                            + trial_index
+                        ] += (
+                            local_test_fun_values[
+                                dim_index, grad_index, test_index, quad_index
+                            ]
+                            * local_trial_fun_values[
+                                dim_index, grad_index, trial_index, quad_index
+                            ]
+                            * quad_weights[quad_index]
+                            * integration_element
+                        )
 
 
 @_numba.jit(
