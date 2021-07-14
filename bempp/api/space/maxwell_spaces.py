@@ -4,6 +4,14 @@ import numpy as _np
 import numba as _numba
 
 
+def _is_screen(grid):
+    """Check if there is an edge only adjacent to one triangle."""
+    for e in range(grid.edges.shape[1]):
+        if len([j for i in grid.element_edges for j in i if j == e]) < 2:
+            return True
+    return False
+
+
 def rwg0_function_space(
     grid,
     support_elements=None,
@@ -307,7 +315,7 @@ def bc_function_space(
     """Define a space of BC functions."""
     from .space import SpaceBuilder
 
-    if len(grid.vertices[0]) - len(grid.edges[0]) + len(grid.elements[0]) != 2:
+    if _is_screen(grid):
         # Grid is a screen, not a polyhedron
         raise ValueError("BC spaces not yet supported on screens")
 
@@ -359,7 +367,7 @@ def rbc_function_space(
     """Define a space of RBC functions."""
     from .space import SpaceBuilder
 
-    if len(grid.vertices[0]) - len(grid.edges[0]) + len(grid.elements[0]) != 2:
+    if _is_screen(grid):
         # Grid is a screen, not a polyhedron
         raise ValueError("BC spaces not yet supported on screens")
 
