@@ -200,9 +200,14 @@ def multitrace_operator(
         target is set to the input grid (that is the domain
         grid).
     space_type : string
-        Currently only "p1" is supported, which means
-        that the operator is discretised with all P1 basis
-        functions.
+        Controls which discretisation spaces are used.
+        Supported values:
+        - "p1", which means that all operators are discretised
+        with P1 basis functions.
+        - "p1-dp0", which means that P1 basis functions are
+        used for the first row and column, and DP0 for the second.
+        - "p1-dual0", which means that P1 basis functions are
+        used for the first row and column, and DUAL0 for the second.
     parameters : Parameters
         An optional parameters object.
     assembler : string
@@ -226,17 +231,43 @@ def multitrace_operator(
     import bempp.api
     from bempp.api.assembly.blocked_operator import BlockedOperator
 
-    space = bempp.api.function_space(grid, "P", 1)
 
-    if target is not None:
-        target_space = bempp.api.function_space(target, "P", 1)
+    if space_type == "p1":
+        space1 = bempp.api.function_space(grid, "P", 1)
+        space0 = space1
+        if target is not None:
+            target_space1 = bempp.api.function_space(target, "P", 1)
+            target_space0 = target_space1
+            target_space_dual1 = target_space1
+            target_space_dual0 = target_space1
+        else:
+            target_space1 = space1
+            target_space0 = space1
+            target_space_dual1 = space1
+            target_space_dual0 = space1
+    elif space_type == "p1-dp0":
+        space1 = bempp.api.function_space(grid, "P", 1)
+        space0 = bempp.api.function_space(grid, "DP", 0)
+        if target is not None:
+            target_space1 = bempp.api.function_space(target, "P", 1)
+            target_space0 = bempp.api.function_space(target, "DP", 0)
+            target_space_dual1 = target_space1
+            target_space_dual0 = target_space0
+    elif space_type == "p1-dual":
+        space1 = bempp.api.function_space(grid, "P", 1)
+        space0 = bempp.api.function_space(grid, "DUAL", 0)
+        if target is not None:
+            target_space1 = bempp.api.function_space(target, "P", 1)
+            target_space0 = bempp.api.function_space(target, "DUAL", 0)
+            target_space_dual1 = target_space1
+            target_space_dual0 = target_space0
     else:
-        target_space = space
+        raise ValueError(f"Unknown space type: {space_type}")
 
     slp = single_layer(
-        space,
-        target_space,
-        target_space,
+        space0,
+        target_space1,
+        target_space_dual0,
         wavenumber,
         parameters=parameters,
         assembler=assembler,
@@ -245,9 +276,9 @@ def multitrace_operator(
     )
 
     dlp = double_layer(
-        space,
-        target_space,
-        target_space,
+        space1,
+        target_space1,
+        target_space_dual0,
         wavenumber,
         parameters=parameters,
         assembler=assembler,
@@ -256,9 +287,9 @@ def multitrace_operator(
     )
 
     hyp = hypersingular(
-        space,
-        target_space,
-        target_space,
+        space1,
+        target_space0,
+        target_space_dual1,
         wavenumber,
         parameters=parameters,
         assembler=assembler,
@@ -267,9 +298,9 @@ def multitrace_operator(
     )
 
     adj_dlp = adjoint_double_layer(
-        space,
-        target_space,
-        target_space,
+        space0,
+        target_space0,
+        target_space_dual1,
         wavenumber,
         parameters=parameters,
         assembler=assembler,
@@ -285,213 +316,3 @@ def multitrace_operator(
     blocked[1, 1] = adj_dlp
 
     return blocked
-
-
-# def multitrace_operator(
-# grid,
-# wavenumber,
-# segments=None,
-# parameters=None,
-# swapped_normals=None,
-# assembler="dense_evaluator",
-# device_interface=None,
-# precision=None,
-# ):
-# """Assemble the Helmholtz multitrace operator."""
-# from bempp.api.space import function_space
-# from bempp.api.operators import _add_wavenumber
-# from bempp.api.assembly.blocked_operator import GeneralizedBlockedOperator
-
-# domain = function_space(
-# grid,
-# "P",
-# 1,
-# segments=segments,
-# include_boundary_dofs=True,
-# swapped_normals=swapped_normals,
-# )
-# range_ = domain
-# dual_to_range = domain
-
-# slp = single_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
-
-# dlp = double_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
-
-# adlp = adjoint_double_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
-
-# hyp = hypersingular(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
-
-# options = {"COMPLEX_KERNEL": None}
-
-# _add_wavenumber(options, wavenumber)
-
-# return GeneralizedBlockedOperator([[-dlp, slp], [hyp, adlp]])
-
-
-# def transmission_operator(
-# grid,
-# wavenumber,
-# rho_rel,
-# refractive_index,
-# segments=None,
-# parameters=None,
-# swapped_normals=None,
-# assembler="dense_evaluator",
-# device_interface=None,
-# precision=None,
-# ):
-# """Assemble the Helmholtz transmission operator."""
-# from bempp.api.space import function_space
-# from bempp.api.operators import _add_wavenumber
-# from bempp.api.assembly.blocked_operator import GeneralizedBlockedOperator
-
-
-# wavenumber_int = wavenumber * refractive_index
-
-# domain = function_space(
-# grid,
-# "P",
-# 1,
-# segments=segments,
-# swapped_normals=swapped_normals,
-# include_boundary_dofs=True,
-# )
-# range_ = domain
-# dual_to_range = domain
-
-# slp = single_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
-
-# slp_int = single_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber_int,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
-
-# dlp = double_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
-
-# dlp_int = double_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber_int,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
-
-# adlp = adjoint_double_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
-
-# adlp_int = adjoint_double_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber_int,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
-
-# hyp = hypersingular(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
-
-# hyp_int = hypersingular(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber_int,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
-
-# options = {"COMPLEX_KERNEL": None, "TRANSMISSION": None}
-
-# _add_wavenumber(options, wavenumber)
-# _add_wavenumber(options, rho_rel, "RHO_REL")
-# _add_wavenumber(options, wavenumber_int, "WAVENUMBER_INT")
-
-# return GeneralizedBlockedOperator(
-# [
-# [-dlp - dlp_int, slp + rho_rel * slp_int],
-# [hyp + 1.0 / rho_rel * hyp_int, adlp + adlp_int],
-# ]
-# )
