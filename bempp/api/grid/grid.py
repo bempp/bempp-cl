@@ -1372,7 +1372,7 @@ def union(grids, domain_indices=None, swapped_normals=None):
     return Grid(vertices, elements, all_domain_indices)
 
 
-def enumerate_vertex_adjacent_elements(grid, support_elements):
+def enumerate_vertex_adjacent_elements(grid, support_elements, swapped_normals=None):
     """
     Enumerate in anti-clockwise order all elements adjacent to all vertices in support.
 
@@ -1383,6 +1383,9 @@ def enumerate_vertex_adjacent_elements(grid, support_elements):
     anti-clockwise order with respect to the natural normal directions of the elements.
     Moreover, all tuples represent elements in anti-clockwise order.
     """
+    if swapped_normals is None:
+        swapped_normals = []
+
     vertex_edges = [[] for _ in range(grid.vertices.shape[1])]
 
     for element_index in support_elements:
@@ -1392,11 +1395,14 @@ def enumerate_vertex_adjacent_elements(grid, support_elements):
                     (element_index, local_index)
                 )
 
-    # Now sort each list so that edges appear in anti-clockwise order according
-    # to neighboring edges.
+    for vertex_index, neighbors in enumerate(vertex_edges):
+        # First sort by element
+        if not neighbors:
+            # Continue if empty
+            continue
+        # Now sort each list so that edges appear in anti-clockwise order according
+        # to neighboring edges.
 
-    def sort_neighbors(grid_data, neighbors):
-        """Implement the sorting of a neighbors list."""
         # Swap the edges in each element so
         # that they have edges in anti-clockwise order
         locally_sorted_neighbors = []
@@ -1412,10 +1418,16 @@ def enumerate_vertex_adjacent_elements(grid, support_elements):
             # Check if the two edges in the found element entries
             # are in clockwise or anti-clockwise order.
             # Resort accordingly
-            if elem1[1] == (1 + elem2[1]) % 3:
-                locally_sorted_neighbors.append((elem1[0], elem2[1], elem1[1]))
+            if grid.domain_indices[elem1[0]] in swapped_normals:
+                if elem1[1] == (1 + elem2[1]) % 3:
+                    locally_sorted_neighbors.append((elem1[0], elem1[1], elem2[1]))
+                else:
+                    locally_sorted_neighbors.append((elem1[0], elem2[1], elem1[1]))
             else:
-                locally_sorted_neighbors.append((elem1[0], elem1[1], elem2[1]))
+                if elem1[1] == (1 + elem2[1]) % 3:
+                    locally_sorted_neighbors.append((elem1[0], elem2[1], elem1[1]))
+                else:
+                    locally_sorted_neighbors.append((elem1[0], elem1[1], elem2[1]))
 
         # locally sorted neighbors now has triplets (elem_index, local_ind1, local_ind2) of
         # one element index and two associated edge indices that are anti-clockwise sorted.
@@ -1428,16 +1440,16 @@ def enumerate_vertex_adjacent_elements(grid, support_elements):
                 last = sorted_neighbors[-1]
                 first = sorted_neighbors[0]
                 if (
-                    grid_data.element_edges[elem[1], elem[0]]
-                    == grid_data.element_edges[last[2], last[0]]
+                    grid.data().element_edges[elem[1], elem[0]]
+                    == grid.data().element_edges[last[2], last[0]]
                 ):
                     locally_sorted_neighbors.pop(index)
                     found = True
                     sorted_neighbors.append(elem)
                     break
                 if (
-                    grid_data.element_edges[elem[2], elem[0]]
-                    == grid_data.element_edges[first[1], first[0]]
+                    grid.data().element_edges[elem[2], elem[0]]
+                    == grid.data().element_edges[first[1], first[0]]
                 ):
                     locally_sorted_neighbors.pop(index)
                     found = True
@@ -1448,14 +1460,7 @@ def enumerate_vertex_adjacent_elements(grid, support_elements):
                     "Two elements seem to be connected only by a vertex, not by an edge."
                 )
 
-        return sorted_neighbors
-
-    for vertex_index, neighbors in enumerate(vertex_edges):
-        # First sort by element
-        if not neighbors:
-            # Continue if empty
-            continue
-        vertex_edges[vertex_index] = sort_neighbors(grid.data(), neighbors)
+        vertex_edges[vertex_index] = sorted_neighbors
 
     return vertex_edges
 
