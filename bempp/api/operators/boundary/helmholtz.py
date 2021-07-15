@@ -231,7 +231,6 @@ def multitrace_operator(
     import bempp.api
     from bempp.api.assembly.blocked_operator import BlockedOperator
 
-
     if space_type == "p1":
         space1 = bempp.api.function_space(grid, "P", 1)
         space0 = space1
