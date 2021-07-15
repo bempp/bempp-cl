@@ -336,7 +336,9 @@ def bc_function_space(
         normal_multipliers,
         local2global,
         local_multipliers,
-    ) = _compute_bc_space_data(grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals)
+    ) = _compute_bc_space_data(
+        grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals
+    )
 
     return (
         SpaceBuilder(bary_grid)
@@ -388,7 +390,9 @@ def rbc_function_space(
         normal_multipliers,
         local2global,
         local_multipliers,
-    ) = _compute_bc_space_data(grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals)
+    ) = _compute_bc_space_data(
+        grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals
+    )
 
     return (
         SpaceBuilder(bary_grid)
@@ -408,7 +412,9 @@ def rbc_function_space(
     )
 
 
-def _compute_bc_space_data(grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals):
+def _compute_bc_space_data(
+    grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals
+):
     """Generate the BC map."""
     from bempp.api.grid.grid import enumerate_vertex_adjacent_elements
     from scipy.sparse import coo_matrix
