@@ -98,8 +98,10 @@ def test_helmholtz_boundary_fmm(helpers, grid, skip):
     bempp.api.clear_fmm_cache()
 
 
-def test_helmholtz_boundary_fmm_complex(helpers):
+def test_helmholtz_boundary_fmm_complex(helpers, skip):
     """Test Helmholtz boundary operators with complex wavenumber."""
+    if skip == "circleci":
+        pytest.skip()
     rand = np.random.RandomState(0)
     grid = bempp.api.shapes.regular_sphere(2)
     space = bempp.api.function_space(grid, "P", 1)

@@ -18,7 +18,7 @@ new_config = []
 config = repo.get_contents("_config.yml")
 for line in config.decoded_content.decode("utf8").split("\n"):
     if line.startswith("bemppversion:"):
-        new_config.append("bemppversion: bempp-cl " + tag[1:])
+        new_config.append("bemppversion: Bempp-cl " + tag[1:])
     else:
         new_config.append(line)
 
