@@ -22,8 +22,8 @@ preferred-citation:
     orcid: "https://orcid.org/0000-0002-4658-2443"
   doi: "10.21105/joss.02879"
   journal: "Journal of Open Source Software"
-  start: 2879
   title: "Bempp-cl: A fast Python based just-in-time compiling boundary element library"
-  issue: 59
-  volume: 6
   year: 2021
+  volume: 6
+  issue: 59
+  start: 2879
