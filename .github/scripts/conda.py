@@ -63,7 +63,7 @@ fork.update_file(
 )
 
 upstream_feedstock.create_pull(
-    title=f"Update version to {version} [testing, please close]",
+    title=f"Update version to {version}",
     body="",
     base="master",
     head="bemppbot:master",
