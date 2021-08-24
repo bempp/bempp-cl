@@ -17,7 +17,7 @@ ARG GMSH_VERSION=4.6.0
 ARG TINI_VERSION=0.19.0
 ARG EXAFMM_VERSION=0.1.0
 ARG FENICSX_VERSION=0.1.0
-ARG FENICSX_UFL_VERSION=2021.1.1
+ARG FENICSX_UFL_VERSION=2021.1.0
 ARG MAKEFLAGS
 
 
@@ -52,7 +52,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     python3-dev \
     python3-matplotlib \
     python3-mpi4py \
-    python3-numpy \
     python3-pip \
     python3-pyopencl \
     python3-scipy \
@@ -88,7 +87,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir numba meshio>=4.0.16 && \
+RUN pip3 install --no-cache-dir numpy==1.20 numba meshio>=4.0.16 && \
     pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
 
 # Download Install Gmsh SDK
@@ -138,7 +137,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     python3-dev \
     python3-matplotlib \
     python3-mpi4py \
-    python3-numpy \
     python3-pip \
     python3-pyopencl \
     python3-scipy \
@@ -176,7 +174,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir numba meshio>=4.0.16 && \
+RUN pip3 install --no-cache-dir numpy==1.20 numba meshio>=4.0.16 && \
     pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
 
 # Download Install Gmsh SDK
@@ -223,7 +221,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir meshio>=4.0.16 && \
+RUN pip3 install --no-cache-dir meshio>=4.0.16 numpy==1.20 && \
     pip3 install --upgrade six
 
 # Install Basix
