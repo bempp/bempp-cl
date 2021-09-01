@@ -224,11 +224,18 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 RUN pip3 install --no-cache-dir meshio>=4.0.16 numpy==1.20 && \
     pip3 install --upgrade six
 
+# Install Basix
+RUN git clone --depth 1 --branch v${FENICSX_VERSION} https://github.com/FEniCS/basix.git basix-src && \
+    cd basix-src && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S . && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    pip3 install ./python
+
 # Install FEniCSx components
-RUN pip3 install --no-cache-dir ipython
-RUN pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_UFL_VERSION}
-RUN pip3 install --no-cache-dir git+https://github.com/FEniCS/basix.git@v${FENICSX_VERSION}
-RUN pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@v${FENICSX_VERSION}
+RUN pip3 install --no-cache-dir ipython && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_UFL_VERSION} && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@v${FENICSX_VERSION}
 
 # Install FEniCSx
 RUN git clone --depth 1 --branch v${FENICSX_VERSION} https://github.com/fenics/dolfinx.git && \
