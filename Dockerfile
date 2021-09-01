@@ -225,7 +225,7 @@ RUN pip3 install --no-cache-dir meshio>=4.0.16 numpy==1.20 && \
     pip3 install --upgrade six
 
 # Install FEniCSx components
-RUN pip3 install --no-cache-dir ipython && \
+RUN pip3 install --no-cache-dir ipython
 RUN pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_UFL_VERSION}
 RUN pip3 install --no-cache-dir git+https://github.com/FEniCS/basix.git@v${FENICSX_VERSION}
 RUN pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@v${FENICSX_VERSION}
