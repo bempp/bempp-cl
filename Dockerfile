@@ -15,8 +15,8 @@
 
 ARG GMSH_VERSION=4.6.0
 ARG TINI_VERSION=0.19.0
-ARG EXAFMM_VERSION=0.1.0
-ARG FENICSX_VERSION=0.1.0
+ARG EXAFMM_VERSION=0.1.1
+ARG FENICSX_VERSION=0.3.0
 ARG FENICSX_UFL_VERSION=2021.1.0
 ARG MAKEFLAGS
 
@@ -225,9 +225,9 @@ RUN pip3 install --no-cache-dir meshio>=4.0.16 numpy==1.20 && \
     pip3 install --upgrade six
 
 # Install Basix
-RUN git clone --depth 1 --branch ${FENICSX_VERSION} https://github.com/FEniCS/basix.git basix-src && \
+RUN git clone --depth 1 --branch v${FENICSX_VERSION} https://github.com/FEniCS/basix.git basix-src && \
     cd basix-src && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DXTENSOR_ENABLE_ASSERT=ON -B build-dir -S . && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S . && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     pip3 install ./python
@@ -235,10 +235,10 @@ RUN git clone --depth 1 --branch ${FENICSX_VERSION} https://github.com/FEniCS/ba
 # Install FEniCSx components
 RUN pip3 install --no-cache-dir ipython && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_UFL_VERSION} && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@${FENICSX_VERSION}
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@v${FENICSX_VERSION}
 
 # Install FEniCSx
-RUN git clone --depth 1 --branch ${FENICSX_VERSION} https://github.com/fenics/dolfinx.git && \
+RUN git clone --depth 1 --branch v${FENICSX_VERSION} https://github.com/fenics/dolfinx.git && \
     cd dolfinx && \
     mkdir build && \
     cd build && \
