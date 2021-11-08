@@ -16,8 +16,9 @@
 ARG GMSH_VERSION=4.6.0
 ARG TINI_VERSION=0.19.0
 ARG EXAFMM_VERSION=0.1.1
-ARG FENICSX_VERSION=0.3.0
-ARG FENICSX_UFL_VERSION=2021.1.0
+# ARG FENICSX_TAG=v0.3.0
+ARG FENICSX_TAG=main
+ARG FENICSX_UFL_TAG=2021.1.0
 ARG MAKEFLAGS
 
 
@@ -200,8 +201,8 @@ LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
 LABEL description="Bempp-cl development environment with FEniCSx"
 
 ARG DOLFINX_MAKEFLAGS
-ARG FENICSX_VERSION
-ARG FENICSX_UFL_VERSION
+ARG FENICSX_TAG
+ARG FENICSX_UFL_TAG
 ARG BEMPP_VERSION
 ARG EXAFMM_VERSION
 
@@ -212,6 +213,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
     python3-pyopencl \
+    python3-pybind11 \
     python3-matplotlib \
     libfftw3-dev \
     pkg-config \
@@ -225,7 +227,7 @@ RUN pip3 install --no-cache-dir meshio>=4.0.16 numpy==1.20 && \
     pip3 install --upgrade six
 
 # Install Basix
-RUN git clone --depth 1 --branch v${FENICSX_VERSION} https://github.com/FEniCS/basix.git basix-src && \
+RUN git clone --depth 1 --branch ${FENICSX_TAG} https://github.com/FEniCS/basix.git basix-src && \
     cd basix-src && \
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S . && \
     cmake --build build-dir && \
@@ -234,20 +236,12 @@ RUN git clone --depth 1 --branch v${FENICSX_VERSION} https://github.com/FEniCS/b
 
 # Install FEniCSx components
 RUN pip3 install --no-cache-dir ipython && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_UFL_VERSION} && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@v${FENICSX_VERSION}
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_UFL_TAG} && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@${FENICSX_TAG}
 
 # Install FEniCSx
-RUN git clone --depth 1 --branch v${FENICSX_VERSION} https://github.com/fenics/dolfinx.git && \
+RUN git clone --depth 1 --branch ${FENICSX_TAG} https://github.com/fenics/dolfinx.git && \
     cd dolfinx && \
-    mkdir build && \
-    cd build && \
-    PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real ../cpp && \
-    ninja ${DOLFINX_MAKEFLAGS} install && \
-    cd ../python && \
-    PETSC_ARCH=linux-gnu-real-32 pip3 install --target /usr/local/dolfinx-real/lib/python3.8/dist-packages --no-dependencies --ignore-installed . && \
-    cd ../ && \
-    git clean -fdx && \
     mkdir build && \
     cd build && \
     PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex ../cpp && \
