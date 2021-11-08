@@ -186,7 +186,7 @@ RUN cd /usr/local && \
 
 ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
 
-RUN git clone -b ${EXAFMM_VERSION} https://github.com/exafmm/exafmm-t.git
+RUN git clone -b v${EXAFMM_VERSION} https://github.com/exafmm/exafmm-t.git
 RUN cd exafmm-t && sed -i 's/march=native/march=ivybridge/g' ./setup.py && python3 setup.py install
 
 # Clear /tmp
