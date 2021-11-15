@@ -15,7 +15,7 @@ def test_p1_trace(has_dolfinx):
             import dolfinx
             import dolfinx.geometry
         except ImportError:
-            pytest.skip("DOLFIN-X must be installed to run this test")
+            pytest.skip("DOLFINx must be installed to run this test")
     import bempp.api
     from bempp.api.external.fenicsx import fenics_to_bempp_trace_data
 
