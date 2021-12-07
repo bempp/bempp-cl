@@ -23,13 +23,24 @@ def get_mode_from_operator_identifier(identifier):
         raise ValueError("Unknown identifier string.")
 
 
-def get_fmm_interface(domain, dual_to_range, mode, wavenumber, device_interface=None):
+def get_fmm_interface(
+    domain, dual_to_range, mode, wavenumber, parameters=None, device_interface=None
+):
     """Get an Fmm instance."""
     import bempp.api
 
     global _FMM_CACHE
 
-    key = (domain.grid.id, dual_to_range.grid.id, mode, wavenumber)
+    parameters = bempp.api.assign_parameters(parameters)
+
+    key = (
+        domain.grid.id,
+        dual_to_range.grid.id,
+        mode,
+        wavenumber,
+        parameters.fmm.expansion_order,
+        parameters.fmm.ncrit,
+    )
 
     interface = _FMM_CACHE.get(key, None)
 
@@ -41,6 +52,7 @@ def get_fmm_interface(domain, dual_to_range, mode, wavenumber, device_interface=
             mode,
             wavenumber=wavenumber,
             target_grid=dual_to_range.grid,
+            parameters=parameters,
             device_interface=device_interface,
         )
         _FMM_CACHE[key] = interface
@@ -197,7 +209,12 @@ class FmmAssembler(_assembler.AssemblerBase):
             raise ValueError(f"Unknown value {mode} for `mode`.")
 
         fmm_interface = get_fmm_interface(
-            actual_domain, actual_dual_to_range, mode, wavenumber, device_interface
+            actual_domain,
+            actual_dual_to_range,
+            mode,
+            wavenumber,
+            self.parameters,
+            device_interface,
         )
 
         self._evaluator = create_evaluator(

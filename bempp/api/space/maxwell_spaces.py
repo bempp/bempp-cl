@@ -4,6 +4,14 @@ import numpy as _np
 import numba as _numba
 
 
+def _is_screen(grid):
+    """Check if there is an edge only adjacent to one triangle."""
+    for e in range(grid.edges.shape[1]):
+        if len([j for i in grid.element_edges for j in i if j == e]) < 2:
+            return True
+    return False
+
+
 def rwg0_function_space(
     grid,
     support_elements=None,
@@ -307,7 +315,7 @@ def bc_function_space(
     """Define a space of BC functions."""
     from .space import SpaceBuilder
 
-    if len(grid.vertices[0]) - len(grid.edges[0]) + len(grid.elements[0]) != 2:
+    if _is_screen(grid):
         # Grid is a screen, not a polyhedron
         raise ValueError("BC spaces not yet supported on screens")
 
@@ -328,7 +336,9 @@ def bc_function_space(
         normal_multipliers,
         local2global,
         local_multipliers,
-    ) = _compute_bc_space_data(grid, bary_grid, coarse_space, truncate_at_segment_edge)
+    ) = _compute_bc_space_data(
+        grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals
+    )
 
     return (
         SpaceBuilder(bary_grid)
@@ -359,7 +369,7 @@ def rbc_function_space(
     """Define a space of RBC functions."""
     from .space import SpaceBuilder
 
-    if len(grid.vertices[0]) - len(grid.edges[0]) + len(grid.elements[0]) != 2:
+    if _is_screen(grid):
         # Grid is a screen, not a polyhedron
         raise ValueError("BC spaces not yet supported on screens")
 
@@ -380,7 +390,9 @@ def rbc_function_space(
         normal_multipliers,
         local2global,
         local_multipliers,
-    ) = _compute_bc_space_data(grid, bary_grid, coarse_space, truncate_at_segment_edge)
+    ) = _compute_bc_space_data(
+        grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals
+    )
 
     return (
         SpaceBuilder(bary_grid)
@@ -400,7 +412,9 @@ def rbc_function_space(
     )
 
 
-def _compute_bc_space_data(grid, bary_grid, coarse_space, truncate_at_segment_edge):
+def _compute_bc_space_data(
+    grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals
+):
     """Generate the BC map."""
     from bempp.api.grid.grid import enumerate_vertex_adjacent_elements
     from scipy.sparse import coo_matrix
@@ -432,7 +446,7 @@ def _compute_bc_space_data(grid, bary_grid, coarse_space, truncate_at_segment_ed
     bary_support_size = len(bary_support_elements)
 
     bary_vertex_to_edge = enumerate_vertex_adjacent_elements(
-        bary_grid, bary_support_elements
+        bary_grid, bary_support_elements, swapped_normals
     )
 
     edge_vectors = (
