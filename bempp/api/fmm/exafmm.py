@@ -197,6 +197,7 @@ class ExafmmInterface(object):
         wavenumber=None,
         target_grid=None,
         precision="double",
+        parameters=None,
         device_interface=None,
     ):
         """
@@ -216,6 +217,8 @@ class ExafmmInterface(object):
         precision : string
             Either 'single' or 'double'. Currently, the Fmm is always
             executed in double precision.
+        parameters  :   object
+            A bempp parameters object. If not provided, the GLOBAL_PARAMETERS will be used.
         device_interface : string
             Either 'numba' or 'opencl'. If not provided, the DEFAULT_DEVICE_INTERFACE
             will be used for the calculation of local interactions.
@@ -225,7 +228,9 @@ class ExafmmInterface(object):
         from bempp.api.fmm.helpers import get_local_interaction_operator
         import numpy as np
 
-        quadrature_order = bempp.api.GLOBAL_PARAMETERS.quadrature.regular
+        parameters = bempp.api.assign_parameters(parameters)
+
+        quadrature_order = parameters.quadrature.regular
 
         local_points, weights = rule(quadrature_order)
 
@@ -285,9 +290,9 @@ class ExafmmInterface(object):
             target_points,
             mode,
             wavenumber=wavenumber,
-            depth=bempp.api.GLOBAL_PARAMETERS.fmm.depth,
-            expansion_order=bempp.api.GLOBAL_PARAMETERS.fmm.expansion_order,
-            ncrit=bempp.api.GLOBAL_PARAMETERS.fmm.ncrit,
+            depth=parameters.fmm.depth,
+            expansion_order=parameters.fmm.expansion_order,
+            ncrit=parameters.fmm.ncrit,
             precision=precision,
             singular_correction=singular_correction,
         )
