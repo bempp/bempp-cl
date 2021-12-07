@@ -30,8 +30,8 @@ def test_blocked_matvec(cols):
     result1 = op.weak_form() * vec
 
     assert np.allclose(block01.weak_form() * vec[ndofs:], result1[:ndofs])
-    assert np.allclose(block10.weak_form() * vec[:ndofs], result1[ndofs:2 * ndofs])
-    assert np.allclose(block21.weak_form() * vec[ndofs:], result1[2 * ndofs:])
+    assert np.allclose(block10.weak_form() * vec[:ndofs], result1[ndofs : 2 * ndofs])
+    assert np.allclose(block21.weak_form() * vec[ndofs:], result1[2 * ndofs :])
 
 
 @pytest.mark.parametrize("cols", range(4))
@@ -43,7 +43,9 @@ def test_blocked_matvec_linear_operator(cols):
 
     block01 = laplace.single_layer(space, space, space).weak_form()
     block10 = laplace.adjoint_double_layer(space, space, space).weak_form()
-    block21 = LinearOperator([ndofs, ndofs], matvec=lambda x: np.array([x[i] * i for i in range(ndofs)]))
+    block21 = LinearOperator(
+        [ndofs, ndofs], matvec=lambda x: np.array([x[i] * i for i in range(ndofs)])
+    )
 
     op = BlockedDiscreteOperator([[None, block01], [block10, None], [None, block21]])
 
@@ -55,8 +57,8 @@ def test_blocked_matvec_linear_operator(cols):
     result1 = op * vec
 
     assert np.allclose(block01 * vec[ndofs:], result1[:ndofs])
-    assert np.allclose(block10 * vec[:ndofs], result1[ndofs:2 * ndofs])
-    assert np.allclose(block21 * vec[ndofs:], result1[2 * ndofs:])
+    assert np.allclose(block10 * vec[:ndofs], result1[ndofs : 2 * ndofs])
+    assert np.allclose(block21 * vec[ndofs:], result1[2 * ndofs :])
 
 
 def test_blocked_matvec_only_linear_operator():
@@ -76,5 +78,5 @@ def test_blocked_matvec_only_linear_operator():
     result1 = op * vec
 
     assert np.allclose(block01 * vec[ndofs:], result1[:ndofs])
-    assert np.allclose(block10 * vec[:ndofs], result1[ndofs:2 * ndofs])
-    assert np.allclose(block21 * vec[ndofs:], result1[2 * ndofs:])
+    assert np.allclose(block10 * vec[:ndofs], result1[ndofs : 2 * ndofs])
+    assert np.allclose(block21 * vec[ndofs:], result1[2 * ndofs :])
