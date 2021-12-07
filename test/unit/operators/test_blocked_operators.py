@@ -8,7 +8,7 @@ from scipy.sparse.linalg.interface import LinearOperator
 
 @pytest.mark.parametrize("cols", range(4))
 def test_blocked_matvec(cols):
-    grid = bempp.api.shapes.sphere(h=0.2)
+    grid = bempp.api.shapes.sphere(h=1)
     space = bempp.api.function_space(grid, "P", 1)
 
     ndofs = space.global_dof_count
@@ -36,7 +36,31 @@ def test_blocked_matvec(cols):
 
 @pytest.mark.parametrize("cols", range(4))
 def test_blocked_matvec_linear_operator(cols):
-    grid = bempp.api.shapes.sphere(h=0.2)
+    grid = bempp.api.shapes.sphere(h=1)
+    space = bempp.api.function_space(grid, "P", 1)
+
+    ndofs = space.global_dof_count
+
+    block01 = laplace.single_layer(space, space, space).weak_form()
+    block10 = laplace.adjoint_double_layer(space, space, space).weak_form()
+    block21 = LinearOperator([ndofs, ndofs], matvec=lambda x: np.array([x[i] * i for i in range(ndofs)]))
+
+    op = BlockedDiscreteOperator([[None, block01], [block10, None], [None, block21]])
+
+    if cols == 0:
+        vec = np.random.rand(2 * ndofs)
+    else:
+        vec = np.random.rand(2 * ndofs, cols)
+
+    result1 = op * vec
+
+    assert np.allclose(block01 * vec[ndofs:], result1[:ndofs])
+    assert np.allclose(block10 * vec[:ndofs], result1[ndofs:2 * ndofs])
+    assert np.allclose(block21 * vec[ndofs:], result1[2 * ndofs:])
+
+
+def test_blocked_matvec_only_linear_operator():
+    grid = bempp.api.shapes.sphere(h=1)
     space = bempp.api.function_space(grid, "P", 1)
 
     ndofs = space.global_dof_count
@@ -47,12 +71,7 @@ def test_blocked_matvec_linear_operator(cols):
 
     op = BlockedDiscreteOperator([[None, block01], [block10, None], [None, block21]])
 
-    if cols == 0:
-        vec = np.random.rand(2 * ndofs)
-    else:
-        vec = np.random.rand(2 * ndofs, cols)
-
-    print(op.shape, vec.shape)
+    vec = np.random.rand(2 * ndofs)
 
     result1 = op * vec
 
