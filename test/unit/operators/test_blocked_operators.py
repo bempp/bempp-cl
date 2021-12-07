@@ -1,0 +1,62 @@
+import pytest
+import bempp.api
+import numpy as np
+from bempp.api.operators.boundary import laplace
+from bempp.api.assembly.blocked_operator import BlockedOperator, BlockedDiscreteOperator
+from scipy.sparse.linalg.interface import LinearOperator
+
+
+@pytest.mark.parametrize("cols", range(4))
+def test_blocked_matvec(cols):
+    grid = bempp.api.shapes.sphere(h=0.2)
+    space = bempp.api.function_space(grid, "P", 1)
+
+    ndofs = space.global_dof_count
+
+    block01 = laplace.single_layer(space, space, space)
+    block10 = laplace.adjoint_double_layer(space, space, space)
+    block21 = laplace.double_layer(space, space, space)
+
+    op = BlockedOperator(3, 2)
+    op[0, 1] = block01
+    op[1, 0] = block10
+    op[2, 1] = block21
+
+    if cols == 0:
+        vec = np.random.rand(2 * ndofs)
+    else:
+        vec = np.random.rand(2 * ndofs, cols)
+
+    result1 = op.weak_form() * vec
+
+    assert np.allclose(block01.weak_form() * vec[ndofs:], result1[:ndofs])
+    assert np.allclose(block10.weak_form() * vec[:ndofs], result1[ndofs:2 * ndofs])
+    assert np.allclose(block21.weak_form() * vec[ndofs:], result1[2 * ndofs:])
+
+
+@pytest.mark.xfail
+@pytest.mark.parametrize("cols", range(4))
+def test_blocked_matvec_linear_operator(cols):
+    grid = bempp.api.shapes.sphere(h=0.2)
+    space = bempp.api.function_space(grid, "P", 1)
+
+    ndofs = space.global_dof_count
+
+    block01 = laplace.single_layer(space, space, space).weak_form()
+    block10 = laplace.adjoint_double_layer(space, space, space).weak_form()
+    block21 = LinearOperator([ndofs, ndofs], matvec=lambda x: x * np.arange(ndofs))
+
+    op = BlockedDiscreteOperator([[None, block01], [block10, None], [None, block21]])
+
+    if cols == 0:
+        vec = np.random.rand(2 * ndofs)
+    else:
+        vec = np.random.rand(2 * ndofs, cols)
+
+    print(op.shape, vec.shape)
+
+    result1 = op * vec
+
+    assert np.allclose(block01 * vec[ndofs:], result1[:ndofs])
+    assert np.allclose(block10 * vec[:ndofs], result1[ndofs:2 * ndofs])
+    assert np.allclose(block21 * vec[ndofs:], result1[2 * ndofs:])
