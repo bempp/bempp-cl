@@ -34,7 +34,6 @@ def test_blocked_matvec(cols):
     assert np.allclose(block21.weak_form() * vec[ndofs:], result1[2 * ndofs:])
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize("cols", range(4))
 def test_blocked_matvec_linear_operator(cols):
     grid = bempp.api.shapes.sphere(h=0.2)
