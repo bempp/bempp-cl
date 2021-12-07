@@ -2,6 +2,7 @@
 import numpy as _np
 
 from bempp.api.operators.boundary import common as _common
+from bempp.api.assembly.boundary_operator import BoundaryOperator as _BoundaryOperator
 
 
 def single_layer(
@@ -287,211 +288,240 @@ def multitrace_operator(
     return blocked
 
 
-# def multitrace_operator(
-# grid,
-# wavenumber,
-# segments=None,
-# parameters=None,
-# swapped_normals=None,
-# assembler="dense_evaluator",
-# device_interface=None,
-# precision=None,
-# ):
-# """Assemble the Helmholtz multitrace operator."""
-# from bempp.api.space import function_space
-# from bempp.api.operators import _add_wavenumber
-# from bempp.api.assembly.blocked_operator import GeneralizedBlockedOperator
+def osrc_dtn(
+    space,
+    wavenumber,
+    npade=2,
+    theta=_np.pi / 3.0,
+    damped_wavenumber=None,
+    parameters=None,
+    device_interface=None,
+    precision=None,
+):
+    """Assemble the OSRC approximation to the DtN operator."""
+    if space.shapeset.identifier != "p1_discontinuous":
+        raise ValueError("Space shapeset must be of type 'p1_discontinuous'.")
 
-# domain = function_space(
-# grid,
-# "P",
-# 1,
-# segments=segments,
-# include_boundary_dofs=True,
-# swapped_normals=swapped_normals,
-# )
-# range_ = domain
-# dual_to_range = domain
-
-# slp = single_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
-
-# dlp = double_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
-
-# adlp = adjoint_double_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
-
-# hyp = hypersingular(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
-
-# options = {"COMPLEX_KERNEL": None}
-
-# _add_wavenumber(options, wavenumber)
-
-# return GeneralizedBlockedOperator([[-dlp, slp], [hyp, adlp]])
+    return _OsrcDtN(
+        space,
+        parameters,
+        [wavenumber, npade, theta, damped_wavenumber],
+        device_interface,
+        precision,
+    )
 
 
-# def transmission_operator(
-# grid,
-# wavenumber,
-# rho_rel,
-# refractive_index,
-# segments=None,
-# parameters=None,
-# swapped_normals=None,
-# assembler="dense_evaluator",
-# device_interface=None,
-# precision=None,
-# ):
-# """Assemble the Helmholtz transmission operator."""
-# from bempp.api.space import function_space
-# from bempp.api.operators import _add_wavenumber
-# from bempp.api.assembly.blocked_operator import GeneralizedBlockedOperator
+class _OsrcDtN(_BoundaryOperator):
+    """Implementation of the OSRC DtN operator."""
+
+    def __init__(
+        self, space, parameters, operator_options, device_interface=None, precision=None
+    ):
+        from bempp.api.operators import OperatorDescriptor
+
+        super().__init__(space, space, space, parameters)
+
+        self._device_interface = device_interface
+
+        self._operator_descriptor = OperatorDescriptor(
+            "osrc_dtn",
+            operator_options,
+            "laplace_beltrami",
+            "default_sparse",
+            precision,
+            True,
+            None,
+            1,
+        )
+
+    @property
+    def descriptor(self):
+        """Operator descriptor."""
+        return self._operator_descriptor
+
+    def _assemble(self):
+        """Assemble the operator."""
+        from bempp.api.operators.boundary.sparse import identity
+        from bempp.api.operators.boundary.sparse import laplace_beltrami
+        from bempp.api.assembly.discrete_boundary_operator import (
+            InverseSparseDiscreteBoundaryOperator,
+        )
+
+        space = self._domain
+        wavenumber, npade, theta, damped_wavenumber = self.descriptor.options
+
+        mass = identity(
+            space,
+            space,
+            space,
+            self._parameters,
+            self._device_interface,
+            self.descriptor.precision,
+        ).weak_form()
+        stiff = laplace_beltrami(
+            space,
+            space,
+            space,
+            self._parameters,
+            self._device_interface,
+            self.descriptor.precision,
+        ).weak_form()
+
+        if damped_wavenumber is None:
+            bbox = space.grid.bounding_box
+            rad = _np.linalg.norm(bbox[:, 1] - bbox[:, 0]) / 2.0
+            dk = wavenumber + 0.4j * wavenumber ** (1.0 / 3.0) * rad ** (-2.0 / 3.0)
+        else:
+            dk = damped_wavenumber
+
+        c0, alpha, beta = _pade_coeffs(npade, theta)
+
+        series = c0 * mass
+        for i in range(npade):
+            element = (
+                alpha[i]
+                / (dk ** 2)
+                * stiff
+                * InverseSparseDiscreteBoundaryOperator(
+                    mass - beta[i] / (dk ** 2) * stiff
+                )
+            )
+            series -= element * mass
+        operator = 1.0j * wavenumber * series
+
+        return operator
 
 
-# wavenumber_int = wavenumber * refractive_index
+def osrc_ntd(
+    space,
+    wavenumber,
+    npade=2,
+    theta=_np.pi / 3.0,
+    damped_wavenumber=None,
+    parameters=None,
+    device_interface=None,
+    precision=None,
+):
+    """Assemble the OSRC approximation to the NtD operator."""
+    if space.shapeset.identifier != "p1_discontinuous":
+        raise ValueError("Space shapeset must be of type 'p1_discontinuous'.")
 
-# domain = function_space(
-# grid,
-# "P",
-# 1,
-# segments=segments,
-# swapped_normals=swapped_normals,
-# include_boundary_dofs=True,
-# )
-# range_ = domain
-# dual_to_range = domain
+    return _OsrcNtD(
+        space,
+        parameters,
+        [wavenumber, npade, theta, damped_wavenumber],
+        device_interface,
+        precision,
+    )
 
-# slp = single_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
 
-# slp_int = single_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber_int,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
+class _OsrcNtD(_BoundaryOperator):
+    """Implementation of the OSRC NtD operator."""
 
-# dlp = double_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
+    def __init__(
+        self, space, parameters, operator_options, device_interface=None, precision=None
+    ):
+        from bempp.api.operators import OperatorDescriptor
 
-# dlp_int = double_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber_int,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
+        super().__init__(space, space, space, parameters)
 
-# adlp = adjoint_double_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
+        self._device_interface = device_interface
 
-# adlp_int = adjoint_double_layer(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber_int,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
+        self._operator_descriptor = OperatorDescriptor(
+            "osrc_ntd",
+            operator_options,
+            "laplace_beltrami",
+            "default_sparse",
+            precision,
+            True,
+            None,
+            1,
+        )
 
-# hyp = hypersingular(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
+    @property
+    def descriptor(self):
+        """Operator descriptor."""
+        return self._operator_descriptor
 
-# hyp_int = hypersingular(
-# domain,
-# range_,
-# dual_to_range,
-# wavenumber_int,
-# parameters,
-# assembler,
-# device_interface,
-# precision,
-# )
+    def _assemble(self):
+        from bempp.api.operators.boundary.sparse import identity
+        from bempp.api.operators.boundary.sparse import laplace_beltrami
+        from bempp.api.assembly.discrete_boundary_operator import (
+            InverseSparseDiscreteBoundaryOperator,
+        )
 
-# options = {"COMPLEX_KERNEL": None, "TRANSMISSION": None}
+        space = self._domain
+        wavenumber, npade, theta, damped_wavenumber = self.descriptor.options
 
-# _add_wavenumber(options, wavenumber)
-# _add_wavenumber(options, rho_rel, "RHO_REL")
-# _add_wavenumber(options, wavenumber_int, "WAVENUMBER_INT")
+        mass = identity(
+            space,
+            space,
+            space,
+            self._parameters,
+            self._device_interface,
+            self.descriptor.precision,
+        ).weak_form()
+        stiff = laplace_beltrami(
+            space,
+            space,
+            space,
+            self._parameters,
+            self._device_interface,
+            self.descriptor.precision,
+        ).weak_form()
 
-# return GeneralizedBlockedOperator(
-# [
-# [-dlp - dlp_int, slp + rho_rel * slp_int],
-# [hyp + 1.0 / rho_rel * hyp_int, adlp + adlp_int],
-# ]
-# )
+        if damped_wavenumber is None:
+            bbox = space.grid.bounding_box
+            rad = _np.linalg.norm(bbox[:, 1] - bbox[:, 0]) / 2.0
+            dk = wavenumber + 0.4j * wavenumber ** (1.0 / 3.0) * rad ** (-2.0 / 3.0)
+        else:
+            dk = damped_wavenumber
+
+        c0, alpha, beta = _pade_coeffs(npade, theta)
+
+        series = c0 * mass
+        for i in range(npade):
+            element = (
+                alpha[i]
+                / (dk ** 2)
+                * stiff
+                * InverseSparseDiscreteBoundaryOperator(
+                    mass - beta[i] / (dk ** 2) * stiff
+                )
+            )
+            series -= element * mass
+        operator = (
+            1.0
+            / (1.0j * wavenumber)
+            * (
+                mass
+                * InverseSparseDiscreteBoundaryOperator(mass - 1.0 / (dk ** 2) * stiff)
+                * series
+            )
+        )
+
+        return operator
+
+
+def _pade_coeffs(n, theta):
+    """Compute the coefficients of the Pade series expansion."""
+    aj = _np.zeros(n)
+    bj = _np.zeros(n)
+    for jj in range(1, n + 1):
+        aj[jj - 1] = 2.0 / (2.0 * n + 1.0) * _np.sin(jj * _np.pi / (2.0 * n + 1.0)) ** 2
+        bj[jj - 1] = _np.cos(jj * _np.pi / (2.0 * n + 1.0)) ** 2
+    c0t = _np.exp(1.0j * theta / 2.0) * (
+        1.0
+        + _np.sum(
+            (aj * (_np.exp(-1j * theta) - 1.0))
+            / (1.0 + bj * (_np.exp(-1.0j * theta) - 1.0))
+        )
+    )
+    ajt = (
+        _np.exp(-1.0j * theta / 2.0)
+        * aj
+        / ((1.0 + bj * (_np.exp(-1.0j * theta) - 1.0)) ** 2)
+    )
+    bjt = _np.exp(-1.0j * theta) * bj / (1.0 + bj * (_np.exp(-1.0j * theta) - 1.0))
+
+    return c0t, ajt, bjt

@@ -38,3 +38,9 @@ jobs:
           push: true
           tags: bempp/cl-notebook:latest
           target: lab
+      - name: Build and push Numba-only notebook Docker image
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/cl-notebook-numba:latest
+          target: numba-lab

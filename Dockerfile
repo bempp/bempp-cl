@@ -270,6 +270,79 @@ WORKDIR /root
 
 ########################################
 
+FROM dolfinx/dev-env as bempp-dev-env-with-dolfinx-numba
+LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
+LABEL description="Bempp-cl development environment with FEniCSx (Numba only)"
+
+ARG DOLFINX_MAKEFLAGS
+ARG FENICSX_TAG
+ARG FENICSX_UFL_TAG
+ARG BEMPP_VERSION
+ARG EXAFMM_VERSION
+
+WORKDIR /tmp
+
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get -qq update && \
+    apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
+    apt-get -y install \
+    python3-pybind11 \
+    python3-matplotlib \
+    libfftw3-dev \
+    pkg-config \
+    python-is-python3 \
+    && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install Python packages (via pip)
+RUN pip3 install --no-cache-dir meshio>=4.0.16 numpy==1.20 && \
+    pip3 install --upgrade six
+
+# Install Basix
+RUN git clone --depth 1 --branch ${FENICSX_TAG} https://github.com/FEniCS/basix.git basix-src && \
+    cd basix-src && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S . && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    pip3 install ./python
+
+# Install FEniCSx components
+RUN pip3 install --no-cache-dir ipython && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_UFL_TAG} && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@${FENICSX_TAG}
+
+# Install FEniCSx
+RUN git clone --depth 1 --branch ${FENICSX_TAG} https://github.com/fenics/dolfinx.git && \
+    cd dolfinx && \
+    mkdir build && \
+    cd build && \
+    PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex ../cpp && \
+    ninja ${DOLFINX_MAKEFLAGS} install && \
+    . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
+    cd ../python && \
+    PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
+
+# complex by default.
+ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH \
+        PATH=/usr/local/dolfinx-complex/bin:$PATH \
+        PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH \
+        PETSC_ARCH=linux-gnu-complex-32 \
+        PYTHONPATH=/usr/local/dolfinx-complex/lib/python3.8/dist-packages:$PYTHONPATH
+
+# Download and install ExaFMM
+RUN wget -nc --quiet https://github.com/exafmm/exafmm-t/archive/v${EXAFMM_VERSION}.tar.gz && \
+    tar -xf v${EXAFMM_VERSION}.tar.gz && \
+    cd exafmm-t-${EXAFMM_VERSION} && \
+    sed -i 's/march=native/march=ivybridge/g' ./setup.py && python3 setup.py install
+
+# Clear /tmp
+RUN rm -rf /tmp/*
+
+WORKDIR /root
+
+########################################
+
 FROM bempp-dev-env-with-dolfinx as with-dolfinx
 LABEL description="Bempp-cl environment with FEniCSx"
 
@@ -294,6 +367,27 @@ WORKDIR /root
 
 FROM bempp-dev-env-with-dolfinx as lab
 LABEL description="Bempp Jupyter Lab"
+
+WORKDIR /tmp
+RUN git clone https://github.com/bempp/bempp-cl
+RUN cd bempp-cl && python3 setup.py install
+RUN cp -r bempp-cl/notebooks /root/example_notebooks
+RUN rm /root/example_notebooks/conftest.py /root/example_notebooks/test_notebooks.py
+
+WORKDIR /root
+
+ARG TINI_VERSION
+ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini /tini
+RUN chmod +x /tini && \
+    pip3 install --no-cache-dir jupyter jupyterlab
+EXPOSE 8888/tcp
+
+ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
+
+########################################
+
+FROM bempp-dev-env-with-dolfinx-numba as numba-lab
+LABEL description="Bempp Jupyter Lab (Numba only)"
 
 WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
