@@ -9,17 +9,15 @@ from bempp.api.external.fenicsx import fenics_to_bempp_trace_data
 
 def test_p1_trace(has_dolfinx):
     """Test the trace of a P1 Dolfin function."""
-    if has_dolfinx:
-        import dolfinx
-    else:
-        try:
-            import dolfinx
-        except ImportError:
-            pytest.skip("DOLFINx must be installed to run this test")
+    try:
+        from dolfinx.geometry import BoundingBoxTree, create_midpoint_tree, compute_closest_entity
+        from dolfinx.fem import FunctionSpace, Function
+        from dolfinx.mesh import create_unit_cube
+    except ImportError:
+        if has_dolfinx:
+            raise ImportError("DOLFINx is not installed")
+        pytest.skip("DOLFINx must be installed to run this test")
 
-    from dolfinx.geometry import BoundingBoxTree, create_midpoint_tree, compute_closest_entity
-    from dolfinx.fem import FunctionSpace, Function
-    from dolfinx.mesh import create_unit_cube
 
     fenics_mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     fenics_space = FunctionSpace(fenics_mesh, ("CG", 1))
