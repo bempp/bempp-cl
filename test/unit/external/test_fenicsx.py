@@ -10,7 +10,11 @@ from bempp.api.external.fenicsx import fenics_to_bempp_trace_data
 def test_p1_trace(has_dolfinx):
     """Test the trace of a P1 Dolfin function."""
     try:
-        from dolfinx.geometry import BoundingBoxTree, create_midpoint_tree, compute_closest_entity
+        from dolfinx.geometry import (
+            BoundingBoxTree,
+            create_midpoint_tree,
+            compute_closest_entity,
+        )
         from dolfinx.fem import FunctionSpace, Function
         from dolfinx.mesh import create_unit_cube
     except ImportError:
@@ -40,8 +44,6 @@ def test_p1_trace(has_dolfinx):
         mid = cell.geometry.centroid
         bempp_val = bempp_fun.evaluate(cell.index, np.array([[1 / 3], [1 / 3]]))
 
-        fenics_cell = compute_closest_entity(
-            tree, midpoint_tree, fenics_mesh, mid
-        )[0]
+        fenics_cell = compute_closest_entity(tree, midpoint_tree, fenics_mesh, mid)[0]
         fenics_val = fenics_fun.eval([mid.T], [fenics_cell])
         assert np.isclose(bempp_val[0, 0], fenics_val[0])
