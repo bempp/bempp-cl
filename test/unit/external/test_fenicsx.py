@@ -18,7 +18,6 @@ def test_p1_trace(has_dolfinx):
             raise ImportError("DOLFINx is not installed")
         pytest.skip("DOLFINx must be installed to run this test")
 
-
     fenics_mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     fenics_space = FunctionSpace(fenics_mesh, ("CG", 1))
 
