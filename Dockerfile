@@ -350,6 +350,9 @@ WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
 RUN cd bempp-cl && python3 setup.py install
 
+# Clear /tmp
+RUN rm -rf /tmp/*
+
 WORKDIR /root
 
 ########################################
@@ -360,6 +363,9 @@ LABEL description="Bempp-cl environment with FEniCS"
 WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
 RUN cd bempp-cl && python3 setup.py install
+
+# Clear /tmp
+RUN rm -rf /tmp/*
 
 WORKDIR /root
 
@@ -373,6 +379,9 @@ RUN git clone https://github.com/bempp/bempp-cl
 RUN cd bempp-cl && python3 setup.py install
 RUN cp -r bempp-cl/notebooks /root/example_notebooks
 RUN rm /root/example_notebooks/conftest.py /root/example_notebooks/test_notebooks.py
+
+# Clear /tmp
+RUN rm -rf /tmp/*
 
 WORKDIR /root
 
@@ -394,6 +403,33 @@ RUN git clone https://github.com/bempp/bempp-cl
 RUN cd bempp-cl && python3 setup.py install
 RUN cp -r bempp-cl/notebooks /root/example_notebooks
 RUN rm /root/example_notebooks/conftest.py /root/example_notebooks/test_notebooks.py
+
+# Clear /tmp
+RUN rm -rf /tmp/*
+
+WORKDIR /root
+
+ARG TINI_VERSION
+ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini /tini
+RUN chmod +x /tini && \
+    pip3 install --no-cache-dir jupyter jupyterlab
+EXPOSE 8888/tcp
+
+ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
+
+########################################
+
+FROM bempp-dev-env-with-dolfin as fenics-lab
+LABEL description="Bempp Jupyter Lab with legacy FEniCS"
+
+WORKDIR /tmp
+RUN git clone https://github.com/bempp/bempp-cl
+RUN cd bempp-cl && python3 setup.py install
+RUN cp -r bempp-cl/notebooks /root/example_notebooks
+RUN rm /root/example_notebooks/conftest.py /root/example_notebooks/test_notebooks.py
+
+# Clear /tmp
+RUN rm -rf /tmp/*
 
 WORKDIR /root
 
