@@ -124,11 +124,11 @@ class FenicsOperator(object):
         from bempp.api.assembly.discrete_boundary_operator import (
             SparseDiscreteBoundaryOperator,
         )
-        from dolfinx.fem import assemble_matrix
+        from dolfinx.fem import assemble_matrix, form
         from scipy.sparse import csr_matrix
 
         if self._sparse_mat is None:
-            mat = assemble_matrix(self._fenics_weak_form)
+            mat = assemble_matrix(form(self._fenics_weak_form))
             mat.assemble()
             (indptr, indices, data) = mat.getValuesCSR()
             self._sparse_mat = csr_matrix((data, indices, indptr), shape=mat.size)
