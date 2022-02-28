@@ -58,7 +58,7 @@ def test_fenics_operator(has_dolfinx):
             raise ImportError("UFL is not installed")
         pytest.skip("UFL must be installed to run this test")
     try:
-        from dolfinx.fem import FunctionSpace, Function
+        from dolfinx.fem import FunctionSpace
         from dolfinx.mesh import create_unit_cube
     except ImportError:
         if has_dolfinx:
