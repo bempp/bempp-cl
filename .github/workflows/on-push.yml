@@ -98,24 +98,15 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
             sudo apt-get install -y python3-setuptools
-            pip3 install black>=20.8
             pip3 install pydocstyle flake8
         name: Install Python style tools
       - run: |
             python3 -m flake8 bempp
             python3 -m flake8 test
+            python3 -m flake8 .github/scripts
         name: Run flake8 checks
       - run: python3 -m pydocstyle bempp/api
         name: Run pydocstyle checks
-      - run: | 
-            python3 -m black --line-length 88 --check bempp
-        name: Run black checks in bempp
-      - run: | 
-            python3 -m black --line-length 88 --check test
-        name: Run black checks on tests
-      - run: | 
-            python3 -m black --line-length 88 --check .github/scripts
-        name: Run black checks on CI scripts
 
   build-and-test-with-dolfin:
     name: Build Bempp and run tests with DOLFIN

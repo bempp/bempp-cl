@@ -1,9 +1,7 @@
 import os
-import json
 import sys
 import github
 import hashlib
-import urllib.request
 
 access_key = sys.argv[-1]
 
