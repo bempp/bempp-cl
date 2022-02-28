@@ -129,6 +129,13 @@ class FenicsOperator(object):
 
         if self._sparse_mat is None:
             mat = assemble_matrix(form(self._fenics_weak_form))
-            self._sparse_mat = csr_matrix((mat.data, mat.indices, mat.indptr), shape=mat.size)
+            mat.finalize()
+            shape = (
+                self._fenics_weak_form.arguments()[0]._ufl_function_space.dofmap.index_map.size_global,
+                self._fenics_weak_form.arguments()[1]._ufl_function_space.dofmap.index_map.size_global,
+            )
+            self._sparse_mat = csr_matrix(
+                (mat.data, mat.indices, mat.indptr), shape=shape
+            )
 
         return SparseDiscreteBoundaryOperator(self._sparse_mat)
