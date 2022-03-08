@@ -1180,26 +1180,26 @@ def cylinders(h=1.0, z=1.0, r=[0.5, 1, 1.5, 1.7], origin=(0.0, 0.0, 0.0), square
 
     for i, radius in enumerate(r):
         if square:
-            stub += (f"    Point({1+4*i}) = {{{origin[0]-radius},{origin[1]-radius}, {origin[2]}, cl}};\n"
-                     f"    Point({2+4*i}) = {{{origin[0]+radius},{origin[1]-radius}, {origin[2]}, cl}};\n"
-                     f"    Point({3+4*i}) = {{{origin[0]+radius},{origin[1]+radius}, {origin[2]}, cl}};\n"
-                     f"    Point({4+4*i}) = {{{origin[0]-radius},{origin[1]+radius}, {origin[2]}, cl}};\n"
+            stub += (f"Point({1+4*i}) = {{{origin[0]-radius},{origin[1]-radius}, {origin[2]}, cl}};\n"
+                     f"Point({2+4*i}) = {{{origin[0]+radius},{origin[1]-radius}, {origin[2]}, cl}};\n"
+                     f"Point({3+4*i}) = {{{origin[0]+radius},{origin[1]+radius}, {origin[2]}, cl}};\n"
+                     f"Point({4+4*i}) = {{{origin[0]-radius},{origin[1]+radius}, {origin[2]}, cl}};\n"
                      "\n"
-                     f"    Line({1+4*i}) = {{{1+4*i},{2+4*i}}};\n"
-                     f"    Line({2+4*i}) = {{{2+4*i},{3+4*i}}};\n"
-                     f"    Line({3+4*i}) = {{{3+4*i},{4+4*i}}};\n"
-                     f"    Line({4+4*i}) = {{{4+4*i},{1+4*i}}};")
+                     f"Line({1+4*i}) = {{{1+4*i},{2+4*i}}};\n"
+                     f"Line({2+4*i}) = {{{2+4*i},{3+4*i}}};\n"
+                     f"Line({3+4*i}) = {{{3+4*i},{4+4*i}}};\n"
+                     f"Line({4+4*i}) = {{{4+4*i},{1+4*i}}};")
         else:
-            stub += (f"    Point({2+4*i}) = {{{origin[0]+radius},{origin[1]},{origin[2]},cl}};\n"
-                     f"    Point({3+4*i}) = {{{origin[0]},{origin[1]+radius},{origin[2]},cl}};\n"
-                     f"    Point({4+4*i}) = {{{origin[0]-radius},{origin[1]},{origin[2]},cl}};\n"
-                     f"    Point({5+4*i}) = {{{origin[0]},{origin[1]-radius},{origin[2]},cl}};\n"
+            stub += (f"Point({2+4*i}) = {{{origin[0]+radius},{origin[1]},{origin[2]},cl}};\n"
+                     f"Point({3+4*i}) = {{{origin[0]},{origin[1]+radius},{origin[2]},cl}};\n"
+                     f"Point({4+4*i}) = {{{origin[0]-radius},{origin[1]},{origin[2]},cl}};\n"
+                     f"Point({5+4*i}) = {{{origin[0]},{origin[1]-radius},{origin[2]},cl}};\n"
                      "\n"
-                     f"    Circle({1+4*i}) = {{{2+4*i}, 1, {3+4*i}}};\n"
-                     f"    Circle({2+4*i}) = {{{3+4*i}, 1, {4+4*i}}};\n"
-                     f"    Circle({3+4*i}) = {{{4+4*i}, 1, {5+4*i}}};\n"
-                     f"    Circle({4+4*i}) = {{{5+4*i}, 1, {2+4*i}}};\n")
-        stub += f"    Line Loop({11+i}) = {{{3+4*i}, {4+4*i}, {1+4*i}, {2+4*i}}};\n"
+                     f"Circle({1+4*i}) = {{{2+4*i}, 1, {3+4*i}}};\n"
+                     f"Circle({2+4*i}) = {{{3+4*i}, 1, {4+4*i}}};\n"
+                     f"Circle({3+4*i}) = {{{4+4*i}, 1, {5+4*i}}};\n"
+                     f"Circle({4+4*i}) = {{{5+4*i}, 1, {2+4*i}}};\n")
+        stub += f"Line Loop({11+i}) = {{{3+4*i}, {4+4*i}, {1+4*i}, {2+4*i}}};\n"
         if i == 0:
             stub += "Plane Surface(21) = {11};\n"
         else:
