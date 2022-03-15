@@ -389,7 +389,7 @@ WORKDIR /root
 ARG TINI_VERSION
 ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini /tini
 RUN chmod +x /tini && \
-    pip3 install --no-cache-dir jupyter jupyterlab
+    pip3 install --no-cache-dir jupyter jupyterlab plotly
 EXPOSE 8888/tcp
 
 ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
@@ -413,7 +413,7 @@ WORKDIR /root
 ARG TINI_VERSION
 ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini /tini
 RUN chmod +x /tini && \
-    pip3 install --no-cache-dir jupyter jupyterlab
+    pip3 install --no-cache-dir jupyter jupyterlab plotly
 EXPOSE 8888/tcp
 
 ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
@@ -437,7 +437,7 @@ WORKDIR /root
 ARG TINI_VERSION
 ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini /tini
 RUN chmod +x /tini && \
-    pip3 install --no-cache-dir jupyter jupyterlab
+    pip3 install --no-cache-dir jupyter jupyterlab plotly
 EXPOSE 8888/tcp
 
 ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
