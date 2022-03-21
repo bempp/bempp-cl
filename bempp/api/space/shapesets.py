@@ -120,6 +120,15 @@ def _rwg0_shapeset_gradient(local_coordinates):
     grad[1, 1, :, :] = _np.ones((3, npoints), dtype=dtype)
     return grad
 
+@_numba.njit
+def _snc0_shapeset_gradient(local_coordinates):
+    """Evaluate SNC 0 shapeset gradient."""
+    dtype = local_coordinates.dtype
+    temp = _np.eye(2, dtype=dtype)
+    grad = _np.zeros((2, 2), dtype=dtype)
+    grad[0] = - temp[1]
+    grad[1] = temp[0]
+    return grad
 
 _SHAPESETS = {
     "p0_discontinuous": {
@@ -141,6 +150,13 @@ _SHAPESETS = {
         "gradient": _rwg0_shapeset_gradient,
         "number_of_shape_functions": 3,
         "identifier": "rwg0",
+        "dimension": 2,
+    },
+    "snc0": {
+        "evaluate": _rwg0_shapeset_evaluate,
+        "gradient": _snc0_shapeset_gradient,
+        "number_of_shape_functions": 3,
+        "identifier": "snc0",
         "dimension": 2,
     },
 }

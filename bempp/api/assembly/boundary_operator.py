@@ -104,12 +104,13 @@ class BoundaryOperatorWithAssembler(BoundaryOperator):
     """Implements a boundary operator together with an assembler."""
 
     # pylint: disable=too-many-arguments
-    def __init__(self, domain, range_, dual_to_range, assembler, operator_descriptor):
+    def __init__(self, domain, range_, dual_to_range, assembler, operator_descriptor, transpose = False):
         """Initialize a boundary operator with assembler."""
         super().__init__(domain, range_, dual_to_range, assembler.parameters)
 
         self._assembler = assembler
         self._operator_descriptor = operator_descriptor
+        self.transpose_ = transpose
 
     @property
     def assembler(self):
@@ -123,7 +124,12 @@ class BoundaryOperatorWithAssembler(BoundaryOperator):
 
     def _assemble(self):
         """Assemble the operator."""
+        if(self.transpose_):
+            return self.assembler.assemble(self.descriptor).transpose()
         return self.assembler.assemble(self.descriptor)
+        
+    def _transpose(self, _range):
+    	return BoundaryOperatorWithAssembler(self._dual_to_range, self._domain, _range, self._assembler, self._operator_descriptor, True)
 
 
 class _SumBoundaryOperator(BoundaryOperator):

@@ -26,6 +26,55 @@ def identity(
         False,
     )
 
+def grad_identity(
+    domain,
+    range_,
+    dual_to_range,
+    parameters=None,
+    device_interface=None,
+    precision=None,
+):
+    """Assemble the L^2 identity operator."""
+    return _common.create_operator(
+        "l2_grad_identity",
+        domain,
+        range_,
+        dual_to_range,
+        parameters,
+        "sparse",
+        [],
+        "l2_grad_identity",
+        "default_sparse",
+        device_interface,
+        precision,
+        False,
+    )
+
+def curl_curl_identity(
+    domain,
+    range_,
+    dual_to_range,
+    parameters=None,
+    device_interface=None,
+    precision=None,
+):
+    """Assemble the L^2 identity operator."""
+    return _common.create_operator(
+        "l2_curl_curl_identity",
+        domain,
+        range_,
+        dual_to_range,
+        parameters,
+        "sparse",
+        [],
+        "l2_curl_curl_identity",
+        "default_sparse",
+        device_interface,
+        precision,
+        False,
+    )
+
+
 
 def multitrace_identity(
     multitrace_operator, parameters=None, device_interface=None, precision=None
@@ -56,6 +105,27 @@ def multitrace_identity(
     blocked_operator[1, 1] = identity(domain1, range1, dual_to_range1)
 
     return blocked_operator
+
+def mte_operators(domains_, ranges_, dual_to_ranges_, kappa):
+    IP = identity(domains_[1], ranges_[1], dual_to_ranges_[1]) 
+    IC = identity(domains_[0], ranges_[0], dual_to_ranges_[0]) 
+    N = (1.0/kappa)**2 * curl_curl_identity(domains_[0], ranges_[0], dual_to_ranges_[0])
+    LT = grad_identity(domains_[1], ranges_[0], dual_to_ranges_[0])
+    L = LT._transpose(LT._domain)
+    return IP, IC, N, LT, L
+
+def mte_lambda_1i(mte_operators, beta, kappa):
+    from bempp.api.assembly.blocked_operator import BlockedOperator
+    from scipy.sparse import bmat
+    from bempp.api.assembly.discrete_boundary_operator import (
+            InverseSparseDiscreteBoundaryOperator,
+        )
+    IP, IC, N, LT, L = mte_operators
+    return InverseSparseDiscreteBoundaryOperator(bmat([[(IC - beta * N).weak_form().to_sparse() ,(beta * LT).weak_form().to_sparse()],[L.weak_form().to_sparse(), kappa**2 * IP.weak_form().to_sparse()]],'csc'))
+
+def mte_lambda_2(mte_operators):
+    IP, IC, N, LT, L = mte_operators
+    return IC-N
 
 
 def sigma_identity(
