@@ -416,7 +416,7 @@ def set_default_gpu_device(platform_index, device_index):
     _DEFAULT_GPU_CONTEXT = _cl.Context(
         devices=[device], properties=[(_cl.context_properties.PLATFORM, platform)]
     )
-    _DEFAULT_GPU_DEVICE = _DEFAULT_CPU_CONTEXT.devices[0]
+    _DEFAULT_GPU_DEVICE = _DEFAULT_GPU_CONTEXT.devices[0]
 
     vector_width_single = _DEFAULT_GPU_DEVICE.native_vector_width_float
     vector_width_double = _DEFAULT_GPU_DEVICE.native_vector_width_double
