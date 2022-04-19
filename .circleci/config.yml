@@ -21,9 +21,7 @@ jobs:
     steps:
       - checkout
       - run:
-          command: |
-              apt-get -yq update
-              apt-get -y install jupyter
+          command: pip3 install jupyter nbconvert
           name: Install jupyter
       - run:
           command: python3 setup.py install
@@ -37,9 +35,7 @@ jobs:
     steps:
       - checkout
       - run:
-          command: |
-              apt-get -yq update
-              apt-get -y install jupyter
+          command: pip3 install jupyter nbconvert
           name: Install jupyter
       - run:
           command: python3 setup.py install
