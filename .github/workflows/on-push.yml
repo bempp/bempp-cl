@@ -18,7 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       dockertag: ${{ steps.dockertag.outputs.tag }}
-    needs: get-branch
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -108,7 +107,6 @@ jobs:
     name: Build Bempp and run tests with DOLFIN
     needs:
       - build-and-publish-docker
-      - get-branch
       - style-checks
     runs-on: ubuntu-latest
     container: bempp/cl-dev-env-with-dolfin:${{ needs.build-and-publish-docker.outputs.dockertag }}
@@ -123,7 +121,6 @@ jobs:
     name: Build Bempp and run tests with DOLFINx
     needs:
       - build-and-publish-docker
-      - get-branch
       - style-checks
     runs-on: ubuntu-latest
     container: bempp/cl-dev-env-with-dolfinx:${{ needs.build-and-publish-docker.outputs.dockertag }}
