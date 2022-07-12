@@ -52,13 +52,13 @@ jobs:
       - name: compare Dockerfile with cache
         id: diff
         run: |
-            if diff Dockerfile ~/cache/Dockerfile > /dev/null; then
+            if diff docker/Dockerfile ~/cache/Dockerfile > /dev/null; then
                 echo ::set-output name=changed::no
             else
                 echo ::set-output name=changed::yes
             fi
       - name: Copy Dockerfile to ~/cache/Dockerfile
-        run: cp Dockerfile ~/cache/Dockerfile
+        run: cp docker/Dockerfile ~/cache/Dockerfile
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
