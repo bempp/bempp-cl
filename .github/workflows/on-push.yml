@@ -3,25 +3,6 @@ name: Run tests and style checks
 on: push
 
 jobs:
-  get-branch:
-    name: Get branch name
-    runs-on: ubuntu-latest
-    outputs:
-      tag: ${{ steps.vars.outputs.tag }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Get tag name
-        id: vars
-        run: |
-            if [ ${GITHUB_REF#refs/*/} == "master" ]
-            then
-              echo ::set-output name=tag::latest
-            else
-              the_tag=${GITHUB_REF#refs/*/}
-              echo ::set-output name=tag::${the_tag/\//_}
-            fi
-
   check-version-number:
     name: Check version numbers
     runs-on: ubuntu-20.04
@@ -35,30 +16,45 @@ jobs:
   build-and-publish-docker:
     name: Build and publish testing environment docker image
     runs-on: ubuntu-latest
+    outputs:
+      dockertag: ${{ steps.dockertag.outputs.tag }}
     needs: get-branch
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Make cache folder
-        run: mkdir ~/cache
-      - name: Cache Dockerfile
-        id: cache-docker
-        uses: actions/cache@v2
-        with:
-          path: ~/cache/Dockerfile
-          key: ${{ runner.os }}-Dockerfile-${{ needs.get-branch.outputs.tag }}-${{ hashFiles('Dockerfile') }}
-      - name: touch ~/cache/Dockerfile
-        run: touch ~/cache/Dockerfile
-      - name: compare Dockerfile with cache
+
+      - name: Get main branch
+        run: git clone https://github.com/bempp/bempp-cl.git bempp-main
+      - name: Go back a commit:
+        run: |
+          cd bempp-main
+          git reset HEAD~1
+          cd ..
+        if: github.ref == 'refs/heads/main'
+      - name: Get old Dockerfile
+        run: |
+          cp bempp-main/Dockerfile Dockerfile.old
+          rm -rf bempp-main
+      - name: compare Dockerfile with old Dockerfile
         id: diff
         run: |
-            if diff docker/Dockerfile ~/cache/Dockerfile > /dev/null; then
+            if diff Dockerfile Dockerfile.old > /dev/null; then
                 echo ::set-output name=changed::no
             else
                 echo ::set-output name=changed::yes
             fi
-      - name: Copy Dockerfile to ~/cache/Dockerfile
-        run: cp docker/Dockerfile ~/cache/Dockerfile
+
+      - name: set Docker tag
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+              echo ::set-output name=tag::main
+          elif [ "${{ steps.diff.outputs.changed }}" = "yes" ]; then
+              the_tag=($(echo "${{ github.ref }}" | sha1sum))
+              echo ::set-output name=tag::$the_tag
+          else
+              echo ::set-output name=tag::main
+          fi
+        id: dockertag
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -73,21 +69,21 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: bempp/cl-dev-env-with-dolfinx:${{ needs.get-branch.outputs.tag }}
+          tags: bempp/cl-dev-env-with-dolfinx:${{ steps.dockertag.outputs.tag }}
           target: bempp-dev-env-with-dolfinx
         if: steps.diff.outputs.changed == 'yes'
       - name: Build and push testing Docker image with dolfin
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: bempp/cl-dev-env-with-dolfin:${{ needs.get-branch.outputs.tag }}
+          tags: bempp/cl-dev-env-with-dolfin:${{ steps.dockertag.outputs.tag }}
           target: bempp-dev-env-with-dolfin
         if: steps.diff.outputs.changed == 'yes'
       - name: Build and push testing Docker image
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: bempp/cl-dev-env:${{ needs.get-branch.outputs.tag }}
+          tags: bempp/cl-dev-env:${{ steps.dockertag.outputs.tag }}
           target: bempp-dev-env
         if: steps.diff.outputs.changed == 'yes'
   
@@ -115,7 +111,7 @@ jobs:
       - get-branch
       - style-checks
     runs-on: ubuntu-latest
-    container: bempp/cl-dev-env-with-dolfin:${{ needs.get-branch.outputs.tag }}
+    container: bempp/cl-dev-env-with-dolfin:${{ needs.build-and-publish-docker.outputs.dockertag }}
     steps:
       - uses: actions/checkout@v2
       - run: python3 setup.py install
@@ -130,7 +126,7 @@ jobs:
       - get-branch
       - style-checks
     runs-on: ubuntu-latest
-    container: bempp/cl-dev-env-with-dolfinx:${{ needs.get-branch.outputs.tag }}
+    container: bempp/cl-dev-env-with-dolfinx:${{ needs.build-and-publish-docker.outputs.dockertag }}
     steps:
       - uses: actions/checkout@v2
       - run: python3 setup.py install
