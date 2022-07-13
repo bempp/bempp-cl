@@ -137,7 +137,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     pkg-config \
     python-is-python3 \
     python3-dev \
-    python3-matplotlib \
     python3-mpi4py \
     python3-pip \
     python3-pyopencl \
@@ -177,7 +176,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 
 # Install Python packages (via pip)
 RUN pip3 install --no-cache-dir numpy>=1.21 numba>=0.55.2 meshio>=4.0.16 && \
-    pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
+    pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist matplotlib
 
 # Download Install Gmsh SDK
 RUN cd /usr/local && \
@@ -218,7 +217,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libpugixml-dev \
     python3-pyopencl \
     python3-pybind11 \
-    python3-matplotlib \
     libfftw3-dev \
     pkg-config \
     python-is-python3 \
@@ -227,7 +225,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir meshio>=4.0.16 numpy>=1.21 && \
+RUN pip3 install --no-cache-dir meshio>=4.0.16 numpy>=1.21 matplotlib && \
     pip3 install --upgrade six
 
 # Install Basix
