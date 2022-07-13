@@ -85,7 +85,7 @@ jobs:
           tags: bempp/cl-dev-env:${{ steps.dockertag.outputs.tag }}
           target: bempp-dev-env
         if: steps.diff.outputs.changed == 'yes'
-  
+
   style-checks:
     name: Run style checks
     runs-on: ubuntu-latest

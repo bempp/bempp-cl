@@ -18,9 +18,9 @@ setup(
     license="MIT",
     include_package_data=True,
     python_requires=">=3.8",
-    # install_requires=["numpy", "scipy", "numba>=0.55.2", "meshio"],
-    # extras_require={
-    #    "optional": ["plotly", "pyopencl"],
-    #    "lint": ["pydocstyle", "flake8", "pytest", "pytest-xdist"],
-    # }
+    install_requires=["numpy>=1.21.0", "scipy", "numba>=0.55.2", "meshio>=4.0.16"],
+    extras_require={
+       "optional": ["plotly", "pyopencl"],
+       "lint": ["pydocstyle", "flake8", "pytest", "pytest-xdist"],
+    }
 )

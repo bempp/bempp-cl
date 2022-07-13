@@ -12,6 +12,9 @@ def boundary_grid_from_fenics_mesh(fenics_mesh):
     import numpy as np
     from dolfinx.cpp.mesh import entities_to_geometry, exterior_facet_indices
 
+    fenics_mesh.topology.create_entities(2)
+    fenics_mesh.topology.create_connectivity(2, 3)
+
     boundary = entities_to_geometry(
         fenics_mesh,
         fenics_mesh.topology.dim - 1,
