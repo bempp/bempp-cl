@@ -15,7 +15,7 @@ def boundary_grid_from_fenics_mesh(fenics_mesh):
     boundary = entities_to_geometry(
         fenics_mesh,
         fenics_mesh.topology.dim - 1,
-        exterior_facet_indices(fenics_mesh),
+        exterior_facet_indices(fenics_mesh.topology),
         True,
     )
 
