@@ -53,7 +53,7 @@ jobs:
           push: true
           tags: bempp/cl-dev-env:latest
           target: bempp-dev-env
-  
+
   build-and-test-with-dolfin:
     name: Build Bempp and run tests
     needs:
