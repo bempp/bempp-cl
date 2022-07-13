@@ -1,18 +1,16 @@
 name: Run tests and style checks
 
-on: push
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "0 7 * * 1"
 
 jobs:
-  check-version-number:
-    name: Check version numbers
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install PyGitHub
-        run: pip3 install PyGitHub
-      - name: Check and update version numbers
-        run: python3 .github/scripts/update_version_number.py ${{ secrets.bemppbot_github_token }} ${GITHUB_REF#refs/heads/}
-
   build-and-publish-docker:
     name: Build and publish testing environment docker image
     runs-on: ubuntu-latest
@@ -22,19 +20,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Get main branch
-        run: git clone https://github.com/bempp/bempp-cl.git bempp-main
-      - name: Go back a commit
+      - name: Get main Dockerfile
         run: |
+          git clone https://github.com/bempp/bempp-cl.git bempp-main
           cd bempp-main
           git reset HEAD~1
           git stash
           cd ..
-        if: github.ref == 'refs/heads/main'
-      - name: Get old Dockerfile
-        run: |
           cp bempp-main/Dockerfile Dockerfile.old
           rm -rf bempp-main
+        if: github.ref != 'refs/heads/main'
+      - name: Make dummy old Dockerfile
+        run: touch Dockerfile.old
+        if: github.ref == 'refs/heads/main'
       - name: compare Dockerfile with old Dockerfile
         id: diff
         run: |

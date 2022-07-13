@@ -3,7 +3,9 @@ name: Update latest Docker image
 on:
   push:
     branches:
-      - master
+      - main
+  schedule:
+    - cron: "0 7 * * 1"
 
 jobs:
   build-and-publish-docker:
