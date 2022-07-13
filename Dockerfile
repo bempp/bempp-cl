@@ -12,6 +12,7 @@
 #   Garth N. Wells <gnw20@cam.ac.uk>
 #   Jan Blechta <blechta@karlin.mff.cuni.cz>
 #
+# DEBUG
 
 ARG GMSH_VERSION=4.6.0
 ARG TINI_VERSION=0.19.0

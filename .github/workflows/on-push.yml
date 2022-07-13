@@ -34,6 +34,8 @@ jobs:
         run: |
           cp bempp-main/Dockerfile Dockerfile.old
           rm -rf bempp-main
+      - name: debug
+        run: diff Dockerfile Dockerfile.old
       - name: compare Dockerfile with old Dockerfile
         id: diff
         run: |
@@ -42,6 +44,9 @@ jobs:
             else
                 echo ::set-output name=changed::yes
             fi
+
+      - name: debug
+        run: echo ${{ steps.diff.outputs.changed }}
 
       - name: set Docker tag
         run: |
