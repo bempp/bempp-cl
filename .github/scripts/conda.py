@@ -7,11 +7,11 @@ access_key = sys.argv[-1]
 
 git = github.Github(access_key)
 
-symfem = git.get_repo("bempp/bempp-cl")
-branch = symfem.get_branch("master")
+bempp = git.get_repo("bempp/bempp-cl")
+branch = bempp.get_branch("main")
 
 version = (
-    symfem.get_contents("VERSION", branch.commit.sha).decoded_content.decode().strip()
+    bempp.get_contents("VERSION", branch.commit.sha).decoded_content.decode().strip()
 )
 
 
@@ -25,7 +25,7 @@ with open(f"v{version}.tar.gz", "rb") as f:
     hash = sha256_hash.hexdigest()
 
 upstream_feedstock = git.get_repo("conda-forge/bempp-cl-feedstock")
-upstream_branch = upstream_feedstock.get_branch("master")
+upstream_branch = upstream_feedstock.get_branch("main")
 
 fork = git.get_user().create_fork(upstream_feedstock)
 
@@ -36,7 +36,7 @@ for repo in u.get_repos():
         repo.delete()
 
 fork = git.get_user().create_fork(upstream_feedstock)
-branch = fork.get_branch("master")
+branch = fork.get_branch("main")
 
 old_meta = fork.get_contents("recipe/meta.yaml", branch.commit.sha)
 
@@ -63,6 +63,6 @@ fork.update_file(
 upstream_feedstock.create_pull(
     title=f"Update version to {version}",
     body="",
-    base="master",
-    head="bemppbot:master",
+    base="main",
+    head="bemppbot:main",
 )

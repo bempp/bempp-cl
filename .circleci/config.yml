@@ -65,10 +65,6 @@ workflows:
       - run-notebooks
       - run-notebooks-dolfin
       - run-notebooks-dolfinx
-      - run-benchmarks:
-          filters:
-            branches:
-              only: master
   weekly:
     jobs:
       - large-tests
@@ -80,4 +76,4 @@ workflows:
           cron: "0 7 * * 1"
           filters:
             branches:
-              only: master
+              only: main
