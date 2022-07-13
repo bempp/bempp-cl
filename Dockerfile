@@ -89,7 +89,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir numpy>=1.21 numba>=0.55.2 meshio>=4.0.16 && \
+RUN pip3 install --no-cache-dir numpy<1.23,>=1.21 numba>=0.55.2 meshio>=4.0.16 && \
     pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
 
 # Download Install Gmsh SDK
@@ -175,7 +175,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir numpy>=1.21 numba>=0.55.2 meshio>=4.0.16 && \
+RUN pip3 install --no-cache-dir numpy<1.23,>=1.21 numba>=0.55.2 meshio>=4.0.16 && \
     pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist matplotlib
 
 # Download Install Gmsh SDK
@@ -225,7 +225,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir meshio>=4.0.16 numpy>=1.21 matplotlib && \
+RUN pip3 install --no-cache-dir meshio>=4.0.16 numpy<1.23,>=1.21 matplotlib && \
     pip3 install --upgrade six
 
 # Install Basix
@@ -300,7 +300,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir meshio>=4.0.16 numpy>=1.21 && \
+RUN pip3 install --no-cache-dir meshio>=4.0.16 numpy<1.23,>=1.21 && \
     pip3 install --upgrade six
 
 # Install Basix
