@@ -137,7 +137,10 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     pkg-config \
     python-is-python3 \
     python3-dev \
+    python3-matplotlib \
     python3-mpi4py \
+    python3-numpy \
+    python3-numba \
     python3-pip \
     python3-pyopencl \
     python3-scipy \
@@ -175,8 +178,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir "numpy>=1.21,<1.23" numba>=0.55.2 meshio>=4.0.16 && \
-    pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist matplotlib
+RUN pip3 install --no-cache-dir meshio>=4.0.16 && \
+    pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
 
 # Download Install Gmsh SDK
 RUN cd /usr/local && \
