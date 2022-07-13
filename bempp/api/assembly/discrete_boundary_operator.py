@@ -552,7 +552,7 @@ class DiscreteRankOneOperator(_DiscreteOperatorBase):
         # pylint: disable=protected-access
         return self._adjoint()._matvec(x)
 
-    def _transpoe(self):
+    def _transpose(self):
         """Find the transpose."""
         return DiscreteRankOneOperator(self._row, self._column)
 

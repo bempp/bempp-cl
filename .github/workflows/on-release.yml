@@ -75,7 +75,7 @@ jobs:
       - name: Tweet
         run: python3 .github/scripts/tweet.py ${{ steps.tag_name.outputs.SOURCE_TAG }} ${{ secrets.twitter1 }} ${{ secrets.twitter2 }} ${{ secrets.twitter3 }} ${{ secrets.twitter4 }}
 
-  conda:  
+  conda:
     name: Update conda version
     runs-on: ubuntu-20.04
     steps:
