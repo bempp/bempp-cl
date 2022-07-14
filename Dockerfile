@@ -421,7 +421,7 @@ LABEL description="Bempp Jupyter Lab with legacy FEniCS"
 
 WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
-RUN cd bempp-cl && pip3 isntall .
+RUN cd bempp-cl && pip3 install .
 RUN cp -r bempp-cl/notebooks /root/example_notebooks
 RUN rm /root/example_notebooks/conftest.py /root/example_notebooks/test_notebooks.py
 
