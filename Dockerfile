@@ -120,13 +120,7 @@ ARG EXAFMM_VERSION
 
 WORKDIR /tmp
 
-# Install dependencies available via apt-get.
-# - First set of packages are required to build and run Bempp-cl.
-# - Second set of packages are recommended and/or required to build
-#   documentation or tests.
-# - Third set of packages are optional, but required to run gmsh
-#   pre-built binaries.
-# - Fourth set of packages are optional, required for meshio.
+# Install dependencies
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
@@ -140,7 +134,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     python3-mpi4py \
     python3-pip \
     python3-pyopencl \
-    python3-scipy \
     python3-setuptools \
     jupyter \
     wget && \
@@ -166,17 +159,17 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libraw19 \
     libtbb2 \
     libxcursor1 \
-    libxinerama1 && \
-    apt-get -y install \
-    python3-dolfin && \
-    apt-get -y install \
+    libxinerama1
+RUN pip3 install --no-cache-dir meshio>=4.0.16 \
+    numba numpy==1.20 scipy matplotlib && \
+    pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
+RUN apt-get -y install \
+    python3-dolfin \
     python3-lxml && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir "numpy>=1.21,<1.23" numba>=0.55.2 meshio>=4.0.16 && \
-    pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist matplotlib
 
 # Download Install Gmsh SDK
 RUN cd /usr/local && \
