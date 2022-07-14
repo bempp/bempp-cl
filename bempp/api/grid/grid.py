@@ -658,7 +658,7 @@ class Grid(object):
 
         edge_to_edge = element_to_edge.T.dot(element_to_edge)
         arr1 = edge_to_edge.diagonal() == 1
-        arr0 = _np.zeros(number_of_vertices, dtype=_np.bool)
+        arr0 = _np.full(number_of_vertices, False)
 
         for boundary_edge_index in _np.flatnonzero(arr1):
             arr0[self.edges[:, boundary_edge_index]] = True
@@ -1211,7 +1211,7 @@ def _vertices_from_edge_index(element, local_index):
 
 def grid_from_segments(grid, segments):
     """Return new grid from segments of existing grid."""
-    element_in_new_grid = _np.zeros(grid.number_of_elements, dtype=_np.bool)
+    element_in_new_grid = _np.full(grid.number_of_elements, False)
 
     for elem in range(grid.number_of_elements):
         if grid.domain_indices[elem] in segments:
@@ -1220,7 +1220,7 @@ def grid_from_segments(grid, segments):
     new_domain_indices = grid.domain_indices[element_in_new_grid]
     vertex_indices = list(set(new_elements.ravel()))
     new_vertices = grid.vertices[:, vertex_indices]
-    new_vertex_map = -_np.ones(grid.number_of_vertices, dtype=_np.int)
+    new_vertex_map = -_np.ones(grid.number_of_vertices, dtype=_np.int_)
     new_vertex_map[vertex_indices] = _np.arange(len(vertex_indices))
     new_elements = new_vertex_map[new_elements.ravel()].reshape(3, -1)
 
