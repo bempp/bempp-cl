@@ -535,7 +535,7 @@ class GridFunction(object):
         # Sum up the areas of all elements adjacent to the vertices
         vertex_areas = _np.zeros(grid.number_of_vertices, dtype="float64")
 
-        vertex_used = _np.zeros(grid.number_of_vertices, dtype=_np.bool)
+        vertex_used = _np.full(grid.number_of_vertices, False)
 
         for element_index in self.space.support_elements:
             local_values = self.evaluate(element_index, local_coordinates)

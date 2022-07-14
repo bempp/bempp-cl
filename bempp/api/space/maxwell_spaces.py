@@ -77,7 +77,7 @@ def rwg0_barycentric_function_space(coarse_space):
 
     bary_support_size = len(bary_support_elements)
 
-    support = _np.zeros(6 * coarse_space.grid.number_of_elements, dtype=_np.bool)
+    support = _np.zeros(6 * coarse_space.grid.number_of_elements, dtype=_np.bool_)
     support[bary_support_elements] = True
 
     normal_multipliers = _np.repeat(coarse_space.normal_multipliers, 6)
@@ -223,7 +223,7 @@ def snc0_barycentric_function_space(coarse_space):
 
     bary_support_size = len(bary_support_elements)
 
-    support = _np.zeros(6 * coarse_space.grid.number_of_elements, dtype=_np.bool)
+    support = _np.zeros(6 * coarse_space.grid.number_of_elements, dtype=_np.bool_)
     support[bary_support_elements] = True
 
     normal_multipliers = _np.repeat(coarse_space.normal_multipliers, 6)
@@ -419,7 +419,7 @@ def _compute_bc_space_data(
     from bempp.api.grid.grid import enumerate_vertex_adjacent_elements
     from scipy.sparse import coo_matrix
 
-    coarse_support = _np.zeros(grid.entity_count(0), dtype=_np.bool)
+    coarse_support = _np.zeros(grid.entity_count(0), dtype=_np.bool_)
     coarse_support[coarse_space.support_elements] = True
 
     if not truncate_at_segment_edge:
@@ -440,7 +440,7 @@ def _compute_bc_space_data(
         _np.arange(6), number_of_support_elements
     )
 
-    support = _np.zeros(bary_grid.number_of_elements, dtype=_np.bool)
+    support = _np.zeros(bary_grid.number_of_elements, dtype=_np.bool_)
     support[bary_support_elements] = True
 
     bary_support_size = len(bary_support_elements)
