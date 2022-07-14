@@ -219,6 +219,8 @@ def _gmsh_path():
 
     if _os.name == "nt":
         gmp = which("gmsh.exe")
+        if gmp is None:
+            gmp = which("gmsh")
     else:
         gmp = which("gmsh")
     if gmp is None:

@@ -1150,7 +1150,7 @@ Physical Surface(1) = {518, 520, 750, 718, 516, 714, 748, 603, 491, 489, 487, 60
 """
 
 
-def cylinders(h=1.0, z=1.0, r=[0.5, 1, 1.5, 1.7], square=False):
+def cylinders(h=1.0, z=1.0, r=[0.5, 1, 1.5, 1.7], origin=(0.0, 0.0, 0.0), square=False):
     """
     Create a sequence of concentric cylindrical or cuboidal objects.
 
@@ -1162,6 +1162,8 @@ def cylinders(h=1.0, z=1.0, r=[0.5, 1, 1.5, 1.7], square=False):
         A floating point number specifying the extrusion parameter along z-axis.
     r : increasing sequence of floats
         A sequence definying the radius of each concentric cylinder.
+    origin: tuple of floats
+        The centre of the base of the cylinder.
     square: boolean
         Specifies whether the cylindrical shape is a sequence of squares or circles
 
@@ -1172,91 +1174,51 @@ def cylinders(h=1.0, z=1.0, r=[0.5, 1, 1.5, 1.7], square=False):
 
     """
     if square:
-        stub0 = ""
+        stub = ""
     else:
-        stub0 = """
-Point(1) = {0, 0, 0, cl};"""
+        stub = f"Point(1) = {{{origin[0]}, {origin[1]}, {origin[2]}, cl}};\n"
 
-    stub1 = """
-For i In {0:(N-1)}
-    r = r[i];"""
-    if square:
-        stub2 = """
-    Point(1+4*i) = {-r,-r, 0, cl};
-    Point(2+4*i) = {r,-r, 0, cl};
-    Point(3+4*i) = {r,r, 0, cl};
-    Point(4+4*i) = {-r,r, 0, cl};
+    for i, radius in enumerate(r):
+        if square:
+            stub += (f"Point({1+4*i}) = {{{origin[0]-radius},{origin[1]-radius}, {origin[2]}, cl}};\n"
+                     f"Point({2+4*i}) = {{{origin[0]+radius},{origin[1]-radius}, {origin[2]}, cl}};\n"
+                     f"Point({3+4*i}) = {{{origin[0]+radius},{origin[1]+radius}, {origin[2]}, cl}};\n"
+                     f"Point({4+4*i}) = {{{origin[0]-radius},{origin[1]+radius}, {origin[2]}, cl}};\n"
+                     "\n"
+                     f"Line({1+4*i}) = {{{1+4*i},{2+4*i}}};\n"
+                     f"Line({2+4*i}) = {{{2+4*i},{3+4*i}}};\n"
+                     f"Line({3+4*i}) = {{{3+4*i},{4+4*i}}};\n"
+                     f"Line({4+4*i}) = {{{4+4*i},{1+4*i}}};")
+        else:
+            stub += (f"Point({2+4*i}) = {{{origin[0]+radius},{origin[1]},{origin[2]},cl}};\n"
+                     f"Point({3+4*i}) = {{{origin[0]},{origin[1]+radius},{origin[2]},cl}};\n"
+                     f"Point({4+4*i}) = {{{origin[0]-radius},{origin[1]},{origin[2]},cl}};\n"
+                     f"Point({5+4*i}) = {{{origin[0]},{origin[1]-radius},{origin[2]},cl}};\n"
+                     "\n"
+                     f"Circle({1+4*i}) = {{{2+4*i}, 1, {3+4*i}}};\n"
+                     f"Circle({2+4*i}) = {{{3+4*i}, 1, {4+4*i}}};\n"
+                     f"Circle({3+4*i}) = {{{4+4*i}, 1, {5+4*i}}};\n"
+                     f"Circle({4+4*i}) = {{{5+4*i}, 1, {2+4*i}}};\n")
+        stub += f"Line Loop({11+i}) = {{{3+4*i}, {4+4*i}, {1+4*i}, {2+4*i}}};\n"
+        if i == 0:
+            stub += "Plane Surface(21) = {11};\n"
+        else:
+            stub += f"Plane Surface({21 + 3*i}) = {{{11+i}, {-(11 + i - 1)}}};\n"
+    for i, _ in enumerate(r):
+        stub += f"out[] = Extrude {{0,0,z}} {{Surface{{{21+3*i}}}; Layers{{cl}};}};\n"
+        stub += f"Reverse Surface{{{21+3*i}}};\n"
+        if i < len(r) - 1:
+            stub += (f"Physical Surface({10 * (i+1)}) = {{{21+3*i}, out[0]}};\n"
+                     f"Physical Surface({10 * (i+2) + (i+1)}) = {{out[2], out[3], out[4], out[5]}};\n")
+        else:
+            stub += f"Physical Surface({10 * (i+1)}) = {{{21+3*i}, out[0],out[2], out[3], out[4], out[5]}};\n"
 
-    Line(1+4*i) = {1+4*i,2+4*i};
-    Line(2+4*i) = {2+4*i,3+4*i};
-    Line(3+4*i) = {3+4*i,4+4*i};
-    Line(4+4*i) = {4+4*i,1+4*i};"""
-    else:
-        stub2 = """
-    Point(2+4*i) = {r,0, 0, cl};
-    Point(3+4*i) = {0,r, 0, cl};
-    Point(4+4*i) = {-r,0, 0, cl};
-    Point(5+4*i) = {0,-r, 0, cl};
+    for i, _ in enumerate(r):
+        stub += f"b() = Boundary{{Volume{{{i+1}}};}};\n"
 
-    Circle(1+4*i) = {2+4*i, 1, 3+4*i};
-    Circle(2+4*i) = {3+4*i, 1, 4+4*i};
-    Circle(3+4*i) = {4+4*i, 1, 5+4*i};
-    Circle(4+4*i) = {5+4*i, 1, 2+4*i};
-        """
-    stub3 = """
-    Line Loop(11+i) = {3+4*i, 4+4*i, 1+4*i, 2+4*i};
+    geometry = (f"cl = {h};\n"
+                f"z = {z};\n"
+                f"{stub}\n"
+                "Mesh.Algorithm = 3;")
 
-    If (i==0)
-        Plane Surface(21) = {11};
-    Else
-        Plane Surface(21 + 3*i) = {11+i, -(11 + i - 1)};
-    EndIf
-EndFor
-
-For i In {0:(N-1)}
-    Printf("i = %g", i);
-    out[] = Extrude {0,0,z} {Surface{21+3*i}; Layers{cl};};
-    Reverse Surface{21+3*i};
-
-    If (i < (N-1))
-    Physical Surface(10 * (i+1)) = {21+3*i, out[0]};
-    Physical Surface(10 * (i+2) + (i+1)) = {out[2], out[3], out[4], out[5]};
-    Else
-    Physical Surface(10 * (i+1)) = {21+3*i, out[0],out[2], out[3], out[4], out[5]};
-    EndIf
-EndFor
-
-// Delete Physicals;
-
-
-For i In {1:N}
-    b() = Boundary{Volume{i};};
-    Printf("--------");
-    sb = #b[];
-    For j In {0:(sb-1)}
-        Printf("b0= %g", b[j]);
-    EndFor
-
-EndFor
-
-Mesh.Algorithm = 3;
-    """
-    geometry = (
-        "N = "
-        + str(len(r))
-        + ";\n"
-        + "cl = "
-        + str(h)
-        + ";\n"
-        + "z ="
-        + str(z)
-        + ";\n"
-        + "r[] = {"
-        + str(r)[1:-1]
-        + "};\n"
-        + stub0
-        + stub1
-        + stub2
-        + stub3
-    )
     return __generate_grid_from_geo_string(geometry)

@@ -12,7 +12,7 @@ changelog = bempp.get_release(tag).body
 
 repo = git.get_repo("bempp/bempp-website")
 
-master = repo.get_branch("master")
+main = repo.get_branch("main")
 
 new_config = []
 config = repo.get_contents("_config.yml")

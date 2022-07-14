@@ -20,7 +20,3 @@ By default bempp-cl uses the pocl (portablecl.org) OpenCL CPU library.
 Other OpenCL capable devices can be used if a corresponding ICD file is
 available. These need to be copied into the 
 ~/.conda/envs/bempp/conda/etc/OpenCL/vendors directory.
-
-
-
-

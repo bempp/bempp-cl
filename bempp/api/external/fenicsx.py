@@ -12,10 +12,13 @@ def boundary_grid_from_fenics_mesh(fenics_mesh):
     import numpy as np
     from dolfinx.cpp.mesh import entities_to_geometry, exterior_facet_indices
 
+    fenics_mesh.topology.create_entities(2)
+    fenics_mesh.topology.create_connectivity(2, 3)
+
     boundary = entities_to_geometry(
         fenics_mesh,
         fenics_mesh.topology.dim - 1,
-        exterior_facet_indices(fenics_mesh),
+        exterior_facet_indices(fenics_mesh.topology),
         True,
     )
 
@@ -124,13 +127,18 @@ class FenicsOperator(object):
         from bempp.api.assembly.discrete_boundary_operator import (
             SparseDiscreteBoundaryOperator,
         )
-        from dolfinx.fem import assemble_matrix
+        from dolfinx.fem import assemble_matrix, form
         from scipy.sparse import csr_matrix
 
         if self._sparse_mat is None:
-            mat = assemble_matrix(self._fenics_weak_form)
-            mat.assemble()
-            (indptr, indices, data) = mat.getValuesCSR()
-            self._sparse_mat = csr_matrix((data, indices, indptr), shape=mat.size)
+            mat = assemble_matrix(form(self._fenics_weak_form))
+            mat.finalize()
+            shape = tuple(
+                i._ufl_function_space.dofmap.index_map.size_global
+                for i in self._fenics_weak_form.arguments()
+            )
+            self._sparse_mat = csr_matrix(
+                (mat.data, mat.indices, mat.indptr), shape=shape
+            )
 
         return SparseDiscreteBoundaryOperator(self._sparse_mat)
