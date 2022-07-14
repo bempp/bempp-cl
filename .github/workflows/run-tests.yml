@@ -12,7 +12,7 @@ on:
 
 jobs:
   configure-docker:
-    name: Build and publish testing environment docker image
+    name: Configure options for Docker image
     runs-on: ubuntu-latest
     outputs:
       dockertag: ${{ steps.dockertag.outputs.tag }}
