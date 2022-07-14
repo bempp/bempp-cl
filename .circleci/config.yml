@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   large-tests:
     docker:
-      - image: bempp/cl-dev-env:latest
+      - image: bempp/cl-dev-env:main
     steps:
       - checkout
       - run:
@@ -17,13 +17,11 @@ jobs:
           name: Run Bempp validation tests
   run-notebooks:
     docker:
-      - image: bempp/cl-dev-env:latest
+      - image: bempp/cl-dev-env:main
     steps:
       - checkout
       - run:
-          command: |
-              apt-get -yq update
-              apt-get -y install jupyter
+          command: pip3 install jupyter nbconvert
           name: Install jupyter
       - run:
           command: python3 setup.py install
@@ -33,13 +31,11 @@ jobs:
           name: Run example notebooks
   run-notebooks-dolfin:
     docker:
-      - image: bempp/cl-dev-env-with-dolfin:latest
+      - image: bempp/cl-dev-env-with-dolfin:main
     steps:
       - checkout
       - run:
-          command: |
-              apt-get -yq update
-              apt-get -y install jupyter
+          command: pip3 install jupyter nbconvert
           name: Install jupyter
       - run:
           command: python3 setup.py install
@@ -49,13 +45,11 @@ jobs:
           name: Run example notebooks
   run-notebooks-dolfinx:
     docker:
-      - image: bempp/cl-dev-env-with-dolfinx:latest
+      - image: bempp/cl-dev-env-with-dolfinx:main
     steps:
       - checkout
       - run:
-          command: |
-              apt-get -yq update
-              apt-get -y install jupyter
+          command: pip3 install jupyter nbconvert
           name: Install jupyter
       - run:
           command: python3 setup.py install
@@ -63,12 +57,6 @@ jobs:
       - run:
           command: python3 -m pytest notebooks/test_notebooks.py --has-dolfin 0 --has-dolfinx 1 --has-exafmm 1 --dolfin-books-only 1
           name: Run example notebooks
-  run-benchmarks:
-    docker:
-      - image: bempp/cl-dev-env:latest
-    steps:
-      - checkout
-      # TODO: run benchmarks and upload timings somewhere
 
 workflows:
   main:
@@ -77,10 +65,6 @@ workflows:
       - run-notebooks
       - run-notebooks-dolfin
       - run-notebooks-dolfinx
-      - run-benchmarks:
-          filters:
-            branches:
-              only: master
   weekly:
     jobs:
       - large-tests
@@ -92,4 +76,4 @@ workflows:
           cron: "0 7 * * 1"
           filters:
             branches:
-              only: master
+              only: main
