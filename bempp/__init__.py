@@ -6,3 +6,4 @@ Laplace, Helmholtz, modified Helmholtz, and Maxwell problems.
 
 Documentation can be found at https://bempp.com/documentation/index.html
 """
+from .version import __version__
