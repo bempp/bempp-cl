@@ -24,10 +24,6 @@ jobs:
       - name: Get main Dockerfile
         run: |
           git clone https://github.com/bempp/bempp-cl.git bempp-main
-          cd bempp-main
-          git reset HEAD~1
-          git stash
-          cd ..
           cp bempp-main/Dockerfile Dockerfile.old
           rm -rf bempp-main
         if: github.ref != 'refs/heads/main'
