@@ -5,7 +5,7 @@ import numpy as np
 
 
 def test_p1_trace(has_dolfin):
-    """Test the trace of a P1 Dolfin function."""
+    """Test the trace of a P1 DOLFIN function."""
     if has_dolfin:
         import dolfin
     else:
@@ -39,7 +39,7 @@ def test_p1_trace(has_dolfin):
 
 
 def test_nc1_trace(has_dolfin):
-    """Test the trace of a (N1curl, 1) Dolfin function."""
+    """Test the trace of a (N1curl, 1) DOLFIN function."""
     if has_dolfin:
         import dolfin
     else:
