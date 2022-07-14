@@ -164,7 +164,7 @@ RUN pip3 install --no-cache-dir meshio>=4.0.16 \
     numba numpy==1.20 scipy matplotlib && \
     pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
 RUN apt-get -y install \
-    python3-dolfin && \
+    python3-dolfin \
     python3-lxml && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
