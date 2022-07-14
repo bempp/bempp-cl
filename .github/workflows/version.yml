@@ -1,0 +1,14 @@
+name: Check version numbering
+
+on: push
+
+jobs:
+  check-version-number:
+    name: Check version numbers
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install PyGitHub
+        run: pip3 install PyGitHub
+      - name: Check and update version numbers
+        run: python3 .github/scripts/update_version_number.py ${{ secrets.bemppbot_github_token }} ${GITHUB_REF#refs/heads/}
