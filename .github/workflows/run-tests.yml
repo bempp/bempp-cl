@@ -11,11 +11,12 @@ on:
     - cron: "0 7 * * 1"
 
 jobs:
-  build-and-publish-docker:
+  configure-docker:
     name: Build and publish testing environment docker image
     runs-on: ubuntu-latest
     outputs:
       dockertag: ${{ steps.dockertag.outputs.tag }}
+      buildneeded: ${{ steps.diff.outputs.changed }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -54,36 +55,69 @@ jobs:
           fi
         id: dockertag
 
+  build-and-publish-docker-dolfinx:
+    name: Build testing docker image with DOLFINx
+    needs:
+      - configure-docker
+    steps:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-        if: steps.diff.outputs.changed == 'yes'
+        if: needs.configure-docker.outputs.buildneeded == 'yes'
       - name: Login to DockerHub
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-        if: steps.diff.outputs.changed == 'yes'
+        if: needs.configure-docker.outputs.buildneeded == 'yes'
       - name: Build and push testing Docker image with dolfinx
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: bempp/cl-dev-env-with-dolfinx:${{ steps.dockertag.outputs.tag }}
+          tags: bempp/cl-dev-env-with-dolfinx:${{ needs.configure-docker.outputs.dockertag }}
           target: bempp-dev-env-with-dolfinx
-        if: steps.diff.outputs.changed == 'yes'
+        if: needs.configure-docker.outputs.buildneeded == 'yes'
+  build-and-publish-docker-dolfin:
+    name: Build testing docker image with legacy DOLFIN
+    needs:
+      - configure-docker
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+        if: needs.configure-docker.outputs.buildneeded == 'yes'
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+        if: needs.configure-docker.outputs.buildneeded == 'yes'
       - name: Build and push testing Docker image with dolfin
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: bempp/cl-dev-env-with-dolfin:${{ steps.dockertag.outputs.tag }}
+          tags: bempp/cl-dev-env-with-dolfin:${{ needs.configure-docker.outputs.dockertag }}
           target: bempp-dev-env-with-dolfin
-        if: steps.diff.outputs.changed == 'yes'
+        if: needs.configure-docker.outputs.buildneeded == 'yes'
+  build-and-publish-docker:
+    name: Build testing docker image
+    needs:
+      - configure-docker
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+        if: needs.configure-docker.outputs.buildneeded == 'yes'
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+        if: needs.configure-docker.outputs.buildneeded == 'yes'
       - name: Build and push testing Docker image
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: bempp/cl-dev-env:${{ steps.dockertag.outputs.tag }}
+          tags: bempp/cl-dev-env:${{ needs.configure-docker.outputs.dockertag }}
           target: bempp-dev-env
-        if: steps.diff.outputs.changed == 'yes'
+        if: needs.configure-docker.outputs.buildneeded == 'yes'
 
   style-checks:
     name: Run style checks
@@ -102,13 +136,29 @@ jobs:
       - run: python3 -m pydocstyle bempp/api
         name: Run pydocstyle checks
 
-  build-and-test-with-dolfin:
-    name: Build Bempp and run tests with DOLFIN
+  build-and-test:
+    name: Build Bempp and run tests
     needs:
+      - configure-docker
       - build-and-publish-docker
       - style-checks
     runs-on: ubuntu-latest
-    container: bempp/cl-dev-env-with-dolfin:${{ needs.build-and-publish-docker.outputs.dockertag }}
+    container: bempp/cl-dev-env:${{ needs.configure-docker.outputs.dockertag }}
+    steps:
+      - uses: actions/checkout@v2
+      - run: python3 setup.py install
+        name: Install Bempp
+      - run: python3 -m pytest -n4 --durations=50 test/unit --has-dolfin 0 --has-dolfinx 0 --has-exafmm 1
+        name: Run Bempp unit tests
+
+  build-and-test-with-dolfin:
+    name: Build Bempp and run tests with DOLFIN
+    needs:
+      - configure-docker
+      - build-and-publish-docker-dolfin
+      - style-checks
+    runs-on: ubuntu-latest
+    container: bempp/cl-dev-env-with-dolfin:${{ needs.configure-docker.outputs.dockertag }}
     steps:
       - uses: actions/checkout@v2
       - run: python3 setup.py install
@@ -119,10 +169,11 @@ jobs:
   build-and-test-with-dolfinx:
     name: Build Bempp and run tests with DOLFINx
     needs:
-      - build-and-publish-docker
+      - configure-docker
+      - build-and-publish-docker-dolfinx
       - style-checks
     runs-on: ubuntu-latest
-    container: bempp/cl-dev-env-with-dolfinx:${{ needs.build-and-publish-docker.outputs.dockertag }}
+    container: bempp/cl-dev-env-with-dolfinx:${{ needs.configure-docker.outputs.dockertag }}
     steps:
       - uses: actions/checkout@v2
       - run: python3 setup.py install
