@@ -65,7 +65,7 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
         "l2_identity": l2_identity_kernel,
         "laplace_beltrami": laplace_beltrami_kernel,
         "l2_grad_identity": l2_grad_identity_kernel,
-        "l2_curl_curl_identity":l2_curl_curl_identity_kernel
+        "l2_curl_curl_identity": l2_curl_curl_identity_kernel
     }
 
     if mode == "regular":
@@ -899,7 +899,7 @@ def l2_identity_kernel(
                         * quad_weights[quad_index]
                         * integration_element
                     )
-                    
+
 
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
@@ -950,14 +950,11 @@ def l2_grad_identity_kernel(
             for dim_index in range(1):
                 for grad_index in range(3):
                     for quad_index in range(n_quad_points):
-                        result[nshape * element_index
-                                + test_index * nshape_trial
-                                + trial_index
-                            ] += (
-                                local_test_fun_values[grad_index, test_index, quad_index]* local_trial_fun_values[dim_index, grad_index, trial_index, quad_index]
-                                * quad_weights[quad_index]
-                                * integration_element
-                            )
+                        result[nshape * element_index + test_index * nshape_trial + trial_index] += (
+                            local_test_fun_values[grad_index, test_index, quad_index] * local_trial_fun_values[dim_index, grad_index, trial_index, quad_index]
+                            * quad_weights[quad_index]
+                            * integration_element
+                        )
 
 
 @_numba.jit(
@@ -1001,21 +998,21 @@ def l2_curl_curl_identity_kernel(
         trial_multipliers,
         trial_normal_multipliers,
     )
-  
+
     nshape = nshape_test * nshape_trial
     integration_element = grid_data.integration_elements[element]
     n_quad_points = len(quad_weights)
     for test_index in range(nshape_test):
         for trial_index in range(nshape_trial):
-                for quad_index in range(n_quad_points):
-                    result[
-                        nshape * element_index + test_index * nshape_trial + trial_index
-                    ] += (
-                        local_test_fun_values[test_index]
-                        * local_trial_fun_values[trial_index]
-                        * quad_weights[quad_index]
-                        * integration_element
-                    ) 
+            for quad_index in range(n_quad_points):
+                result[
+                    nshape * element_index + test_index * nshape_trial + trial_index
+                ] += (
+                    local_test_fun_values[test_index]
+                    * local_trial_fun_values[trial_index]
+                    * quad_weights[quad_index]
+                    * integration_element
+                )
 
 
 @_numba.jit(

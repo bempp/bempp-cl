@@ -290,6 +290,7 @@ def _multitrace_operator_impl(
 
     return blocked
 
+
 class _OsrcMtE():
     """Implementation of the OSRC DtN operator."""
 
@@ -316,7 +317,6 @@ class _OsrcMtE():
         self.dual_to_ranges_ = dual_to_ranges
         self.coeff = 0
 
-
     @property
     def descriptor(self):
         """Operator descriptor."""
@@ -325,32 +325,28 @@ class _OsrcMtE():
     def _matvec1(self, v):
         import itertools
         res = 0
-        rhs = list(itertools.chain(*[v.tolist(),_np.zeros(self.pi[0].shape[0]-v.shape[0]).tolist()]))
+        rhs = list(itertools.chain(*[v.tolist(), _np.zeros(self.pi[0].shape[0] - v.shape[0]).tolist()]))
         for element in self.pi:
             res -= element.matvec(rhs)[0:self.domains_[0].global_dof_count]
         res = self.mass * res + self.pade_coeffs[3] * v
-        return self.lambda_2_inv*res
+        return self.lambda_2_inv * res
 
     def _matvec2(self, v):
         res = self.coeff * self.mass * v + self.pade_coeffs[3] * v
-        return self.lambda_2_inv*res
+        return self.lambda_2_inv * res
 
     def _assemble(self):
         """Assemble the operator."""
         from bempp.api.operators.boundary.sparse import mte_lambda_1i
         from bempp.api.operators.boundary.sparse import mte_lambda_2
         from bempp.api.operators.boundary.sparse import mte_operators
-        from bempp.api.assembly.discrete_boundary_operator import (
-            InverseSparseDiscreteBoundaryOperator,
-        )
+        from bempp.api.assembly.discrete_boundary_operator import InverseSparseDiscreteBoundaryOperator
         from scipy.sparse.linalg import LinearOperator
 
-
         wavenumber, npade, theta, damped_wavenumber = self.descriptor.options
-   
 
         if damped_wavenumber is None:
-            dk = wavenumber + 1.0j * 0.39 * wavenumber**(1.0/3) * _np.sqrt(2)**(2.0/3)
+            dk = wavenumber + 1.0j * 0.39 * wavenumber ** (1.0 / 3) * _np.sqrt(2) ** (2.0 / 3)
         else:
             dk = damped_wavenumber
 
@@ -360,22 +356,23 @@ class _OsrcMtE():
 
         self.pade_coeffs = _pade_coeffs(npade, theta)
         self.mass = mte_op[1].weak_form()
-        if(self.type == 1):
+        if self.type == 1 :
             self.pi = []
             for i in range(npade):
                 self.pi.append((self.pade_coeffs[1][i] / self.pade_coeffs[2][i]) * mte_lambda_1i(mte_op, self.pade_coeffs[2][i], dk))
-            return LinearOperator(self.lambda_2_inv.shape, matvec = self._matvec1)
+            return LinearOperator(self.lambda_2_inv.shape, matvec=self._matvec1)
         else:
-            for j in range(int(_np.floor(4.0*npade/5)),npade):
-                self.coeff+= self.pade_coeffs[1][j]
-            return LinearOperator(self.lambda_2_inv.shape, matvec = self._matvec2)
+            for j in range(int(_np.floor(4.0 * npade / 5)), npade):
+                self.coeff += self.pade_coeffs[1][j]
+            return LinearOperator(self.lambda_2_inv.shape, matvec=self._matvec2)
+
 
 def osrc_mte(
     domains, ranges, dual_to_ranges,
     wavenumber,
-    npade= 2,
-    theta= _np.pi / 2.0,
-    type = 1,
+    npade=2,
+    theta=_np.pi / 2.0,
+    type=1,
     damped_wavenumber=None,
     parameters=None,
     device_interface=None,
@@ -401,7 +398,6 @@ def osrc_mte(
     if dual_to_ranges[1].shapeset.identifier != "p1_discontinuous":
         raise ValueError("Domain space must be of type 'p1_discontinuous'.")
 
-
     return _OsrcMtE(
         type,
         domains, ranges, dual_to_ranges,
@@ -411,20 +407,21 @@ def osrc_mte(
         precision,
     )
 
+
 def Sum(A, B, inpt, inner_coeff, outer_coeff):
     s = 0.0
     index = 0
     for coefficient in A:
-        s+= coefficient*inpt/(inner_coeff+B[index]*inpt)
-        index+=1
-    return outer_coeff+s
+        s += coefficient * inpt / (inner_coeff + B[index] * inpt)
+        index += 1
+    return outer_coeff + s
 
 
 def _pade_coeffs(Np, angle):
-    a = [(2.0/(2.0*Np+1.0))*_np.sin(_np.pi*(i+1.0)/(2.0*Np+1.0))**2 for i in range(Np)]
-    b = [_np.cos(_np.pi*(i+1.0)/(2.0*Np+1.0))**2 for i in range(Np)]
-    A = [(_np.exp(-1.0j*angle/2.0)*a[i])/(1.0+b[i]*(_np.exp(-1.0j*angle)-1))**2 for i in range(Np)]
-    B = [(_np.exp(-1.0j*angle)*b[i])/(1.0+b[i]*(_np.exp(-1.0j*angle)-1.0)) for i in range(Np)]
-    C_0 = _np.exp(1.0j*angle/2.0)*Sum(a,b,_np.exp(-1.0j*angle)-1.0,1.0,1.0)
-    R_0 = Sum(A,B,1.0,0.0,C_0)
+    a = [(2.0 / (2.0 * Np + 1.0)) * _np.sin(_np.pi * (i + 1.0) / (2.0 * Np + 1.0)) ** 2 for i in range(Np)]
+    b = [_np.cos(_np.pi * (i + 1.0) / (2.0 * Np + 1.0)) ** 2 for i in range(Np)]
+    A = [(_np.exp(-1.0j * angle / 2.0) * a[i]) / (1.0 + b[i] * (_np.exp(-1.0j * angle) - 1)) ** 2 for i in range(Np)]
+    B = [(_np.exp(-1.0j * angle) * b[i]) / (1.0 + b[i] * (_np.exp(-1.0j * angle) - 1.0)) for i in range(Np)]
+    C_0 = _np.exp(1.0j * angle / 2.0) * Sum(a, b, _np.exp(-1.0j * angle) - 1.0, 1.0, 1.0)
+    R_0 = Sum(A, B, 1.0, 0.0, C_0)
     return C_0, A, B, R_0
