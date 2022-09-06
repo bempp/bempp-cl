@@ -189,7 +189,7 @@ WORKDIR /root
 
 ########################################
 
-FROM dolfinx/dev-env as bempp-dev-env-with-dolfinx
+FROM dolfinx/dev-env:stable as bempp-dev-env-with-dolfinx
 LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
 LABEL description="Bempp-cl development environment with FEniCSx"
 
@@ -265,7 +265,7 @@ WORKDIR /root
 
 ########################################
 
-FROM dolfinx/dev-env as bempp-dev-env-with-dolfinx-numba
+FROM dolfinx/dev-env:stable as bempp-dev-env-with-dolfinx-numba
 LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
 LABEL description="Bempp-cl development environment with FEniCSx (Numba only)"
 
@@ -421,7 +421,7 @@ LABEL description="Bempp Jupyter Lab with legacy FEniCS"
 
 WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
-RUN cd bempp-cl && pip3 isntall .
+RUN cd bempp-cl && pip3 install .
 RUN cp -r bempp-cl/notebooks /root/example_notebooks
 RUN rm /root/example_notebooks/conftest.py /root/example_notebooks/test_notebooks.py
 
