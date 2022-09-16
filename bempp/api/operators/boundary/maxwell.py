@@ -379,7 +379,6 @@ def osrc_mte(
     precision=None,
 ):
     """Assemble the OSRC approximation to the NtD operator."""
-
     if domains[0].identifier != "snc0":
         raise ValueError("Domain space must be a SNC type function space.")
 
@@ -409,6 +408,9 @@ def osrc_mte(
 
 
 def Sum(A, B, inpt, inner_coeff, outer_coeff):
+    """Return a sum.
+
+    TODO: document this."""
     s = 0.0
     index = 0
     for coefficient in A:

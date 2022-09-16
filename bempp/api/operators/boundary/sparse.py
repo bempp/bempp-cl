@@ -109,6 +109,23 @@ def multitrace_identity(
 
 
 def mte_operators(domains_, ranges_, dual_to_ranges_, kappa):
+    """
+    Create MTE operators.
+
+    Parameters
+    ----------
+    domains_
+        Domain spaces
+    ranges_
+        Range spaces
+    dual_to_ranges_
+        Dual spaces
+
+    Output
+    ------
+    MTE operators.
+
+    """
     IP = identity(domains_[1], ranges_[1], dual_to_ranges_[1])
     IC = identity(domains_[0], ranges_[0], dual_to_ranges_[0])
     N = (1.0 / kappa) ** 2 * curl_curl_identity(domains_[0], ranges_[0], dual_to_ranges_[0])
@@ -118,6 +135,11 @@ def mte_operators(domains_, ranges_, dual_to_ranges_, kappa):
 
 
 def mte_lambda_1i(mte_operators, beta, kappa):
+    """
+    Crate the MTE lambda 1i operator.
+
+    TODO: document this
+    """
     from scipy.sparse import bmat
     from bempp.api.assembly.discrete_boundary_operator import InverseSparseDiscreteBoundaryOperator
     IP, IC, N, LT, L = mte_operators
@@ -126,6 +148,11 @@ def mte_lambda_1i(mte_operators, beta, kappa):
 
 
 def mte_lambda_2(mte_operators):
+    """
+    Crate the MTE lambda 2 operator.
+
+    TODO: document this
+    """
     IP, IC, N, LT, L = mte_operators
     return IC - N
 
