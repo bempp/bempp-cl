@@ -410,7 +410,8 @@ def osrc_mte(
 def Sum(A, B, inpt, inner_coeff, outer_coeff):
     """Return a sum.
 
-    TODO: document this."""
+    TODO: document this.
+    """
     s = 0.0
     index = 0
     for coefficient in A:
