@@ -1312,7 +1312,7 @@ def barycentric_refinement(grid):
     )
 
 
-def union(grids, domain_indices=None, swapped_normals=None):
+def union(grids, domain_indices=None, swapped_normals=None, normalize_domain_indices=True):
     """
     Return the union of a given list of grids.
 
@@ -1330,6 +1330,11 @@ def union(grids, domain_indices=None, swapped_normals=None):
         should be swapped (True) or not (False). This
         is helpful if one grid is defined to be inside
         another grid.
+    normalize_domain_indices : bool
+        Normalize the resulting grid with domain unique indices
+        between 0 and N-1, where N is the total number
+        of domains across all grids, when
+        domain_indices has not been provided.
 
     This method returns a new grid object, which is
     the union of the input grid objects.
@@ -1347,10 +1352,23 @@ def union(grids, domain_indices=None, swapped_normals=None):
     elements = _np.empty((3, element_count), dtype="uint32")
     all_domain_indices = _np.empty(element_count, dtype="uint32")
 
+    def normalize_array(arr):
+        """Normalize array to integer values between 0 and N-1,
+        where N is number of unique values in the original array."""
+        arr = arr - arr.min()
+        for i, index in enumerate(_np.unique(arr)[1:], start=1):
+            arr[arr == index] = i
+        return arr
+
     if domain_indices is None:
-        domain_indices = [grids[0].domain_indices]
-        for grid in grids[1:]:
-            domain_indices.append(domain_indices[-1].max() - grid.domain_indices.min() + 1 + grid.domain_indices)
+        if not normalize_domain_indices:
+            domain_indices = [grids[0].domain_indices]
+            for grid in grids[1:]:
+                domain_indices.append(domain_indices[-1].max() - grid.domain_indices.min() + 1 + grid.domain_indices)
+        else:
+            domain_indices = [normalize_array(grids[0].domain_indices)]
+            for grid in grids[1:]:
+                domain_indices.append(domain_indices[-1].max() + 1 + normalize_array(grid.domain_indices))
 
     if swapped_normals is None:
         swapped_normals = len(grids) * [False]
