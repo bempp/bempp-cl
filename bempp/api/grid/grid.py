@@ -1348,7 +1348,9 @@ def union(grids, domain_indices=None, swapped_normals=None):
     all_domain_indices = _np.empty(element_count, dtype="uint32")
 
     if domain_indices is None:
-        domain_indices = range(len(grids))
+        domain_indices = [grids[0].domain_indices]
+        for grid in grids[1:]:
+            domain_indices.append(domain_indices[-1].max() - grid.domain_indices.min() + 1 + grid.domain_indices)
 
     if swapped_normals is None:
         swapped_normals = len(grids) * [False]
