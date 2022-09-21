@@ -1353,8 +1353,7 @@ def union(grids, domain_indices=None, swapped_normals=None, normalize_domain_ind
     all_domain_indices = _np.empty(element_count, dtype="uint32")
 
     def normalize_array(arr):
-        """Normalize array to integer values between 0 and N-1,
-        where N is number of unique values in the original array."""
+        """Normalize domain indices array."""
         arr = arr - arr.min()
         for i, index in enumerate(_np.unique(arr)[1:], start=1):
             arr[arr == index] = i
