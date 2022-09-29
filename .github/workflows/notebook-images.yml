@@ -37,6 +37,20 @@ jobs:
           tags: bempp/cl-notebook:latest
           target: lab
 
+      # Images with legacy FEniCS
+      # - name: Build and push Docker image with legacy FEniCS
+      #  uses: docker/build-push-action@v2
+      #  with:
+      #    push: true
+      #    tags: bempp/bempp-cl-with-dolfin:latest
+      #    target: with-dolfin
+      # - name: Build and push notebook Docker image with legacy FEniCS
+      #  uses: docker/build-push-action@v2
+      #  with:
+      #    push: true
+      #    tags: bempp/cl-notebook-fenics:latest
+      #    target: fenics-lab
+
       # Notebook with Numba only
       - name: Build and push Numba-only notebook Docker image
         uses: docker/build-push-action@v2
