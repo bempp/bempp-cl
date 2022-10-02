@@ -409,7 +409,7 @@ def osrc_mte(
 
 def _pade_coeffs(Np, angle):
     """
-    Returns complex Pade coefficient for a Pade approximation of order Np and a certain angle.
+    Return complex Pade coefficient for a Pade approximation of order Np and a certain angle.
 
     Parameters
     ----------
@@ -429,7 +429,7 @@ def _pade_coeffs(Np, angle):
     """
 
     def sum_coeffs(A, B, inpt, inner_coeff, outer_coeff):
-        """Returns a standard real valued Pade approximation of order Np from arrays of coefficients, A and B"""
+        """Return a standard real valued Pade approximation of order Np from arrays of coefficients, A and B."""
         s = 0.0
         index = 0
         for coefficient in A:

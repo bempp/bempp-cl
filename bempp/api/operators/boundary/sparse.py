@@ -146,7 +146,7 @@ def mte_operators(domains_, ranges_, dual_to_ranges_, kappa):
 
 
 def lambda_1(mte_operators, beta, kappa_eps):
-    """Create and return block Pade approximate operator to Lambda1 = (I+Delta)^(1/2)
+    """Create and return block Pade approximate operator to Lambda1 = (I+Delta)^(1/2).
 
     Parameters
     ----------
@@ -170,7 +170,7 @@ def lambda_1(mte_operators, beta, kappa_eps):
 
 def lambda_2(mte_operators):
     """
-    Crate and return Lambda2 = (I-curlcurl) operator
+    Crate and return Lambda2 = (I-curlcurl) operator.
 
     Parameters
     ----------
