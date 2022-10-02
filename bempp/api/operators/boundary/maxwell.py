@@ -420,10 +420,10 @@ def _pade_coeffs(Np, angle):
 
     Output
     ------
-    C0, R0 
+    C0, R0
         Constants from Pade approximation
 
-    A, B 
+    A, B
         Arrays containing the Pade coefficients
 
     """
@@ -443,5 +443,4 @@ def _pade_coeffs(Np, angle):
     B = [(_np.exp(-1.0j * angle) * b[i]) / (1.0 + b[i] * (_np.exp(-1.0j * angle) - 1.0)) for i in range(Np)]
     C_0 = _np.exp(1.0j * angle / 2.0) * sum_coeffs(a, b, _np.exp(-1.0j * angle) - 1.0, 1.0, 1.0)
     R_0 = sum_coeffs(A, B, 1.0, 0.0, C_0)
-    
     return C_0, A, B, R_0

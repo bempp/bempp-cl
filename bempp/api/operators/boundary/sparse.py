@@ -126,7 +126,7 @@ def mte_operators(domains_, ranges_, dual_to_ranges_, kappa):
     Basic sparse operators to assemble Pade approximate MtE operators.
 
     IP
-        Identity operator built with piecewise linear basis functions 
+        Identity operator built with piecewise linear basis functions
     IC
         Identity operator built with Hcurl conforming basis functions
     N
@@ -160,7 +160,6 @@ def lambda_1(mte_operators, beta, kappa_eps):
     Output
     ------
     Block operator that approximates (I+Delta)^(1/2)
-    
     """
     from scipy.sparse import bmat
     from bempp.api.assembly.discrete_boundary_operator import InverseSparseDiscreteBoundaryOperator
