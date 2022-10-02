@@ -29,20 +29,6 @@ jobs:
       - run:
           command: python3 -m pytest --durations=10 notebooks/test_notebooks.py --has-dolfin 0 --has-dolfinx 0 --has-exafmm 1
           name: Run example notebooks
-  run-notebooks-dolfin:
-    docker:
-      - image: bempp/cl-dev-env-with-dolfin:main
-    steps:
-      - checkout
-      - run:
-          command: pip3 install jupyter nbconvert
-          name: Install jupyter
-      - run:
-          command: python3 setup.py install
-          name: Install Bempp
-      - run:
-          command: python3 -m pytest notebooks/test_notebooks.py --has-dolfin 1 --has-dolfinx 0 --has-exafmm 1 --dolfin-books-only 1
-          name: Run example notebooks
   run-notebooks-dolfinx:
     docker:
       - image: bempp/cl-dev-env-with-dolfinx:main
@@ -63,13 +49,11 @@ workflows:
     jobs:
       - large-tests
       - run-notebooks
-      - run-notebooks-dolfin
       - run-notebooks-dolfinx
   weekly:
     jobs:
       - large-tests
       - run-notebooks
-      - run-notebooks-dolfin
       - run-notebooks-dolfinx
     triggers:
       - schedule:
