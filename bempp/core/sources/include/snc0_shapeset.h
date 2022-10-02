@@ -3,7 +3,7 @@
 
 #include "bempp_base_types.h"
 
-inline void luate(const REALTYPE2* localPoint, REALTYPE* result)
+inline void snc0_evaluate(const REALTYPE2* localPoint, REALTYPE* result)
 {
     
     // Shape function on edge 0
