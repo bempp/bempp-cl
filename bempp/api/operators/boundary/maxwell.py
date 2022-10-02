@@ -337,8 +337,8 @@ class _OsrcMtE():
 
     def _assemble(self):
         """Assemble the operator."""
-        from bempp.api.operators.boundary.sparse import mte_lambda_1i
-        from bempp.api.operators.boundary.sparse import mte_lambda_2
+        from bempp.api.operators.boundary.sparse import lambda_1
+        from bempp.api.operators.boundary.sparse import lambda_2
         from bempp.api.operators.boundary.sparse import mte_operators
         from bempp.api.assembly.discrete_boundary_operator import InverseSparseDiscreteBoundaryOperator
         from scipy.sparse.linalg import LinearOperator
@@ -352,14 +352,14 @@ class _OsrcMtE():
 
         mte_op = mte_operators(self.domains_, self.ranges_, self.dual_to_ranges_, dk)
 
-        self.lambda_2_inv = InverseSparseDiscreteBoundaryOperator(mte_lambda_2(mte_op).weak_form())
+        self.lambda_2_inv = InverseSparseDiscreteBoundaryOperator(lambda_2(mte_op).weak_form())
 
         self.pade_coeffs = _pade_coeffs(npade, theta)
         self.mass = mte_op[1].weak_form()
         if self.type == 1 :
             self.pi = []
             for i in range(npade):
-                self.pi.append((self.pade_coeffs[1][i] / self.pade_coeffs[2][i]) * mte_lambda_1i(mte_op, self.pade_coeffs[2][i], dk))
+                self.pi.append((self.pade_coeffs[1][i] / self.pade_coeffs[2][i]) * lambda_1(mte_op, self.pade_coeffs[2][i], dk))
             return LinearOperator(self.lambda_2_inv.shape, matvec=self._matvec1)
         else:
             for j in range(int(_np.floor(4.0 * npade / 5)), npade):
@@ -407,24 +407,41 @@ def osrc_mte(
     )
 
 
-def Sum(A, B, inpt, inner_coeff, outer_coeff):
-    """Return a sum.
-
-    TODO: document this.
-    """
-    s = 0.0
-    index = 0
-    for coefficient in A:
-        s += coefficient * inpt / (inner_coeff + B[index] * inpt)
-        index += 1
-    return outer_coeff + s
-
-
 def _pade_coeffs(Np, angle):
+    """
+    Returns complex Pade coefficient for a Pade approximation of order Np and a certain angle.
+
+    Parameters
+    ----------
+    Np
+        Order of the approximation
+    angle
+        Angle of the complex approximation
+
+    Output
+    ------
+    C0, R0 
+        Constants from Pade approximation
+
+    A, B 
+        Arrays containing the Pade coefficients
+
+    """
+
+    def sum_coeffs(A, B, inpt, inner_coeff, outer_coeff):
+        """Returns a standard real valued Pade approximation of order Np from arrays of coefficients, A and B"""
+        s = 0.0
+        index = 0
+        for coefficient in A:
+            s += coefficient * inpt / (inner_coeff + B[index] * inpt)
+            index += 1
+        return outer_coeff + s
+
     a = [(2.0 / (2.0 * Np + 1.0)) * _np.sin(_np.pi * (i + 1.0) / (2.0 * Np + 1.0)) ** 2 for i in range(Np)]
     b = [_np.cos(_np.pi * (i + 1.0) / (2.0 * Np + 1.0)) ** 2 for i in range(Np)]
     A = [(_np.exp(-1.0j * angle / 2.0) * a[i]) / (1.0 + b[i] * (_np.exp(-1.0j * angle) - 1)) ** 2 for i in range(Np)]
     B = [(_np.exp(-1.0j * angle) * b[i]) / (1.0 + b[i] * (_np.exp(-1.0j * angle) - 1.0)) for i in range(Np)]
-    C_0 = _np.exp(1.0j * angle / 2.0) * Sum(a, b, _np.exp(-1.0j * angle) - 1.0, 1.0, 1.0)
-    R_0 = Sum(A, B, 1.0, 0.0, C_0)
+    C_0 = _np.exp(1.0j * angle / 2.0) * sum_coeffs(a, b, _np.exp(-1.0j * angle) - 1.0, 1.0, 1.0)
+    R_0 = sum_coeffs(A, B, 1.0, 0.0, C_0)
+    
     return C_0, A, B, R_0

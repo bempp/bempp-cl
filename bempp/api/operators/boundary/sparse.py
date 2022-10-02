@@ -110,7 +110,7 @@ def multitrace_identity(
 
 def mte_operators(domains_, ranges_, dual_to_ranges_, kappa):
     """
-    Create MTE operators.
+    Create basic sparse operators to assemble Pade approximate MtE operators.
 
     Parameters
     ----------
@@ -123,7 +123,18 @@ def mte_operators(domains_, ranges_, dual_to_ranges_, kappa):
 
     Output
     ------
-    MTE operators.
+    Basic sparse operators to assemble Pade approximate MtE operators.
+
+    IP
+        Identity operator built with piecewise linear basis functions 
+    IC
+        Identity operator built with Hcurl conforming basis functions
+    N
+        Scaled curlcurl operator
+    L
+        Grad u dot v operator
+    LT
+        Transpose of L
 
     """
     IP = identity(domains_[1], ranges_[1], dual_to_ranges_[1])
@@ -134,24 +145,42 @@ def mte_operators(domains_, ranges_, dual_to_ranges_, kappa):
     return IP, IC, N, LT, L
 
 
-def mte_lambda_1i(mte_operators, beta, kappa):
-    """
-    Crate the MTE lambda 1i operator.
+def lambda_1(mte_operators, beta, kappa_eps):
+    """Create and return block Pade approximate operator to Lambda1 = (I+Delta)^(1/2)
 
-    TODO: document this
+    Parameters
+    ----------
+    mte_operators
+        Basic sparse Pade approximate MtE operators.
+    beta
+        Array containing the division between Pade coefficients: A_j/B_j
+    kappa
+        Damped wavenumber kappa_eps = kappa + i eps
+
+    Output
+    ------
+    Block operator that approximates (I+Delta)^(1/2)
+    
     """
     from scipy.sparse import bmat
     from bempp.api.assembly.discrete_boundary_operator import InverseSparseDiscreteBoundaryOperator
     IP, IC, N, LT, L = mte_operators
     return InverseSparseDiscreteBoundaryOperator(
-        bmat([[(IC - beta * N).weak_form().to_sparse(), (beta * LT).weak_form().to_sparse()], [L.weak_form().to_sparse(), kappa ** 2 * IP.weak_form().to_sparse()]], 'csc'))
+        bmat([[(IC - beta * N).weak_form().to_sparse(), (beta * LT).weak_form().to_sparse()], [L.weak_form().to_sparse(), kappa_eps ** 2 * IP.weak_form().to_sparse()]], 'csc'))
 
 
-def mte_lambda_2(mte_operators):
+def lambda_2(mte_operators):
     """
-    Crate the MTE lambda 2 operator.
+    Crate and return Lambda2 = (I-curlcurl) operator
 
-    TODO: document this
+    Parameters
+    ----------
+    mte_operators
+
+    Output
+    ------
+    IC-N = (I-curlcurl)
+
     """
     IP, IC, N, LT, L = mte_operators
     return IC - N
