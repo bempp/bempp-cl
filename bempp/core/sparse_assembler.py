@@ -119,12 +119,12 @@ def assemble_sparse(
         domain_shapeset_evaluation = domain.shapeset.gradient
         dual_to_range_numba_evaluation = dual_to_range.numba_surface_gradient
         domain_numba_evaluation = domain.numba_surface_gradient
-    elif operator_descriptor.identifier == "l2_grad_identity":
+    elif operator_descriptor.identifier == "_vector_grad_product":
         dual_to_range_shapeset_evaluation = dual_to_range.shapeset.evaluate
         domain_shapeset_evaluation = domain.shapeset.gradient
         dual_to_range_numba_evaluation = dual_to_range.numba_evaluate
         domain_numba_evaluation = domain.numba_surface_gradient
-    elif operator_descriptor.identifier == "l2_curl_curl_identity":
+    elif operator_descriptor.identifier == "_curl_curl_product":
         dual_to_range_shapeset_evaluation = dual_to_range.shapeset.gradient
         domain_shapeset_evaluation = domain.shapeset.gradient
         dual_to_range_numba_evaluation = dual_to_range.numba_surface_curl

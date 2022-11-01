@@ -27,7 +27,7 @@ def identity(
     )
 
 
-def grad_identity(
+def _vector_grad_product(
     domain,
     range_,
     dual_to_range,
@@ -35,16 +35,16 @@ def grad_identity(
     device_interface=None,
     precision=None,
 ):
-    """Assemble the L^2 identity operator."""
+    """Assemble the inner product between a vector field and grad of a P1 basis function."""
     return _common.create_operator(
-        "l2_grad_identity",
+        "_vector_grad_product",
         domain,
         range_,
         dual_to_range,
         parameters,
         "sparse",
         [],
-        "l2_grad_identity",
+        "_vector_grad_product",
         "default_sparse",
         device_interface,
         precision,
@@ -52,7 +52,7 @@ def grad_identity(
     )
 
 
-def curl_curl_identity(
+def _curl_curl_product(
     domain,
     range_,
     dual_to_range,
@@ -60,16 +60,16 @@ def curl_curl_identity(
     device_interface=None,
     precision=None,
 ):
-    """Assemble the L^2 identity operator."""
+    """Assemble inner product between the surface curl of 2 SNC basis functions"""
     return _common.create_operator(
-        "l2_curl_curl_identity",
+        "_curl_curl_product",
         domain,
         range_,
         dual_to_range,
         parameters,
         "sparse",
         [],
-        "l2_curl_curl_identity",
+        "_curl_curl_product",
         "default_sparse",
         device_interface,
         precision,
@@ -139,8 +139,8 @@ def mte_operators(domains_, ranges_, dual_to_ranges_, kappa):
     """
     IP = identity(domains_[1], ranges_[1], dual_to_ranges_[1])
     IC = identity(domains_[0], ranges_[0], dual_to_ranges_[0])
-    N = (1.0 / kappa) ** 2 * curl_curl_identity(domains_[0], ranges_[0], dual_to_ranges_[0])
-    LT = grad_identity(domains_[1], ranges_[0], dual_to_ranges_[0])
+    N = (1.0 / kappa) ** 2 * _curl_curl_product(domains_[0], ranges_[0], dual_to_ranges_[0])
+    LT = _vector_grad_product(domains_[1], ranges_[0], dual_to_ranges_[0])
     L = LT._transpose(LT._domain)
     return IP, IC, N, LT, L
 
@@ -170,7 +170,7 @@ def lambda_1(mte_operators, beta, kappa_eps):
 
 def lambda_2(mte_operators):
     """
-    Crate and return Lambda2 = (I-curlcurl) operator.
+    Create and return Lambda2 = (I-curlcurl) operator.
 
     Parameters
     ----------

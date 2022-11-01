@@ -64,8 +64,8 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
     kernel_functions_sparse = {
         "l2_identity": l2_identity_kernel,
         "laplace_beltrami": laplace_beltrami_kernel,
-        "l2_grad_identity": l2_grad_identity_kernel,
-        "l2_curl_curl_identity": l2_curl_curl_identity_kernel
+        "_vector_grad_product": _vector_grad_product_kernel,
+        "_curl_curl_product": _curl_curl_product_kernel
     }
 
     if mode == "regular":
@@ -904,7 +904,7 @@ def l2_identity_kernel(
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
 )
-def l2_grad_identity_kernel(
+def _vector_grad_product_kernel(
     grid_data,
     nshape_test,
     nshape_trial,
@@ -960,7 +960,7 @@ def l2_grad_identity_kernel(
 @_numba.jit(
     nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
 )
-def l2_curl_curl_identity_kernel(
+def _curl_curl_product_kernel(
     grid_data,
     nshape_test,
     nshape_trial,
