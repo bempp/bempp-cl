@@ -60,7 +60,7 @@ def _curl_curl_product(
     device_interface=None,
     precision=None,
 ):
-    """Assemble inner product between the surface curl of 2 SNC basis functions"""
+    """Assemble inner product between the surface curl of 2 SNC basis functions."""
     return _common.create_operator(
         "_curl_curl_product",
         domain,
