@@ -27,6 +27,56 @@ def identity(
     )
 
 
+def _vector_grad_product(
+    domain,
+    range_,
+    dual_to_range,
+    parameters=None,
+    device_interface=None,
+    precision=None,
+):
+    """Assemble the inner product between a vector field and grad of a P1 basis function."""
+    return _common.create_operator(
+        "_vector_grad_product",
+        domain,
+        range_,
+        dual_to_range,
+        parameters,
+        "sparse",
+        [],
+        "_vector_grad_product",
+        "default_sparse",
+        device_interface,
+        precision,
+        False,
+    )
+
+
+def _curl_curl_product(
+    domain,
+    range_,
+    dual_to_range,
+    parameters=None,
+    device_interface=None,
+    precision=None,
+):
+    """Assemble inner product between the surface curl of 2 SNC basis functions."""
+    return _common.create_operator(
+        "_curl_curl_product",
+        domain,
+        range_,
+        dual_to_range,
+        parameters,
+        "sparse",
+        [],
+        "_curl_curl_product",
+        "default_sparse",
+        device_interface,
+        precision,
+        False,
+    )
+
+
 def multitrace_identity(
     multitrace_operator, parameters=None, device_interface=None, precision=None
 ):
@@ -56,6 +106,83 @@ def multitrace_identity(
     blocked_operator[1, 1] = identity(domain1, range1, dual_to_range1)
 
     return blocked_operator
+
+
+def mte_operators(domains_, ranges_, dual_to_ranges_, kappa):
+    """
+    Create basic sparse operators to assemble Pade approximate MtE operators.
+
+    Parameters
+    ----------
+    domains_
+        Domain spaces
+    ranges_
+        Range spaces
+    dual_to_ranges_
+        Dual spaces
+
+    Output
+    ------
+    Basic sparse operators to assemble Pade approximate MtE operators.
+
+    IP
+        Identity operator built with piecewise linear basis functions
+    IC
+        Identity operator built with Hcurl conforming basis functions
+    N
+        Scaled curlcurl operator
+    L
+        Grad u dot v operator
+    LT
+        Transpose of L
+
+    """
+    IP = identity(domains_[1], ranges_[1], dual_to_ranges_[1])
+    IC = identity(domains_[0], ranges_[0], dual_to_ranges_[0])
+    N = (1.0 / kappa) ** 2 * _curl_curl_product(domains_[0], ranges_[0], dual_to_ranges_[0])
+    LT = _vector_grad_product(domains_[1], ranges_[0], dual_to_ranges_[0])
+    L = LT._transpose(LT._domain)
+    return IP, IC, N, LT, L
+
+
+def lambda_1(mte_operators, beta, kappa_eps):
+    """Create and return block Pade approximate operator to Lambda1 = (I+Delta)^(1/2).
+
+    Parameters
+    ----------
+    mte_operators
+        Basic sparse Pade approximate MtE operators.
+    beta
+        Array containing the division between Pade coefficients: A_j/B_j
+    kappa
+        Damped wavenumber kappa_eps = kappa + i eps
+
+    Output
+    ------
+    Block operator that approximates (I+Delta)^(1/2)
+    """
+    from scipy.sparse import bmat
+    from bempp.api.assembly.discrete_boundary_operator import InverseSparseDiscreteBoundaryOperator
+    IP, IC, N, LT, L = mte_operators
+    return InverseSparseDiscreteBoundaryOperator(
+        bmat([[(IC - beta * N).weak_form().to_sparse(), (beta * LT).weak_form().to_sparse()], [L.weak_form().to_sparse(), kappa_eps ** 2 * IP.weak_form().to_sparse()]], 'csc'))
+
+
+def lambda_2(mte_operators):
+    """
+    Create and return Lambda2 = (I-curlcurl) operator.
+
+    Parameters
+    ----------
+    mte_operators
+
+    Output
+    ------
+    IC-N = (I-curlcurl)
+
+    """
+    IP, IC, N, LT, L = mte_operators
+    return IC - N
 
 
 def sigma_identity(
