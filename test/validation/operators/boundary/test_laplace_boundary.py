@@ -231,14 +231,13 @@ def test_laplace_single_element_p0(
     default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for the Laplace slp with p0 basis on the unit triangle."""
-    import bempp.api
     from bempp.api import Grid, function_space
     from bempp.api.operators.boundary.laplace import single_layer
 
     vertices = _np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]], dtype=_np.float64).T
     elements = _np.array([[0, 1, 2]]).T
 
-    grid = bempp.api.Grid(vertices, elements)
+    grid = Grid(vertices, elements)
 
     space = function_space(grid, "DP", 0)
 
@@ -255,4 +254,3 @@ def test_laplace_single_element_p0(
     expected = 0.0798
 
     assert _np.isclose(value, expected, rtol=1E-3)
-
