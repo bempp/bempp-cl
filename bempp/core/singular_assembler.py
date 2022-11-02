@@ -501,7 +501,7 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
                 self.index_count["coincident"] + self.index_count["edge_adjacent"]
             )
         ] = self.number_of_points("coincident")
-        weights_offsets[(self.index_count["coincident"] + self.index_count["vertex_adjacent"]) :] = self.number_of_points(
+        weights_offsets[(self.index_count["coincident"] + self.index_count["edge_adjacent"]) :] = self.number_of_points(
             "coincident"
         ) + self.number_of_points("edge_adjacent")
 
