@@ -403,6 +403,7 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
 
     def _get_number_of_quad_points(self):
         """Compute an array of local numbers of integration points."""
+        n = self.index_count["all"]
         number_of_quad_points = _np.empty(self.index_count["all"], dtype="uint32")
 
         number_of_quad_points[: self.index_count["coincident"]] = self.number_of_points(
@@ -414,7 +415,7 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
             )
         ] = self.number_of_points("edge_adjacent")
         number_of_quad_points[
-            -self.index_count["vertex_adjacent"] :
+            n - self.index_count["vertex_adjacent"] :
         ] = self.number_of_points("vertex_adjacent")
 
         return number_of_quad_points
@@ -500,7 +501,7 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
                 self.index_count["coincident"] + self.index_count["edge_adjacent"]
             )
         ] = self.number_of_points("coincident")
-        weights_offsets[-self.index_count["vertex_adjacent"] :] = self.number_of_points(
+        weights_offsets[(self.index_count["coincident"] + self.index_count["vertex_adjacent"]) :] = self.number_of_points(
             "coincident"
         ) + self.number_of_points("edge_adjacent")
 
