@@ -41,7 +41,7 @@ def dual0_function_space(
     bary_grid = grid.barycentric_refinement
     bary_support_size = len(bary_support_elements)
 
-    support = _np.zeros(bary_grid.number_of_elements, dtype=_np.bool)
+    support = _np.zeros(bary_grid.number_of_elements, dtype=_np.bool_)
     support[bary_support_elements] = True
 
     local2global = _np.zeros((bary_grid.number_of_elements, 1), dtype="uint32")
@@ -126,7 +126,7 @@ def dual1_function_space(
         grid, support_elements, segments, swapped_normals
     )
 
-    coarse_support = _np.zeros(grid.number_of_elements, dtype=_np.bool)
+    coarse_support = _np.zeros(grid.number_of_elements, dtype=_np.bool_)
     coarse_support[coarse_space.support_elements] = True
 
     nentries = 0
@@ -221,7 +221,7 @@ def dual1_function_space(
 
     bary_support_size = len(bary_support_elements)
 
-    support = _np.zeros(bary_grid.number_of_elements, dtype=_np.bool)
+    support = _np.zeros(bary_grid.number_of_elements, dtype=_np.bool_)
     support[bary_support_elements] = True
 
     local2global = _np.zeros((bary_grid.number_of_elements, 3), dtype="uint32")

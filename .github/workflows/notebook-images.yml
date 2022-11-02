@@ -3,11 +3,13 @@ name: Update latest Docker image
 on:
   push:
     branches:
-      - master
+      - main
+  schedule:
+    - cron: "0 7 * * 1"
 
 jobs:
-  build-and-publish-docker:
-    name: Build and publish notebook docker image
+  docker-images:
+    name: Build and publish docker images
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -20,33 +22,25 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build and push Docker image with FEniCS
-        uses: docker/build-push-action@v2
-        with:
-          push: true
-          tags: bempp/bempp-cl-with-dolfin:latest
-          target: with-dolfin
+
+      # Images with FEniCSx
       - name: Build and push Docker image with FEniCSx
         uses: docker/build-push-action@v2
         with:
           push: true
           tags: bempp/bempp-cl-with-dolfinx:latest
           target: with-dolfinx
-      - name: Build and push notebook Docker image
+      - name: Build and push notebook Docker image with FEniCSx
         uses: docker/build-push-action@v2
         with:
           push: true
           tags: bempp/cl-notebook:latest
           target: lab
+
+      # Notebook with Numba only
       - name: Build and push Numba-only notebook Docker image
         uses: docker/build-push-action@v2
         with:
           push: true
           tags: bempp/cl-notebook-numba:latest
           target: numba-lab
-      - name: Build and push legacy FEniCS notebook Docker image
-        uses: docker/build-push-action@v2
-        with:
-          push: true
-          tags: bempp/cl-notebook-fenics:latest
-          target: fenics-lab

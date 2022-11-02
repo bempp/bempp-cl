@@ -12,10 +12,13 @@ def boundary_grid_from_fenics_mesh(fenics_mesh):
     import numpy as np
     from dolfinx.cpp.mesh import entities_to_geometry, exterior_facet_indices
 
+    fenics_mesh.topology.create_entities(2)
+    fenics_mesh.topology.create_connectivity(2, 3)
+
     boundary = entities_to_geometry(
         fenics_mesh,
         fenics_mesh.topology.dim - 1,
-        exterior_facet_indices(fenics_mesh),
+        exterior_facet_indices(fenics_mesh.topology),
         True,
     )
 
@@ -36,7 +39,7 @@ def fenics_to_bempp_trace_data(fenics_space):
     """Return tuple (space,trace_matrix)."""
     family, degree = fenics_space_info(fenics_space)
 
-    if family == "Lagrange":
+    if family in ["Lagrange", "P"]:
         if degree == 1:
             return p1_trace(fenics_space)
     else:
@@ -66,7 +69,7 @@ def p1_trace(fenics_space):
     import numpy as np
 
     family, degree = fenics_space_info(fenics_space)
-    if not (family == "Lagrange" and degree == 1):
+    if not (family in ["Lagrange", "P"] and degree == 1):
         raise ValueError("fenics_space must be a p1 Lagrange space")
 
     fenics_mesh = fenics_space.mesh

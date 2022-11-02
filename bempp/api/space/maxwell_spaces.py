@@ -77,7 +77,7 @@ def rwg0_barycentric_function_space(coarse_space):
 
     bary_support_size = len(bary_support_elements)
 
-    support = _np.zeros(6 * coarse_space.grid.number_of_elements, dtype=_np.bool)
+    support = _np.zeros(6 * coarse_space.grid.number_of_elements, dtype=_np.bool_)
     support[bary_support_elements] = True
 
     normal_multipliers = _np.repeat(coarse_space.normal_multipliers, 6)
@@ -199,12 +199,13 @@ def snc0_function_space(
         .set_normal_multipliers(normal_multipliers)
         .set_order(0)
         .set_is_localised(False)
-        .set_shapeset("rwg0")
+        .set_shapeset("snc0")
         .set_identifier("snc0")
         .set_local2global(local2global)
         .set_local_multipliers(local_multipliers)
         .set_barycentric_representation(snc0_barycentric_function_space)
         .set_numba_evaluator(_numba_snc0_evaluate)
+        .set_numba_surface_curl(_numba_snc0_surface_curl)
         .build()
     )
 
@@ -223,7 +224,7 @@ def snc0_barycentric_function_space(coarse_space):
 
     bary_support_size = len(bary_support_elements)
 
-    support = _np.zeros(6 * coarse_space.grid.number_of_elements, dtype=_np.bool)
+    support = _np.zeros(6 * coarse_space.grid.number_of_elements, dtype=_np.bool_)
     support[bary_support_elements] = True
 
     normal_multipliers = _np.repeat(coarse_space.normal_multipliers, 6)
@@ -419,7 +420,7 @@ def _compute_bc_space_data(
     from bempp.api.grid.grid import enumerate_vertex_adjacent_elements
     from scipy.sparse import coo_matrix
 
-    coarse_support = _np.zeros(grid.entity_count(0), dtype=_np.bool)
+    coarse_support = _np.zeros(grid.entity_count(0), dtype=_np.bool_)
     coarse_support[coarse_space.support_elements] = True
 
     if not truncate_at_segment_edge:
@@ -440,7 +441,7 @@ def _compute_bc_space_data(
         _np.arange(6), number_of_support_elements
     )
 
-    support = _np.zeros(bary_grid.number_of_elements, dtype=_np.bool)
+    support = _np.zeros(bary_grid.number_of_elements, dtype=_np.bool_)
     support[bary_support_elements] = True
 
     bary_support_size = len(bary_support_elements)
@@ -830,4 +831,44 @@ def _numba_snc0_evaluate(
     result[1, :, :] = normal[2] * tmp[0, :, :] - normal[0] * tmp[2, :, :]
     result[2, :, :] = normal[0] * tmp[1, :, :] - normal[1] * tmp[0, :, :]
 
+    return result
+
+
+@_numba.njit
+def _numba_snc0_surface_curl(
+    element_index,
+    shapeset_gradient,
+    local_coordinates,
+    grid_data,
+    local_multipliers,
+    normal_multipliers,
+):
+    """Evaluate the curl on an element."""
+    normal = grid_data.normals[element_index] * normal_multipliers[element_index]
+    reference_derivatives = shapeset_gradient(local_coordinates)
+    jac_inv_t = grid_data.jac_inv_trans[element_index]
+    derivatives = jac_inv_t @ reference_derivatives @ jac_inv_t.T
+    reference_values = normal[0] * (derivatives[2, 1] - derivatives[1, 2]) + normal[1] * (derivatives[0, 2] - derivatives[2, 0]) + normal[2] * (derivatives[1, 0] - derivatives[0, 1])
+
+    result = _np.empty(3, dtype=_np.float64)
+
+    edge_lengths = _np.empty(3, dtype=_np.float64)
+    edge_lengths[0] = _np.linalg.norm(
+        grid_data.vertices[:, grid_data.elements[0, element_index]]
+        - grid_data.vertices[:, grid_data.elements[1, element_index]]
+    )
+    edge_lengths[1] = _np.linalg.norm(
+        grid_data.vertices[:, grid_data.elements[2, element_index]]
+        - grid_data.vertices[:, grid_data.elements[0, element_index]]
+    )
+    edge_lengths[2] = _np.linalg.norm(
+        grid_data.vertices[:, grid_data.elements[1, element_index]]
+        - grid_data.vertices[:, grid_data.elements[2, element_index]]
+    )
+
+    for index in range(3):
+        result[index] = (
+            local_multipliers[element_index, index]
+            * edge_lengths[index] * reference_values
+        )
     return result

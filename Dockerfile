@@ -16,9 +16,9 @@
 ARG GMSH_VERSION=4.6.0
 ARG TINI_VERSION=0.19.0
 ARG EXAFMM_VERSION=0.1.1
-# ARG FENICSX_TAG=v0.3.0
-ARG FENICSX_TAG=main
-# ARG FENICSX_UFL_TAG=2021.1.0
+ARG FENICSX_BASIX_TAG=main
+ARG FENICSX_FFCX_TAG=main
+ARG FENICSX_DOLFINX_TAG=main
 ARG FENICSX_UFL_TAG=main
 ARG MAKEFLAGS
 
@@ -89,7 +89,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir numpy==1.20 numba meshio>=4.0.16 && \
+RUN pip3 install --no-cache-dir "numpy>=1.21,<1.23" numba>=0.55.2 meshio>=4.0.16 && \
     pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
 
 # Download Install Gmsh SDK
@@ -120,13 +120,7 @@ ARG EXAFMM_VERSION
 
 WORKDIR /tmp
 
-# Install dependencies available via apt-get.
-# - First set of packages are required to build and run Bempp-cl.
-# - Second set of packages are recommended and/or required to build
-#   documentation or tests.
-# - Third set of packages are optional, but required to run gmsh
-#   pre-built binaries.
-# - Fourth set of packages are optional, required for meshio.
+# Install dependencies
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
@@ -137,11 +131,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     pkg-config \
     python-is-python3 \
     python3-dev \
-    python3-matplotlib \
     python3-mpi4py \
     python3-pip \
     python3-pyopencl \
-    python3-scipy \
     python3-setuptools \
     jupyter \
     wget && \
@@ -167,17 +159,17 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libraw19 \
     libtbb2 \
     libxcursor1 \
-    libxinerama1 && \
-    apt-get -y install \
-    python3-dolfin && \
-    apt-get -y install \
+    libxinerama1
+RUN pip3 install --no-cache-dir meshio>=4.0.16 \
+    numba numpy==1.20 scipy matplotlib && \
+    pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
+RUN apt-get -y install \
+    python3-dolfin \
     python3-lxml && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir numpy==1.20 numba meshio>=4.0.16 && \
-    pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
 
 # Download Install Gmsh SDK
 RUN cd /usr/local && \
@@ -197,12 +189,14 @@ WORKDIR /root
 
 ########################################
 
-FROM dolfinx/dev-env as bempp-dev-env-with-dolfinx
+FROM dolfinx/dev-env:stable as bempp-dev-env-with-dolfinx
 LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
 LABEL description="Bempp-cl development environment with FEniCSx"
 
 ARG DOLFINX_MAKEFLAGS
-ARG FENICSX_TAG
+ARG FENICSX_BASIX_TAG
+ARG FENICSX_FFCX_TAG
+ARG FENICSX_DOLFINX_TAG
 ARG FENICSX_UFL_TAG
 ARG BEMPP_VERSION
 ARG EXAFMM_VERSION
@@ -213,9 +207,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
+    libpugixml-dev \
     python3-pyopencl \
     python3-pybind11 \
-    python3-matplotlib \
     libfftw3-dev \
     pkg-config \
     python-is-python3 \
@@ -224,11 +218,11 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir meshio>=4.0.16 numpy==1.20 && \
+RUN pip3 install --no-cache-dir meshio>=4.0.16 "numpy>=1.21,<1.23" matplotlib && \
     pip3 install --upgrade six
 
 # Install Basix
-RUN git clone --depth 1 --branch ${FENICSX_TAG} https://github.com/FEniCS/basix.git basix-src && \
+RUN git clone --depth 1 --branch ${FENICSX_BASIX_TAG} https://github.com/FEniCS/basix.git basix-src && \
     cd basix-src && \
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S . && \
     cmake --build build-dir && \
@@ -238,10 +232,10 @@ RUN git clone --depth 1 --branch ${FENICSX_TAG} https://github.com/FEniCS/basix.
 # Install FEniCSx components
 RUN pip3 install --no-cache-dir ipython && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_UFL_TAG} && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@${FENICSX_TAG}
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@${FENICSX_FFCX_TAG}
 
 # Install FEniCSx
-RUN git clone --depth 1 --branch ${FENICSX_TAG} https://github.com/fenics/dolfinx.git && \
+RUN git clone --depth 1 --branch ${FENICSX_DOLFINX_TAG} https://github.com/fenics/dolfinx.git && \
     cd dolfinx && \
     mkdir build && \
     cd build && \
@@ -271,12 +265,14 @@ WORKDIR /root
 
 ########################################
 
-FROM dolfinx/dev-env as bempp-dev-env-with-dolfinx-numba
+FROM dolfinx/dev-env:stable as bempp-dev-env-with-dolfinx-numba
 LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
 LABEL description="Bempp-cl development environment with FEniCSx (Numba only)"
 
 ARG DOLFINX_MAKEFLAGS
-ARG FENICSX_TAG
+ARG FENICSX_BASIX_TAG
+ARG FENICSX_FFCX_TAG
+ARG FENICSX_DOLFINX_TAG
 ARG FENICSX_UFL_TAG
 ARG BEMPP_VERSION
 ARG EXAFMM_VERSION
@@ -297,11 +293,11 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir meshio>=4.0.16 numpy==1.20 && \
+RUN pip3 install --no-cache-dir meshio>=4.0.16 "numpy>=1.21,<1.23" && \
     pip3 install --upgrade six
 
 # Install Basix
-RUN git clone --depth 1 --branch ${FENICSX_TAG} https://github.com/FEniCS/basix.git basix-src && \
+RUN git clone --depth 1 --branch ${FENICSX_BASIX_TAG} https://github.com/FEniCS/basix.git basix-src && \
     cd basix-src && \
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S . && \
     cmake --build build-dir && \
@@ -311,10 +307,10 @@ RUN git clone --depth 1 --branch ${FENICSX_TAG} https://github.com/FEniCS/basix.
 # Install FEniCSx components
 RUN pip3 install --no-cache-dir ipython && \
     pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_UFL_TAG} && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@${FENICSX_TAG}
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@${FENICSX_FFCX_TAG}
 
 # Install FEniCSx
-RUN git clone --depth 1 --branch ${FENICSX_TAG} https://github.com/fenics/dolfinx.git && \
+RUN git clone --depth 1 --branch ${FENICSX_DOLFINX_TAG} https://github.com/fenics/dolfinx.git && \
     cd dolfinx && \
     mkdir build && \
     cd build && \
@@ -425,7 +421,7 @@ LABEL description="Bempp Jupyter Lab with legacy FEniCS"
 
 WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
-RUN cd bempp-cl && python3 setup.py install
+RUN cd bempp-cl && pip3 install .
 RUN cp -r bempp-cl/notebooks /root/example_notebooks
 RUN rm /root/example_notebooks/conftest.py /root/example_notebooks/test_notebooks.py
 

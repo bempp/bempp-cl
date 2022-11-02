@@ -8,7 +8,7 @@ from bempp.api.external.fenicsx import fenics_to_bempp_trace_data, FenicsOperato
 
 
 def test_p1_trace(has_dolfinx):
-    """Test the trace of a P1 Dolfin function."""
+    """Test the trace of a P1 DOLFINx function."""
     try:
         from dolfinx.geometry import (
             BoundingBoxTree,
