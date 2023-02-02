@@ -16,7 +16,7 @@ def boundary_grid_from_fenics_mesh(fenics_mesh):
     fenics_mesh.topology.create_connectivity(2, 3)
 
     boundary = entities_to_geometry(
-        fenics_mesh,
+        fenics_mesh._cpp_object,
         fenics_mesh.topology.dim - 1,
         exterior_facet_indices(fenics_mesh.topology),
         True,

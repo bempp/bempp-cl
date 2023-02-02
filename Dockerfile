@@ -218,7 +218,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir meshio>=4.0.16 "numpy>=1.21,<1.23" matplotlib && \
+RUN pip3 install --no-cache-dir meshio>=4.0.16 numpy matplotlib && \
     pip3 install --upgrade six
 
 # Install Basix
