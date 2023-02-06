@@ -25,7 +25,7 @@ ARG MAKEFLAGS
 
 ########################################
 
-FROM ubuntu:20.04 as bempp-dev-env
+FROM ubuntu:22.04 as bempp-dev-env
 LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
 LABEL description="Bempp-cl development environment"
 
@@ -110,7 +110,7 @@ WORKDIR /root
 
 ########################################
 
-FROM ubuntu:20.04 as bempp-dev-env-with-dolfin
+FROM ubuntu:22.04 as bempp-dev-env-with-dolfin
 LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
 LABEL description="Bempp-cl development environment with FEniCS"
 
