@@ -73,6 +73,13 @@ jobs:
           tags: bempp/cl-dev-env-with-dolfinx:${{ needs.configure-docker.outputs.dockertag }}
           target: bempp-dev-env-with-dolfinx
         if: needs.configure-docker.outputs.buildneeded == 'yes'
+      - name: Push latest tag
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/cl-dev-env-with-dolfinx:latest
+          target: bempp-dev-env-with-dolfinx
+        if: needs.configure-docker.outputs.dockertag == 'tag::main'
   build-and-publish-docker:
     name: Build testing docker image
     runs-on: ubuntu-latest
@@ -95,6 +102,13 @@ jobs:
           tags: bempp/cl-dev-env:${{ needs.configure-docker.outputs.dockertag }}
           target: bempp-dev-env
         if: needs.configure-docker.outputs.buildneeded == 'yes'
+      - name: Push latest tag
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/cl-dev-env:${{ needs.configure-docker.outputs.dockertag }}
+          target: bempp-dev-env
+        if: needs.configure-docker.outputs.dockertag == 'tag::main'
 
   style-checks:
     name: Run style checks
