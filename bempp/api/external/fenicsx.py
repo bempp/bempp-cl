@@ -24,12 +24,20 @@ def boundary_grid_from_fenics_mesh(fenics_mesh):
         )
     except AttributeError:
         # Works with older versions of FEniCSx
-        boundary = entities_to_geometry(
-            fenics_mesh,
-            fenics_mesh.topology.dim - 1,
-            exterior_facet_indices(fenics_mesh.topology),
-            True,
-        )
+        try:
+            boundary = entities_to_geometry(
+                fenics_mesh,
+                fenics_mesh.topology.dim - 1,
+                exterior_facet_indices(fenics_mesh.topology),
+                True,
+            )
+        except AttributeError:
+            boundary = entities_to_geometry(
+                fenics_mesh,
+                fenics_mesh.topology.dim - 1,
+                exterior_facet_indices(fenics_mesh),
+                True,
+            )
 
     bm_nodes = set()
     for tri in boundary:
