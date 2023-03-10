@@ -34,20 +34,20 @@ jobs:
         id: diff
         run: |
             if diff Dockerfile Dockerfile.old > /dev/null; then
-                echo ::set-output name=changed::no
+                echo "changed=no" >> $GITHUB_OUTPUT
             else
-                echo ::set-output name=changed::yes
+                echo "changed=yes" >> $GITHUB_OUTPUT
             fi
 
       - name: set Docker tag
         run: |
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-              echo ::set-output name=tag::main
+              echo "tag=main" >> $GITHUB_OUTPUT
           elif [ "${{ steps.diff.outputs.changed }}" = "yes" ]; then
               the_tag=($(echo "${{ github.ref }}" | sha1sum))
-              echo ::set-output name=tag::$the_tag
+              echo "tag=$the_tag" >> $GITHUB_OUTPUT
           else
-              echo ::set-output name=tag::main
+              echo "tag=main" >> $GITHUB_OUTPUT
           fi
         id: dockertag
 
@@ -79,7 +79,7 @@ jobs:
           push: true
           tags: bempp/cl-dev-env-with-dolfinx:latest
           target: bempp-dev-env-with-dolfinx
-        if: needs.configure-docker.outputs.dockertag == 'tag::main'
+        if: needs.configure-docker.outputs.dockertag == 'main'
   build-and-publish-docker:
     name: Build testing docker image
     runs-on: ubuntu-latest
@@ -108,7 +108,7 @@ jobs:
           push: true
           tags: bempp/cl-dev-env:${{ needs.configure-docker.outputs.dockertag }}
           target: bempp-dev-env
-        if: needs.configure-docker.outputs.dockertag == 'tag::main'
+        if: needs.configure-docker.outputs.dockertag == 'main'
 
   style-checks:
     name: Run style checks
