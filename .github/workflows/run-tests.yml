@@ -79,7 +79,7 @@ jobs:
           push: true
           tags: bempp/cl-dev-env-with-dolfinx:latest
           target: bempp-dev-env-with-dolfinx
-        if: ${{ github.repository == "bempp/bempp-cl" && github.ref == "refs/heads/main" }}
+        if: ${{ github.repository == 'bempp/bempp-cl' && github.ref == 'refs/heads/main' }}
   build-and-publish-docker:
     name: Build testing docker image
     runs-on: ubuntu-latest
@@ -108,7 +108,7 @@ jobs:
           push: true
           tags: bempp/cl-dev-env:${{ needs.configure-docker.outputs.dockertag }}
           target: bempp-dev-env
-        if: ${{ github.repository == "bempp/bempp-cl" && github.ref == "refs/heads/main" }}
+        if: ${{ github.repository == 'bempp/bempp-cl' && github.ref == 'refs/heads/main' }}
 
   style-checks:
     name: Run style checks
