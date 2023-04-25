@@ -112,6 +112,7 @@ def p1_trace(fenics_space):
         ntets = tets.num_nodes
         tets = [tets.get_links(i) for i in range(ntets)]
     except AttributeError:
+        pass
 
     for tet, cell_verts in enumerate(tets):
         cell_dofs = fenics_space.dofmap.cell_dofs(tet)
