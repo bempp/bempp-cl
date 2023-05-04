@@ -25,7 +25,7 @@ ARG MAKEFLAGS
 
 ########################################
 
-FROM ubuntu:20.04 as bempp-dev-env
+FROM ubuntu:22.04 as bempp-dev-env
 LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
 LABEL description="Bempp-cl development environment"
 
@@ -68,18 +68,18 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libfreeimage3 \
     libgl2ps1.4 \
     libglu1-mesa \
-    libilmbase24 \
+    libilmbase25 \
     libjxr0 \
-    libocct-data-exchange-7.3 \
-    libocct-foundation-7.3 \
-    libocct-modeling-algorithms-7.3 \
-    libocct-modeling-data-7.3 \ 
-    libocct-ocaf-7.3 \
-    libocct-visualization-7.3 \
+    libocct-data-exchange-7.5 \
+    libocct-foundation-7.5 \
+    libocct-modeling-algorithms-7.5 \
+    libocct-modeling-data-7.5 \ 
+    libocct-ocaf-7.5 \
+    libocct-visualization-7.5 \
     libopenblas-dev \
-    libopenexr24 \
+    libopenexr25 \
     libopenjp2-7 \
-    libraw19 \
+    libraw-dev \
     libtbb2 \
     libxcursor1 \
     libxinerama1 && \
@@ -110,7 +110,7 @@ WORKDIR /root
 
 ########################################
 
-FROM ubuntu:20.04 as bempp-dev-env-with-dolfin
+FROM ubuntu:22.04 as bempp-dev-env-with-dolfin
 LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
 LABEL description="Bempp-cl development environment with FEniCS"
 
@@ -145,18 +145,18 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libfreeimage3 \
     libgl2ps1.4 \
     libglu1-mesa \
-    libilmbase24 \
+    libilmbase25 \
     libjxr0 \
-    libocct-data-exchange-7.3 \
-    libocct-foundation-7.3 \
-    libocct-modeling-algorithms-7.3 \
-    libocct-modeling-data-7.3 \ 
-    libocct-ocaf-7.3 \
-    libocct-visualization-7.3 \
+    libocct-data-exchange-7.5 \
+    libocct-foundation-7.5 \
+    libocct-modeling-algorithms-7.5 \
+    libocct-modeling-data-7.5 \ 
+    libocct-ocaf-7.5 \
+    libocct-visualization-7.5 \
     libopenblas-dev \
-    libopenexr24 \
+    libopenexr25 \
     libopenjp2-7 \
-    libraw19 \
+    libraw-dev \
     libtbb2 \
     libxcursor1 \
     libxinerama1
