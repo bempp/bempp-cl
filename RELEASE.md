@@ -33,6 +33,6 @@ Once this is merged, the new version will be available via conda.
 
 ## Tweet that a new version is made
 [GitHub Actions](https://github.com/bempp/bempp-cl/actions/workflows/release.yml) currently
-does an automatic tweet to announce a new version. This is likely to break in the near future
-as Twitter is deprecating their free API. If this doesn't work, ask @mscroggs to manually
-tweet about the new version.
+does an automatic tweet from [@BemppProject](https://twitter.com/BemppProject) to announce
+a new version. This is likely to break in the near future as Twitter is deprecating their
+free API. If this doesn't work, ask @mscroggs to manually tweet about the new version.
