@@ -70,16 +70,16 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libglu1-mesa \
     libilmbase24 \
     libjxr0 \
-    libocct-data-exchange-7.3 \
-    libocct-foundation-7.3 \
-    libocct-modeling-algorithms-7.3 \
-    libocct-modeling-data-7.3 \ 
-    libocct-ocaf-7.3 \
-    libocct-visualization-7.3 \
+    libocct-data-exchange-7.5 \
+    libocct-foundation-7.5 \
+    libocct-modeling-algorithms-7.5 \
+    libocct-modeling-data-7.5 \ 
+    libocct-ocaf-7.5 \
+    libocct-visualization-7.5 \
     libopenblas-dev \
-    libopenexr24 \
+    libopenexr25 \
     libopenjp2-7 \
-    libraw19 \
+    libraw-dev \
     libtbb2 \
     libxcursor1 \
     libxinerama1 && \
@@ -147,16 +147,16 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libglu1-mesa \
     libilmbase24 \
     libjxr0 \
-    libocct-data-exchange-7.3 \
-    libocct-foundation-7.3 \
-    libocct-modeling-algorithms-7.3 \
-    libocct-modeling-data-7.3 \ 
-    libocct-ocaf-7.3 \
-    libocct-visualization-7.3 \
+    libocct-data-exchange-7.5 \
+    libocct-foundation-7.5 \
+    libocct-modeling-algorithms-7.5 \
+    libocct-modeling-data-7.5 \ 
+    libocct-ocaf-7.5 \
+    libocct-visualization-7.5 \
     libopenblas-dev \
-    libopenexr24 \
+    libopenexr25 \
     libopenjp2-7 \
-    libraw19 \
+    libraw-dev \
     libtbb2 \
     libxcursor1 \
     libxinerama1
