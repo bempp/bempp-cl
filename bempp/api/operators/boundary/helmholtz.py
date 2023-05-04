@@ -374,7 +374,7 @@ class _OsrcDtN(_BoundaryOperator):
         else:
             dk = damped_wavenumber
 
-        c0, alpha, beta = _pade_coeffs(npade, theta)
+        c0, alpha, beta, _ = _common.pade_coeffs(npade, theta)
 
         series = c0 * mass
         for i in range(npade):
@@ -477,7 +477,7 @@ class _OsrcNtD(_BoundaryOperator):
         else:
             dk = damped_wavenumber
 
-        c0, alpha, beta = _pade_coeffs(npade, theta)
+        c0, alpha, beta, _ = _common.pade_coeffs(npade, theta)
 
         series = c0 * mass
         for i in range(npade):
@@ -501,27 +501,3 @@ class _OsrcNtD(_BoundaryOperator):
         )
 
         return operator
-
-
-def _pade_coeffs(n, theta):
-    """Compute the coefficients of the Pade series expansion."""
-    aj = _np.zeros(n)
-    bj = _np.zeros(n)
-    for jj in range(1, n + 1):
-        aj[jj - 1] = 2.0 / (2.0 * n + 1.0) * _np.sin(jj * _np.pi / (2.0 * n + 1.0)) ** 2
-        bj[jj - 1] = _np.cos(jj * _np.pi / (2.0 * n + 1.0)) ** 2
-    c0t = _np.exp(1.0j * theta / 2.0) * (
-        1.0
-        + _np.sum(
-            (aj * (_np.exp(-1j * theta) - 1.0))
-            / (1.0 + bj * (_np.exp(-1.0j * theta) - 1.0))
-        )
-    )
-    ajt = (
-        _np.exp(-1.0j * theta / 2.0)
-        * aj
-        / ((1.0 + bj * (_np.exp(-1.0j * theta) - 1.0)) ** 2)
-    )
-    bjt = _np.exp(-1.0j * theta) * bj / (1.0 + bj * (_np.exp(-1.0j * theta) - 1.0))
-
-    return c0t, ajt, bjt

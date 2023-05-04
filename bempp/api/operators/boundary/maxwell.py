@@ -354,7 +354,7 @@ class _OsrcMtE():
 
         self.lambda_2_inv = InverseSparseDiscreteBoundaryOperator(lambda_2(mte_op).weak_form())
 
-        self.pade_coeffs = _pade_coeffs(npade, theta)
+        self.pade_coeffs = _common.pade_coeffs(npade, theta)
         self.mass = mte_op[1].weak_form()
         if self.type == 1 :
             self.pi = []
@@ -405,42 +405,3 @@ def osrc_mte(
         device_interface,
         precision,
     )
-
-
-def _pade_coeffs(Np, angle):
-    """
-    Return complex Pade coefficient for a Pade approximation of order Np and a certain angle.
-
-    Parameters
-    ----------
-    Np
-        Order of the approximation
-    angle
-        Angle of the complex approximation
-
-    Output
-    ------
-    C0, R0
-        Constants from Pade approximation
-
-    A, B
-        Arrays containing the Pade coefficients
-
-    """
-
-    def sum_coeffs(A, B, inpt, inner_coeff, outer_coeff):
-        """Return a standard real valued Pade approximation of order Np from arrays of coefficients, A and B."""
-        s = 0.0
-        index = 0
-        for coefficient in A:
-            s += coefficient * inpt / (inner_coeff + B[index] * inpt)
-            index += 1
-        return outer_coeff + s
-
-    a = [(2.0 / (2.0 * Np + 1.0)) * _np.sin(_np.pi * (i + 1.0) / (2.0 * Np + 1.0)) ** 2 for i in range(Np)]
-    b = [_np.cos(_np.pi * (i + 1.0) / (2.0 * Np + 1.0)) ** 2 for i in range(Np)]
-    A = [(_np.exp(-1.0j * angle / 2.0) * a[i]) / (1.0 + b[i] * (_np.exp(-1.0j * angle) - 1)) ** 2 for i in range(Np)]
-    B = [(_np.exp(-1.0j * angle) * b[i]) / (1.0 + b[i] * (_np.exp(-1.0j * angle) - 1.0)) for i in range(Np)]
-    C_0 = _np.exp(1.0j * angle / 2.0) * sum_coeffs(a, b, _np.exp(-1.0j * angle) - 1.0, 1.0, 1.0)
-    R_0 = sum_coeffs(A, B, 1.0, 0.0, C_0)
-    return C_0, A, B, R_0
