@@ -68,7 +68,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libfreeimage3 \
     libgl2ps1.4 \
     libglu1-mesa \
-    libilmbase24 \
+    libilmbase25 \
     libjxr0 \
     libocct-data-exchange-7.5 \
     libocct-foundation-7.5 \
@@ -145,7 +145,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libfreeimage3 \
     libgl2ps1.4 \
     libglu1-mesa \
-    libilmbase24 \
+    libilmbase25 \
     libjxr0 \
     libocct-data-exchange-7.5 \
     libocct-foundation-7.5 \
