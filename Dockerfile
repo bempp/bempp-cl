@@ -35,13 +35,6 @@ ARG EXAFMM_VERSION
 
 WORKDIR /tmp
 
-# Install dependencies available via apt-get.
-# - First set of packages are required to build and run Bempp-cl.
-# - Second set of packages are recommended and/or required to build
-#   documentation or tests.
-# - Third set of packages are optional, but required to run gmsh
-#   pre-built binaries.
-# - Fourth set of packages are optional, required for meshio.
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
@@ -57,27 +50,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         libfltk-gl1.3 \
         libfltk-images1.3 \
         libfltk1.3 \
-        libfreeimage3 \
-        libgl2ps1.4 \
         libglu1-mesa \
-        libilmbase25 \
-        libjxr0 \
-        libocct-data-exchange-7.5 \
-        libocct-foundation-7.5 \
-        libocct-modeling-algorithms-7.5 \
-        libocct-modeling-data-7.5 \ 
-        libocct-ocaf-7.5 \
-        libocct-visualization-7.5 \
-        libopenexr25 \
-        libopenjp2-7 \
-        libraw-dev \
-        libtbb2 \
-        libxcursor1 \
-        libxinerama1 \
-        python3-lxml \
-    && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 ENV CONDA_DIR /opt/conda
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
     /bin/bash ~/miniconda.sh -b -p /opt/conda
@@ -86,134 +60,6 @@ ENV PATH=$CONDA_DIR/bin:$PATH
 RUN conda install -c conda-forge intel-opencl-rt
 RUN python3 -m pip install --no-cache-dir matplotlib pyopencl numpy scipy numba meshio && \
     python3 -m pip install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
-
-
-#RUN export DEBIAN_FRONTEND=noninteractive && \
-#    apt-get -qq update && \
-#    apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
-#    apt-get -y install \
-#    cmake \
-#    git \
-#    ipython3 \
-#    pkg-config \
-#    python-is-python3 \
-#    python3-dev \
-#    python3-matplotlib \
-#    python3-mpi4py \
-#    python3-pip \
-#    python3-pyopencl \
-#    python3-scipy \
-#    python3-setuptools \
-#    jupyter \
-#    wget && \
-#    apt-get -y install \
-#    libfltk-gl1.3 \
-#    libfltk-images1.3 \
-#    libfltk1.3 \
-#    libfreeimage3 \
-#    libgl2ps1.4 \
-#    libglu1-mesa \
-#    libilmbase25 \
-#    libjxr0 \
-#    libocct-data-exchange-7.5 \
-#    libocct-foundation-7.5 \
-#    libocct-modeling-algorithms-7.5 \
-#    libocct-modeling-data-7.5 \ 
-#    libocct-ocaf-7.5 \
-#    libocct-visualization-7.5 \
-#    libopenexr25 \
-#    libopenjp2-7 \
-#    libraw-dev \
-#    libtbb2 \
-#    libxcursor1 \
-#    libxinerama1 && \
-#    apt-get -y install \
-#    python3-lxml && \
-#    apt-get clean && \
-#    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Download Install Gmsh SDK
-RUN cd /usr/local && \
-    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
-    tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
-    rm gmsh-${GMSH_VERSION}-Linux64-sdk.tgz
-
-ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
-
-RUN git clone -b v${EXAFMM_VERSION} https://github.com/exafmm/exafmm-t.git
-RUN cd exafmm-t && sed -i 's/march=native/march=ivybridge/g' ./setup.py && python3 setup.py install
-
-# Clear /tmp
-RUN rm -rf /tmp/*
-
-WORKDIR /root
-
-RUN git clone https://github.com/bempp/bempp-cl.git && git checkout mscroggs/intel=opencl
-RUN cd bempp-cl && python3 -m pip install .
-RUN python3 -m pytest -n8 bempp-cl/test/unit -x
-
-########################################
-
-FROM ubuntu:22.04 as bempp-dev-env-with-dolfin
-LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
-LABEL description="Bempp-cl development environment with FEniCS"
-
-ARG GMSH_VERSION
-ARG MAKEFLAGS
-ARG EXAFMM_VERSION
-
-WORKDIR /tmp
-
-# Install dependencies
-RUN export DEBIAN_FRONTEND=noninteractive && \
-    apt-get -qq update && \
-    apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
-    apt-get -y install \
-    cmake \
-    git \
-    ipython3 \
-    pkg-config \
-    python-is-python3 \
-    python3-dev \
-    python3-mpi4py \
-    python3-pip \
-    python3-pyopencl \
-    python3-setuptools \
-    jupyter \
-    wget && \
-    apt-get -y install \
-    libfftw3-dev \
-    libfltk-gl1.3 \
-    libfltk-images1.3 \
-    libfltk1.3 \
-    libfreeimage3 \
-    libgl2ps1.4 \
-    libglu1-mesa \
-    libilmbase25 \
-    libjxr0 \
-    libocct-data-exchange-7.5 \
-    libocct-foundation-7.5 \
-    libocct-modeling-algorithms-7.5 \
-    libocct-modeling-data-7.5 \ 
-    libocct-ocaf-7.5 \
-    libocct-visualization-7.5 \
-    libopenblas-dev \
-    libopenexr25 \
-    libopenjp2-7 \
-    libraw-dev \
-    libtbb2 \
-    libxcursor1 \
-    libxinerama1
-RUN pip3 install --no-cache-dir meshio>=4.0.16 \
-    numba numpy==1.20 scipy matplotlib && \
-    pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
-RUN apt-get -y install \
-    python3-dolfin \
-    python3-lxml && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Install Python packages (via pip)
 
 # Download Install Gmsh SDK
 RUN cd /usr/local && \
