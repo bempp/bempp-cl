@@ -2,7 +2,6 @@
 
 import pytest
 import numpy as np
-from mpi4py import MPI
 import bempp.api
 from bempp.api.external.fenicsx import fenics_to_bempp_trace_data, FenicsOperator
 
@@ -10,6 +9,7 @@ from bempp.api.external.fenicsx import fenics_to_bempp_trace_data, FenicsOperato
 def test_p1_trace(has_dolfinx):
     """Test the trace of a P1 DOLFINx function."""
     try:
+        from mpi4py import MPI
         from dolfinx.geometry import (
             BoundingBoxTree,
             create_midpoint_tree,
@@ -58,6 +58,7 @@ def test_fenics_operator(has_dolfinx):
             raise ImportError("UFL is not installed")
         pytest.skip("UFL must be installed to run this test")
     try:
+        from mpi4py import MPI
         from dolfinx.fem import FunctionSpace
         from dolfinx.mesh import create_unit_cube
     except ImportError:
