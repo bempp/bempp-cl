@@ -46,51 +46,91 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
-    cmake \
-    git \
-    ipython3 \
-    pkg-config \
-    python-is-python3 \
-    python3-dev \
-    python3-matplotlib \
-    python3-mpi4py \
-    python3-pip \
-    python3-pyopencl \
-    python3-scipy \
-    python3-setuptools \
-    jupyter \
-    wget && \
-    apt-get -y install \
-    libfftw3-dev \
-    libfltk-gl1.3 \
-    libfltk-images1.3 \
-    libfltk1.3 \
-    libfreeimage3 \
-    libgl2ps1.4 \
-    libglu1-mesa \
-    libilmbase25 \
-    libjxr0 \
-    libocct-data-exchange-7.5 \
-    libocct-foundation-7.5 \
-    libocct-modeling-algorithms-7.5 \
-    libocct-modeling-data-7.5 \ 
-    libocct-ocaf-7.5 \
-    libocct-visualization-7.5 \
-    libopenblas-dev \
-    libopenexr25 \
-    libopenjp2-7 \
-    libraw-dev \
-    libtbb2 \
-    libxcursor1 \
-    libxinerama1 && \
-    apt-get -y install \
-    python3-lxml && \
+        wget \
+        git \
+        pkg-config \
+        build-essential \
+        # ExaFMM dependencies
+        libfftw3-dev \
+        libopenblas-dev \
+        # Gmsh dependencies
+        libfltk-gl1.3 \
+        libfltk-images1.3 \
+        libfltk1.3 \
+        libfreeimage3 \
+        libgl2ps1.4 \
+        libglu1-mesa \
+        libilmbase25 \
+        libjxr0 \
+        libocct-data-exchange-7.5 \
+        libocct-foundation-7.5 \
+        libocct-modeling-algorithms-7.5 \
+        libocct-modeling-data-7.5 \ 
+        libocct-ocaf-7.5 \
+        libocct-visualization-7.5 \
+        libopenexr25 \
+        libopenjp2-7 \
+        libraw-dev \
+        libtbb2 \
+        libxcursor1 \
+        libxinerama1 \
+        python3-lxml \
+    && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+ENV CONDA_DIR /opt/conda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p /opt/conda
+ENV PATH=$CONDA_DIR/bin:$PATH
 
-# Install Python packages (via pip)
-RUN pip3 install --no-cache-dir "numpy>=1.21,<1.23" numba>=0.55.2 meshio>=4.0.16 && \
-    pip3 install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
+RUN conda install -c conda-forge intel-opencl-rt
+RUN python3 -m pip install --no-cache-dir matplotlib pyopencl numpy scipy numba meshio && \
+    python3 -m pip install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
+
+
+#RUN export DEBIAN_FRONTEND=noninteractive && \
+#    apt-get -qq update && \
+#    apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
+#    apt-get -y install \
+#    cmake \
+#    git \
+#    ipython3 \
+#    pkg-config \
+#    python-is-python3 \
+#    python3-dev \
+#    python3-matplotlib \
+#    python3-mpi4py \
+#    python3-pip \
+#    python3-pyopencl \
+#    python3-scipy \
+#    python3-setuptools \
+#    jupyter \
+#    wget && \
+#    apt-get -y install \
+#    libfltk-gl1.3 \
+#    libfltk-images1.3 \
+#    libfltk1.3 \
+#    libfreeimage3 \
+#    libgl2ps1.4 \
+#    libglu1-mesa \
+#    libilmbase25 \
+#    libjxr0 \
+#    libocct-data-exchange-7.5 \
+#    libocct-foundation-7.5 \
+#    libocct-modeling-algorithms-7.5 \
+#    libocct-modeling-data-7.5 \ 
+#    libocct-ocaf-7.5 \
+#    libocct-visualization-7.5 \
+#    libopenexr25 \
+#    libopenjp2-7 \
+#    libraw-dev \
+#    libtbb2 \
+#    libxcursor1 \
+#    libxinerama1 && \
+#    apt-get -y install \
+#    python3-lxml && \
+#    apt-get clean && \
+#    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Download Install Gmsh SDK
 RUN cd /usr/local && \
@@ -107,6 +147,10 @@ RUN cd exafmm-t && sed -i 's/march=native/march=ivybridge/g' ./setup.py && pytho
 RUN rm -rf /tmp/*
 
 WORKDIR /root
+
+RUN git clone https://github.com/bempp/bempp-cl.git && git checkout mscroggs/intel=opencl
+RUN cd bempp-cl && python3 -m pip install .
+RUN python3 -m pytest -n8 bempp-cl/test/unit -x
 
 ########################################
 
