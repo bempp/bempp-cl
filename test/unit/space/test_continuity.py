@@ -33,6 +33,9 @@ def test_Hdiv_continuity(space_type):
     space = bempp.api.function_space(grid, space_type, 0)
     f = bempp.api.GridFunction(space, coefficients=range(space.global_dof_count))
 
+    if space_type == "BC":
+        grid = grid.barycentric_refinement
+
     for e, (vertices, neighbors) in enumerate(zip(grid.edges.T, grid.edge_neighbors)):
         v0 = [local_vertices[list(grid.elements[:, neighbors[0]]).index(v)] for v in vertices]
         v1 = [local_vertices[list(grid.elements[:, neighbors[1]]).index(v)] for v in vertices]
@@ -62,6 +65,9 @@ def test_Hcurl_continuity(space_type):
     grid = bempp.api.shapes.sphere(h=0.2)
     space = bempp.api.function_space(grid, space_type, 0)
     f = bempp.api.GridFunction(space, coefficients=range(space.global_dof_count))
+
+    if space_type == "RBC":
+        grid = grid.barycentric_refinement
 
     for e, (vertices, neighbors) in enumerate(zip(grid.edges.T, grid.edge_neighbors)):
         v0 = [local_vertices[list(grid.elements[:, neighbors[0]]).index(v)] for v in vertices]
