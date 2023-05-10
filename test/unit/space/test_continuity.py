@@ -4,6 +4,8 @@ import bempp.api
 import pytest
 import numpy as np
 
+local_vertices = [[0, 0], [1, 0], [0, 1]]
+
 
 @pytest.mark.parametrize("space_type,degree", [("P", 1)])
 def test_H1_continuity(space_type, degree):
@@ -11,8 +13,6 @@ def test_H1_continuity(space_type, degree):
     grid = bempp.api.shapes.sphere(h=0.2)
     space = bempp.api.function_space(grid, space_type, degree)
     f = bempp.api.GridFunction(space, coefficients=range(space.global_dof_count))
-
-    local_vertices = [[0, 0], [1, 0], [0, 1]]
 
     for e, (vertices, neighbors) in enumerate(zip(grid.edges.T, grid.edge_neighbors)):
         v0 = [local_vertices[list(grid.elements[:, neighbors[0]]).index(v)] for v in vertices]
@@ -32,8 +32,6 @@ def test_Hdiv_continuity(space_type):
     grid = bempp.api.shapes.sphere(h=0.2)
     space = bempp.api.function_space(grid, space_type, 0)
     f = bempp.api.GridFunction(space, coefficients=range(space.global_dof_count))
-
-    local_vertices = [[0, 0], [1, 0], [0, 1]]
 
     for e, (vertices, neighbors) in enumerate(zip(grid.edges.T, grid.edge_neighbors)):
         v0 = [local_vertices[list(grid.elements[:, neighbors[0]]).index(v)] for v in vertices]
@@ -64,8 +62,6 @@ def test_Hcurl_continuity(space_type):
     grid = bempp.api.shapes.sphere(h=0.2)
     space = bempp.api.function_space(grid, space_type, 0)
     f = bempp.api.GridFunction(space, coefficients=range(space.global_dof_count))
-
-    local_vertices = [[0, 0], [1, 0], [0, 1]]
 
     for e, (vertices, neighbors) in enumerate(zip(grid.edges.T, grid.edge_neighbors)):
         v0 = [local_vertices[list(grid.elements[:, neighbors[0]]).index(v)] for v in vertices]
