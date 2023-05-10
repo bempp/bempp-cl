@@ -51,13 +51,13 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         libfltk-images1.3 \
         libfltk1.3 \
         libglu1-mesa \
+        # OpenCL
+        libpocl-dev \
+        # Python
+        python3-dev \
+        python3-pip \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-ENV CONDA_DIR /opt/conda
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-    /bin/bash ~/miniconda.sh -b -p /opt/conda
-ENV PATH=$CONDA_DIR/bin:$PATH
 
-RUN conda install -c conda-forge intel-opencl-rt
 RUN python3 -m pip install --no-cache-dir matplotlib pyopencl numpy scipy numba meshio && \
     python3 -m pip install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
 
@@ -70,7 +70,7 @@ RUN cd /usr/local && \
 ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
 
 RUN git clone -b v${EXAFMM_VERSION} https://github.com/exafmm/exafmm-t.git
-RUN cd exafmm-t && sed -i 's/march=native/march=ivybridge/g' ./setup.py && python3 setup.py install
+RUN cd exafmm-t && sed -i 's/march=native/march=ivybridge/g' ./setup.py && python3 -m pip install .
 
 # Clear /tmp
 RUN rm -rf /tmp/*
@@ -97,19 +97,19 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
-    libpugixml-dev \
-    python3-pyopencl \
-    python3-pybind11 \
-    libfftw3-dev \
-    pkg-config \
-    python-is-python3 \
+        # OpenCL
+        libpocl-dev \
+        # ExaFMM dependencies
+        libfftw3-dev \
     && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+RUN python3 -m pip install --no-cache-dir matplotlib pyopencl numpy scipy numba meshio && \
+    python3 -m pip install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
+
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir meshio>=4.0.16 numpy matplotlib && \
-    pip3 install --upgrade six
+RUN python3 -m pip install --no-cache-dir meshio numpy matplotlib pyopencl
 
 # Install Basix
 RUN git clone --depth 1 --branch ${FENICSX_BASIX_TAG} https://github.com/FEniCS/basix.git basix-src && \
@@ -117,12 +117,12 @@ RUN git clone --depth 1 --branch ${FENICSX_BASIX_TAG} https://github.com/FEniCS/
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S . && \
     cmake --build build-dir && \
     cmake --install build-dir && \
-    pip3 install ./python
+    python3 -m pip install ./python
 
 # Install FEniCSx components
-RUN pip3 install --no-cache-dir ipython && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_UFL_TAG} && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@${FENICSX_FFCX_TAG}
+RUN python3 -m pip install --no-cache-dir ipython && \
+    python3 -m pip install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_UFL_TAG} && \
+    python3 -m pip install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@${FENICSX_FFCX_TAG}
 
 # Install FEniCSx
 RUN git clone --depth 1 --branch ${FENICSX_DOLFINX_TAG} https://github.com/fenics/dolfinx.git && \
@@ -133,7 +133,7 @@ RUN git clone --depth 1 --branch ${FENICSX_DOLFINX_TAG} https://github.com/fenic
     ninja ${DOLFINX_MAKEFLAGS} install && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
+    PETSC_ARCH=linux-gnu-complex-32 python3 -m pip install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
 
 # complex by default.
 ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH \
@@ -146,7 +146,7 @@ ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH \
 RUN wget -nc --quiet https://github.com/exafmm/exafmm-t/archive/v${EXAFMM_VERSION}.tar.gz && \
     tar -xf v${EXAFMM_VERSION}.tar.gz && \
     cd exafmm-t-${EXAFMM_VERSION} && \
-    sed -i 's/march=native/march=ivybridge/g' ./setup.py && python3 setup.py install
+    sed -i 's/march=native/march=ivybridge/g' ./setup.py && python3 -m pip install .
 
 # Clear /tmp
 RUN rm -rf /tmp/*
@@ -173,18 +173,14 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
-    python3-pybind11 \
-    python3-matplotlib \
+    # ExaFMM dependencies
     libfftw3-dev \
-    pkg-config \
-    python-is-python3 \
     && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir meshio>=4.0.16 "numpy>=1.21,<1.23" && \
-    pip3 install --upgrade six
+RUN python3 -m pip install --no-cache-dir meshio numpy matplotlib
 
 # Install Basix
 RUN git clone --depth 1 --branch ${FENICSX_BASIX_TAG} https://github.com/FEniCS/basix.git basix-src && \
@@ -192,12 +188,11 @@ RUN git clone --depth 1 --branch ${FENICSX_BASIX_TAG} https://github.com/FEniCS/
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S . && \
     cmake --build build-dir && \
     cmake --install build-dir && \
-    pip3 install ./python
+    python3 -m pip install ./python
 
 # Install FEniCSx components
-RUN pip3 install --no-cache-dir ipython && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_UFL_TAG} && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@${FENICSX_FFCX_TAG}
+RUN python3 -m pip install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_UFL_TAG} && \
+    python3 -m pip install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@${FENICSX_FFCX_TAG}
 
 # Install FEniCSx
 RUN git clone --depth 1 --branch ${FENICSX_DOLFINX_TAG} https://github.com/fenics/dolfinx.git && \
@@ -208,7 +203,7 @@ RUN git clone --depth 1 --branch ${FENICSX_DOLFINX_TAG} https://github.com/fenic
     ninja ${DOLFINX_MAKEFLAGS} install && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-complex-32 pip3 install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
+    PETSC_ARCH=linux-gnu-complex-32 python3 -m pip install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
 
 # complex by default.
 ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH \
@@ -221,7 +216,7 @@ ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH \
 RUN wget -nc --quiet https://github.com/exafmm/exafmm-t/archive/v${EXAFMM_VERSION}.tar.gz && \
     tar -xf v${EXAFMM_VERSION}.tar.gz && \
     cd exafmm-t-${EXAFMM_VERSION} && \
-    sed -i 's/march=native/march=ivybridge/g' ./setup.py && python3 setup.py install
+    sed -i 's/march=native/march=ivybridge/g' ./setup.py && python3 -m pip install .
 
 # Clear /tmp
 RUN rm -rf /tmp/*
@@ -235,21 +230,7 @@ LABEL description="Bempp-cl environment with FEniCSx"
 
 WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
-RUN cd bempp-cl && python3 setup.py install
-
-# Clear /tmp
-RUN rm -rf /tmp/*
-
-WORKDIR /root
-
-########################################
-
-FROM bempp-dev-env-with-dolfin as with-dolfin
-LABEL description="Bempp-cl environment with FEniCS"
-
-WORKDIR /tmp
-RUN git clone https://github.com/bempp/bempp-cl
-RUN cd bempp-cl && python3 setup.py install
+RUN cd bempp-cl && python3 -m pip install .
 
 # Clear /tmp
 RUN rm -rf /tmp/*
@@ -263,7 +244,7 @@ LABEL description="Bempp Jupyter Lab"
 
 WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
-RUN cd bempp-cl && python3 setup.py install
+RUN cd bempp-cl && python3 -m pip install .
 RUN cp -r bempp-cl/notebooks /root/example_notebooks
 RUN rm /root/example_notebooks/conftest.py /root/example_notebooks/test_notebooks.py
 
@@ -275,7 +256,7 @@ WORKDIR /root
 ARG TINI_VERSION
 ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini /tini
 RUN chmod +x /tini && \
-    pip3 install --no-cache-dir jupyter jupyterlab plotly
+    python3 -m pip install --no-cache-dir jupyter jupyterlab plotly
 EXPOSE 8888/tcp
 
 ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
@@ -287,7 +268,7 @@ LABEL description="Bempp Jupyter Lab (Numba only)"
 
 WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
-RUN cd bempp-cl && python3 setup.py install
+RUN cd bempp-cl && python3 -m pip install .
 RUN cp -r bempp-cl/notebooks /root/example_notebooks
 RUN rm /root/example_notebooks/conftest.py /root/example_notebooks/test_notebooks.py
 
@@ -299,31 +280,7 @@ WORKDIR /root
 ARG TINI_VERSION
 ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini /tini
 RUN chmod +x /tini && \
-    pip3 install --no-cache-dir jupyter jupyterlab plotly
-EXPOSE 8888/tcp
-
-ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
-
-########################################
-
-FROM bempp-dev-env-with-dolfin as fenics-lab
-LABEL description="Bempp Jupyter Lab with legacy FEniCS"
-
-WORKDIR /tmp
-RUN git clone https://github.com/bempp/bempp-cl
-RUN cd bempp-cl && pip3 install .
-RUN cp -r bempp-cl/notebooks /root/example_notebooks
-RUN rm /root/example_notebooks/conftest.py /root/example_notebooks/test_notebooks.py
-
-# Clear /tmp
-RUN rm -rf /tmp/*
-
-WORKDIR /root
-
-ARG TINI_VERSION
-ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini /tini
-RUN chmod +x /tini && \
-    pip3 install --no-cache-dir jupyter jupyterlab plotly
+    python3 -m pip install --no-cache-dir jupyter jupyterlab plotly
 EXPOSE 8888/tcp
 
 ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
