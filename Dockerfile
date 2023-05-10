@@ -13,7 +13,7 @@
 #   Jan Blechta <blechta@karlin.mff.cuni.cz>
 #
 
-ARG GMSH_VERSION=4.6.0
+ARG GMSH_VERSION=4.11.1
 ARG TINI_VERSION=0.19.0
 ARG EXAFMM_VERSION=0.1.1
 ARG FENICSX_BASIX_TAG=main
