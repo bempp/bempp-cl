@@ -34,7 +34,7 @@ def export(
     filename,
     grid=None,
     grid_function=None,
-    data_type="node",
+    data_type=None,
     transformation=None,
     write_binary=True,
 ):
@@ -73,6 +73,12 @@ def export(
         data if supported by the file format.
     """
     import os
+
+    if data_type is None and grid_function is not None:
+        if grid_function.space.identifier == "p1":
+            data_type = "node"
+        else:
+            data_type = "element"
 
     _, extension = os.path.splitext(filename)
 

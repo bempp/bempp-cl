@@ -2,7 +2,7 @@
 import numpy as _np
 
 
-def visualize(obj, mode="node", transformation=None):
+def visualize(obj, mode=None, transformation=None):
     """
     Create a visualisation.
 
@@ -14,8 +14,7 @@ def visualize(obj, mode="node", transformation=None):
         One of 'element' or 'node'. If 'element' is chosen
         the color is determined by the mid-point of the faces
         of the grid. For 'node' the vertex values are
-        chosen (default: 'element'). Only used for
-        grid functions.
+        chosen. Only used for grid functions.
     transformation : string or object
         One of 'real', 'imag', 'abs', 'log_abs' or
         'abs_squared' or a callable object.
@@ -55,7 +54,7 @@ def visualize(obj, mode="node", transformation=None):
         visualize_with_jupyter_notebook(obj, mode, transform)
 
 
-def visualize_with_jupyter_notebook(obj, mode="element", transformation=None):
+def visualize_with_jupyter_notebook(obj, mode=None, transformation=None):
     """View a grid or grid function in an IPython Notebook."""
     import plotly
     import plotly.figure_factory as ff
@@ -115,7 +114,7 @@ def visualize_with_jupyter_notebook(obj, mode="element", transformation=None):
         plotly.offline.iplot(fig)
 
 
-def visualize_with_gmsh(obj, mode="element", transformation=None):
+def visualize_with_gmsh(obj, mode=None, transformation=None):
     """
     View a grid or grid function with Gmsh.
 
@@ -160,7 +159,7 @@ def visualize_with_gmsh(obj, mode="element", transformation=None):
     subprocess.Popen([GMSH_PATH, outfile.name])
 
 
-def visualize_with_paraview(obj, mode="element", transformation=None):
+def visualize_with_paraview(obj, mode=None, transformation=None):
     """
     View a grid or grid function with Paraview.
 
