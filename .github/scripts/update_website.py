@@ -31,7 +31,7 @@ old_changelog = repo.get_contents("changelog.md")
 new_changelog = "---\ntitle: Changelog\n---\n"
 new_changelog += "## [Bempp-cl " + tag[1:] + "]"
 new_changelog += "(https://github.com/bempp/bempp-cl/releases/tag/" + tag + ")\n"
-new_changelog += changelog.replace("\r\n", "\n")
+new_changelog += changelog.strip().replace("\r\n", "\n") + "\n\n"
 new_changelog += old_changelog.decoded_content.decode("utf8").split("---", 3)[2]
 
 repo.update_file(

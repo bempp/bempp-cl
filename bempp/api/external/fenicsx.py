@@ -15,12 +15,29 @@ def boundary_grid_from_fenics_mesh(fenics_mesh):
     fenics_mesh.topology.create_entities(2)
     fenics_mesh.topology.create_connectivity(2, 3)
 
-    boundary = entities_to_geometry(
-        fenics_mesh,
-        fenics_mesh.topology.dim - 1,
-        exterior_facet_indices(fenics_mesh.topology),
-        True,
-    )
+    try:
+        boundary = entities_to_geometry(
+            fenics_mesh._cpp_object,
+            fenics_mesh.topology.dim - 1,
+            exterior_facet_indices(fenics_mesh.topology),
+            True,
+        )
+    except AttributeError:
+        # Works with older versions of FEniCSx
+        try:
+            boundary = entities_to_geometry(
+                fenics_mesh,
+                fenics_mesh.topology.dim - 1,
+                exterior_facet_indices(fenics_mesh.topology),
+                True,
+            )
+        except AttributeError:
+            boundary = entities_to_geometry(
+                fenics_mesh,
+                fenics_mesh.topology.dim - 1,
+                exterior_facet_indices(fenics_mesh),
+                True,
+            )
 
     bm_nodes = set()
     for tri in boundary:
@@ -90,9 +107,15 @@ def p1_trace(fenics_space):
     # Finally FEniCS dofs to vertices.
     dof_to_vertex_map = np.zeros(num_fenics_vertices, dtype=np.int64)
     tets = fenics_mesh.geometry.dofmap
-    for tet in range(tets.num_nodes):
+
+    try:
+        ntets = tets.num_nodes
+        tets = [tets.get_links(i) for i in range(ntets)]
+    except AttributeError:
+        pass
+
+    for tet, cell_verts in enumerate(tets):
         cell_dofs = fenics_space.dofmap.cell_dofs(tet)
-        cell_verts = tets.links(tet)
         for v in range(4):
             vertex_n = cell_verts[v]
             dof = cell_dofs[fenics_space.dofmap.dof_layout.entity_dofs(0, v)[0]]

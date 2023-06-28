@@ -272,7 +272,7 @@ class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
 
         self._ndims = (rows, cols)
 
-        self._operators = _np.empty((rows, cols), dtype=_np.object)
+        self._operators = _np.empty((rows, cols), dtype=object)
         self._tags = _np.empty((rows, cols), dtype=_np.int)
         self._rows = -_np.ones(rows, dtype=int)
         self._cols = -_np.ones(cols, dtype=int)
