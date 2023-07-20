@@ -38,7 +38,7 @@ jobs:
       matrix:
         fenics-version: ["v0.6"]
     runs-on: ubuntu-latest
-    container: bempp/cl-dev-env-with-dolfinx:main-fenicsx-${{ matrix.fenics-version}
+    container: bempp/cl-dev-env-with-dolfinx:main-fenicsx-${{ matrix.fenics-version }}
     steps:
       - uses: actions/checkout@v2
       - run: python3 setup.py install

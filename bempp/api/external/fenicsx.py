@@ -109,6 +109,7 @@ def p1_trace(fenics_space):
     tets = fenics_mesh.geometry.dofmap
 
     try:
+        # Support older versions of FEniCSx
         ntets = tets.num_nodes
         tets = [tets.get_links(i) for i in range(ntets)]
     except AttributeError:
