@@ -11,7 +11,7 @@ def test_p1_trace(has_dolfinx):
     try:
         from mpi4py import MPI
         from dolfinx.geometry import (
-            BoundingBoxTree,
+            bb_tree,
             create_midpoint_tree,
             compute_closest_entity,
         )
@@ -34,7 +34,7 @@ def test_p1_trace(has_dolfinx):
     fenics_fun.vector[:] = fenics_coeffs
     bempp_fun = bempp.api.GridFunction(bempp_space, coefficients=bempp_coeffs)
 
-    tree = BoundingBoxTree(fenics_mesh, 3)
+    tree = bb_tree(fenics_mesh, 3)
 
     midpoint_tree = create_midpoint_tree(
         fenics_mesh, 3, list(range(fenics_mesh.topology.connectivity(3, 0).num_nodes))
