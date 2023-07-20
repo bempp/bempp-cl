@@ -1,9 +1,6 @@
 name: Run tests with FEniCSx releases
 
 on:
-  push:
-    branches:
-      - "**"
   schedule:
     - cron: "0 7 * * 1"
 
