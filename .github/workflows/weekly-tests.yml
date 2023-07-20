@@ -1,0 +1,48 @@
+name: Run tests against various releases of FEniCSx
+
+on:
+  push:
+    branches:
+      - "**"
+  schedule:
+    - cron: "0 7 * * 1"
+
+jobs:
+  build-and-publish-docker-fenicsx:
+    name: Build testing docker image with FEniCSx
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        fenics-version: ["v0.6"]
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push testing Docker image with FEniCSx ${{ matrix.fenics-version }}
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/cl-dev-env-with-dolfinx:main-fenicsx-${{ matrix.fenics-version }}
+          target: bempp-dev-env-with-dolfinx
+    # if: ${{ github.repository == 'bempp/bempp-cl' && github.ref == 'refs/heads/main' }}
+
+  build-and-test-with-fenicsx:
+    name: Build Bempp and run tests with FEniCSx
+    needs:
+      - build-and-publish-docker-fenicsx
+    strategy:
+      matrix:
+        fenics-version: ["v0.6"]
+    runs-on: ubuntu-latest
+    container: bempp/cl-dev-env-with-dolfinx:main-fenicsx-${{ matrix.fenics-version}
+    steps:
+      - uses: actions/checkout@v2
+      - run: python3 setup.py install
+        name: Install Bempp
+      - run: python3 -m pytest -n4 --durations=50 test/unit --has-dolfin 0 --has-dolfinx 1 --has-exafmm 1
+        name: Run Bempp unit tests
+
