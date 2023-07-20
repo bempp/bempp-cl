@@ -32,12 +32,11 @@ jobs:
             FENICSX_BASIX_TAG=${{ matrix.fenics-version }}
             FENICSX_FFCX_TAG=${{ matrix.fenics-version }}
             FENICSX_DOLFINX_TAG=${{ matrix.fenics-version }}
-    # if: ${{ github.repository == 'bempp/bempp-cl' && github.ref == 'refs/heads/main' }}
 
   build-and-test-with-fenicsx-release:
     name: Build Bempp and run tests with FEniCSx release
     needs:
-      - build-and-publish-docker-fenicsx
+      - build-and-publish-docker-fenicsx-release
     strategy:
       matrix:
         fenics-version: [ "v0.6.0", "main" ]
@@ -49,4 +48,3 @@ jobs:
         name: Install Bempp
       - run: python3 -m pytest -n4 --durations=50 test/unit --has-dolfin 0 --has-dolfinx 1 --has-exafmm 1
         name: Run Bempp unit tests
-    # if: ${{ github.repository == 'bempp/bempp-cl' && github.ref == 'refs/heads/main' }}
