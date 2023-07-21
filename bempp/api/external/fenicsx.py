@@ -108,11 +108,13 @@ def p1_trace(fenics_space):
     dof_to_vertex_map = np.zeros(num_fenics_vertices, dtype=np.int64)
     tets = fenics_mesh.geometry.dofmap
 
-    try:
+    # Support older versions of FEniCSx
+    if hasattr(tets, "get_links"):
         ntets = tets.num_nodes
         tets = [tets.get_links(i) for i in range(ntets)]
-    except AttributeError:
-        pass
+    if hasattr(tets, "links"):
+        ntets = tets.num_nodes
+        tets = [tets.links(i) for i in range(ntets)]
 
     for tet, cell_verts in enumerate(tets):
         cell_dofs = fenics_space.dofmap.cell_dofs(tet)
