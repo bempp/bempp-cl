@@ -158,7 +158,7 @@ class FenicsOperator(object):
         if self._sparse_mat is None:
             mat = assemble_matrix(form(self._fenics_weak_form))
             try:
-                mat.scatter_rev()
+                mat.scatter_reverse()
             except AttributeError:
                 # Support for older FEniCSx
                 mat.finalize()
