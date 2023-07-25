@@ -157,7 +157,11 @@ class FenicsOperator(object):
 
         if self._sparse_mat is None:
             mat = assemble_matrix(form(self._fenics_weak_form))
-            mat.finalize()
+            try:
+                mat.scatter_reverse()
+            except AttributeError:
+                # Support for older FEniCSx
+                mat.finalize()
             shape = tuple(
                 i._ufl_function_space.dofmap.index_map.size_global
                 for i in self._fenics_weak_form.arguments()
