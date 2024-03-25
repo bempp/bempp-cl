@@ -130,17 +130,17 @@ RUN git clone --depth 1 --branch ${FENICSX_DOLFINX_TAG} https://github.com/fenic
     cd dolfinx && \
     mkdir build && \
     cd build && \
-    PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex ../cpp && \
+    PETSC_ARCH=linux-gnu-complex64-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex ../cpp && \
     ninja ${DOLFINX_MAKEFLAGS} install && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-complex-32 python3 -m pip install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
+    PETSC_ARCH=linux-gnu-complex64-32 python3 -m pip install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
 
 # complex by default.
 ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH \
         PATH=/usr/local/dolfinx-complex/bin:$PATH \
         PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH \
-        PETSC_ARCH=linux-gnu-complex-32 \
+        PETSC_ARCH=linux-gnu-complex64-32 \
         PYTHONPATH=/usr/local/dolfinx-complex/lib/python3.8/dist-packages:$PYTHONPATH
 
 # Download and install ExaFMM
@@ -200,17 +200,17 @@ RUN git clone --depth 1 --branch ${FENICSX_DOLFINX_TAG} https://github.com/fenic
     cd dolfinx && \
     mkdir build && \
     cd build && \
-    PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex ../cpp && \
+    PETSC_ARCH=linux-gnu-complex64-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex ../cpp && \
     ninja ${DOLFINX_MAKEFLAGS} install && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-complex-32 python3 -m pip install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
+    PETSC_ARCH=linux-gnu-complex64-32 python3 -m pip install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
 
 # complex by default.
 ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH \
         PATH=/usr/local/dolfinx-complex/bin:$PATH \
         PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH \
-        PETSC_ARCH=linux-gnu-complex-32 \
+        PETSC_ARCH=linux-gnu-complex64-32 \
         PYTHONPATH=/usr/local/dolfinx-complex/lib/python3.8/dist-packages:$PYTHONPATH
 
 # Download and install ExaFMM
