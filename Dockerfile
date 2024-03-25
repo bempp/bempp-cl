@@ -54,7 +54,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         libglu1-mesa \
         # OpenCL
         libpocl-dev \
-        mesa-opencl-icd \
         # Python
         python3-dev \
         python3-pip \
@@ -101,7 +100,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y install \
         # OpenCL
         libpocl-dev \
-        mesa-opencl-icd \
         # ExaFMM dependencies
         libfftw3-dev \
     && \

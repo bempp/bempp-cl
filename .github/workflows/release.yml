@@ -59,28 +59,3 @@ jobs:
       uses: pypa/gh-action-pypi-publish@master
       with:
         password: ${{ secrets.pypi_password }}
-
-  #tweet:
-  #  name: Tweet about latest version
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    - name: Checkout code
-  #      uses: actions/checkout@v2
-  #    - name: Get tag name
-  #      id: tag_name
-  #      run: |
-  #        echo "SOURCE_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-  #    - name: Install twitter api
-  #      run: pip3 install twitter
-  #    - name: Tweet
-  #      run: python3 .github/scripts/tweet.py ${{ steps.tag_name.outputs.SOURCE_TAG }} ${{ secrets.twitter1 }} ${{ secrets.twitter2 }} ${{ secrets.twitter3 }} ${{ secrets.twitter4 }}
-
-  #conda:
-  #  name: Update conda version
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #  - uses: actions/checkout@main
-  #  - name: Install PyGitHub
-  #    run: pip3 install PyGitHub
-  #  - name: Update website
-  #    run: python3 .github/scripts/conda.py ${{ secrets.bemppbot_github_token }}
