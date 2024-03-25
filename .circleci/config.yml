@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   large-tests:
     docker:
-      - image: bempp/cl-dev-env:main
+      - image: bempp/cl-dev-env:latest
     steps:
       - checkout
       - run:
@@ -17,7 +17,7 @@ jobs:
           name: Run Bempp validation tests
   run-notebooks:
     docker:
-      - image: bempp/cl-dev-env:main
+      - image: bempp/cl-dev-env:latest
     steps:
       - checkout
       - run:
@@ -31,7 +31,7 @@ jobs:
           name: Run example notebooks
   run-notebooks-dolfinx:
     docker:
-      - image: bempp/cl-dev-env-with-dolfinx:main
+      - image: bempp/cl-dev-env-with-dolfinx:latest
     steps:
       - checkout
       - run:
