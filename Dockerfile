@@ -80,7 +80,7 @@ WORKDIR /root
 
 ########################################
 
-FROM dolfinx/dev-env:stable as bempp-dev-env-with-dolfinx
+FROM dolfinx/dev-env:nightly as bempp-dev-env-with-dolfinx
 LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
 LABEL description="Bempp-cl development environment with FEniCSx"
 
@@ -156,7 +156,7 @@ WORKDIR /root
 
 ########################################
 
-FROM dolfinx/dev-env:stable as bempp-dev-env-with-dolfinx-numba
+FROM dolfinx/dev-env:nightly as bempp-dev-env-with-dolfinx-numba
 LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
 LABEL description="Bempp-cl development environment with FEniCSx (Numba only)"
 
