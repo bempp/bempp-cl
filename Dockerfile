@@ -12,6 +12,7 @@
 #   Garth N. Wells <gnw20@cam.ac.uk>
 #   Jan Blechta <blechta@karlin.mff.cuni.cz>
 #
+#
 
 ARG GMSH_VERSION=4.11.1
 ARG TINI_VERSION=0.19.0
@@ -79,7 +80,59 @@ WORKDIR /root
 
 ########################################
 
-FROM dolfinx/dev-env:stable as bempp-dev-env-with-dolfinx
+FROM ubuntu:22.04 as bempp-dev-env-numba
+LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
+LABEL description="Bempp-cl development environment"
+
+ARG GMSH_VERSION
+ARG MAKEFLAGS
+ARG EXAFMM_VERSION
+
+WORKDIR /tmp
+
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get -qq update && \
+    apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
+    apt-get -y install \
+        wget \
+        git \
+        pkg-config \
+        build-essential \
+        # ExaFMM dependencies
+        libfftw3-dev \
+        libopenblas-dev \
+        # Gmsh dependencies
+        libfltk-gl1.3 \
+        libfltk-images1.3 \
+        libfltk1.3 \
+        libglu1-mesa \
+        # Python
+        python3-dev \
+        python3-pip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN python3 -m pip install --no-cache-dir matplotlib numpy scipy numba meshio && \
+    python3 -m pip install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
+
+# Download Install Gmsh SDK
+RUN cd /usr/local && \
+    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
+    tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
+    rm gmsh-${GMSH_VERSION}-Linux64-sdk.tgz
+
+ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
+
+RUN git clone -b v${EXAFMM_VERSION} https://github.com/exafmm/exafmm-t.git
+RUN cd exafmm-t && sed -i 's/march=native/march=ivybridge/g' ./setup.py && python3 -m pip install .
+
+# Clear /tmp
+RUN rm -rf /tmp/*
+
+WORKDIR /root
+
+########################################
+
+FROM ghcr.io/fenics/test-env:current-openmpi as bempp-dev-env-with-dolfinx
 LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
 LABEL description="Bempp-cl development environment with FEniCSx"
 
@@ -129,17 +182,17 @@ RUN git clone --depth 1 --branch ${FENICSX_DOLFINX_TAG} https://github.com/fenic
     cd dolfinx && \
     mkdir build && \
     cd build && \
-    PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex ../cpp && \
+    PETSC_ARCH=linux-gnu-complex64-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex ../cpp && \
     ninja ${DOLFINX_MAKEFLAGS} install && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-complex-32 python3 -m pip install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
+    PETSC_ARCH=linux-gnu-complex64-32 python3 -m pip install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
 
 # complex by default.
 ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH \
         PATH=/usr/local/dolfinx-complex/bin:$PATH \
         PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH \
-        PETSC_ARCH=linux-gnu-complex-32 \
+        PETSC_ARCH=linux-gnu-complex64-32 \
         PYTHONPATH=/usr/local/dolfinx-complex/lib/python3.8/dist-packages:$PYTHONPATH
 
 # Download and install ExaFMM
@@ -155,7 +208,7 @@ WORKDIR /root
 
 ########################################
 
-FROM dolfinx/dev-env:stable as bempp-dev-env-with-dolfinx-numba
+FROM ghcr.io/fenics/test-env:current-openmpi as bempp-dev-env-with-dolfinx-numba
 LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
 LABEL description="Bempp-cl development environment with FEniCSx (Numba only)"
 
@@ -199,17 +252,17 @@ RUN git clone --depth 1 --branch ${FENICSX_DOLFINX_TAG} https://github.com/fenic
     cd dolfinx && \
     mkdir build && \
     cd build && \
-    PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex ../cpp && \
+    PETSC_ARCH=linux-gnu-complex64-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex ../cpp && \
     ninja ${DOLFINX_MAKEFLAGS} install && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-complex-32 python3 -m pip install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
+    PETSC_ARCH=linux-gnu-complex64-32 python3 -m pip install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
 
 # complex by default.
 ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH \
         PATH=/usr/local/dolfinx-complex/bin:$PATH \
         PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH \
-        PETSC_ARCH=linux-gnu-complex-32 \
+        PETSC_ARCH=linux-gnu-complex64-32 \
         PYTHONPATH=/usr/local/dolfinx-complex/lib/python3.8/dist-packages:$PYTHONPATH
 
 # Download and install ExaFMM

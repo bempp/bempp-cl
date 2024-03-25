@@ -66,9 +66,9 @@ def fenics_to_bempp_trace_data(fenics_space):
 def fenics_space_info(fenics_space):
     """Return tuple (family,degree) containing information about a FEniCS space."""
     element = fenics_space.ufl_element()
-    family = element.family()
-    degree = element.degree()
-    return (family, degree)
+    family = element.basix_element.family.name
+    degree = element.degree
+    return family, degree
 
 
 # pylint: disable=too-many-locals
