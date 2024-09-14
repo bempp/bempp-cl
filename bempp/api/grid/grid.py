@@ -1698,8 +1698,7 @@ def _border_barycentric_edges_coefficients(edge_lengths, vertex_edges, sorted_ed
 
 
 def _interior_barycentric_edges_coefficients(edge_lengths, vertex_edges, bary_grid, local2global, sign, nc, global_dof_index):
-    """Calculate barycentric edge coefficients associated to a vertex
-    that belongs to the border of the grid (eg: vertex on the edge of a screen)."""
+    """Calculate barycentric edge coefficients associated to a vertex that belongs to the border of the grid (eg: vertex on the edge of a screen)."""
     values = []
     bary_dofs = []
     coarse_dofs = []
