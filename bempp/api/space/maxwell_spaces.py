@@ -519,7 +519,7 @@ def _compute_bc_space_data(
         # The edge that we need always has local edge index 2.
         # Can compute the edge length now.
         aux_values, aux_bary_dofs, aux_coarse_dofs = get_coefficients_reference_edge(edge_lengths, bary_grid, local2global, global_dof_index, bary_upper_minus, bary_upper_plus, bary_lower_minus, bary_lower_plus)
-        
+
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
