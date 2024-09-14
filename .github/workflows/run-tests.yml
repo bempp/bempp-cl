@@ -80,6 +80,20 @@ jobs:
           tags: bempp/cl-dev-env-with-dolfinx:latest
           target: bempp-dev-env-with-dolfinx
         if: ${{ github.repository == 'bempp/bempp-cl' && github.ref == 'refs/heads/main' }}
+      - name: Build and push testing Docker image with FEniCSx (Numba only version)
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/cl-dev-env-with-dolfinx-numba:${{ needs.configure-docker.outputs.dockertag }}
+          target: bempp-dev-env-with-dolfinx-numba
+        if: needs.configure-docker.outputs.buildneeded == 'yes'
+      - name: Push latest tag (Numba only version)
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/cl-dev-env-with-dolfinx-numba:latest
+          target: bempp-dev-env-with-dolfinx-numba
+        if: ${{ github.repository == 'bempp/bempp-cl' && github.ref == 'refs/heads/main' }}
   build-and-publish-docker:
     name: Build testing docker image
     runs-on: ubuntu-latest
@@ -106,8 +120,22 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: bempp/cl-dev-env:${{ needs.configure-docker.outputs.dockertag }}
+          tags: bempp/cl-dev-env:latest
           target: bempp-dev-env
+        if: ${{ github.repository == 'bempp/bempp-cl' && github.ref == 'refs/heads/main' }}
+      - name: Build and push testing Docker image (Numba only version)
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/cl-dev-env-numba:${{ needs.configure-docker.outputs.dockertag }}
+          target: bempp-dev-env-numba
+        if: needs.configure-docker.outputs.buildneeded == 'yes'
+      - name: Push latest tag (Numba only version)
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/cl-dev-env-numba:latest
+          target: bempp-dev-env-numba
         if: ${{ github.repository == 'bempp/bempp-cl' && github.ref == 'refs/heads/main' }}
 
   style-checks:
@@ -134,7 +162,7 @@ jobs:
       - build-and-publish-docker
       - style-checks
     runs-on: ubuntu-latest
-    container: bempp/cl-dev-env:${{ needs.configure-docker.outputs.dockertag }}
+    container: bempp/cl-dev-env-numba:${{ needs.configure-docker.outputs.dockertag }}
     steps:
       - uses: actions/checkout@v2
       - run: python3 setup.py install
@@ -149,7 +177,7 @@ jobs:
       - build-and-publish-docker-fenicsx
       - style-checks
     runs-on: ubuntu-latest
-    container: bempp/cl-dev-env-with-dolfinx:${{ needs.configure-docker.outputs.dockertag }}
+    container: bempp/cl-dev-env-with-dolfinx-numba:${{ needs.configure-docker.outputs.dockertag }}
     steps:
       - uses: actions/checkout@v2
       - run: python3 setup.py install

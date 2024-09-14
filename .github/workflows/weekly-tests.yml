@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        fenics-version: [ "v0.6.0", "main" ]
+        fenics-version: [ "v0.7.0", "main" ]
     steps:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -36,7 +36,7 @@ jobs:
       - build-and-publish-docker-fenicsx-release
     strategy:
       matrix:
-        fenics-version: [ "v0.6.0", "main" ]
+        fenics-version: [ "v0.7.0", "main" ]
     runs-on: ubuntu-latest
     container: bempp/cl-dev-env-with-dolfinx:main-fenicsx-${{ matrix.fenics-version }}
     steps:
