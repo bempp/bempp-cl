@@ -316,10 +316,6 @@ def bc_function_space(
     """Define a space of BC functions."""
     from .space import SpaceBuilder
 
-    if _is_screen(grid):
-        # Grid is a screen, not a polyhedron
-        raise ValueError("BC spaces not yet supported on screens")
-
     bary_grid = grid.barycentric_refinement
 
     coarse_space = rwg0_function_space(
@@ -370,10 +366,6 @@ def rbc_function_space(
     """Define a space of RBC functions."""
     from .space import SpaceBuilder
 
-    if _is_screen(grid):
-        # Grid is a screen, not a polyhedron
-        raise ValueError("BC spaces not yet supported on screens")
-
     bary_grid = grid.barycentric_refinement
 
     coarse_space = rwg0_function_space(
@@ -417,7 +409,8 @@ def _compute_bc_space_data(
     grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals
 ):
     """Generate the BC map."""
-    from bempp.api.grid.grid import enumerate_vertex_adjacent_elements
+    from bempp.api.grid.grid import enumerate_vertex_adjacent_elements, get_vertex_edges, \
+        get_bary_coefficients, get_coefficients_reference_edge
     from scipy.sparse import coo_matrix
 
     coarse_support = _np.zeros(grid.entity_count(0), dtype=_np.bool_)
@@ -507,52 +500,14 @@ def _compute_bc_space_data(
         else:
             local_vertex2 = -1
 
-        for vertex_index, bary_element, sign in [
-            (vertex1, 6 * upper + 2 * local_vertex1, -1.0),
-            (vertex2, 6 * lower + 2 * local_vertex2, 1.0),
-        ]:
-            # Find the reference element index in elements adjacent to that vertex
-            for ind, elem in enumerate(bary_vertex_to_edge[vertex_index]):
-                if bary_element == elem[0]:
-                    break
-
-            # Now get all the relevant edges starting to count above
-            # ind
-            num_bary_elements = len(bary_vertex_to_edge[vertex_index])
-            vertex_edges = []
-            for index in range(num_bary_elements):
-                elem_edge_pair = bary_vertex_to_edge[vertex_index][
-                    (index + ind) % num_bary_elements
-                ]
-                for n in range(1, 3):
-                    vertex_edges.append((elem_edge_pair[0], elem_edge_pair[n]))
-
-            # We do not want the reference edge part of this list
-            vertex_edges.pop(0)
-            vertex_edges.pop(-1)
-
-            # We now have a list of edges associated with the vertex counting from edge
-            # after the reference edge onwards in anti-clockwise order. We can now
-            # assign the coefficients
-
-            nc = num_bary_elements // 2  # Number of elements on coarse grid
-            # adjacent to vertex.
-
-            count = 0
-            for index, edge in enumerate(vertex_edges):
-                if index % 2 == 0:
-                    count += 1
-                elem_index, local_edge_index = edge[:]
-                edge_length = edge_lengths[
-                    bary_grid.data().element_edges[local_edge_index, elem_index]
-                ]
-                bary_dofs.append(local2global[elem_index, local_edge_index])
-                coarse_dofs.append(global_dof_index)
-                values.append(sign * (nc - count) / (2 * nc * edge_length))
-                sign *= -1
+        vertex_edges1, sorted_edges1, nc1, ref_edge1 = get_vertex_edges(vertex1, bary_vertex_to_edge, 6 * upper + 2 * local_vertex1, bary_grid)
+        vertex_edges2, sorted_edges2, nc2, ref_edge2 = get_vertex_edges(vertex2, bary_vertex_to_edge, 6 * lower + 2 * local_vertex2, bary_grid)
+        aux_values, aux_bary_dofs, aux_coarse_dofs = get_bary_coefficients(edge_lengths, vertex_edges1, vertex_edges2, sorted_edges1, sorted_edges2, bary_grid, local2global, nc1, nc2, global_dof_index, ref_edge1, ref_edge2)
+        values += aux_values
+        bary_dofs += aux_bary_dofs
+        coarse_dofs += aux_coarse_dofs
 
         # Now process the tangential rwgs close to the reference edge
-
         # Get the associated barycentric elements and fill the coefficients in
         # the matrix.
 
@@ -563,29 +518,11 @@ def _compute_bc_space_data(
 
         # The edge that we need always has local edge index 2.
         # Can compute the edge length now.
-
-        edge_length_upper = edge_lengths[
-            bary_grid.data().element_edges[2, bary_upper_minus]
-        ]
-        edge_length_lower = edge_lengths[
-            bary_grid.data().element_edges[2, bary_lower_minus]
-        ]
-
-        # Now assign the dofs in the arrays
-        coarse_dofs.append(global_dof_index)
-        coarse_dofs.append(global_dof_index)
-        coarse_dofs.append(global_dof_index)
-        coarse_dofs.append(global_dof_index)
-
-        bary_dofs.append(local2global[bary_upper_minus, 2])
-        bary_dofs.append(local2global[bary_upper_plus, 2])
-        bary_dofs.append(local2global[bary_lower_minus, 2])
-        bary_dofs.append(local2global[bary_lower_plus, 2])
-
-        values.append(1.0 / (2 * edge_length_upper))
-        values.append(-1.0 / (2 * edge_length_upper))
-        values.append(-1.0 / (2 * edge_length_lower))
-        values.append(1.0 / (2 * edge_length_lower))
+        aux_values, aux_bary_dofs, aux_coarse_dofs = get_coefficients_reference_edge(edge_lengths, bary_grid, local2global, global_dof_index, bary_upper_minus, bary_upper_plus, bary_lower_minus, bary_lower_plus)
+        
+        values += aux_values
+        bary_dofs += aux_bary_dofs
+        coarse_dofs += aux_coarse_dofs
 
     nentries = len(coarse_dofs)
     np_coarse_dofs = _np.zeros(nentries, dtype=_np.uint32)
@@ -626,7 +563,6 @@ def _compute_rwg0_space_data(
     local2global_map = _np.zeros((number_of_elements, 3), dtype=_np.uint32)
     local_multipliers = _np.zeros((number_of_elements, 3), dtype=_np.float64)
     edge_dofs = -_np.ones(number_of_edges, dtype=_np.int32)
-
     dof_count = 0
     for element in _np.flatnonzero(support):
         has_dof = False

@@ -251,9 +251,6 @@ def test_truncating_edge_and_face_dual_spaces(space_info):
         include_boundary_dofs=False,
         truncate_at_segment_edge=True,
     )
-    fun0 = bempp.api.GridFunction(
-        space0, coefficients=_np.ones(space0.global_dof_count)
-    )
 
     space1 = bempp.api.function_space(
         grid,
@@ -263,9 +260,6 @@ def test_truncating_edge_and_face_dual_spaces(space_info):
         include_boundary_dofs=False,
         truncate_at_segment_edge=False,
     )
-    fun1 = bempp.api.GridFunction(
-        space1, coefficients=_np.ones(space1.global_dof_count)
-    )
 
     assert space0.global_dof_count == space1.global_dof_count
-    assert fun0.l2_norm() < fun1.l2_norm()
+    assert _np.linalg.norm(space0.mass_matrix().to_sparse().toarray()) < _np.linalg.norm(space1.mass_matrix().to_sparse().toarray())

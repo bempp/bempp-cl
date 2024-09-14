@@ -982,7 +982,7 @@ def _curl_curl_product_kernel(
     element = elements[element_index]
 
     local_test_fun_values = test_basis_curl(
-        element_index,
+        element,
         test_shapeset_gradient,
         quad_points,
         grid_data,
@@ -991,7 +991,7 @@ def _curl_curl_product_kernel(
     )
 
     local_trial_fun_values = trial_basis_curl(
-        element_index,
+        element,
         trial_shapeset_gradient,
         quad_points,
         grid_data,
