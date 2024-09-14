@@ -1582,7 +1582,7 @@ def get_vertex_edges(vertex_index, bary_vertex_to_edge, bary_element, bary_grid)
             new_vertex_edges.append(vertex_edges[edges.index(el)])
 
     if (len(sorted_edges) > 0):
-        new_vertex_edges, sorted_edges = sort_vertex_edges(vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1)
+        new_vertex_edges, sorted_edges = _sort_vertex_edges(vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1)
         sorted_edges = sorted(set(sorted_edges), key=sorted_edges.index, reverse=True)
         new_vertex_edges = sorted(set(new_vertex_edges), key=new_vertex_edges.index, reverse=True)
         ref_edge = sorted_edges.index(bary_grid.data().element_edges[vertex_edges[0][1]][vertex_edges[0][0]])
@@ -1594,7 +1594,7 @@ def get_vertex_edges(vertex_index, bary_vertex_to_edge, bary_element, bary_grid)
     return vertex_edges, sorted_edges, num_bary_elements // 2, ref_edge
 
 
-def sort_vertex_edges(vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, edge_number):
+def _sort_vertex_edges(vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, edge_number):
     if edge_number == 1:
         for element in vertex_edges:
             if element[0] == new_vertex_edges[-1][0] and element[1] == 0:
@@ -1609,7 +1609,7 @@ def sort_vertex_edges(vertex_edges, edges, set_edges, sorted_edges, new_vertex_e
             sorted_edges.append(sorted_edges[-1])
             new_vertex_edges.append(vertex_edges[indexes[1]])
     if len(new_vertex_edges) < len(vertex_edges):
-        return sort_vertex_edges(vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1 - edge_number)
+        return _sort_vertex_edges(vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1 - edge_number)
     return new_vertex_edges, sorted_edges
 
 
@@ -1698,8 +1698,8 @@ def _border_barycentric_edges_coefficients(edge_lengths, vertex_edges, sorted_ed
 
 
 def _interior_barycentric_edges_coefficients(edge_lengths, vertex_edges, bary_grid, local2global, sign, nc, global_dof_index):
-    """Calculate barycentric edge coefficients associated to a vertex that belongs to the border of the grid"""
-    """(eg: vertex on the edge of a screen)"""
+    """Calculate barycentric edge coefficients associated to a vertex
+    that belongs to the border of the grid (eg: vertex on the edge of a screen)."""
     values = []
     bary_dofs = []
     coarse_dofs = []
