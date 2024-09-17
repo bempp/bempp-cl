@@ -1613,7 +1613,6 @@ def _get_data_multipliers(support, bary_grid, bary_support_elements,
 def _get_barycentric_edges_associated_to_vertex(vertex_index, bary_vertex_to_edge,
                                                 bary_element, bary_grid):
     """Get all the barycentryc vertices of the elements associated to a reference edge."""
-
     # Get barycentric elements associated to a vertex
     for ind, elem in enumerate(bary_vertex_to_edge[vertex_index]):
         if bary_element == elem[0]:
@@ -1704,7 +1703,7 @@ def get_vertex_edges(vertex_index, bary_vertex_to_edge, bary_element, bary_grid)
 
 
 def _sort_vertex_edges(vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, edge_number):
-    '''Sort edges anti clock-wise when the basis function lies on the border of a geometry.'''
+    """Sort edges anti clock-wise when the basis function lies on the border of a geometry."""
     if edge_number == 1:
         for element in vertex_edges:
             if element[0] == new_vertex_edges[-1][0] and element[1] == 0:
