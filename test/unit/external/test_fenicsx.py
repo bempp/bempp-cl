@@ -25,7 +25,7 @@ def test_p1_trace(has_dolfinx):
     bempp_coeffs = trace_matrix @ fenics_coeffs
 
     fenics_fun = dolfinx.fem.Function(fenics_space)
-    fenics_fun.vector[:] = fenics_coeffs
+    fenics_fun.x.array[:] = fenics_coeffs
     bempp_fun = bempp.api.GridFunction(bempp_space, coefficients=bempp_coeffs)
 
     try:
