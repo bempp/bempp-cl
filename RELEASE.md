@@ -6,6 +6,7 @@ You will need to update the version number in three places. These are:
 - [VERSION](VERSION)
 - [bempp/version.py](bempp/version.py)
 - [codemeta.json](codemeta.json)
+- [pyproject.toml](pyporoject.toml)
 
 We use the format `{a}.{b}.{c}` for the version numbers, where
 `{a}` should be increased for major releases,
