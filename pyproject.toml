@@ -6,7 +6,6 @@ authors = [
     { name = "Matthew Scroggs", email="bempp@mscroggs.co.uk" }
 ]
 description = "The Bempp boundary element library"
-packages = ["bempp"]
 readme = "README.md"
 requires-python = ">=3.8.0"
 license = { file = "LICENSE" }
