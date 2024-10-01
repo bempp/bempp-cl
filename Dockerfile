@@ -298,8 +298,10 @@ LABEL description="Bempp Jupyter Lab"
 WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
 RUN cd bempp-cl && python3 -m pip install .
-RUN cp -r bempp-cl/notebooks /root/example_notebooks
-RUN rm /root/example_notebooks/conftest.py /root/example_notebooks/test_notebooks.py
+RUN python3 -m pip install --no-cache-dir jupytext
+RUN python3 examples/generate_notebooks.py
+RUN cp -r bempp-cl/examples/notebooks /root/example_notebooks
+RUN python3 -m pip uninstall jupytext
 
 # Clear /tmp
 RUN rm -rf /tmp/*
@@ -322,8 +324,10 @@ LABEL description="Bempp Jupyter Lab (Numba only)"
 WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
 RUN cd bempp-cl && python3 -m pip install .
-RUN cp -r bempp-cl/notebooks /root/example_notebooks
-RUN rm /root/example_notebooks/conftest.py /root/example_notebooks/test_notebooks.py
+RUN python3 -m pip install --no-cache-dir jupytext
+RUN python3 examples/generate_notebooks.py
+RUN cp -r bempp-cl/examples/notebooks /root/example_notebooks
+RUN python3 -m pip uninstall jupytext
 
 # Clear /tmp
 RUN rm -rf /tmp/*

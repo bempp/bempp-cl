@@ -131,3 +131,4 @@ testoutput*
 *.DONTUPLOAD
 
 example-*.png
+examples/notebooks/*
