@@ -7,7 +7,7 @@ jobs:
     steps:
       - checkout
       - run:
-          command: python3 setup.py install
+          command: python3 -m pip install .[test]
           name: Install Bempp
       - run:
           command: python3 -m pytest -n4 --durations=10 test/unit --has-dolfin 0 --has-dolfinx 0 --has-exafmm 1
@@ -21,10 +21,7 @@ jobs:
     steps:
       - checkout
       - run:
-          command: pip3 install jupyter nbconvert
-          name: Install jupyter
-      - run:
-          command: python3 setup.py install
+          command: python3 -m pip install .[test]
           name: Install Bempp
       - run:
           command: python3 -m pytest --durations=10 examples/test.py --has-dolfin 0 --has-dolfinx 0 --has-exafmm 1
@@ -38,7 +35,7 @@ jobs:
           command: pip3 install jupyter nbconvert
           name: Install jupyter
       - run:
-          command: python3 setup.py install
+          command: python3 -m pip install .[test]
           name: Install Bempp
       - run:
           command: python3 -m pytest examples/test.py --has-dolfin 0 --has-dolfinx 1 --has-exafmm 1 --dolfin-books-only 1
