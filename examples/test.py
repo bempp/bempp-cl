@@ -14,8 +14,7 @@ for dir in ["laplace", "helmholtz", "maxwell", "other"]:
 @pytest.mark.parametrize(("path", "script"), scripts)
 def test_example(path, script, has_dolfin, has_dolfinx, dolfin_books_only):
     # Examples in this list will be skipped as the problems are very large or require GPUs
-    if script in ["reentrant_cube_capacity.py", "opencl_benchmark.py",
-                  "dirichlet_weak_imposition.py"]:
+    if script in ["reentrant_cube_capacity.py", "opencl_benchmark.py", "dirichlet_weak_imposition.py"]:
         pytest.skip()
 
     if not has_dolfin and script.endswith("dolfin.py"):

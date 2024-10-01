@@ -24,20 +24,20 @@ for dir in ["laplace", "helmholtz", "maxwell", "other"]:
                 "    ipython = True\n"
                 "except NameError:\n"
                 "    ipython = False",
-                "%matplotlib inline")
+                "%matplotlib inline",
+            )
             content = content.replace(
-                "try:\n"
-                "    get_ipython().run_line_magic('matplotlib', 'inline')\n"
-                "except NameError:\n"
-                "    pass",
-                "%matplotlib inline")
+                "try:\n" "    get_ipython().run_line_magic('matplotlib', 'inline')\n" "except NameError:\n" "    pass",
+                "%matplotlib inline",
+            )
             with open(file_copy, "w") as f:
                 f.write(content)
 
             assert os.system(f"jupytext --to ipynb {file_copy}") == 0
             assert os.system(f"rm {file_copy}") == 0
-            os.system("mv " + os.path.join(
-                path, f'convert-{i[:-3]}.ipynb'
-            ) + " " + os.path.join(
-                notebook_subdir, f"{i[:-3]}.ipynb"
-            ))
+            os.system(
+                "mv "
+                + os.path.join(path, f"convert-{i[:-3]}.ipynb")
+                + " "
+                + os.path.join(notebook_subdir, f"{i[:-3]}.ipynb")
+            )

@@ -12,28 +12,28 @@
 # This is a test notebook to benchmark the Bempp performance on different devices. The default figures reported here
 # are obtained under Ubuntu 20.04 Linux on an Intel Core i9-9980HK 8 Core CPU with a base clock of 2.4GHz and a maximum turbo
 # frequency of 5GHz. The GPU device is an NVIDIA Quadro RTX 3000 GPU with 6GB Ram.
-# 
+#
 # As OpenCL CPU driver we test both POCL (in Version 1.5) and the Intel OpenCL CPU driver, both with default vectorization options.
-# 
+#
 # We are benchmarking the following operator types
-# 
+#
 # * Boundary Operators:
-# 
+#
 #     * Laplace single and double layer boundary operator
 #     * Helmholtz single and double layer boundary operator
 #     * Maxwell electric and magnetic field boundary operator
-#     
-#     
+#
+#
 # * Domain Potential Operators:
-# 
+#
 #     * Laplace single and double layer potential operator
 #     * Helmholtz single and double layer potential operator
 #     * Maxwell electric and magnetic field domain potential operator
-# 
-# 
+#
+#
 # We are testing all operators in single and double precision. For the GPU we only perform single precision tests as it is significantly
 # slower in double precision.
-# 
+#
 # As mesh we use a uniform sphere with 8192 elements. As wavenumber in the Helmholtz and Maxwell tests we use the value $k=1.0$. This has no effect on the performance. As scalar function spaces we use spaces of continuous $P1$ functions. For Maxwell we use RWG functions of order 0.
 #
 # ## General Setup
@@ -55,19 +55,23 @@ try:
 except NameError:
     raise RuntimeError("Must run using IPython")
 
+
 def benchmark_boundary_operator(operator, precision):
     """Benchmark an operator with given precision"""
-    result = get_ipython().run_line_magic('timeit', '-o -r 2 -n 2 operator(precision).weak_form()')
+    result = get_ipython().run_line_magic("timeit", "-o -r 2 -n 2 operator(precision).weak_form()")  # noqa: F821
     return result.best
+
 
 def benchmark_potential_operator(operator, fun, precision):
     """Benchmark an operator with given precision"""
-    result = get_ipython().run_line_magic('timeit', '-o -r 2 -n 2 res = operator(precision) @ fun')
+    result = get_ipython().run_line_magic("timeit", "-o -r 2 -n 2 res = operator(precision) @ fun")  # noqa: F821
     return result.best
+
+
 # -
 
 # ## Boundary Operators
-# We first define the boundary operators that we want to test. We make them dependent only on a *precision* argument. 
+# We first define the boundary operators that we want to test. We make them dependent only on a *precision* argument.
 
 # +
 from bempp.api.operators import boundary
@@ -87,8 +91,8 @@ operators = [
 # We setup a Pandas data frame to conveniently store the different timings.
 
 # +
-driver_labels = ['Portable Computing Language', 'Intel(R) OpenCL']
-precision_labels = ['single', 'double']
+driver_labels = ["Portable Computing Language", "Intel(R) OpenCL"]
+precision_labels = ["single", "double"]
 
 operator_labels = [
     "laplace single layer bnd",
@@ -103,11 +107,11 @@ df = pd.DataFrame(index=operator_labels, columns=pd.MultiIndex.from_product([dri
 
 # We assemble each operator once to make sure that all Numba functions are compiled.
 
-for precision in ['single', 'double']:
-    if precision == 'single':
-        bempp.api.VECTORIZATION_MODE = 'vec16'
+for precision in ["single", "double"]:
+    if precision == "single":
+        bempp.api.VECTORIZATION_MODE = "vec16"
     else:
-        bempp.api.VECTORIZATION_MODE = 'vec8'
+        bempp.api.VECTORIZATION_MODE = "vec8"
     for driver_name in driver_labels:
         bempp.api.set_default_cpu_device_by_name(driver_name)
         for op in operators:
@@ -115,11 +119,11 @@ for precision in ['single', 'double']:
 
 # Now let's run the actual benchmarks.
 
-for precision in ['single', 'double']:
-    if precision == 'single':
-        bempp.api.VECTORIZATION_MODE = 'vec16'
+for precision in ["single", "double"]:
+    if precision == "single":
+        bempp.api.VECTORIZATION_MODE = "vec16"
     else:
-        bempp.api.VECTORIZATION_MODE = 'vec8'
+        bempp.api.VECTORIZATION_MODE = "vec8"
     for driver_name in driver_labels:
         print(f"Driver: {driver_name}")
         bempp.api.set_default_cpu_device_by_name(driver_name)
@@ -164,11 +168,11 @@ functions = [
 
 # We assemble each operator once to compile all functions.
 
-for precision in ['single', 'double']:
-    if precision == 'single':
-        bempp.api.VECTORIZATION_MODE = 'vec16'
+for precision in ["single", "double"]:
+    if precision == "single":
+        bempp.api.VECTORIZATION_MODE = "vec16"
     else:
-        bempp.api.VECTORIZATION_MODE = 'vec8'
+        bempp.api.VECTORIZATION_MODE = "vec8"
     for driver_name in driver_labels:
         bempp.api.set_default_cpu_device_by_name(driver_name)
         for op, fun in zip(operators, functions):
@@ -177,8 +181,8 @@ for precision in ['single', 'double']:
 # Let's create the data structure to store the results.
 
 # +
-driver_labels = ['Portable Computing Language', 'Intel(R) OpenCL', 'NVIDIA CUDA']
-precision_labels = ['single', 'double']
+driver_labels = ["Portable Computing Language", "Intel(R) OpenCL", "NVIDIA CUDA"]
+precision_labels = ["single", "double"]
 
 operator_labels = [
     "laplace single layer pot",
@@ -194,20 +198,20 @@ df = pd.DataFrame(index=operator_labels, columns=pd.MultiIndex.from_product([dri
 # Finally, we run the actual tests.
 
 # +
-bempp.api.set_default_gpu_device_by_name('NVIDIA CUDA')
+bempp.api.set_default_gpu_device_by_name("NVIDIA CUDA")
 
-for precision in ['single', 'double']:
-    if precision == 'single':
-        bempp.api.VECTORIZATION_MODE = 'vec16'
+for precision in ["single", "double"]:
+    if precision == "single":
+        bempp.api.VECTORIZATION_MODE = "vec16"
     else:
-        bempp.api.VECTORIZATION_MODE = 'vec8'
+        bempp.api.VECTORIZATION_MODE = "vec8"
     for driver_name in driver_labels:
         print(f"Driver: {driver_name}")
-        if driver_name == 'NVIDIA CUDA':
-            bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE = 'gpu'
-            bempp.api.VECTORIZATION_MODE = 'novec'
+        if driver_name == "NVIDIA CUDA":
+            bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE = "gpu"
+            bempp.api.VECTORIZATION_MODE = "novec"
         else:
-            bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE = 'cpu'
+            bempp.api.POTENTIAL_OPERATOR_DEVICE_TYPE = "cpu"
             bempp.api.set_default_cpu_device_by_name(driver_name)
         for label, op, fun in zip(operator_labels, operators, functions):
             df.loc[label, (driver_name, precision)] = benchmark_potential_operator(op, fun, precision)
