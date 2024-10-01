@@ -142,10 +142,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: |
-            sudo apt-get install -y python3-setuptools
-            pip3 install .[style]
-        name: Install Python style tools
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+      - run: python3 -m pip install .[style]
+        name: Install Bempp with optional style dependencies
       - run: |
             python3 -m flake8 bempp
             python3 -m flake8 test
