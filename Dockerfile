@@ -56,9 +56,15 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         libpocl-dev \
         # Python
         python3-dev \
+        python3-venv \
         python3-pip \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+ENV VIRTUAL_ENV /bempp-env
+ENV PATH /bempp-env/bin:$PATH
+RUN python3 -m venv ${VIRTUAL_ENV}
+
+# Install Python packages (via pip)
 RUN python3 -m pip install --no-cache-dir matplotlib pyopencl numpy scipy numba meshio && \
     python3 -m pip install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
 
@@ -188,13 +194,12 @@ RUN git clone --depth 1 --branch ${FENICSX_DOLFINX_TAG} https://github.com/fenic
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
     python3 -m pip install -r build-requirements.txt && \
-    python3 -m pip install --target /usr/local/dolfinx-complex/lib/python3.12/dist-packages --no-dependencies --ignore-installed --config-settings=cmake.build-type="Release" .
+    python3 -m pip install --no-dependencies --ignore-installed --config-settings=cmake.build-type="Release" .
 
 # complex by default.
 ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH \
     PATH=/usr/local/dolfinx-complex/bin:$PATH \
-    PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH \
-    PYTHONPATH=/usr/local/dolfinx-complex/lib/python3.12/dist-packages:$PYTHONPATH
+    PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH
 
 # Download and install ExaFMM
 RUN wget -nc --quiet https://github.com/exafmm/exafmm-t/archive/v${EXAFMM_VERSION}.tar.gz && \
@@ -262,15 +267,12 @@ RUN cd dolfinx/build && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
     python3 -m pip install -r build-requirements.txt && \
-    python3 -m pip install --target /usr/local/dolfinx-complex/lib/python3.12/dist-packages --no-dependencies --ignore-installed --config-settings=cmake.build-type="Release" .
+    python3 -m pip install --no-dependencies --ignore-installed --config-settings=cmake.build-type="Release" .
 
 # complex by default.
 ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH \
     PATH=/usr/local/dolfinx-complex/bin:$PATH \
-    PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH \
-    PYTHONPATH=/usr/local/dolfinx-complex/lib/python3.12/dist-packages:$PYTHONPATH
-
-RUN python3 -c 'import dolfinx'
+    PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH
 
 # Download and install ExaFMM
 RUN wget -nc --quiet https://github.com/exafmm/exafmm-t/archive/v${EXAFMM_VERSION}.tar.gz && \
