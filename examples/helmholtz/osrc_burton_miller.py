@@ -153,7 +153,7 @@ db_pattern = 10 * np.log10(4 * np.pi * radiation_pattern)
 try:
     get_ipython().run_line_magic('matplotlib', 'inline')
     ipython = True
-except:
+except NameError:
     ipython = False
 from matplotlib import pyplot as plt
 

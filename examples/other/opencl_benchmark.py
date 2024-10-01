@@ -50,6 +50,11 @@ snc_space = bempp.api.function_space(grid, "SNC", 0)
 
 
 # +
+try:
+    get_ipython()
+except NameError:
+    raise RuntimeError("Must run using IPython")
+
 def benchmark_boundary_operator(operator, precision):
     """Benchmark an operator with given precision"""
     result = get_ipython().run_line_magic('timeit', '-o -r 2 -n 2 operator(precision).weak_form()')

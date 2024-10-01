@@ -114,7 +114,7 @@ u_evaluated = slp_pot * neumann_fun - dlp_pot * dirichlet_fun
 try:
     get_ipython().run_line_magic('matplotlib', 'inline')
     ipython = True
-except:
+except NameError:
     ipython = False
 
 # Filter out solution values that are associated with points outside the unit circle.
