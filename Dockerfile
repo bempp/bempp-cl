@@ -158,7 +158,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN python3 -m pip install --no-cache-dir matplotlib pyopencl numpy scipy numba meshio && \
+RUN python3 -m pip install --no-cache-dir nanobind scikit-build-core[pyproject] && \
+    python3 -m pip install --no-cache-dir matplotlib pyopencl numpy scipy numba meshio && \
     python3 -m pip install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
 
 # Install Python packages (via pip)
@@ -233,7 +234,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN python3 -m pip install --no-cache-dir meshio numpy matplotlib
+RUN python3 -m pip install --no-cache-dir nanobind scikit-build-core[pyproject] && \
+    python3 -m pip install --no-cache-dir meshio numpy matplotlib
 
 # Install Basix
 RUN git clone --depth 1 --branch ${FENICSX_BASIX_TAG} https://github.com/FEniCS/basix.git basix-src && \
