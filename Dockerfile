@@ -57,7 +57,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         # Python
         python3-dev \
         python3-pip \
-    && python3 -m pip install --upgrade --no-cache-dir pip
+    && python3 -m pip install --upgrade --no-cache-dir pip \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN python3 -m pip install --no-cache-dir matplotlib pyopencl numpy scipy numba meshio && \
