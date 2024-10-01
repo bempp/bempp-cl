@@ -93,6 +93,7 @@ jobs:
           tags: bempp/cl-dev-env-with-dolfinx-numba:latest
           target: bempp-dev-env-with-dolfinx-numba
         if: ${{ github.repository == 'bempp/bempp-cl' && github.ref == 'refs/heads/main' }}
+
   build-and-publish-docker:
     name: Build testing docker image
     runs-on: ubuntu-latest
@@ -206,7 +207,7 @@ jobs:
     name: Run examples
     needs:
       - configure-docker
-      - build-and-publish-docker-fenicsx
+      - build-and-publish-docker
       - style-checks
     runs-on: ubuntu-latest
     container: bempp/cl-dev-env-numba:${{ needs.configure-docker.outputs.dockertag }}
