@@ -9,8 +9,9 @@ os.mkdir(notebook_dir)
 scripts = []
 for dir in ["laplace", "helmholtz", "maxwell", "other"]:
     notebook_subdir = os.path.join(notebook_dir, dir)
-    os.mkdir(notebook_subdir)
     path = os.path.join(os.path.dirname(os.path.realpath(__file__)), dir)
+    os.mkdir(notebook_subdir)
+    os.system(f"cp {path}/*.png {notebook_subdir}")
     for i in os.listdir(path):
         if i.endswith(".py"):
             file = os.path.join(path, i)
