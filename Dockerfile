@@ -201,10 +201,10 @@ RUN git clone --depth 1 --branch ${FENICSX_DOLFINX_TAG} https://github.com/fenic
     python3 -m pip install -r build-requirements.txt && \
     python3 -m pip install --no-dependencies --ignore-installed --config-settings=cmake.build-type="Release" .
 
-# complex by default.
-ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH \
-    PATH=/usr/local/dolfinx-complex/bin:$PATH \
-    PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH
+ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH
+ENV PATH=/usr/local/dolfinx-complex/bin:$PATH
+ENV PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH
+ENV CMAKE_PREFIX_PATH=/usr/local/dolfinx-complex/lib/cmake:$CMAKE_PREFIX_PATH
 
 # Download and install ExaFMM
 RUN wget -nc --quiet https://github.com/exafmm/exafmm-t/archive/v${EXAFMM_VERSION}.tar.gz && \
@@ -275,9 +275,10 @@ RUN cd dolfinx/build && \
     python3 -m pip install --no-dependencies --ignore-installed --config-settings=cmake.build-type="Release" .
 
 # complex by default.
-ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH \
-    PATH=/usr/local/dolfinx-complex/bin:$PATH \
-    PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH
+ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH
+ENV PATH=/usr/local/dolfinx-complex/bin:$PATH
+ENV PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH
+ENV CMAKE_PREFIX_PATH=/usr/local/dolfinx-complex/lib/cmake:$CMAKE_PREFIX_PATH
 
 # Download and install ExaFMM
 RUN wget -nc --quiet https://github.com/exafmm/exafmm-t/archive/v${EXAFMM_VERSION}.tar.gz && \
