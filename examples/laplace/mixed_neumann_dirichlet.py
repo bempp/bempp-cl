@@ -186,9 +186,12 @@ bempp.api.export("mixed_dirichlet_neumann_laplace_solution.vtk", grid_function=d
 
 # +
 try:
+    get_ipython()
+    ipython = True
+except NameError:
+    ipython = False
+if ipython:
     from IPython.display import Image
 
     Image("mixed_dirichlet_neumann_laplace_solution.png")
-except NameError:
-    pass
 # -
