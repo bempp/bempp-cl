@@ -46,10 +46,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@main
-    - name: Set up Python 3.7
-      uses: actions/setup-python@v1
+    - name: Set up Python
+      uses: actions/setup-python@v4
       with:
-        python-version: 3.7
+        python-version: "3.12"
     - name: Build a binary wheel and a source tarball
       run: |
         pip install wheel
