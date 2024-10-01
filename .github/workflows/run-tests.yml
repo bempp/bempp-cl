@@ -187,3 +187,47 @@ jobs:
       - run: python3 -m pytest -n4 --durations=50 test/unit --has-dolfin 0 --has-dolfinx 1 --has-exafmm 1
         name: Run Bempp unit tests
 
+  large-tests:
+    name: Run large tests
+    needs:
+      - configure-docker
+      - build-and-publish-docker
+      - style-checks
+    runs-on: ubuntu-latest
+    container: bempp/cl-dev-env-numba:${{ needs.configure-docker.outputs.dockertag }}
+    steps:
+      - uses: actions/checkout@v2
+      - run: python3 -m pip install .[test]
+        name: Install Bempp
+      - run: python3 -m pytest --durations=10 test/validation --has-dolfin 0 --has-dolfinx 0 --has-exafmm 1 --skip ci
+        name: Run Bempp validation tests
+
+  run-examples:
+    name: Run examples with
+    needs:
+      - configure-docker
+      - build-and-publish-docker-fenicsx
+      - style-checks
+    runs-on: ubuntu-latest
+    container: bempp/cl-dev-env-numba:${{ needs.configure-docker.outputs.dockertag }}
+    steps:
+      - uses: actions/checkout@v2
+      - run: python3 -m pip install .[test]
+        name: Install Bempp
+      - run: python3 -m pytest examples/test.py --has-dolfin 0 --has-dolfinx 0 --has-exafmm 1
+        name: Run Bempp examples
+
+  run-examples-fenicsx:
+    name: Run examples with FEniCSx
+    needs:
+      - configure-docker
+      - build-and-publish-docker-fenicsx
+      - style-checks
+    runs-on: ubuntu-latest
+    container: bempp/cl-dev-env-with-dolfinx-numba:${{ needs.configure-docker.outputs.dockertag }}
+    steps:
+      - uses: actions/checkout@v2
+      - run: python3 -m pip install .[test]
+        name: Install Bempp
+      - run: python3 -m pytest examples/test.py --has-dolfin 0 --has-dolfinx 1 --has-exafmm 1 --dolfin-books-only 1
+        name: Run Bempp examples
