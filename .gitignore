@@ -129,3 +129,5 @@ testoutput*
 .exafmm/*
 
 *.DONTUPLOAD
+
+example-*.png
