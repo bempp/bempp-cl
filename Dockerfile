@@ -26,7 +26,7 @@ ARG MAKEFLAGS
 
 ########################################
 
-FROM ubuntu:22.04 as bempp-dev-env
+FROM ubuntu:24.04 as bempp-dev-env
 LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
 LABEL description="Bempp-cl development environment"
 
@@ -81,7 +81,7 @@ WORKDIR /root
 
 ########################################
 
-FROM ubuntu:22.04 as bempp-dev-env-numba
+FROM ubuntu:24.04 as bempp-dev-env-numba
 LABEL maintainer="Matthew Scroggs <bempp@mscroggs.co.uk>"
 LABEL description="Bempp-cl development environment"
 
@@ -160,12 +160,10 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN python3 -m pip install --no-cache-dir nanobind scikit-build-core[pyproject] && \
-    python3 -m pip install --no-cache-dir matplotlib pyopencl numpy scipy numba meshio && \
-    python3 -m pip install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
-
 # Install Python packages (via pip)
-RUN python3 -m pip install --no-cache-dir meshio numpy matplotlib pyopencl
+RUN python3 -m pip install --no-cache-dir nanobind scikit-build-core[pyproject] && \
+    python3 -m pip install --no-cache-dir matplotlib pyopencl numpy scipy numba meshio pyopencl && \
+    python3 -m pip install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
 
 # Install Basix
 RUN git clone --depth 1 --branch ${FENICSX_BASIX_TAG} https://github.com/FEniCS/basix.git basix-src && \
@@ -175,28 +173,30 @@ RUN git clone --depth 1 --branch ${FENICSX_BASIX_TAG} https://github.com/FEniCS/
     cmake --install build-dir && \
     python3 -m pip install ./python
 
-# Install FEniCSx components
+# Install UFL and FFCx components
 RUN python3 -m pip install --no-cache-dir ipython && \
     python3 -m pip install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_UFL_TAG} && \
     python3 -m pip install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@${FENICSX_FFCX_TAG}
 
-# Install FEniCSx
+ENV PETSC_ARCH=linux-gnu-complex128-32
+
+# Install DOLFINx
 RUN git clone --depth 1 --branch ${FENICSX_DOLFINX_TAG} https://github.com/fenics/dolfinx.git && \
     cd dolfinx && \
     mkdir build && \
     cd build && \
-    PETSC_ARCH=linux-gnu-complex128-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DDOLFINX_ENABLE_PETSC=true ../cpp && \
+    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DDOLFINX_ENABLE_PETSC=true ../cpp && \
     ninja ${DOLFINX_MAKEFLAGS} install && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-complex128-32 python3 -m pip install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
+    python3 -m pip install -r build-requirements.txt && \
+    python3 -m pip install --target /usr/local/dolfinx-complex/lib/python3.12/dist-packages --no-dependencies --ignore-installed --config-settings=cmake.build-type="Release" .
 
 # complex by default.
 ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH \
-        PATH=/usr/local/dolfinx-complex/bin:$PATH \
-        PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH \
-        PETSC_ARCH=linux-gnu-complex128-32 \
-        PYTHONPATH=/usr/local/dolfinx-complex/lib/python3.8/dist-packages:$PYTHONPATH
+    PATH=/usr/local/dolfinx-complex/bin:$PATH \
+    PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH \
+    PYTHONPATH=/usr/local/dolfinx-complex/lib/python3.12/dist-packages:$PYTHONPATH
 
 # Download and install ExaFMM
 RUN wget -nc --quiet https://github.com/exafmm/exafmm-t/archive/v${EXAFMM_VERSION}.tar.gz && \
@@ -247,27 +247,32 @@ RUN git clone --depth 1 --branch ${FENICSX_BASIX_TAG} https://github.com/FEniCS/
     cmake --install build-dir && \
     python3 -m pip install ./python
 
-# Install FEniCSx components
+# Install UFL and FFCx components
 RUN python3 -m pip install --no-cache-dir git+https://github.com/FEniCS/ufl.git@${FENICSX_UFL_TAG} && \
     python3 -m pip install --no-cache-dir git+https://github.com/FEniCS/ffcx.git@${FENICSX_FFCX_TAG}
 
-# Install FEniCSx
+ENV PETSC_ARCH=linux-gnu-complex128-32
+
+# Install DOLFINx
 RUN git clone --depth 1 --branch ${FENICSX_DOLFINX_TAG} https://github.com/fenics/dolfinx.git && \
     cd dolfinx && \
     mkdir build && \
     cd build && \
-    PETSC_ARCH=linux-gnu-complex128-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DDOLFINX_ENABLE_PETSC=true ../cpp && \
-    ninja ${DOLFINX_MAKEFLAGS} install && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DDOLFINX_ENABLE_PETSC=true ../cpp && \
+    ninja ${DOLFINX_MAKEFLAGS} install
+RUN cd dolfinx/build && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-complex128-32 python3 -m pip install --target /usr/local/dolfinx-complex/lib/python3.8/dist-packages --no-dependencies --ignore-installed .
+    python3 -m pip install -r build-requirements.txt && \
+    python3 -m pip install --target /usr/local/dolfinx-complex/lib/python3.12/dist-packages --no-dependencies --ignore-installed --config-settings=cmake.build-type="Release" .
 
 # complex by default.
 ENV LD_LIBRARY_PATH=/usr/local/dolfinx-complex/lib:$LD_LIBRARY_PATH \
-        PATH=/usr/local/dolfinx-complex/bin:$PATH \
-        PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH \
-        PETSC_ARCH=linux-gnu-complex128-32 \
-        PYTHONPATH=/usr/local/dolfinx-complex/lib/python3.8/dist-packages:$PYTHONPATH
+    PATH=/usr/local/dolfinx-complex/bin:$PATH \
+    PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH \
+    PYTHONPATH=/usr/local/dolfinx-complex/lib/python3.12/dist-packages:$PYTHONPATH
+
+RUN python3 -c 'import dolfinx'
 
 # Download and install ExaFMM
 RUN wget -nc --quiet https://github.com/exafmm/exafmm-t/archive/v${EXAFMM_VERSION}.tar.gz && \
