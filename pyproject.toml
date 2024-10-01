@@ -19,4 +19,3 @@ repository = "https://github.com/bempp/bempp-cl"
 optional = ["matplotlib"]
 style = ["pydocstyle", "flake8"]
 test = ["pytest", "bempp[optional]"]
-notebooks = ["jupytext"]
