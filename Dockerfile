@@ -114,8 +114,13 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         libglu1-mesa \
         # Python
         python3-dev \
+        python3-venv \
         python3-pip \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+ENV VIRTUAL_ENV /bempp-env
+ENV PATH /bempp-env/bin:$PATH
+RUN python3 -m venv ${VIRTUAL_ENV}
 
 RUN python3 -m pip install --no-cache-dir matplotlib numpy scipy numba meshio && \
     python3 -m pip install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
