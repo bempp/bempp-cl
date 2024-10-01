@@ -197,7 +197,7 @@ def default_cpu_device():
     if _DEFAULT_CPU_DEVICE is None:
         try:
             ctx, device = find_cpu_driver(name)
-        except:
+        except:  # noqa: E722
             raise RuntimeError("Could not find suitable OpenCL CPU driver.")
         _DEFAULT_CPU_CONTEXT = ctx
         _DEFAULT_CPU_DEVICE = device
@@ -222,7 +222,7 @@ def default_gpu_device():
     if _DEFAULT_GPU_DEVICE is None:
         try:
             ctx, device = find_gpu_driver(name)
-        except:
+        except:  # noqa: E722
             raise RuntimeError("Could not find a suitable OpenCL GPU driver.")
         _DEFAULT_GPU_CONTEXT = ctx
         _DEFAULT_GPU_DEVICE = device
@@ -331,7 +331,7 @@ def set_default_cpu_device_by_name(name):
 
     try:
         context, device = find_cpu_driver(name)
-    except:
+    except:  # noqa: E722
         raise RuntimeError("No CPU driver with given name found.")
 
     _DEFAULT_CPU_CONTEXT = context
@@ -388,7 +388,7 @@ def set_default_gpu_device_by_name(name):
     try:
         pair = find_gpu_driver(name)
         context, device = pair[0], pair[1]
-    except:
+    except:  # noqa: E722
         raise RuntimeError("No GPU driver with given name found.")
 
     _DEFAULT_GPU_CONTEXT = context

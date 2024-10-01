@@ -262,4 +262,6 @@ def test_truncating_edge_and_face_dual_spaces(space_info):
     )
 
     assert space0.global_dof_count == space1.global_dof_count
-    assert _np.linalg.norm(space0.mass_matrix().to_sparse().toarray()) < _np.linalg.norm(space1.mass_matrix().to_sparse().toarray())
+    assert _np.linalg.norm(
+        space0.mass_matrix().to_sparse().toarray()
+    ) < _np.linalg.norm(space1.mass_matrix().to_sparse().toarray())

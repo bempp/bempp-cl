@@ -165,12 +165,12 @@ def lambda_1(mte_operators, beta, kappa_eps):
     from bempp.api.assembly.discrete_boundary_operator import InverseSparseDiscreteBoundaryOperator
     IP, IC, N, LT, L = mte_operators
     return InverseSparseDiscreteBoundaryOperator(
-        bmat([[(IC - beta * N).weak_form().to_sparse(), (beta * LT).weak_form().to_sparse()], [L.weak_form().to_sparse(), kappa_eps ** 2 * IP.weak_form().to_sparse()]], 'csc'))
+        bmat([[(IC - beta * N).weak_form().to_sparse(), (beta * LT).weak_form().to_sparse()],
+              [L.weak_form().to_sparse(), kappa_eps ** 2 * IP.weak_form().to_sparse()]], 'csc'))
 
 
 def lambda_2(mte_operators):
-    """
-    Create and return Lambda2 = (I-curlcurl) operator.
+    """Create and return Lambda2 = (I-curlcurl) operator.
 
     Parameters
     ----------

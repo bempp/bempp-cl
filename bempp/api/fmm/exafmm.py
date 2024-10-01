@@ -14,7 +14,7 @@ def cleanup_fmm_tmp():
         if FMM_TMP_DIR is not None:
             for tmp_file in Path(FMM_TMP_DIR).glob("*.tmp"):
                 tmp_file.unlink()
-    except:
+    except:  # noqa: E722
         print("Could not delete FMM temporary files.")
 
 
@@ -45,7 +45,7 @@ class ExafmmInterface(object):
             if not os.path.isdir(FMM_TMP_DIR):
                 try:
                     os.mkdir(FMM_TMP_DIR)
-                except:
+                except:  # noqa: E722
                     raise FileExistsError(
                         f"A file with the name {FMM_TMP_DIR} exists. Please delete it."
                     )

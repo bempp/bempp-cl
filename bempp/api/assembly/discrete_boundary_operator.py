@@ -630,7 +630,7 @@ class _Solver(object):  # pylint: disable=too-few-public-methods
             solver_interface = PardisoInterface
             actual_mat = mat.tocsr()
             use_mkl_pardiso = True
-        except:
+        except:  # noqa: E722
             solver_interface = splu
             actual_mat = mat
 

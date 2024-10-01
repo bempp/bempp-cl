@@ -69,15 +69,14 @@ warnings.simplefilter("ignore", category=NumbaPendingDeprecationWarning)
 warnings.simplefilter("ignore", category=NumbaPerformanceWarning)
 warnings.filterwarnings("ignore", message="splu requires CSC matrix format")
 
-
-## Try importing OpenCL routines
+# Try importing OpenCL routines
 
 try:
     from bempp.core.opencl_kernels import set_default_cpu_device
     from bempp.core.opencl_kernels import set_default_cpu_device_by_name
     from bempp.core.opencl_kernels import set_default_gpu_device_by_name
     from bempp.core.opencl_kernels import set_default_gpu_device
-except:
+except ImportError:
     pass
 
 
@@ -126,8 +125,6 @@ def flush_log():
 
 def enable_console_logging(level="info"):
     """Enable console logging and return the console handler."""
-    from bempp.api.utils import pool
-
     # pylint: disable=W0603
     global CONSOLE_LOGGING_HANDLER
     if not CONSOLE_LOGGING_HANDLER:
@@ -237,7 +234,7 @@ def check_for_fmm():
     exafmm_found = False
     try:
         import exafmm
-    except:
+    except ImportError:
         exafmm_found = False
     else:
         exafmm_found = True
@@ -277,14 +274,14 @@ else:
         from bempp.core.opencl_kernels import find_cpu_driver
 
         CPU_OPENCL_DRIVER_FOUND = find_cpu_driver()
-    except:
+    except:  # noqa: E722
         pass
 
     try:
         from bempp.core.opencl_kernels import find_gpu_driver
 
         GPU_OPENCL_DRIVER_FOUND = find_gpu_driver()
-    except:
+    except:  # noqa: E722
         pass
 
     if CPU_OPENCL_DRIVER_FOUND:

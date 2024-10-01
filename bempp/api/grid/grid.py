@@ -1690,7 +1690,8 @@ def get_vertex_edges(vertex_index, bary_vertex_to_edge, bary_element, bary_grid)
             new_vertex_edges.append(vertex_edges[edges.index(el)])
 
     if (len(sorted_edges) > 0):
-        new_vertex_edges, sorted_edges = _sort_vertex_edges(vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1)
+        new_vertex_edges, sorted_edges = _sort_vertex_edges(
+            vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1)
         sorted_edges = sorted(set(sorted_edges), key=sorted_edges.index, reverse=True)
         new_vertex_edges = sorted(set(new_vertex_edges), key=new_vertex_edges.index, reverse=True)
         ref_edge = sorted_edges.index(bary_grid.data().element_edges[vertex_edges[0][1]][vertex_edges[0][0]])
@@ -1718,11 +1719,15 @@ def _sort_vertex_edges(vertex_edges, edges, set_edges, sorted_edges, new_vertex_
             sorted_edges.append(sorted_edges[-1])
             new_vertex_edges.append(vertex_edges[indexes[1]])
     if len(new_vertex_edges) < len(vertex_edges):
-        return _sort_vertex_edges(vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1 - edge_number)
+        return _sort_vertex_edges(
+            vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1 - edge_number)
     return new_vertex_edges, sorted_edges
 
 
-def _get_bary_coefficients(edge_lengths, vertex_edges1, vertex_edges2, sorted_edges1, sorted_edges2, bary_grid, local2global, nc1, nc2, global_dof_index, ref_edge1, ref_edge2):
+def _get_bary_coefficients(
+    edge_lengths, vertex_edges1, vertex_edges2, sorted_edges1, sorted_edges2,
+    bary_grid, local2global, nc1, nc2, global_dof_index, ref_edge1, ref_edge2,
+):
     """Obtain the edge coefficients associated to the barycentric edges of a grid."""
     values = []
     bary_dofs = []
@@ -1733,38 +1738,50 @@ def _get_bary_coefficients(edge_lengths, vertex_edges1, vertex_edges2, sorted_ed
     border_edges2 = _check_if_border_edges(vertex_edges2, bary_grid)
 
     if border_edges1 and not border_edges2:
-        aux_values, aux_bary_dofs, aux_coarse_dofs = _border_barycentric_edges_coefficients(edge_lengths, vertex_edges1, sorted_edges1, bary_grid, local2global, - 1.0, nc1, global_dof_index, ref_edge1)
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _border_barycentric_edges_coefficients(
+            edge_lengths, vertex_edges1, sorted_edges1, bary_grid, local2global, -1.0,
+            nc1, global_dof_index, ref_edge1)
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
-        aux_values, aux_bary_dofs, aux_coarse_dofs = _interior_barycentric_edges_coefficients(edge_lengths, vertex_edges2, bary_grid, local2global, 1.0, nc2, global_dof_index)
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _interior_barycentric_edges_coefficients(
+            edge_lengths, vertex_edges2, bary_grid, local2global, 1.0, nc2, global_dof_index)
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
     elif not border_edges1 and border_edges2:
-        aux_values, aux_bary_dofs, aux_coarse_dofs = _interior_barycentric_edges_coefficients(edge_lengths, vertex_edges1, bary_grid, local2global, - 1.0, nc1, global_dof_index)
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _interior_barycentric_edges_coefficients(
+            edge_lengths, vertex_edges1, bary_grid, local2global, - 1.0, nc1, global_dof_index)
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
-        aux_values, aux_bary_dofs, aux_coarse_dofs = _border_barycentric_edges_coefficients(edge_lengths, vertex_edges2, sorted_edges2, bary_grid, local2global, 1.0, nc2, global_dof_index, ref_edge2)
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _border_barycentric_edges_coefficients(
+            edge_lengths, vertex_edges2, sorted_edges2, bary_grid, local2global, 1.0, nc2,
+            global_dof_index, ref_edge2)
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
     elif border_edges1 and border_edges2:
-        aux_values, aux_bary_dofs, aux_coarse_dofs = _border_barycentric_edges_coefficients(edge_lengths, vertex_edges1, sorted_edges1, bary_grid, local2global, -1.0, nc1, global_dof_index, ref_edge1)
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _border_barycentric_edges_coefficients(
+            edge_lengths, vertex_edges1, sorted_edges1, bary_grid, local2global, -1.0, nc1,
+            global_dof_index, ref_edge1)
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
-        aux_values, aux_bary_dofs, aux_coarse_dofs = _border_barycentric_edges_coefficients(edge_lengths, vertex_edges2, sorted_edges2, bary_grid, local2global, 1.0, nc2, global_dof_index, ref_edge2)
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _border_barycentric_edges_coefficients(
+            edge_lengths, vertex_edges2, sorted_edges2, bary_grid, local2global, 1.0, nc2,
+            global_dof_index, ref_edge2)
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
     else:
-        aux_values, aux_bary_dofs, aux_coarse_dofs = _interior_barycentric_edges_coefficients(edge_lengths, vertex_edges1, bary_grid, local2global, -1.0, nc1, global_dof_index)
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _interior_barycentric_edges_coefficients(
+            edge_lengths, vertex_edges1, bary_grid, local2global, -1.0, nc1, global_dof_index)
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
-        aux_values, aux_bary_dofs, aux_coarse_dofs = _interior_barycentric_edges_coefficients(edge_lengths, vertex_edges2, bary_grid, local2global, 1.0, nc2, global_dof_index)
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _interior_barycentric_edges_coefficients(
+            edge_lengths, vertex_edges2, bary_grid, local2global, 1.0, nc2, global_dof_index)
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
@@ -1784,7 +1801,10 @@ def _check_if_border_edges(vertex_edges, bary_grid):
     return border_edges
 
 
-def _border_barycentric_edges_coefficients(edge_lengths, vertex_edges, sorted_edges, bary_grid, local2global, sign, nc, global_dof_index, ref_edge):
+def _border_barycentric_edges_coefficients(
+    edge_lengths, vertex_edges, sorted_edges, bary_grid, local2global, sign, nc,
+    global_dof_index, ref_edge
+):
     """Calculate barycentric edge coefficients associated to an interior vertex of the grid."""
     values = []
     bary_dofs = []
@@ -1807,8 +1827,13 @@ def _border_barycentric_edges_coefficients(edge_lengths, vertex_edges, sorted_ed
     return values, bary_dofs, coarse_dofs
 
 
-def _interior_barycentric_edges_coefficients(edge_lengths, vertex_edges, bary_grid, local2global, sign, nc, global_dof_index):
-    """Calculate barycentric edge coefficients associated to a vertex that belongs to the border of the grid (eg: vertex on the edge of a screen)."""
+def _interior_barycentric_edges_coefficients(
+    edge_lengths, vertex_edges, bary_grid, local2global, sign, nc, global_dof_index
+):
+    """Calculate barycentric edge coefficients associated to a vertex that belongs to the border of the grid.
+
+    (eg: vertex on the edge of a screen).
+    """
     values = []
     bary_dofs = []
     coarse_dofs = []
@@ -1825,7 +1850,10 @@ def _interior_barycentric_edges_coefficients(edge_lengths, vertex_edges, bary_gr
     return values, bary_dofs, coarse_dofs
 
 
-def _get_coefficients_reference_edge(edge_lengths, bary_grid, local2global, global_dof_index, bary_upper_minus, bary_upper_plus, bary_lower_minus, bary_lower_plus):
+def _get_coefficients_reference_edge(
+    edge_lengths, bary_grid, local2global, global_dof_index, bary_upper_minus, bary_upper_plus,
+    bary_lower_minus, bary_lower_plus
+):
     """Calculate upper and lower coefficients of the barycentric edges associated to a reference edge."""
     values = []
     bary_dofs = []
