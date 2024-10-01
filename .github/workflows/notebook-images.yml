@@ -44,3 +44,31 @@ jobs:
           push: true
           tags: bempp/cl-notebook-numba:latest
           target: numba-lab
+
+  upload-notebooks:
+    permissions:
+      id-token: write
+      contents: write
+    name: Generate and upload example notebooks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Generate notebooks
+        run: |
+          python -m pip install jupytext
+          python examples/generate_notebooks.py
+
+      - name: Push to GitHub
+        run: |
+          cd examples/notebooks
+          git init
+          git checkout -b notebooks
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          git commit -m "Notebook examples"
+          git remote add origin https://oauth2:${{ secrets.GITHUB_TOKEN }}@github.com/bempp/bempp-cl.git
+          git push -u origin notebooks --force
+

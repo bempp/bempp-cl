@@ -53,8 +53,8 @@ jobs:
     - name: Build a binary wheel and a source tarball
       run: |
         pip install wheel
-        python setup.py bdist_wheel
-        python setup.py sdist --formats=gztar
+        pip wheel .
+        python -m build . --sdist
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@master
       with:

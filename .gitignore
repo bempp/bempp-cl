@@ -129,3 +129,6 @@ testoutput*
 .exafmm/*
 
 *.DONTUPLOAD
+
+example-*.png
+examples/notebooks/*

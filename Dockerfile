@@ -158,7 +158,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN python3 -m pip install --no-cache-dir matplotlib pyopencl numpy scipy numba meshio && \
+RUN python3 -m pip install --no-cache-dir nanobind scikit-build-core[pyproject] && \
+    python3 -m pip install --no-cache-dir matplotlib pyopencl numpy scipy numba meshio && \
     python3 -m pip install --no-cache-dir flake8 pytest pydocstyle pytest-xdist
 
 # Install Python packages (via pip)
@@ -233,7 +234,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN python3 -m pip install --no-cache-dir meshio numpy matplotlib
+RUN python3 -m pip install --no-cache-dir nanobind scikit-build-core[pyproject] && \
+    python3 -m pip install --no-cache-dir meshio numpy matplotlib
 
 # Install Basix
 RUN git clone --depth 1 --branch ${FENICSX_BASIX_TAG} https://github.com/FEniCS/basix.git basix-src && \
@@ -297,9 +299,12 @@ LABEL description="Bempp Jupyter Lab"
 
 WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
+RUN cd bempp-cl && git checkout mscroggs/update
 RUN cd bempp-cl && python3 -m pip install .
-RUN cp -r bempp-cl/notebooks /root/example_notebooks
-RUN rm /root/example_notebooks/conftest.py /root/example_notebooks/test_notebooks.py
+RUN python3 -m pip install --no-cache-dir jupytext
+RUN python3 bempp-cl/examples/generate_notebooks.py
+RUN cp -r bempp-cl/examples/notebooks /root/example_notebooks
+RUN python3 -m pip uninstall -y jupytext
 
 # Clear /tmp
 RUN rm -rf /tmp/*
@@ -321,9 +326,12 @@ LABEL description="Bempp Jupyter Lab (Numba only)"
 
 WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
+RUN cd bempp-cl && git checkout mscroggs/update
 RUN cd bempp-cl && python3 -m pip install .
-RUN cp -r bempp-cl/notebooks /root/example_notebooks
-RUN rm /root/example_notebooks/conftest.py /root/example_notebooks/test_notebooks.py
+RUN python3 -m pip install --no-cache-dir jupytext
+RUN python3 bempp-cl/examples/generate_notebooks.py
+RUN cp -r bempp-cl/examples/notebooks /root/example_notebooks
+RUN python3 -m pip uninstall -y jupytext
 
 # Clear /tmp
 RUN rm -rf /tmp/*
