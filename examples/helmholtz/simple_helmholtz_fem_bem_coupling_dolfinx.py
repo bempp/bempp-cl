@@ -256,7 +256,7 @@ print("Number of iterations: {0}".format(it_count))
 # +
 # Store the real part of the FEM solution
 u = Function(fenics_space)
-u.vector[:] = np.ascontiguousarray(np.real(soln_fem))
+u.x.array[:] = np.ascontiguousarray(np.real(soln_fem))
 
 # Solution function with dirichlet data on the boundary
 dirichlet_data = trace_matrix * soln_fem
