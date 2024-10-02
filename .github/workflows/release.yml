@@ -35,6 +35,8 @@ jobs:
   build-and-publish-pypi:
     name: Build and publish to PyPI
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
     - uses: actions/checkout@main
     - name: Set up Python
