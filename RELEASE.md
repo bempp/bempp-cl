@@ -22,6 +22,12 @@ with the three parts of the version number.
 You should include a bullet pointed list of the main changes since the last version in
 the "Describe this release" section.
 
+## Updating bempp.com
+Open a pull request to the [bempp-website repo](https://github.com/bempp/bempp-website) with the following changes:
+
+- Update `bemppversion` in the file `_config.yml`
+- Add the new version and release notes to `changelog.md`
+
 ## Pushing to PyPI
 Once a version is created on GitHub, the new version should automatically be pushed to
 PyPI by [GitHub Actions](https://github.com/bempp/bempp-cl/actions/workflows/release.yml).
