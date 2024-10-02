@@ -42,9 +42,6 @@ jobs:
       with:
         python-version: "3.12"
     - name: Build a binary wheel and a source tarball
-      run: |
-        pip install wheel build
-        pip wheel .
-        python -m build . --sdist
+      run: python -m build .
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
