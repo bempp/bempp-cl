@@ -106,7 +106,7 @@
 # We begin by importing DOLFINx (the FEniCSx python library), UFL (FEniCS's unified form language), MPI, Bempp and NumPy.
 
 import dolfinx
-from dolfinx.fem import functionspace, function
+from dolfinx.fem import functionspace, Function
 from dolfinx.mesh import create_unit_cube
 import dolfinx.geometry
 import ufl
@@ -255,7 +255,7 @@ print("Number of iterations: {0}".format(it_count))
 
 # +
 # Store the real part of the FEM solution
-u = function(fenics_space)
+u = Function(fenics_space)
 u.vector[:] = np.ascontiguousarray(np.real(soln_fem))
 
 # Solution function with dirichlet data on the boundary
@@ -300,7 +300,7 @@ plot_me[bem_x] -= slp_pot.evaluate(neumann_fun).flat
 
 fem_points = points[:, np.logical_not(bem_x)].transpose()
 tree = dolfinx.geometry.bb_tree(mesh, 3)
-midpoint_tree = dolfinx.geometry.create_midpoint_tree(mesh, 3, list(range(mesh.topology.connectivity(3, 0).num_nodes)))
+midpoint_tree = dolfinx.geometry.create_midpoint_tree(mesh, 3, np.array(list(range(mesh.topology.connectivity(3, 0).num_nodes))))
 entities = []
 for point in fem_points:
     entities.append(dolfinx.geometry.compute_closest_entity(tree, midpoint_tree, mesh, point)[0])
