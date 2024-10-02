@@ -62,7 +62,7 @@ def __generate_grid_from_geo_string(geo_string):
         cmd = gmsh_command + " -2 " + geo_name
         try:
             subprocess.check_call(cmd, shell=True, stdout=fnull, stderr=fnull)
-        except:
+        except:  # noqa: E722
             print("The following command failed: " + cmd)
             fnull.close()
             raise

@@ -780,7 +780,7 @@ def check_if_compatible(space1, space2):
     try:
         new_space1, new_space2 = return_compatible_representation(space1, space2)
         return new_space1.hash == new_space2.hash
-    except:
+    except:  # noqa: E722
         return False
 
 

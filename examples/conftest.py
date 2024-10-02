@@ -2,10 +2,10 @@ import pytest
 
 
 def pytest_addoption(parser):
-    parser.addoption("--has-dolfin", type="int", default=0)
-    parser.addoption("--has-dolfinx", type="int", default=0)
-    parser.addoption("--has-exafmm", type="int", default=0)
-    parser.addoption("--dolfin-books-only", type="int", default=0)
+    parser.addoption("--has-dolfin", type=int, default=0)
+    parser.addoption("--has-dolfinx", type=int, default=0)
+    parser.addoption("--has-exafmm", type=int, default=0)
+    parser.addoption("--dolfin-books-only", type=int, default=0)
 
 
 @pytest.fixture

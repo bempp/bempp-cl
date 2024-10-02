@@ -9,7 +9,7 @@ description = "The Bempp boundary element library"
 readme = "README.md"
 requires-python = ">=3.8.0"
 license = { file = "LICENSE" }
-dependencies = ["numpy", "numba", "meshio"]
+dependencies = ["numpy", "numba", "meshio", "scipy"]
 
 [project.urls]
 homepage = "https://bempp.com"
@@ -18,7 +18,7 @@ repository = "https://github.com/bempp/bempp-cl"
 [project.optional-dependencies]
 optional = ["matplotlib"]
 style = ["pydocstyle", "flake8"]
-test = ["pytest", "bempp[optional]"]
+test = ["pytest", "pytest-xdist", "bempp-cl[optional]"]
 
 [tool.setuptools]
 packages = ["bempp"]
