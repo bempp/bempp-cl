@@ -14,7 +14,7 @@ We use the format `{a}.{b}.{c}` for the version numbers, where
 `{c}` should be increased for bugfixes and other minor changes.
 
 ## Making the release on GitHub
-Once the version numbers are updates on the `main` branch, you need to
+Once the version numbers are updated on the `main` branch, you need to
 [create a new release on GitHub](https://github.com/bempp/bempp-cl/releases).
 The release should be tagged `v{a}.{b}.{c}` with `{a}`, `{b}`, and `{c}` replaced
 with the three parts of the version number.
@@ -31,7 +31,3 @@ If this doesn't work, ask @mscroggs to look into why it's broken.
 A short time after the PyPI package is updated, a conda bot will open
 [a pull request into the Bempp-cl conda feedstock repo](https://github.com/conda-forge/bempp-cl-feedstock/pulls).
 Once this is merged, the new version will be available via conda.
-
-## Tweet that a new version is made
-Once the new release is made, as @mscroggs to do a tweet from [@BemppProject](https://twitter.com/BemppProject)
-to announce the new version.

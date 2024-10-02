@@ -1,6 +1,6 @@
 [project]
 name = "bempp-cl"
-version = "0.3.1"
+version = "0.3.2"
 authors = [
     { name = "Timo Betcke", email="timo.betcke@gmail.com" },
     { name = "Matthew Scroggs", email="bempp@mscroggs.co.uk" }
