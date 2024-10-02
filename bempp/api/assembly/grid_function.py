@@ -470,7 +470,7 @@ class GridFunction(object):
 
         return GridFunction(space, projections=ident @ self.coefficients)
 
-    def plot(self, mode="element", transformation=None):
+    def plot(self, mode=None, transformation=None):
         """
         Plot the grid function.
 
@@ -480,7 +480,7 @@ class GridFunction(object):
             One of 'element' or 'node'. If 'element' is chosen
             the color is determined by the mid-point of the faces
             of the grid. For 'vertices' the vertex values are
-            chosen (default: 'element')
+            chosen
         transformation : string or object
             One of 'real', 'imag', 'abs', 'log_abs' or
             'abs_squared' or a callable object.
@@ -535,7 +535,7 @@ class GridFunction(object):
         # Sum up the areas of all elements adjacent to the vertices
         vertex_areas = _np.zeros(grid.number_of_vertices, dtype="float64")
 
-        vertex_used = _np.zeros(grid.number_of_vertices, dtype=_np.bool)
+        vertex_used = _np.full(grid.number_of_vertices, False)
 
         for element_index in self.space.support_elements:
             local_values = self.evaluate(element_index, local_coordinates)

@@ -77,7 +77,7 @@ def p0_barycentric_discontinuous_function_space(coarse_space):
 
     bary_support_size = len(bary_support_elements)
 
-    support = _np.zeros(6 * coarse_space.grid.number_of_elements, dtype=_np.bool)
+    support = _np.zeros(6 * coarse_space.grid.number_of_elements, dtype=_np.bool_)
     support[bary_support_elements] = True
 
     normal_multipliers = _np.repeat(coarse_space.normal_multipliers, 6)
@@ -242,7 +242,7 @@ def p1_barycentric_continuous_function_space(coarse_space):
 
     bary_support_size = len(bary_support_elements)
 
-    support = _np.zeros(6 * coarse_space.grid.number_of_elements, dtype=_np.bool)
+    support = _np.zeros(6 * coarse_space.grid.number_of_elements, dtype=_np.bool_)
     support[bary_support_elements] = True
 
     normal_multipliers = _np.repeat(coarse_space.normal_multipliers, 6)

@@ -156,7 +156,7 @@ class BlockedOperator(BlockedOperatorBase):
         """Construct an (m x n) blocked boundary operator."""
         super().__init__()
 
-        self._operators = _np.empty((m, n), dtype=_np.object)
+        self._operators = _np.empty((m, n), dtype=object)
         self._rows = m * [False]
         self._cols = n * [False]
 
@@ -592,7 +592,7 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
 
         self._ndims = (rows, cols)
 
-        self._operators = _np.empty((rows, cols), dtype=_np.object)
+        self._operators = _np.empty((rows, cols), dtype=object)
         self._rows = -_np.ones(rows, dtype=int)
         self._cols = -_np.ones(cols, dtype=int)
 

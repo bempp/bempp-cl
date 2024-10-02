@@ -189,3 +189,34 @@ def test_sparse_identity_snc_bc(
         atol = 1e-14
 
     _np.testing.assert_allclose(actual, expected, atol=atol)
+
+
+def test_sparse_identity_bc_bc_on_screen(
+    default_parameters, helpers, device_interface, precision
+):
+    """Test singular assembler for the sparse L^2 identity with p0/p0 basis."""
+    from bempp.api import function_space
+    from bempp.api.operators.boundary.sparse import identity
+
+    grid = helpers.load_grid("screen")
+    expected = helpers.load_npy_data("sparse_identity_bc_bc_screen")
+
+    space = function_space(grid, "BC", 0)
+
+    actual = (
+        identity(
+            space,
+            space,
+            space,
+            parameters=default_parameters,
+            device_interface=device_interface,
+            precision=precision,
+        )
+        .weak_form()
+        .to_dense()
+    )
+
+    print(expected)
+    print(actual)
+
+    _np.testing.assert_allclose(actual, expected, helpers.default_tolerance(precision))

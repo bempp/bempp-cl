@@ -129,3 +129,9 @@ testoutput*
 .exafmm/*
 
 *.DONTUPLOAD
+
+# Ignore example output
+example-*.png
+examples/notebooks/*
+mixed_dirichlet_neumann_laplace_solution.msh
+mixed_dirichlet_neumann_laplace_solution.vtk
