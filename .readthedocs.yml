@@ -5,6 +5,13 @@
 # Required
 version: 2
 
+python:
+  install:
+    - method: pip
+      path: .
+      extra_requirements:
+        - docs
+
 build:
   os: ubuntu-24.04
   tools:
