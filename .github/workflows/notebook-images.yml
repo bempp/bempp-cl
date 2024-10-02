@@ -37,20 +37,6 @@ jobs:
           tags: bempp/cl-notebook:latest
           target: lab
 
-      # Images with legacy FEniCS
-      - name: Build and push Docker image with legacy FEniCS
-        uses: docker/build-push-action@v2
-        with:
-          push: true
-          tags: bempp/bempp-cl-with-dolfin:latest
-          target: with-dolfin
-      - name: Build and push notebook Docker image with legacy FEniCS
-        uses: docker/build-push-action@v2
-        with:
-          push: true
-          tags: bempp/cl-notebook-fenics:latest
-          target: fenics-lab
-
       # Notebook with Numba only
       - name: Build and push Numba-only notebook Docker image
         uses: docker/build-push-action@v2
@@ -58,3 +44,34 @@ jobs:
           push: true
           tags: bempp/cl-notebook-numba:latest
           target: numba-lab
+
+  upload-notebooks:
+    permissions:
+      id-token: write
+      contents: write
+    name: Generate and upload example notebooks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+      - name: Generate notebooks
+        run: |
+          python3 -m pip install jupytext
+          python3 examples/generate_notebooks.py
+
+      - name: Push to GitHub
+        run: |
+          cd examples/notebooks
+          git init
+          git checkout -b notebooks
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          git commit -m "Notebook examples"
+          git remote add origin https://oauth2:${{ secrets.GITHUB_TOKEN }}@github.com/bempp/bempp-cl.git
+          git push -u origin notebooks --force
+

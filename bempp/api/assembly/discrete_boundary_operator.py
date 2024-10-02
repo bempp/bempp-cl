@@ -74,7 +74,7 @@ class _ScaledDiscreteOperator(_DiscreteOperatorBase):
     """Return a scaled operator."""
 
     def __init__(self, op, alpha):
-        dtype = _np.find_common_type([op.dtype], [type(alpha)])
+        dtype = _np.result_type(op.dtype, type(alpha))
         self._op = op
         self._alpha = alpha
         super().__init__(dtype, op.shape)
@@ -105,7 +105,7 @@ class _SumDiscreteOperator(_DiscreteOperatorBase):
         self._op1 = op1
         self._op2 = op2
 
-        dtype = _np.find_common_type([op1.dtype, op2.dtype], [])
+        dtype = _np.result_type(op1.dtype, op2.dtype)
 
         super().__init__(dtype, op1.shape)
 
@@ -135,7 +135,7 @@ class _ProductDiscreteOperator(_DiscreteOperatorBase):
         self._op1 = op1
         self._op2 = op2
 
-        dtype = _np.find_common_type([op1.dtype, op2.dtype], [])
+        dtype = _np.result_type(op1.dtype, op2.dtype)
 
         super().__init__(dtype, (op1.shape[0], op2.shape[1]))
 
@@ -630,7 +630,7 @@ class _Solver(object):  # pylint: disable=too-few-public-methods
             solver_interface = PardisoInterface
             actual_mat = mat.tocsr()
             use_mkl_pardiso = True
-        except:
+        except:  # noqa: E722
             solver_interface = splu
             actual_mat = mat
 

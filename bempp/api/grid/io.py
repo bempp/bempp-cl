@@ -24,7 +24,7 @@ def import_grid(filename):
 
     try:
         domain_indices = mesh.cell_data_dict["gmsh:physical"]["triangle"]
-    except:
+    except:  # noqa: E722
         domain_indices = None
 
     if domain_indices is None or _np.all(domain_indices == 0):
@@ -40,7 +40,7 @@ def export(
     filename,
     grid=None,
     grid_function=None,
-    data_type="node",
+    data_type=None,
     transformation=None,
     write_binary=True,
 ):
@@ -79,6 +79,12 @@ def export(
         data if supported by the file format.
     """
     import os
+
+    if data_type is None and grid_function is not None:
+        if grid_function.space.identifier == "p1":
+            data_type = "node"
+        else:
+            data_type = "element"
 
     _, extension = os.path.splitext(filename)
 
@@ -122,7 +128,7 @@ def export(
                 cell_data["real"] = _np.real(data)
                 cell_data["imag"] = _np.imag(data)
             else:
-                cell_data["data"] = data.reshape(1, -1)
+                cell_data["data"] = _np.array([data])
 
         else:
             raise ValueError("'data_type' must be one of 'element' or 'node'")

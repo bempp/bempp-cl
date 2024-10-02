@@ -113,6 +113,7 @@ class SpaceBuilder(object):
         self._barycentric_representation = None
         self._numba_evaluator = None
         self._numba_surface_gradient = None
+        self._numba_surface_curl = None
         self._dof_transformation = None
         self._collocation_points = None
         self._is_localised = None
@@ -194,6 +195,11 @@ class SpaceBuilder(object):
         self._numba_surface_gradient = surface_gradient
         return self
 
+    def set_numba_surface_curl(self, surface_curl):
+        """Hand over Numba method that evaluates surface curl."""
+        self._numba_surface_curl = surface_curl
+        return self
+
     def set_barycentric_representation(self, barycentric_representation):
         """Set barycentric representation."""
         self._barycentric_representation = barycentric_representation
@@ -271,6 +277,7 @@ class SpaceBuilder(object):
             self._dof_transformation,
             self._numba_evaluator,
             self._numba_surface_gradient,
+            self._numba_surface_curl,
             self._collocation_points,
         )
 
@@ -307,6 +314,7 @@ class FunctionSpace(object):
         dof_transformation,
         numba_evaluator,
         numba_surface_gradient,
+        numba_surface_curl,
         collocation_points,
     ):
         """Initialize the space."""
@@ -330,6 +338,7 @@ class FunctionSpace(object):
         self._dof_transformation = dof_transformation
         self._numba_evaluate = numba_evaluator
         self._numba_surface_gradient = numba_surface_gradient
+        self._numba_surface_curl = numba_surface_curl
         self._normal_multipliers = normal_multipliers
         self._number_of_support_elements = _np.count_nonzero(self._support)
         self._support_elements = _np.flatnonzero(self._support).astype("uint32")
@@ -568,9 +577,21 @@ class FunctionSpace(object):
         return self._numba_surface_gradient
 
     @property
+    def numba_surface_curl(self):
+        """Return the surface curl evaluator."""
+        if self._numba_surface_curl is None:
+            raise ValueError("No surface curl define for this space.")
+        return self._numba_surface_curl
+
+    @property
     def has_surface_gradient(self):
         """Return True if surface gradient is defined."""
         return self._numba_surface_gradient is not None
+
+    @property
+    def has_surface_curl(self):
+        """Return True if surface curl is defined."""
+        return self._numba_surface_curl is not None
 
     @property
     def collocation_points(self):
@@ -639,6 +660,16 @@ class FunctionSpace(object):
             self.grid.data(),
             self.local_multipliers,
             self.normal_multipliers,
+        )
+
+    def surface_curl(self, element_index, element, local_coordinates):
+        """Return the surface gradient."""
+        return self.numba_surface_curl(
+            element_index,
+            element,
+            self.shapeset.gradient,
+            local_coordinates,
+            self.grid.data()
         )
 
     def mass_matrix(self):
@@ -749,7 +780,7 @@ def check_if_compatible(space1, space2):
     try:
         new_space1, new_space2 = return_compatible_representation(space1, space2)
         return new_space1.hash == new_space2.hash
-    except:
+    except:  # noqa: E722
         return False
 
 
@@ -927,6 +958,10 @@ def make_localised_space(space):
         space.numba_surface_gradient if space.has_surface_gradient else None
     )
 
+    surface_curl = (
+        space.numba_surface_curl if space.has_surface_curl else None
+    )
+
     global2local_map = invert_local2global(local2global_map, local_multipliers)
 
     return (
@@ -943,6 +978,7 @@ def make_localised_space(space):
         .set_local_multipliers(local_multipliers)
         .set_numba_evaluator(space.numba_evaluate)
         .set_numba_surface_gradient(surface_gradient)
+        .set_numba_surface_curl(surface_curl)
         .set_is_barycentric(space.is_barycentric)
         .build()
     )

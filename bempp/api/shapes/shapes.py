@@ -62,7 +62,7 @@ def __generate_grid_from_geo_string(geo_string):
         cmd = gmsh_command + " -2 " + geo_name
         try:
             subprocess.check_call(cmd, shell=True, stdout=fnull, stderr=fnull)
-        except:
+        except:  # noqa: E722
             print("The following command failed: " + cmd)
             fnull.close()
             raise
@@ -1180,45 +1180,50 @@ def cylinders(h=1.0, z=1.0, r=[0.5, 1, 1.5, 1.7], origin=(0.0, 0.0, 0.0), square
 
     for i, radius in enumerate(r):
         if square:
-            stub += (f"Point({1+4*i}) = {{{origin[0]-radius},{origin[1]-radius}, {origin[2]}, cl}};\n"
-                     f"Point({2+4*i}) = {{{origin[0]+radius},{origin[1]-radius}, {origin[2]}, cl}};\n"
-                     f"Point({3+4*i}) = {{{origin[0]+radius},{origin[1]+radius}, {origin[2]}, cl}};\n"
-                     f"Point({4+4*i}) = {{{origin[0]-radius},{origin[1]+radius}, {origin[2]}, cl}};\n"
-                     "\n"
-                     f"Line({1+4*i}) = {{{1+4*i},{2+4*i}}};\n"
-                     f"Line({2+4*i}) = {{{2+4*i},{3+4*i}}};\n"
-                     f"Line({3+4*i}) = {{{3+4*i},{4+4*i}}};\n"
-                     f"Line({4+4*i}) = {{{4+4*i},{1+4*i}}};")
+            stub += (
+                f"Point({1 + 4 * i}) = {{{origin[0] - radius},{origin[1] - radius}, {origin[2]}, cl}};\n"
+                f"Point({2 + 4 * i}) = {{{origin[0] + radius},{origin[1] - radius}, {origin[2]}, cl}};\n"
+                f"Point({3 + 4 * i}) = {{{origin[0] + radius},{origin[1] + radius}, {origin[2]}, cl}};\n"
+                f"Point({4 + 4 * i}) = {{{origin[0] - radius},{origin[1] + radius}, {origin[2]}, cl}};\n"
+                "\n"
+                f"Line({1 + 4 * i}) = {{{1 + 4 * i},{2 + 4 * i}}};\n"
+                f"Line({2 + 4 * i}) = {{{2 + 4 * i},{3 + 4 * i}}};\n"
+                f"Line({3 + 4 * i}) = {{{3 + 4 * i},{4 + 4 * i}}};\n"
+                f"Line({4 + 4 * i}) = {{{4 + 4 * i},{1 + 4 * i}}};"
+            )
         else:
-            stub += (f"Point({2+4*i}) = {{{origin[0]+radius},{origin[1]},{origin[2]},cl}};\n"
-                     f"Point({3+4*i}) = {{{origin[0]},{origin[1]+radius},{origin[2]},cl}};\n"
-                     f"Point({4+4*i}) = {{{origin[0]-radius},{origin[1]},{origin[2]},cl}};\n"
-                     f"Point({5+4*i}) = {{{origin[0]},{origin[1]-radius},{origin[2]},cl}};\n"
-                     "\n"
-                     f"Circle({1+4*i}) = {{{2+4*i}, 1, {3+4*i}}};\n"
-                     f"Circle({2+4*i}) = {{{3+4*i}, 1, {4+4*i}}};\n"
-                     f"Circle({3+4*i}) = {{{4+4*i}, 1, {5+4*i}}};\n"
-                     f"Circle({4+4*i}) = {{{5+4*i}, 1, {2+4*i}}};\n")
-        stub += f"Line Loop({11+i}) = {{{3+4*i}, {4+4*i}, {1+4*i}, {2+4*i}}};\n"
+            stub += (
+                f"Point({2 + 4 * i}) = {{{origin[0] + radius},{origin[1]},{origin[2]},cl}};\n"
+                f"Point({3 + 4 * i}) = {{{origin[0]},{origin[1] + radius},{origin[2]},cl}};\n"
+                f"Point({4 + 4 * i}) = {{{origin[0] - radius},{origin[1]},{origin[2]},cl}};\n"
+                f"Point({5 + 4 * i}) = {{{origin[0]},{origin[1] - radius},{origin[2]},cl}};\n"
+                "\n"
+                f"Circle({1 + 4 * i}) = {{{2 + 4 * i}, 1, {3 + 4 * i}}};\n"
+                f"Circle({2 + 4 * i}) = {{{3 + 4 * i}, 1, {4 + 4 * i}}};\n"
+                f"Circle({3 + 4 * i}) = {{{4 + 4 * i}, 1, {5 + 4 * i}}};\n"
+                f"Circle({4 + 4 * i}) = {{{5 + 4 * i}, 1, {2 + 4 * i}}};\n"
+            )
+        stub += f"Line Loop({11 + i}) = {{{3 + 4 * i}, {4 + 4 * i}, {1 + 4 * i}, {2 + 4 * i}}};\n"
         if i == 0:
             stub += "Plane Surface(21) = {11};\n"
         else:
-            stub += f"Plane Surface({21 + 3*i}) = {{{11+i}, {-(11 + i - 1)}}};\n"
+            stub += f"Plane Surface({21 + 3 * i}) = {{{11 + i}, {-(11 + i - 1)}}};\n"
     for i, _ in enumerate(r):
-        stub += f"out[] = Extrude {{0,0,z}} {{Surface{{{21+3*i}}}; Layers{{cl}};}};\n"
-        stub += f"Reverse Surface{{{21+3*i}}};\n"
+        stub += (
+            f"out[] = Extrude {{0,0,z}} {{Surface{{{21 + 3 * i}}}; Layers{{cl}};}};\n"
+        )
+        stub += f"Reverse Surface{{{21 + 3 * i}}};\n"
         if i < len(r) - 1:
-            stub += (f"Physical Surface({10 * (i+1)}) = {{{21+3*i}, out[0]}};\n"
-                     f"Physical Surface({10 * (i+2) + (i+1)}) = {{out[2], out[3], out[4], out[5]}};\n")
+            stub += (
+                f"Physical Surface({10 * (i + 1)}) = {{{21 + 3 * i}, out[0]}};\n"
+                f"Physical Surface({10 * (i + 2) + (i + 1)}) = {{out[2], out[3], out[4], out[5]}};\n"
+            )
         else:
-            stub += f"Physical Surface({10 * (i+1)}) = {{{21+3*i}, out[0],out[2], out[3], out[4], out[5]}};\n"
+            stub += f"Physical Surface({10 * (i + 1)}) = {{{21 + 3 * i}, out[0], out[2], out[3], out[4], out[5]}};\n"
 
     for i, _ in enumerate(r):
-        stub += f"b() = Boundary{{Volume{{{i+1}}};}};\n"
+        stub += f"b() = Boundary{{Volume{{{i + 1}}};}};\n"
 
-    geometry = (f"cl = {h};\n"
-                f"z = {z};\n"
-                f"{stub}\n"
-                "Mesh.Algorithm = 3;")
+    geometry = f"cl = {h};\n" f"z = {z};\n" f"{stub}\n" "Mesh.Algorithm = 3;"
 
     return __generate_grid_from_geo_string(geometry)

@@ -289,3 +289,120 @@ def _multitrace_operator_impl(
     blocked[1, 1] = magnetic2
 
     return blocked
+
+
+class _OsrcMtE():
+    """Implementation of the OSRC DtN operator."""
+
+    def __init__(
+        self, type, domains, ranges, dual_to_ranges, parameters, operator_options, device_interface=None, precision=None
+    ):
+        from bempp.api.operators import OperatorDescriptor
+
+        self._device_interface = device_interface
+        self.type = type
+        self._operator_descriptor = OperatorDescriptor(
+            "osrc_mte",
+            operator_options,
+            "vectorial_laplace_beltrami",
+            "default_sparse",
+            precision,
+            True,
+            None,
+            1,
+        )
+
+        self.domains_ = domains
+        self.ranges_ = ranges
+        self.dual_to_ranges_ = dual_to_ranges
+        self.coeff = 0
+
+    @property
+    def descriptor(self):
+        """Operator descriptor."""
+        return self._operator_descriptor
+
+    def _matvec1(self, v):
+        import itertools
+        res = 0
+        rhs = list(itertools.chain(*[v.tolist(), _np.zeros(self.pi[0].shape[0] - v.shape[0]).tolist()]))
+        for element in self.pi:
+            res -= element.matvec(rhs)[0:self.domains_[0].global_dof_count]
+        res = self.mass * res + self.pade_coeffs[3] * v
+        return self.lambda_2_inv * res
+
+    def _matvec2(self, v):
+        res = self.coeff * self.mass * v + self.pade_coeffs[3] * v
+        return self.lambda_2_inv * res
+
+    def _assemble(self):
+        """Assemble the operator."""
+        from bempp.api.operators.boundary.sparse import lambda_1
+        from bempp.api.operators.boundary.sparse import lambda_2
+        from bempp.api.operators.boundary.sparse import mte_operators
+        from bempp.api.assembly.discrete_boundary_operator import InverseSparseDiscreteBoundaryOperator
+        from scipy.sparse.linalg import LinearOperator
+
+        wavenumber, npade, theta, damped_wavenumber = self.descriptor.options
+
+        if damped_wavenumber is None:
+            dk = wavenumber + 1.0j * 0.39 * wavenumber ** (1.0 / 3) * _np.sqrt(2) ** (2.0 / 3)
+        else:
+            dk = damped_wavenumber
+
+        mte_op = mte_operators(self.domains_, self.ranges_, self.dual_to_ranges_, dk)
+
+        self.lambda_2_inv = InverseSparseDiscreteBoundaryOperator(lambda_2(mte_op).weak_form())
+
+        self.pade_coeffs = _common.pade_coeffs(npade, theta)
+        self.mass = mte_op[1].weak_form()
+        if self.type == 1 :
+            self.pi = []
+            for i in range(npade):
+                self.pi.append((self.pade_coeffs[1][i] / self.pade_coeffs[2][i]) * lambda_1(
+                    mte_op, self.pade_coeffs[2][i], dk))
+            return LinearOperator(self.lambda_2_inv.shape, matvec=self._matvec1)
+        else:
+            for j in range(int(_np.floor(4.0 * npade / 5)), npade):
+                self.coeff += self.pade_coeffs[1][j]
+            return LinearOperator(self.lambda_2_inv.shape, matvec=self._matvec2)
+
+
+def osrc_mte(
+    domains, ranges, dual_to_ranges,
+    wavenumber,
+    npade=2,
+    theta=_np.pi / 2.0,
+    type=1,
+    damped_wavenumber=None,
+    parameters=None,
+    device_interface=None,
+    precision=None,
+):
+    """Assemble the OSRC approximation to the NtD operator."""
+    if domains[0].identifier != "snc0":
+        raise ValueError("Domain space must be a SNC type function space.")
+
+    if domains[1].shapeset.identifier != "p1_discontinuous":
+        raise ValueError("Domain space must be of type 'p1_discontinuous'.")
+
+    if ranges[0].identifier != "snc0":
+        raise ValueError("Domain space must be a SNC type function space.")
+
+    if ranges[1].shapeset.identifier != "p1_discontinuous":
+        raise ValueError("Domain space must be of type 'p1_discontinuous'.")
+
+    if dual_to_ranges[0].identifier != "snc0":
+        raise ValueError("Domain space must be a SNC type function space.")
+
+    if dual_to_ranges[1].shapeset.identifier != "p1_discontinuous":
+        raise ValueError("Domain space must be of type 'p1_discontinuous'.")
+
+    return _OsrcMtE(
+        type,
+        domains, ranges, dual_to_ranges,
+        parameters,
+        [wavenumber, npade, theta, damped_wavenumber],
+        device_interface,
+        precision,
+    )
