@@ -24,7 +24,7 @@ def import_grid(filename):
 
     try:
         domain_indices = mesh.cell_data_dict["gmsh:physical"]["triangle"]
-    except:
+    except:  # noqa: E722
         domain_indices = None
 
     return Grid(vertices, elements, domain_indices=domain_indices)

@@ -951,7 +951,8 @@ def _vector_grad_product_kernel(
                 for grad_index in range(3):
                     for quad_index in range(n_quad_points):
                         result[nshape * element_index + test_index * nshape_trial + trial_index] += (
-                            local_test_fun_values[grad_index, test_index, quad_index] * local_trial_fun_values[dim_index, grad_index, trial_index, quad_index]
+                            local_test_fun_values[grad_index, test_index, quad_index]
+                            * local_trial_fun_values[dim_index, grad_index, trial_index, quad_index]
                             * quad_weights[quad_index]
                             * integration_element
                         )
@@ -982,7 +983,7 @@ def _curl_curl_product_kernel(
     element = elements[element_index]
 
     local_test_fun_values = test_basis_curl(
-        element_index,
+        element,
         test_shapeset_gradient,
         quad_points,
         grid_data,
@@ -991,7 +992,7 @@ def _curl_curl_product_kernel(
     )
 
     local_trial_fun_values = trial_basis_curl(
-        element_index,
+        element,
         trial_shapeset_gradient,
         quad_points,
         grid_data,

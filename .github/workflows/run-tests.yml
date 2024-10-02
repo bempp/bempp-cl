@@ -1,5 +1,4 @@
 name: Run tests and style checks
-
 on:
   push:
     branches:
@@ -80,6 +79,21 @@ jobs:
           tags: bempp/cl-dev-env-with-dolfinx:latest
           target: bempp-dev-env-with-dolfinx
         if: ${{ github.repository == 'bempp/bempp-cl' && github.ref == 'refs/heads/main' }}
+      - name: Build and push testing Docker image with FEniCSx (Numba only version)
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/cl-dev-env-with-dolfinx-numba:${{ needs.configure-docker.outputs.dockertag }}
+          target: bempp-dev-env-with-dolfinx-numba
+        if: needs.configure-docker.outputs.buildneeded == 'yes'
+      - name: Push latest tag (Numba only version)
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/cl-dev-env-with-dolfinx-numba:latest
+          target: bempp-dev-env-with-dolfinx-numba
+        if: ${{ github.repository == 'bempp/bempp-cl' && github.ref == 'refs/heads/main' }}
+
   build-and-publish-docker:
     name: Build testing docker image
     runs-on: ubuntu-latest
@@ -106,8 +120,22 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: bempp/cl-dev-env:${{ needs.configure-docker.outputs.dockertag }}
+          tags: bempp/cl-dev-env:latest
           target: bempp-dev-env
+        if: ${{ github.repository == 'bempp/bempp-cl' && github.ref == 'refs/heads/main' }}
+      - name: Build and push testing Docker image (Numba only version)
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/cl-dev-env-numba:${{ needs.configure-docker.outputs.dockertag }}
+          target: bempp-dev-env-numba
+        if: needs.configure-docker.outputs.buildneeded == 'yes'
+      - name: Push latest tag (Numba only version)
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: bempp/cl-dev-env-numba:latest
+          target: bempp-dev-env-numba
         if: ${{ github.repository == 'bempp/bempp-cl' && github.ref == 'refs/heads/main' }}
 
   style-checks:
@@ -115,14 +143,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: |
-            sudo apt-get install -y python3-setuptools
-            pip3 install pydocstyle flake8
-        name: Install Python style tools
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+      - run: python3 -m pip install .[style]
+        name: Install Bempp with optional style dependencies
       - run: |
             python3 -m flake8 bempp
             python3 -m flake8 test
-            python3 -m flake8 .github/scripts
+            python3 -m flake8 examples
         name: Run flake8 checks
       - run: python3 -m pydocstyle bempp/api
         name: Run pydocstyle checks
@@ -134,10 +164,10 @@ jobs:
       - build-and-publish-docker
       - style-checks
     runs-on: ubuntu-latest
-    container: bempp/cl-dev-env:${{ needs.configure-docker.outputs.dockertag }}
+    container: bempp/cl-dev-env-numba:${{ needs.configure-docker.outputs.dockertag }}
     steps:
       - uses: actions/checkout@v2
-      - run: python3 setup.py install
+      - run: python3 -m pip install .[test]
         name: Install Bempp
       - run: python3 -m pytest -n4 --durations=50 test/unit --has-dolfin 0 --has-dolfinx 0 --has-exafmm 1
         name: Run Bempp unit tests
@@ -149,11 +179,55 @@ jobs:
       - build-and-publish-docker-fenicsx
       - style-checks
     runs-on: ubuntu-latest
-    container: bempp/cl-dev-env-with-dolfinx:${{ needs.configure-docker.outputs.dockertag }}
+    container: bempp/cl-dev-env-with-dolfinx-numba:${{ needs.configure-docker.outputs.dockertag }}
     steps:
       - uses: actions/checkout@v2
-      - run: python3 setup.py install
+      - run: python3 -m pip install .[test]
         name: Install Bempp
       - run: python3 -m pytest -n4 --durations=50 test/unit --has-dolfin 0 --has-dolfinx 1 --has-exafmm 1
         name: Run Bempp unit tests
 
+  large-tests:
+    name: Run large tests
+    needs:
+      - configure-docker
+      - build-and-publish-docker
+      - style-checks
+    runs-on: ubuntu-latest
+    container: bempp/cl-dev-env-numba:${{ needs.configure-docker.outputs.dockertag }}
+    steps:
+      - uses: actions/checkout@v2
+      - run: python3 -m pip install .[test]
+        name: Install Bempp
+      - run: python3 -m pytest --durations=10 test/validation --has-dolfin 0 --has-dolfinx 0 --has-exafmm 1 --skip ci
+        name: Run Bempp validation tests
+
+  run-examples:
+    name: Run examples
+    needs:
+      - configure-docker
+      - build-and-publish-docker
+      - style-checks
+    runs-on: ubuntu-latest
+    container: bempp/cl-dev-env-numba:${{ needs.configure-docker.outputs.dockertag }}
+    steps:
+      - uses: actions/checkout@v2
+      - run: python3 -m pip install .[test]
+        name: Install Bempp
+      - run: python3 -m pytest examples/test.py --has-dolfin 0 --has-dolfinx 0 --has-exafmm 1
+        name: Run Bempp examples
+
+  run-examples-fenicsx:
+    name: Run examples with FEniCSx
+    needs:
+      - configure-docker
+      - build-and-publish-docker-fenicsx
+      - style-checks
+    runs-on: ubuntu-latest
+    container: bempp/cl-dev-env-with-dolfinx-numba:${{ needs.configure-docker.outputs.dockertag }}
+    steps:
+      - uses: actions/checkout@v2
+      - run: python3 -m pip install .[test]
+        name: Install Bempp
+      - run: python3 -m pytest examples/test.py --has-dolfin 0 --has-dolfinx 1 --has-exafmm 1 --dolfin-books-only 1
+        name: Run Bempp examples

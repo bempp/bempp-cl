@@ -140,7 +140,7 @@ def cg(
     bempp.api.log("Starting CG iteration")
     start_time = time.time()
     x, info = scipy.sparse.linalg.cg(
-        A_op, b_vec, tol=tol, maxiter=maxiter, callback=callback
+        A_op, b_vec, rtol=tol, maxiter=maxiter, callback=callback
     )
     end_time = time.time()
     bempp.api.log(
@@ -202,7 +202,7 @@ def _gmres_single_op_imp(
     bempp.api.log("Starting GMRES iteration")
     start_time = time.time()
     x, info = scipy.sparse.linalg.gmres(
-        A_op, b_vec, tol=tol, restart=restart, maxiter=maxiter, callback=callback
+        A_op, b_vec, rtol=tol, restart=restart, maxiter=maxiter, callback=callback
     )
     end_time = time.time()
     bempp.api.log(
@@ -259,7 +259,7 @@ def _gmres_block_op_imp(
     bempp.api.log("Starting GMRES iteration")
     start_time = time.time()
     x, info = scipy.sparse.linalg.gmres(
-        A_op, b_vec, tol=tol, restart=restart, maxiter=maxiter, callback=callback
+        A_op, b_vec, rtol=tol, restart=restart, maxiter=maxiter, callback=callback
     )
     end_time = time.time()
     bempp.api.log(

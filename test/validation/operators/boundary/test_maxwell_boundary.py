@@ -47,7 +47,7 @@ def test_maxwell_electric_field_rbc_bc_sphere(
     default_parameters, helpers, device_interface, precision, skip
 ):
     """Test Maxwell electric field on sphere with RBC/BC basis."""
-    if skip == "circleci":
+    if skip == "ci":
         pytest.skip()
 
     import bempp.api
@@ -99,7 +99,7 @@ def test_maxwell_electric_field_bc_sphere(
     default_parameters, helpers, device_interface, precision, skip
 ):
     """Test Maxwell electric field on sphere with BC basis."""
-    if skip == "circleci":
+    if skip == "ci":
         pytest.skip()
 
     import bempp.api
