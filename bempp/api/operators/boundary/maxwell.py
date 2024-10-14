@@ -359,7 +359,8 @@ class _OsrcMtE():
         if self.type == 1 :
             self.pi = []
             for i in range(npade):
-                self.pi.append((self.pade_coeffs[1][i] / self.pade_coeffs[2][i]) * lambda_1(mte_op, self.pade_coeffs[2][i], dk))
+                self.pi.append((self.pade_coeffs[1][i] / self.pade_coeffs[2][i]) * lambda_1(
+                    mte_op, self.pade_coeffs[2][i], dk))
             return LinearOperator(self.lambda_2_inv.shape, matvec=self._matvec1)
         else:
             for j in range(int(_np.floor(4.0 * npade / 5)), npade):

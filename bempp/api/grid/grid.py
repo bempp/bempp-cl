@@ -1312,7 +1312,7 @@ def barycentric_refinement(grid):
     )
 
 
-def union(grids, domain_indices=None, swapped_normals=None):
+def union(grids, domain_indices=None, swapped_normals=None, normalize_domain_indices=True):
     """
     Return the union of a given list of grids.
 
@@ -1330,6 +1330,11 @@ def union(grids, domain_indices=None, swapped_normals=None):
         should be swapped (True) or not (False). This
         is helpful if one grid is defined to be inside
         another grid.
+    normalize_domain_indices : bool
+        Normalize the resulting grid with domain unique indices
+        between 0 and N-1, where N is the total number
+        of domains across all grids, when
+        domain_indices has not been provided.
 
     This method returns a new grid object, which is
     the union of the input grid objects.
@@ -1347,8 +1352,22 @@ def union(grids, domain_indices=None, swapped_normals=None):
     elements = _np.empty((3, element_count), dtype="uint32")
     all_domain_indices = _np.empty(element_count, dtype="uint32")
 
+    def normalize_array(arr):
+        """Normalize domain indices array."""
+        arr = arr - arr.min()
+        for i, index in enumerate(_np.unique(arr)[1:], start=1):
+            arr[arr == index] = i
+        return arr
+
     if domain_indices is None:
-        domain_indices = range(len(grids))
+        if not normalize_domain_indices:
+            domain_indices = [grids[0].domain_indices]
+            for grid in grids[1:]:
+                domain_indices.append(domain_indices[-1].max() - grid.domain_indices.min() + 1 + grid.domain_indices)
+        else:
+            domain_indices = [normalize_array(grids[0].domain_indices)]
+            for grid in grids[1:]:
+                domain_indices.append(domain_indices[-1].max() + 1 + normalize_array(grid.domain_indices))
 
     if swapped_normals is None:
         swapped_normals = len(grids) * [False]
@@ -1551,3 +1570,330 @@ def grid_to_points(grid_data, local_points):
             + grid_data.jacobians[elem].dot(local_points)
         ).T
     return points
+
+
+def _get_barycentric_support(truncate_at_segment_edge, grid, bary_grid, coarse_space):
+
+    coarse_support = _np.zeros(grid.entity_count(0), dtype=_np.bool_)
+    coarse_support[coarse_space.support_elements] = True
+
+    if not truncate_at_segment_edge:
+        for global_dof_index in range(coarse_space.global_dof_count):
+            local_dofs = coarse_space.global2local[global_dof_index]
+            edge_index = grid.data().element_edges[local_dofs[0][1], local_dofs[0][0]]
+            for v in range(2):
+                vertex = grid.data().edges[v, edge_index]
+                start = grid.vertex_neighbors.indexptr[vertex]
+                end = grid.vertex_neighbors.indexptr[vertex + 1]
+                for cell in grid.vertex_neighbors.indices[start:end]:
+                    coarse_support[cell] = True
+
+    coarse_support_elements = _np.array([i for i, j in enumerate(coarse_support) if j])
+    number_of_support_elements = len(coarse_support_elements)
+
+    bary_support_elements = 6 * _np.repeat(coarse_support_elements, 6) + _np.tile(
+        _np.arange(6), number_of_support_elements
+    )
+
+    support = _np.zeros(bary_grid.number_of_elements, dtype=_np.bool_)
+    support[bary_support_elements] = True
+
+    bary_support_size = len(bary_support_elements)
+
+    return support, bary_support_size, bary_support_elements
+
+
+def _get_data_multipliers(support, bary_grid, bary_support_elements,
+                          swapped_normals, coarse_space, bary_support_size):
+    bary_vertex_to_edge = enumerate_vertex_adjacent_elements(
+        bary_grid, bary_support_elements, swapped_normals
+    )
+
+    edge_vectors = (
+        bary_grid.vertices[:, bary_grid.edges[0, :]]
+        - bary_grid.vertices[:, bary_grid.edges[1, :]]
+    )
+
+    edge_lengths = _np.linalg.norm(edge_vectors, axis=0)
+
+    normal_multipliers = _np.repeat(coarse_space.normal_multipliers, 6)
+    local2global = _np.zeros((bary_grid.number_of_elements, 3), dtype="uint32")
+    local_multipliers = _np.zeros((bary_grid.number_of_elements, 3), dtype="uint32")
+
+    local2global[support] = _np.arange(3 * bary_support_size).reshape(
+        bary_support_size, 3
+    )
+
+    local_multipliers[support] = 1
+
+    return bary_vertex_to_edge, local2global, edge_lengths, normal_multipliers, local_multipliers
+
+
+def _get_barycentric_edges_associated_to_vertex(vertex_index, bary_vertex_to_edge,
+                                                bary_element, bary_grid):
+    """Get all the barycentryc vertices of the elements associated to a reference edge."""
+    # Get barycentric elements associated to a vertex
+    for ind, elem in enumerate(bary_vertex_to_edge[vertex_index]):
+        if bary_element == elem[0]:
+            break
+
+    # Get all the relevant barycentric edges starting to count above ind
+    num_bary_elements = len(bary_vertex_to_edge[vertex_index])
+    vertex_edges = []
+    for index in range(num_bary_elements):
+        elem_edge_pair = bary_vertex_to_edge[vertex_index][
+            (index + ind) % num_bary_elements
+        ]
+        for n in range(1, 3):
+            vertex_edges.append((elem_edge_pair[0], elem_edge_pair[n]))
+    edges = []
+    for vertex in vertex_edges:
+        edges.append(bary_grid.data().element_edges[vertex[1]][vertex[0]])
+    set_edges = set(edges)
+    sorted_edges = []
+    new_vertex_edges = []
+    ref_edge = 0
+
+    for el in set_edges:
+        # edges.count(el) == 1 means that the edge is associated to one element,
+        # therefore, it is a barycentric element on the border of a on open geometry.
+        # vertex_edges[edges.index(el)][1] == 1 indicates that the barycentric element
+        # on the border is the first one anti-clock-wise.
+        if edges.count(el) == 1 and vertex_edges[edges.index(el)][1] == 1:
+            sorted_edges.append(el)
+            new_vertex_edges.append(vertex_edges[edges.index(el)])
+
+    # If the basis function is on the border, sort the rest of the elements accordingly.
+    # The basis functions on the borders do not need to remove the reference edge.
+    if (len(sorted_edges) > 0):
+        new_vertex_edges, sorted_edges =\
+            _sort_vertex_edges(vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1)
+        sorted_edges = sorted(set(sorted_edges), key=sorted_edges.index, reverse=True)
+        new_vertex_edges = sorted(set(new_vertex_edges), key=new_vertex_edges.index, reverse=True)
+        ref_edge = sorted_edges.index(bary_grid.data().element_edges[vertex_edges[0][1]][vertex_edges[0][0]])
+    else:
+        # If the first element is not on the border, sorting is not necessary
+        # and we remove the barycentric edges that lie on the reference edge.
+        vertex_edges.pop(0)
+        vertex_edges.pop(-1)
+
+    return vertex_edges, sorted_edges, num_bary_elements // 2, ref_edge
+
+
+def get_vertex_edges(vertex_index, bary_vertex_to_edge, bary_element, bary_grid):
+    """Get all the barycentryc vertices of the elements associated to a reference edge."""
+    for ind, elem in enumerate(bary_vertex_to_edge[vertex_index]):
+        if bary_element == elem[0]:
+            break
+    # Get all the relevant edges starting to count above
+    # ind
+    num_bary_elements = len(bary_vertex_to_edge[vertex_index])
+    vertex_edges = []
+    for index in range(num_bary_elements):
+        elem_edge_pair = bary_vertex_to_edge[vertex_index][
+            (index + ind) % num_bary_elements
+        ]
+        for n in range(1, 3):
+            vertex_edges.append((elem_edge_pair[0], elem_edge_pair[n]))
+    edges = []
+    for vertex in vertex_edges:
+        edges.append(bary_grid.data().element_edges[vertex[1]][vertex[0]])
+    set_edges = set(edges)
+    sorted_edges = []
+    new_vertex_edges = []
+    ref_edge = 0
+
+    for el in set_edges:
+        if edges.count(el) == 1 and vertex_edges[edges.index(el)][1] == 1:
+            sorted_edges.append(el)
+            new_vertex_edges.append(vertex_edges[edges.index(el)])
+
+    if (len(sorted_edges) > 0):
+        new_vertex_edges, sorted_edges = _sort_vertex_edges(
+            vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1)
+        sorted_edges = sorted(set(sorted_edges), key=sorted_edges.index, reverse=True)
+        new_vertex_edges = sorted(set(new_vertex_edges), key=new_vertex_edges.index, reverse=True)
+        ref_edge = sorted_edges.index(bary_grid.data().element_edges[vertex_edges[0][1]][vertex_edges[0][0]])
+    else:
+        # We do not want the reference edge part of this list
+        vertex_edges.pop(0)
+        vertex_edges.pop(-1)
+
+    return vertex_edges, sorted_edges, num_bary_elements // 2, ref_edge
+
+
+def _sort_vertex_edges(vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, edge_number):
+    """Sort edges anti clock-wise when the basis function lies on the border of a geometry."""
+    if edge_number == 1:
+        for element in vertex_edges:
+            if element[0] == new_vertex_edges[-1][0] and element[1] == 0:
+                sorted_edges.append(edges[vertex_edges.index((new_vertex_edges[-1][0], 0))])
+                new_vertex_edges.append(element)
+    else:
+        indexes = [ind for ind, el in enumerate(edges) if el == sorted_edges[-1]]
+        if vertex_edges[indexes[0]][1] == 1:
+            sorted_edges.append(sorted_edges[-1])
+            new_vertex_edges.append(vertex_edges[indexes[0]])
+        elif vertex_edges[indexes[1]][1] == 1:
+            sorted_edges.append(sorted_edges[-1])
+            new_vertex_edges.append(vertex_edges[indexes[1]])
+    if len(new_vertex_edges) < len(vertex_edges):
+        return _sort_vertex_edges(
+            vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1 - edge_number)
+    return new_vertex_edges, sorted_edges
+
+
+def _get_bary_coefficients(
+    edge_lengths, vertex_edges1, vertex_edges2, sorted_edges1, sorted_edges2,
+    bary_grid, local2global, nc1, nc2, global_dof_index, ref_edge1, ref_edge2,
+):
+    """Obtain the edge coefficients associated to the barycentric edges of a grid."""
+    values = []
+    bary_dofs = []
+    coarse_dofs = []
+
+    # Check whether any of the poles of the BC basis function is located on the border of a geometry.
+    border_edges1 = _check_if_border_edges(vertex_edges1, bary_grid)
+    border_edges2 = _check_if_border_edges(vertex_edges2, bary_grid)
+
+    if border_edges1 and not border_edges2:
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _border_barycentric_edges_coefficients(
+            edge_lengths, vertex_edges1, sorted_edges1, bary_grid, local2global, -1.0,
+            nc1, global_dof_index, ref_edge1)
+        values += aux_values
+        bary_dofs += aux_bary_dofs
+        coarse_dofs += aux_coarse_dofs
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _interior_barycentric_edges_coefficients(
+            edge_lengths, vertex_edges2, bary_grid, local2global, 1.0, nc2, global_dof_index)
+        values += aux_values
+        bary_dofs += aux_bary_dofs
+        coarse_dofs += aux_coarse_dofs
+    elif not border_edges1 and border_edges2:
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _interior_barycentric_edges_coefficients(
+            edge_lengths, vertex_edges1, bary_grid, local2global, - 1.0, nc1, global_dof_index)
+        values += aux_values
+        bary_dofs += aux_bary_dofs
+        coarse_dofs += aux_coarse_dofs
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _border_barycentric_edges_coefficients(
+            edge_lengths, vertex_edges2, sorted_edges2, bary_grid, local2global, 1.0, nc2,
+            global_dof_index, ref_edge2)
+        values += aux_values
+        bary_dofs += aux_bary_dofs
+        coarse_dofs += aux_coarse_dofs
+    elif border_edges1 and border_edges2:
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _border_barycentric_edges_coefficients(
+            edge_lengths, vertex_edges1, sorted_edges1, bary_grid, local2global, -1.0, nc1,
+            global_dof_index, ref_edge1)
+        values += aux_values
+        bary_dofs += aux_bary_dofs
+        coarse_dofs += aux_coarse_dofs
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _border_barycentric_edges_coefficients(
+            edge_lengths, vertex_edges2, sorted_edges2, bary_grid, local2global, 1.0, nc2,
+            global_dof_index, ref_edge2)
+        values += aux_values
+        bary_dofs += aux_bary_dofs
+        coarse_dofs += aux_coarse_dofs
+    else:
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _interior_barycentric_edges_coefficients(
+            edge_lengths, vertex_edges1, bary_grid, local2global, -1.0, nc1, global_dof_index)
+        values += aux_values
+        bary_dofs += aux_bary_dofs
+        coarse_dofs += aux_coarse_dofs
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _interior_barycentric_edges_coefficients(
+            edge_lengths, vertex_edges2, bary_grid, local2global, 1.0, nc2, global_dof_index)
+        values += aux_values
+        bary_dofs += aux_bary_dofs
+        coarse_dofs += aux_coarse_dofs
+    return values, bary_dofs, coarse_dofs
+
+
+def _check_if_border_edges(vertex_edges, bary_grid):
+    """Check if an edge belongs to the border of the grid."""
+    border_edges = False
+    for edge in vertex_edges:
+        elem_index, local_edge_index = edge[:]
+        edge_index = bary_grid.data().element_edges[local_edge_index, elem_index]
+        neighbors = bary_grid.edge_neighbors[edge_index]
+        if len(neighbors) == 1:
+            border_edges = True
+            break
+    return border_edges
+
+
+def _border_barycentric_edges_coefficients(
+    edge_lengths, vertex_edges, sorted_edges, bary_grid, local2global, sign, nc,
+    global_dof_index, ref_edge
+):
+    """Calculate barycentric edge coefficients associated to an interior vertex of the grid."""
+    values = []
+    bary_dofs = []
+    coarse_dofs = []
+    count = 0
+    signs = sign * _np.array([-1.0, 1.0])
+    for edge in vertex_edges:
+        elem_index, local_edge_index = edge[:]
+        edge_length = edge_lengths[bary_grid.data().element_edges[local_edge_index, elem_index]]
+        count = sorted_edges.index(bary_grid.data().element_edges[local_edge_index, elem_index])
+
+        bary_dofs.append(local2global[elem_index, local_edge_index])
+        coarse_dofs.append(global_dof_index)
+        if count < ref_edge:
+            values.append(signs[local_edge_index] * (1 - nc) / (nc * edge_length))
+        elif count == ref_edge:
+            values.append(signs[local_edge_index] * (2 - nc) / (2 * nc * edge_length))
+        else:
+            values.append(signs[local_edge_index] * 1.0 / (nc * edge_length))
+    return values, bary_dofs, coarse_dofs
+
+
+def _interior_barycentric_edges_coefficients(
+    edge_lengths, vertex_edges, bary_grid, local2global, sign, nc, global_dof_index
+):
+    """Calculate barycentric edge coefficients associated to a vertex that belongs to the border of the grid.
+
+    (eg: vertex on the edge of a screen).
+    """
+    values = []
+    bary_dofs = []
+    coarse_dofs = []
+    count = 0
+    for index, edge in enumerate(vertex_edges):
+        if index % 2 == 0:
+            count += 1
+        elem_index, local_edge_index = edge[:]
+        edge_length = edge_lengths[bary_grid.data().element_edges[local_edge_index, elem_index]]
+        bary_dofs.append(local2global[elem_index, local_edge_index])
+        coarse_dofs.append(global_dof_index)
+        values.append(sign * (nc - count) / (2 * nc * edge_length))
+        sign *= -1
+    return values, bary_dofs, coarse_dofs
+
+
+def _get_coefficients_reference_edge(
+    edge_lengths, bary_grid, local2global, global_dof_index, bary_upper_minus, bary_upper_plus,
+    bary_lower_minus, bary_lower_plus
+):
+    """Calculate upper and lower coefficients of the barycentric edges associated to a reference edge."""
+    values = []
+    bary_dofs = []
+    coarse_dofs = []
+
+    coarse_dofs.append(global_dof_index)
+    coarse_dofs.append(global_dof_index)
+    coarse_dofs.append(global_dof_index)
+    coarse_dofs.append(global_dof_index)
+
+    edge_length_upper = edge_lengths[bary_grid.data().element_edges[2, bary_upper_minus]]
+    edge_length_lower = edge_lengths[bary_grid.data().element_edges[2, bary_lower_minus]]
+
+    bary_dofs.append(local2global[bary_upper_minus, 2])
+    bary_dofs.append(local2global[bary_upper_plus, 2])
+    bary_dofs.append(local2global[bary_lower_minus, 2])
+    bary_dofs.append(local2global[bary_lower_plus, 2])
+
+    values.append(1.0 / (2 * edge_length_upper))
+    values.append(-1.0 / (2 * edge_length_upper))
+    values.append(-1.0 / (2 * edge_length_lower))
+    values.append(1.0 / (2 * edge_length_lower))
+
+    return values, bary_dofs, coarse_dofs

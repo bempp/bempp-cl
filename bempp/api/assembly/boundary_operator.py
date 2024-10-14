@@ -129,7 +129,9 @@ class BoundaryOperatorWithAssembler(BoundaryOperator):
         return self.assembler.assemble(self.descriptor)
 
     def _transpose(self, _range):
-        return BoundaryOperatorWithAssembler(self._dual_to_range, self._domain, _range, self._assembler, self._operator_descriptor, True)
+        return BoundaryOperatorWithAssembler(
+            self._dual_to_range, self._domain, _range, self._assembler,
+            self._operator_descriptor, True)
 
 
 class _SumBoundaryOperator(BoundaryOperator):
