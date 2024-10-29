@@ -786,6 +786,7 @@ def check_if_compatible(space1, space2):
 
 def map_space_to_points(space, quadrature_order=None, return_transpose=False):
     """Return mapper from grid coeffs to point evaluations."""
+    print('bempp.api.space.map_space_to_points')
     import bempp.api
     from scipy.sparse import coo_matrix
     from scipy.sparse.linalg import aslinearoperator
