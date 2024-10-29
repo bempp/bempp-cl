@@ -669,7 +669,7 @@ class FunctionSpace(object):
             element,
             self.shapeset.gradient,
             local_coordinates,
-            self.grid.data()
+            self.grid.data(),
         )
 
     def mass_matrix(self):
@@ -786,6 +786,7 @@ def check_if_compatible(space1, space2):
 
 def map_space_to_points(space, quadrature_order=None, return_transpose=False):
     """Return mapper from grid coeffs to point evaluations."""
+    print('bempp.api.space.map_space_to_points')
     import bempp.api
     from scipy.sparse import coo_matrix
     from scipy.sparse.linalg import aslinearoperator
@@ -860,7 +861,7 @@ def map_space_to_points_impl(
     global_indices = _np.empty(nlocal * number_of_support_elements, dtype=_np.int64)
     vertex_indices = _np.empty(nlocal * number_of_support_elements, dtype=_np.int64)
 
-    for elem in support_elements:
+    for i, elem in enumerate(support_elements):
         basis_values = (
             numba_evaluate(
                 elem,
@@ -873,16 +874,14 @@ def map_space_to_points_impl(
             * weights
             * grid_data.integration_elements[elem]
         )
-        data[elem * nlocal : (1 + elem) * nlocal] = basis_values.ravel()
+        data[i * nlocal : (1 + i) * nlocal] = basis_values.ravel()
         for index in range(number_of_shape_functions):
             vertex_indices[
-                elem * nlocal
-                + index * number_of_local_points : elem * nlocal
+                i * nlocal
+                + index * number_of_local_points : i * nlocal
                 + (1 + index) * number_of_local_points
-            ] = _np.arange(
-                elem * number_of_local_points, (1 + elem) * number_of_local_points
-            )
-        global_indices[elem * nlocal : (1 + elem) * nlocal] = _np.repeat(
+            ] = _np.arange(i * number_of_local_points, (1 + i) * number_of_local_points)
+        global_indices[i * nlocal : (1 + i) * nlocal] = _np.repeat(
             local2global[elem, :], number_of_local_points
         )
 
@@ -958,9 +957,7 @@ def make_localised_space(space):
         space.numba_surface_gradient if space.has_surface_gradient else None
     )
 
-    surface_curl = (
-        space.numba_surface_curl if space.has_surface_curl else None
-    )
+    surface_curl = space.numba_surface_curl if space.has_surface_curl else None
 
     global2local_map = invert_local2global(local2global_map, local_multipliers)
 

@@ -401,6 +401,7 @@ def get_local_interaction_matrix_impl(
 
 def map_space_to_points(space, local_points, weights, return_transpose=False):
     """Return mapper from grid coeffs to point evaluations."""
+    print('bempp.api.fmm.helpers.map_space_to_points')
     from scipy.sparse import coo_matrix
     from scipy.sparse.linalg import aslinearoperator
 
