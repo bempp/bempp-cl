@@ -51,6 +51,7 @@ jobs:
       contents: write
     name: Generate and upload example notebooks
     runs-on: ubuntu-latest
+    container: bempp/cl-dev-env-with-dolfinx-numba
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -60,6 +61,7 @@ jobs:
           python-version: "3.12"
       - name: Generate notebooks
         run: |
+          python3 -m pip install .
           python3 -m pip install jupytext nbconvert ipykernel
           python3 examples/generate_notebooks.py
 
