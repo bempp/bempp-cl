@@ -47,7 +47,7 @@ for dir in ["laplace", "helmholtz", "maxwell", "other"]:
             # Skip examples that use fmm or legacy FEniCS
             if run_notebooks and i[:-3] not in [
                 "dirichlet_weak_imposition",
-                "simple_helmholtz_fem_bem_coupling_dolfin"
+                "simple_helmholtz_fem_bem_coupling_dolfin",
             ]:
                 assert os.system(
                     "jupyter nbconvert --execute --to notebook --inplace "

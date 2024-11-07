@@ -58,7 +58,7 @@ jobs:
       - name: Generate notebooks
         run: |
           python3 -m pip install .
-          python3 -m pip install jupytext nbconvert ipykernel matplotlib
+          python3 -m pip install jupytext nbconvert ipykernel matplotlib pandas
           python3 examples/generate_notebooks.py
 
       - name: Push to GitHub
