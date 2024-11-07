@@ -36,9 +36,10 @@ for dir in ["laplace", "helmholtz", "maxwell", "other"]:
             assert os.system(f"jupytext --to ipynb {file_copy}") == 0
             assert os.system(f"rm {file_copy}") == 0
 
-            # Skip examples that use fmm
+            # Skip examples that use fmm or legacy FEniCS
             if i[:-3] not in [
                 "dirichlet_weak_imposition",
+                "simple_helmholtz_fem_bem_coupling_dolfin"
             ]:
                 assert os.system(
                     "jupyter nbconvert --execute --to notebook --inplace "
