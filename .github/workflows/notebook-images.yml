@@ -60,7 +60,7 @@ jobs:
           python-version: "3.12"
       - name: Generate notebooks
         run: |
-          python3 -m pip install jupytext nbconvert
+          python3 -m pip install jupytext nbconvert ipykernel
           python3 examples/generate_notebooks.py
 
       - name: Push to GitHub
