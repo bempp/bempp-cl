@@ -35,10 +35,15 @@ for dir in ["laplace", "helmholtz", "maxwell", "other"]:
 
             assert os.system(f"jupytext --to ipynb {file_copy}") == 0
             assert os.system(f"rm {file_copy}") == 0
-            assert os.system(
-                "jupyter nbconvert --execute --to notebook --inplace "
-                + os.path.join(path, f"convert-{i[:-3]}.ipynb")
-            ) == 0
+
+            # Skip examples that use fmm
+            if i[:-3] not in [
+                "dirichlet_weak_imposition",
+            ]:
+                assert os.system(
+                    "jupyter nbconvert --execute --to notebook --inplace "
+                    + os.path.join(path, f"convert-{i[:-3]}.ipynb")
+                ) == 0
             os.system(
                 "mv "
                 + os.path.join(path, f"convert-{i[:-3]}.ipynb")
