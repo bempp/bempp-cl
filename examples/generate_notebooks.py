@@ -45,7 +45,7 @@ for dir in ["laplace", "helmholtz", "maxwell", "other"]:
             assert os.system(f"rm {file_copy}") == 0
 
             # Skip examples that use fmm or legacy FEniCS
-            if run_tests and i[:-3] not in [
+            if run_notebooks and i[:-3] not in [
                 "dirichlet_weak_imposition",
                 "simple_helmholtz_fem_bem_coupling_dolfin"
             ]:
