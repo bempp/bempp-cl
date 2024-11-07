@@ -1,4 +1,12 @@
+import argparse
 import os
+
+parser = argparse.ArgumentParser(description="Generate Bempp notebooks")
+parser.add_argument('--run', metavar="run", default="true")
+
+args = parser.parse_args()
+assert args.run in ["true", "false"]
+run_notebooks = (args.run == "true")
 
 # Get all the examples in each folder
 notebook_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "notebooks")
@@ -37,7 +45,7 @@ for dir in ["laplace", "helmholtz", "maxwell", "other"]:
             assert os.system(f"rm {file_copy}") == 0
 
             # Skip examples that use fmm or legacy FEniCS
-            if i[:-3] not in [
+            if run_tests and i[:-3] not in [
                 "dirichlet_weak_imposition",
                 "simple_helmholtz_fem_bem_coupling_dolfin"
             ]:
