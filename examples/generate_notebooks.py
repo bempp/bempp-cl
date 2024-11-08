@@ -1,4 +1,17 @@
+import argparse
 import os
+
+parser = argparse.ArgumentParser(description="Generate Bempp notebooks")
+parser.add_argument('--run', metavar="run", default="true")
+parser.add_argument('--skip', metavar="skip", default="")
+
+args = parser.parse_args()
+assert args.run in ["true", "false"]
+run_notebooks = (args.run == "true")
+if args.skip == "":
+    skip = []
+else:
+    skip = args.skip.split(",")
 
 # Get all the examples in each folder
 notebook_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "notebooks")
@@ -35,10 +48,12 @@ for dir in ["laplace", "helmholtz", "maxwell", "other"]:
 
             assert os.system(f"jupytext --to ipynb {file_copy}") == 0
             assert os.system(f"rm {file_copy}") == 0
-            assert os.system(
-                "jupyter nbconvert --execute --to notebook --inplace "
-                + os.path.join(path, f"convert-{i[:-3]}.ipynb")
-            ) == 0
+
+            if run_notebooks and i[:-3] not in skip:
+                assert os.system(
+                    "jupyter nbconvert --execute --to notebook --inplace "
+                    + os.path.join(path, f"convert-{i[:-3]}.ipynb")
+                ) == 0
             os.system(
                 "mv "
                 + os.path.join(path, f"convert-{i[:-3]}.ipynb")

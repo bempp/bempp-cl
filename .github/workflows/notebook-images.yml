@@ -51,17 +51,15 @@ jobs:
       contents: write
     name: Generate and upload example notebooks
     runs-on: ubuntu-latest
+    container: bempp/cl-dev-env-with-dolfinx-numba
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.12"
       - name: Generate notebooks
         run: |
-          python3 -m pip install jupytext jupyter-nbconvert
-          python3 examples/generate_notebooks.py
+          python3 -m pip install .
+          python3 -m pip install jupytext nbconvert ipykernel matplotlib
+          python3 examples/generate_notebooks.py --skip "dirichlet_weak_imposition,simple_helmholtz_fem_bem_coupling_dolfin,opencl_benchmark"
 
       - name: Push to GitHub
         run: |

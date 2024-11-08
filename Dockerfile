@@ -291,7 +291,7 @@ WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
 RUN cd bempp-cl && python3 -m pip install .
 RUN python3 -m pip install --no-cache-dir jupytext
-RUN python3 bempp-cl/examples/generate_notebooks.py
+RUN python3 bempp-cl/examples/generate_notebooks.py --run false
 RUN cp -r bempp-cl/examples/notebooks /root/example_notebooks
 RUN python3 -m pip uninstall -y jupytext
 
@@ -317,7 +317,7 @@ WORKDIR /tmp
 RUN git clone https://github.com/bempp/bempp-cl
 RUN cd bempp-cl && python3 -m pip install .
 RUN python3 -m pip install --no-cache-dir jupytext
-RUN python3 bempp-cl/examples/generate_notebooks.py
+RUN python3 bempp-cl/examples/generate_notebooks.py --run false
 RUN cp -r bempp-cl/examples/notebooks /root/example_notebooks
 RUN python3 -m pip uninstall -y jupytext
 
