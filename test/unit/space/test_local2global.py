@@ -5,15 +5,15 @@
 
 import numpy as _np
 import pytest
-import bempp.api
+import bempp_cl.api
 
 
 @pytest.mark.parametrize(
     "grid",
     [
-        bempp.api.shapes.sphere(h=0.5),
-        bempp.api.shapes.cube(h=0.5),
-        bempp.api.shapes.shapes.screen(
+        bempp_cl.api.shapes.sphere(h=0.5),
+        bempp_cl.api.shapes.cube(h=0.5),
+        bempp_cl.api.shapes.shapes.screen(
             _np.array([(1, 1, 0), (0, 1, 0), (0, 0, 0), (1, 0, 0)]), h=0.5
         ),
     ],
@@ -44,7 +44,7 @@ def test_local2global(
             print("BC spaces not yet supported on screens")
             return
 
-    space = bempp.api.function_space(
+    space = bempp_cl.api.function_space(
         grid,
         *space_type,
         include_boundary_dofs=include_boundary_dofs,

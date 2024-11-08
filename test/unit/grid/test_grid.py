@@ -3,7 +3,7 @@
 # pylint: disable=redefined-outer-name
 
 import numpy as np
-import bempp.api
+import bempp_cl.api
 import pytest
 
 
@@ -45,9 +45,9 @@ def test_as_array(two_element_grid):
 def test_edge_adjacency():
     """Check edge connectivity information for a small sphere."""
     # pylint: disable=too-many-locals
-    from bempp.api.grid.grid import get_element_to_element_matrix
+    from bempp_cl.api.grid.grid import get_element_to_element_matrix
 
-    small_sphere = bempp.api.shapes.regular_sphere(3)
+    small_sphere = bempp_cl.api.shapes.regular_sphere(3)
 
     edge_adjacency = small_sphere.edge_adjacency
 
@@ -78,9 +78,9 @@ def test_edge_adjacency():
 def test_vertex_adjacency():
     """Check vertex connectivity information for a small sphere."""
     # pylint: disable=too-many-locals
-    from bempp.api.grid.grid import get_element_to_element_matrix
+    from bempp_cl.api.grid.grid import get_element_to_element_matrix
 
-    small_sphere = bempp.api.shapes.regular_sphere(3)
+    small_sphere = bempp_cl.api.shapes.regular_sphere(3)
 
     vertex_adjacency = small_sphere.vertex_adjacency
 
@@ -123,40 +123,40 @@ def test_integration_element(two_element_geometries):
 def test_union_two_grids_one_domain_each(two_element_grid):
     """Test union of two grids, each with one domain."""
 
-    two_element_grid_2 = bempp.api.grid.Grid(two_element_grid.vertices, two_element_grid.elements)
+    two_element_grid_2 = bempp_cl.api.grid.Grid(two_element_grid.vertices, two_element_grid.elements)
     np.testing.assert_array_equal(
-        bempp.api.grid.union([two_element_grid, two_element_grid_2]).domain_indices,
+        bempp_cl.api.grid.union([two_element_grid, two_element_grid_2]).domain_indices,
         np.array([0 , 0, 1, 1], dtype="uint32"))
 
 
 def test_union_two_grids_two_domains_each(two_element_grid):
     """Test union of two grids, each with two domains."""
 
-    two_element_grid = bempp.api.grid.Grid(two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 1])
-    two_element_grid_2 = bempp.api.grid.Grid(
+    two_element_grid = bempp_cl.api.grid.Grid(two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 1])
+    two_element_grid_2 = bempp_cl.api.grid.Grid(
         two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 1])
     np.testing.assert_array_equal(
-        bempp.api.grid.union([two_element_grid, two_element_grid_2]).domain_indices,
+        bempp_cl.api.grid.union([two_element_grid, two_element_grid_2]).domain_indices,
         np.array([0, 1, 2, 3], dtype="uint32"))
 
 
 def test_union_two_grids_two_domains_each_unnormalized(two_element_grid):
     """Test union of two grids, each with two domains, and without domain index normalization."""
 
-    two_element_grid = bempp.api.grid.Grid(two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 2])
-    two_element_grid_2 = bempp.api.grid.Grid(
+    two_element_grid = bempp_cl.api.grid.Grid(two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 2])
+    two_element_grid_2 = bempp_cl.api.grid.Grid(
         two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 3])
     np.testing.assert_array_equal(
-        bempp.api.grid.union([two_element_grid, two_element_grid_2], normalize_domain_indices=False).domain_indices,
+        bempp_cl.api.grid.union([two_element_grid, two_element_grid_2], normalize_domain_indices=False).domain_indices,
         np.array([0, 2, 3, 6], dtype="uint32"))
 
 
 def test_union_two_grids_two_domains_each_normalized(two_element_grid):
     """Test union of two grids, each with two domains, and with domain index normalization."""
 
-    two_element_grid = bempp.api.grid.Grid(two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 2])
-    two_element_grid_2 = bempp.api.grid.Grid(
+    two_element_grid = bempp_cl.api.grid.Grid(two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 2])
+    two_element_grid_2 = bempp_cl.api.grid.Grid(
         two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 3])
     np.testing.assert_array_equal(
-        bempp.api.grid.union([two_element_grid, two_element_grid_2], normalize_domain_indices=True).domain_indices,
+        bempp_cl.api.grid.union([two_element_grid, two_element_grid_2], normalize_domain_indices=True).domain_indices,
         np.array([0, 1, 2, 3], dtype="uint32"))

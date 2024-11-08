@@ -13,8 +13,8 @@ def test_laplace_single_layer_p0(
     default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for the Laplace slp with p0 basis."""
-    from bempp.api import function_space
-    from bempp.api.operators.boundary.laplace import single_layer
+    from bempp_cl.api import function_space
+    from bempp_cl.api.operators.boundary.laplace import single_layer
 
     grid = helpers.load_grid("sphere")
 
@@ -40,8 +40,8 @@ def test_laplace_single_layer_p1_disc(
     default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for the Laplace slp with disc. p1 basis."""
-    from bempp.api.operators.boundary.laplace import single_layer
-    from bempp.api import function_space
+    from bempp_cl.api.operators.boundary.laplace import single_layer
+    from bempp_cl.api import function_space
 
     grid = helpers.load_grid("sphere")
     space = function_space(grid, "DP", 1)
@@ -66,8 +66,8 @@ def test_laplace_single_layer_p1_p0(
     default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for the slp with disc. p1/p0 basis."""
-    from bempp.api.operators.boundary.laplace import single_layer
-    from bempp.api import function_space
+    from bempp_cl.api.operators.boundary.laplace import single_layer
+    from bempp_cl.api import function_space
 
     grid = helpers.load_grid("sphere")
 
@@ -94,8 +94,8 @@ def test_laplace_single_layer_p0_p1(
     default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for the slp with disc. p0/p1 basis."""
-    from bempp.api.operators.boundary.laplace import single_layer
-    from bempp.api import function_space
+    from bempp_cl.api.operators.boundary.laplace import single_layer
+    from bempp_cl.api import function_space
 
     grid = helpers.load_grid("sphere")
 
@@ -122,8 +122,8 @@ def test_laplace_single_layer_p1_cont(
     default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for the Laplace slp with p1 basis."""
-    from bempp.api import function_space
-    from bempp.api.operators.boundary.laplace import single_layer
+    from bempp_cl.api import function_space
+    from bempp_cl.api.operators.boundary.laplace import single_layer
 
     grid = helpers.load_grid("sphere")
 
@@ -149,8 +149,8 @@ def test_laplace_double_layer_p1_cont(
     default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for the Laplace dlp with p1 basis."""
-    from bempp.api import function_space
-    from bempp.api.operators.boundary.laplace import double_layer
+    from bempp_cl.api import function_space
+    from bempp_cl.api.operators.boundary.laplace import double_layer
 
     grid = helpers.load_grid("sphere")
 
@@ -176,8 +176,8 @@ def test_laplace_adjoint_double_layer_p1_cont(
     default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for the Laplace adjoint dlp with p1 basis."""
-    from bempp.api import function_space
-    from bempp.api.operators.boundary.laplace import adjoint_double_layer
+    from bempp_cl.api import function_space
+    from bempp_cl.api.operators.boundary.laplace import adjoint_double_layer
 
     grid = helpers.load_grid("sphere")
 
@@ -203,8 +203,8 @@ def test_laplace_hypersingular(
     default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for the Laplace hypersingular operator."""
-    from bempp.api import function_space
-    from bempp.api.operators.boundary.laplace import hypersingular
+    from bempp_cl.api import function_space
+    from bempp_cl.api.operators.boundary.laplace import hypersingular
 
     grid = helpers.load_grid("sphere")
 
@@ -231,8 +231,8 @@ def test_laplace_single_element_p0(
     default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for the Laplace slp with p0 basis on the unit triangle."""
-    from bempp.api import Grid, function_space
-    from bempp.api.operators.boundary.laplace import single_layer
+    from bempp_cl.api import Grid, function_space
+    from bempp_cl.api.operators.boundary.laplace import single_layer
 
     vertices = _np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]], dtype=_np.float64).T
     elements = _np.array([[0, 1, 2]]).T

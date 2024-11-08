@@ -15,8 +15,8 @@ def test_modified_helmholtz_single_layer(
     default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for modified Helmholtz."""
-    from bempp.api import function_space
-    from bempp.api.operators.boundary.modified_helmholtz import single_layer
+    from bempp_cl.api import function_space
+    from bempp_cl.api.operators.boundary.modified_helmholtz import single_layer
 
     grid = helpers.load_grid("sphere")
 
@@ -46,8 +46,8 @@ def test_modified_helmholtz_double_layer_p1_cont(
     default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for the modified Helmholtz dlp."""
-    from bempp.api import function_space
-    from bempp.api.operators.boundary.modified_helmholtz import double_layer
+    from bempp_cl.api import function_space
+    from bempp_cl.api.operators.boundary.modified_helmholtz import double_layer
 
     grid = helpers.load_grid("sphere")
 
@@ -76,8 +76,8 @@ def test_modified_helmholtz_adjoint_double_layer(
     default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for the Helmholtz adjoint dlp."""
-    from bempp.api import function_space
-    from bempp.api.operators.boundary.modified_helmholtz import adjoint_double_layer
+    from bempp_cl.api import function_space
+    from bempp_cl.api.operators.boundary.modified_helmholtz import adjoint_double_layer
 
     grid = helpers.load_grid("sphere")
 
@@ -106,8 +106,8 @@ def test_modified_helmholtz_hypersingular(
     default_parameters, helpers, precision, device_interface
 ):
     """Test dense assembler for the modified Helmholtz hypersingular operator."""
-    from bempp.api import function_space
-    from bempp.api.operators.boundary.modified_helmholtz import hypersingular
+    from bempp_cl.api import function_space
+    from bempp_cl.api.operators.boundary.modified_helmholtz import hypersingular
 
     grid = helpers.load_grid("sphere")
 

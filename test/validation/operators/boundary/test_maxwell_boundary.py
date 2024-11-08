@@ -13,8 +13,8 @@ def test_maxwell_electric_field_sphere(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Maxwell electric field on sphere."""
-    from bempp.api import function_space
-    from bempp.api.operators.boundary.maxwell import electric_field
+    from bempp_cl.api import function_space
+    from bempp_cl.api.operators.boundary.maxwell import electric_field
 
     grid = helpers.load_grid("sphere")
 
@@ -50,9 +50,9 @@ def test_maxwell_electric_field_rbc_bc_sphere(
     if skip == "ci":
         pytest.skip()
 
-    import bempp.api
-    from bempp.api import function_space
-    from bempp.api.operators.boundary.maxwell import electric_field
+    import bempp_cl.api
+    from bempp_cl.api import function_space
+    from bempp_cl.api.operators.boundary.maxwell import electric_field
 
     grid = helpers.load_grid("sphere")
 
@@ -62,7 +62,7 @@ def test_maxwell_electric_field_rbc_bc_sphere(
     rand = _np.random.RandomState(0)
     vec = rand.rand(space1.global_dof_count)
 
-    bempp.api.GLOBAL_PARAMETERS.fmm.dense_evaluation = True
+    bempp_cl.api.GLOBAL_PARAMETERS.fmm.dense_evaluation = True
 
     discrete_op = electric_field(
         space1,
@@ -77,7 +77,7 @@ def test_maxwell_electric_field_rbc_bc_sphere(
 
     actual = discrete_op @ vec
 
-    bempp.api.GLOBAL_PARAMETERS.fmm.dense_evaluation = False
+    bempp_cl.api.GLOBAL_PARAMETERS.fmm.dense_evaluation = False
 
     if precision == "single":
         rtol = 5e-5
@@ -92,7 +92,7 @@ def test_maxwell_electric_field_rbc_bc_sphere(
 
     _np.testing.assert_allclose(actual, expected, rtol=rtol, atol=atol)
 
-    bempp.api.clear_fmm_cache()
+    bempp_cl.api.clear_fmm_cache()
 
 
 def test_maxwell_electric_field_bc_sphere(
@@ -102,9 +102,9 @@ def test_maxwell_electric_field_bc_sphere(
     if skip == "ci":
         pytest.skip()
 
-    import bempp.api
-    from bempp.api import function_space
-    from bempp.api.operators.boundary.maxwell import electric_field
+    import bempp_cl.api
+    from bempp_cl.api import function_space
+    from bempp_cl.api.operators.boundary.maxwell import electric_field
 
     grid = helpers.load_grid("sphere")
 
@@ -114,7 +114,7 @@ def test_maxwell_electric_field_bc_sphere(
     rand = _np.random.RandomState(0)
     vec = rand.rand(space1.global_dof_count)
 
-    bempp.api.GLOBAL_PARAMETERS.fmm.dense_evaluation = True
+    bempp_cl.api.GLOBAL_PARAMETERS.fmm.dense_evaluation = True
 
     discrete_op = electric_field(
         space1,
@@ -129,7 +129,7 @@ def test_maxwell_electric_field_bc_sphere(
 
     actual = discrete_op @ vec
 
-    bempp.api.GLOBAL_PARAMETERS.fmm.dense_evaluation = False
+    bempp_cl.api.GLOBAL_PARAMETERS.fmm.dense_evaluation = False
 
     if precision == "single":
         rtol = 1e-4
@@ -142,15 +142,15 @@ def test_maxwell_electric_field_bc_sphere(
     expected = mat @ vec
     _np.testing.assert_allclose(actual, expected, rtol=rtol, atol=atol)
 
-    bempp.api.clear_fmm_cache()
+    bempp_cl.api.clear_fmm_cache()
 
 
 def test_maxwell_magnetic_field_sphere(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Maxwell magnetic field on sphere."""
-    from bempp.api import function_space
-    from bempp.api.operators.boundary.maxwell import magnetic_field
+    from bempp_cl.api import function_space
+    from bempp_cl.api.operators.boundary.maxwell import magnetic_field
 
     grid = helpers.load_grid("sphere")
 
