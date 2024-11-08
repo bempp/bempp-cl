@@ -1,5 +1,5 @@
 """Test routines related to duffy rules."""
-from bempp.api.integration import duffy_galerkin as _duffy
+from bempp_cl.api.integration import duffy_galerkin as _duffy
 
 _order = 6
 

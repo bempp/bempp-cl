@@ -1,15 +1,15 @@
 import pytest
-import bempp.api
+import bempp_cl.api
 import numpy as np
-from bempp.api.operators.boundary import laplace
-from bempp.api.assembly.blocked_operator import BlockedOperator, BlockedDiscreteOperator
+from bempp_cl.api.operators.boundary import laplace
+from bempp_cl.api.assembly.blocked_operator import BlockedOperator, BlockedDiscreteOperator
 from scipy.sparse.linalg.interface import LinearOperator
 
 
 @pytest.mark.parametrize("cols", range(4))
 def test_blocked_matvec(cols):
-    grid = bempp.api.shapes.sphere(h=1)
-    space = bempp.api.function_space(grid, "P", 1)
+    grid = bempp_cl.api.shapes.sphere(h=1)
+    space = bempp_cl.api.function_space(grid, "P", 1)
 
     ndofs = space.global_dof_count
 
@@ -36,8 +36,8 @@ def test_blocked_matvec(cols):
 
 @pytest.mark.parametrize("cols", range(4))
 def test_blocked_matvec_linear_operator(cols):
-    grid = bempp.api.shapes.sphere(h=1)
-    space = bempp.api.function_space(grid, "P", 1)
+    grid = bempp_cl.api.shapes.sphere(h=1)
+    space = bempp_cl.api.function_space(grid, "P", 1)
 
     ndofs = space.global_dof_count
 
@@ -62,8 +62,8 @@ def test_blocked_matvec_linear_operator(cols):
 
 
 def test_blocked_matvec_only_linear_operator():
-    grid = bempp.api.shapes.sphere(h=1)
-    space = bempp.api.function_space(grid, "P", 1)
+    grid = bempp_cl.api.shapes.sphere(h=1)
+    space = bempp_cl.api.function_space(grid, "P", 1)
 
     ndofs = space.global_dof_count
 

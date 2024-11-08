@@ -22,4 +22,4 @@ style = ["pydocstyle", "flake8"]
 test = ["pytest", "pytest-xdist", "bempp-cl[optional]"]
 
 [tool.setuptools]
-packages = ["bempp"]
+packages = ["bempp_cl"]

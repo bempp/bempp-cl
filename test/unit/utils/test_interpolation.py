@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from bempp.api.utils import interpolation
+from bempp_cl.api.utils import interpolation
 
 
 def test_evaluation_of_laplace_kernel_on_interp_points():

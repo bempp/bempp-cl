@@ -13,9 +13,9 @@ def test_laplace_single_layer_potential_p0(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Laplace slp potential with p0 basis."""
-    from bempp.api import function_space
-    from bempp.api import GridFunction
-    from bempp.api.operators.potential.laplace import single_layer
+    from bempp_cl.api import function_space
+    from bempp_cl.api import GridFunction
+    from bempp_cl.api.operators.potential.laplace import single_layer
 
     grid = helpers.load_grid("sphere")
     space = function_space(grid, "DP", 0)
@@ -45,9 +45,9 @@ def test_laplace_single_layer_potential_p1(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Laplace slp potential with p1 basis."""
-    from bempp.api import function_space
-    from bempp.api import GridFunction
-    from bempp.api.operators.potential.laplace import single_layer
+    from bempp_cl.api import function_space
+    from bempp_cl.api import GridFunction
+    from bempp_cl.api.operators.potential.laplace import single_layer
 
     grid = helpers.load_grid("sphere")
     space = function_space(grid, "P", 1)
@@ -77,9 +77,9 @@ def test_laplace_double_layer_potential_p1(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Laplace dlp potential with p1 basis."""
-    from bempp.api import function_space
-    from bempp.api import GridFunction
-    from bempp.api.operators.potential.laplace import double_layer
+    from bempp_cl.api import function_space
+    from bempp_cl.api import GridFunction
+    from bempp_cl.api.operators.potential.laplace import double_layer
 
     grid = helpers.load_grid("sphere")
     space = function_space(grid, "P", 1)
@@ -109,9 +109,9 @@ def test_laplace_single_layer_potential_p1_complex(
     default_parameters, helpers, device_interface, precision
 ):
     """Test Laplace slp potential with p1 basis and complex coeffs."""
-    from bempp.api import function_space
-    from bempp.api import GridFunction
-    from bempp.api.operators.potential.laplace import single_layer
+    from bempp_cl.api import function_space
+    from bempp_cl.api import GridFunction
+    from bempp_cl.api.operators.potential.laplace import single_layer
 
     grid = helpers.load_grid("sphere")
     space = function_space(grid, "P", 1)
@@ -146,10 +146,10 @@ def test_laplace_single_layer_potential_p1_complex(
 def test_laplace_p1_segments(default_parameters, helpers, device_interface, precision):
     """Test P1 potential evaluation on segments."""
 
-    from bempp.api.shapes import cube
-    from bempp.api import function_space
-    from bempp.api import GridFunction
-    from bempp.api.operators.potential.laplace import single_layer
+    from bempp_cl.api.shapes import cube
+    from bempp_cl.api import function_space
+    from bempp_cl.api import GridFunction
+    from bempp_cl.api.operators.potential.laplace import single_layer
 
     grid = cube()
     seg1 = function_space(grid, "P", 1, segments=[1, 2, 3], include_boundary_dofs=False)
@@ -212,10 +212,10 @@ def test_laplace_p1_segments_complex_coeffs(
 ):
     """Test P1 potential evaluation on segments with complex coeffs."""
 
-    from bempp.api.shapes import cube
-    from bempp.api import function_space
-    from bempp.api import GridFunction
-    from bempp.api.operators.potential.laplace import single_layer
+    from bempp_cl.api.shapes import cube
+    from bempp_cl.api import function_space
+    from bempp_cl.api import GridFunction
+    from bempp_cl.api.operators.potential.laplace import single_layer
 
     grid = cube()
     seg1 = function_space(grid, "P", 1, segments=[1, 2, 3], include_boundary_dofs=False)
