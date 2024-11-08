@@ -2931,6 +2931,10 @@ def rule(order):
 
     The order must be between 1 and 20.
     """
+    if order < 1 or order > 20:
+        raise ValueError(
+            f"Symmetric Gauss quadrature order must be between 1 and 20. Provided: {order}"
+        )
     npoints = points_per_order[order - 1]
     address = points_address[npoints - 1]
     bary_coords = coords[3 * address : 3 * (address + npoints)].reshape(
