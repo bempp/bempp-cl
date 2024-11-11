@@ -214,6 +214,8 @@ jobs:
       - uses: actions/checkout@v4
       - run: python3 -m pip install .[test]
         name: Install Bempp
+      - run: ls
+        name: ls
       - run: python3 -m pytest examples/test.py --has-dolfin 0 --has-dolfinx 0 --has-exafmm 1
         name: Run Bempp examples
 
