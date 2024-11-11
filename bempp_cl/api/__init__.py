@@ -244,7 +244,7 @@ def check_for_fmm():
 
 def _get_version():
     """Get version string."""
-    from bempp import version
+    from bempp_cl import version
 
     return version.__version__
 
