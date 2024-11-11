@@ -132,7 +132,8 @@ def test_union_two_grids_one_domain_each(two_element_grid):
 def test_union_two_grids_two_domains_each(two_element_grid):
     """Test union of two grids, each with two domains."""
 
-    two_element_grid = bempp_cl.api.grid.Grid(two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 1])
+    two_element_grid = bempp_cl.api.grid.Grid(
+        two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 1])
     two_element_grid_2 = bempp_cl.api.grid.Grid(
         two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 1])
     np.testing.assert_array_equal(
@@ -143,7 +144,8 @@ def test_union_two_grids_two_domains_each(two_element_grid):
 def test_union_two_grids_two_domains_each_unnormalized(two_element_grid):
     """Test union of two grids, each with two domains, and without domain index normalization."""
 
-    two_element_grid = bempp_cl.api.grid.Grid(two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 2])
+    two_element_grid = bempp_cl.api.grid.Grid(
+        two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 2])
     two_element_grid_2 = bempp_cl.api.grid.Grid(
         two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 3])
     np.testing.assert_array_equal(
@@ -154,7 +156,8 @@ def test_union_two_grids_two_domains_each_unnormalized(two_element_grid):
 def test_union_two_grids_two_domains_each_normalized(two_element_grid):
     """Test union of two grids, each with two domains, and with domain index normalization."""
 
-    two_element_grid = bempp_cl.api.grid.Grid(two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 2])
+    two_element_grid = bempp_cl.api.grid.Grid(
+        two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 2])
     two_element_grid_2 = bempp_cl.api.grid.Grid(
         two_element_grid.vertices, two_element_grid.elements, domain_indices=[0, 3])
     np.testing.assert_array_equal(
