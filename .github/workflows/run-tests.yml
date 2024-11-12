@@ -156,9 +156,7 @@ jobs:
             python3 -m ruff format --check bempp_cl
             python3 -m ruff format --check test
             python3 -m ruff format --check examples
-        name: Run flake8 checks
-      - run: python3 -m pydocstyle bempp_cl/api
-        name: Run pydocstyle checks
+        name: Run ruff checks
 
   build-and-test:
     name: Build Bempp and run tests

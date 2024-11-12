@@ -259,9 +259,9 @@ def numba_evaluate_local_interactions(
         local_source_points = _np.empty((3, npoints * nneighbors), dtype=dtype)
         for source_element_index in range(nneighbors):
             source_element = source_elements[source_element_index]
-            local_source_points[
-                :, npoints * source_element_index : npoints * (1 + source_element_index)
-            ] = global_points[source_element, :, :]
+            local_source_points[:, npoints * source_element_index : npoints * (1 + source_element_index)] = (
+                global_points[source_element, :, :]
+            )
         local_target_points = global_points[target_element, :, :]
         interactions = kernel_function(
             local_target_points,
@@ -316,9 +316,9 @@ def get_local_interaction_matrix_impl(grid_data, local_points, kernel_function, 
         local_source_points = _np.empty((3, npoints * nneighbors), dtype=dtype)
         for source_element_index in range(nneighbors):
             source_element = source_elements[source_element_index]
-            local_source_points[
-                :, npoints * source_element_index : npoints * (1 + source_element_index)
-            ] = global_points[source_element, :, :]
+            local_source_points[:, npoints * source_element_index : npoints * (1 + source_element_index)] = (
+                global_points[source_element, :, :]
+            )
         local_target_points = global_points[target_element, :, :]
         interactions = kernel_function(
             local_target_points,
