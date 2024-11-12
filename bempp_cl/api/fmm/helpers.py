@@ -6,9 +6,7 @@ import numba as _numba
 M_INV_4PI = 1.0 / (4 * _np.pi)
 
 
-@_numba.jit(
-    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
-)
+@_numba.jit(nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False)
 def laplace_kernel(target_points, source_points, kernel_parameters, dtype, result_type):
     """Evaluate the Laplace kernel."""
     ntargets = target_points.shape[1]
@@ -26,9 +24,7 @@ def laplace_kernel(target_points, source_points, kernel_parameters, dtype, resul
         for j in range(nsources):
             dist[j] = _np.sqrt(dist[j])
         for j in range(nsources):
-            interactions[target_point_index * 4 * nsources + 4 * j] = (
-                m_inv_4pi / dist[j]
-            )
+            interactions[target_point_index * 4 * nsources + 4 * j] = m_inv_4pi / dist[j]
         for i in range(3):
             for j in range(nsources):
                 interactions[target_point_index * 4 * nsources + 4 * j + 1 + i] = (
@@ -43,12 +39,8 @@ def laplace_kernel(target_points, source_points, kernel_parameters, dtype, resul
     return interactions
 
 
-@_numba.jit(
-    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
-)
-def modified_helmholtz_kernel(
-    target_points, source_points, kernel_parameters, dtype, result_type
-):
+@_numba.jit(nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False)
+def modified_helmholtz_kernel(target_points, source_points, kernel_parameters, dtype, result_type):
     """Evaluate the modified Helmholtz kernel."""
     ntargets = target_points.shape[1]
     nsources = source_points.shape[1]
@@ -86,12 +78,8 @@ def modified_helmholtz_kernel(
     return interactions
 
 
-@_numba.jit(
-    nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False
-)
-def helmholtz_kernel(
-    target_points, source_points, kernel_parameters, dtype, result_type
-):
+@_numba.jit(nopython=True, parallel=False, error_model="numpy", fastmath=True, boundscheck=False)
+def helmholtz_kernel(target_points, source_points, kernel_parameters, dtype, result_type):
     """Evaluate the Laplace kernel."""
     ntargets = target_points.shape[1]
     nsources = source_points.shape[1]
@@ -123,18 +111,12 @@ def helmholtz_kernel(
         for i in range(3):
             for j in range(nsources):
                 interactions_real[target_point_index * 4 * nsources + 4 * j + 1 + i] = (
-                    (
-                        -(1 + dist[j] * kernel_parameters[1]) * tmp_real[j]
-                        - kernel_parameters[0] * dist[j] * tmp_imag[j]
-                    )
+                    (-(1 + dist[j] * kernel_parameters[1]) * tmp_real[j] - kernel_parameters[0] * dist[j] * tmp_imag[j])
                     / (dist[j] * dist[j])
                     * diff[i, j]
                 )
                 interactions_imag[target_point_index * 4 * nsources + 4 * j + 1 + i] = (
-                    (
-                        -(1 + dist[j] * kernel_parameters[1]) * tmp_imag[j]
-                        + kernel_parameters[0] * dist[j] * tmp_real[j]
-                    )
+                    (-(1 + dist[j] * kernel_parameters[1]) * tmp_imag[j] + kernel_parameters[0] * dist[j] * tmp_real[j])
                     / (dist[j] * dist[j])
                     * diff[i, j]
                 )
@@ -193,9 +175,7 @@ def get_local_interaction_operator(
             dtype,
             result_type,
         )
-        return aslinearoperator(
-            csr_matrix((data, indices, indexptr), shape=(rows, cols))
-        )
+        return aslinearoperator(csr_matrix((data, indices, indexptr), shape=(rows, cols)))
 
     elif GLOBAL_PARAMETERS.fmm.near_field_representation == "evaluate":
         if device_interface is None:
@@ -209,9 +189,7 @@ def get_local_interaction_operator(
                 dtype,
                 result_type,
             )
-            return LinearOperator(
-                shape=(rows, cols), matvec=evaluator, dtype=result_type
-            )
+            return LinearOperator(shape=(rows, cols), matvec=evaluator, dtype=result_type)
         elif device_interface == "opencl":
             evaluator = get_local_interaction_evaluator_opencl(
                 grid,
@@ -221,9 +199,7 @@ def get_local_interaction_operator(
                 dtype,
                 result_type,
             )
-            return LinearOperator(
-                shape=(rows, cols), matvec=evaluator, dtype=result_type
-            )
+            return LinearOperator(shape=(rows, cols), matvec=evaluator, dtype=result_type)
         else:
             raise ValueError("Device interface must be one of 'numba', 'opencl'.")
     else:
@@ -252,9 +228,7 @@ def get_local_interaction_evaluator_numba(
     return evaluator
 
 
-@_numba.jit(
-    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
-)
+@_numba.jit(nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False)
 def numba_evaluate_local_interactions(
     grid_data,
     coeffs,
@@ -274,20 +248,12 @@ def numba_evaluate_local_interactions(
     global_points = _np.zeros((nelements, 3, npoints), dtype=dtype)
 
     for element_index in range(nelements):
-        global_points[element_index, :, :] = grid_data.local2global(
-            element_index, local_points
-        )
+        global_points[element_index, :, :] = grid_data.local2global(element_index, local_points)
 
     for target_element in _numba.prange(nelements):
-        nneighbors = (
-            neighbor_indexptr[1 + target_element] - neighbor_indexptr[target_element]
-        )
+        nneighbors = neighbor_indexptr[1 + target_element] - neighbor_indexptr[target_element]
         source_elements = _np.sort(
-            neighbor_indices[
-                neighbor_indexptr[target_element] : neighbor_indexptr[
-                    1 + target_element
-                ]
-            ]
+            neighbor_indices[neighbor_indexptr[target_element] : neighbor_indexptr[1 + target_element]]
         )
 
         local_source_points = _np.empty((3, npoints * nneighbors), dtype=dtype)
@@ -310,9 +276,7 @@ def numba_evaluate_local_interactions(
                 for source_element_index in range(nneighbors):
                     source_element = source_elements[source_element_index]
                     for source_point_index in range(npoints):
-                        result[
-                            4 * npoints * target_element + 4 * target_point_index + i
-                        ] += (
+                        result[4 * npoints * target_element + 4 * target_point_index + i] += (
                             interactions[
                                 4 * target_point_index * nneighbors * npoints
                                 + 4 * source_element_index * npoints
@@ -325,12 +289,8 @@ def numba_evaluate_local_interactions(
     return result
 
 
-@_numba.jit(
-    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
-)
-def get_local_interaction_matrix_impl(
-    grid_data, local_points, kernel_function, kernel_parameters, dtype, result_type
-):
+@_numba.jit(nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False)
+def get_local_interaction_matrix_impl(grid_data, local_points, kernel_function, kernel_parameters, dtype, result_type):
     """Get the local interaction matrix on the grid."""
     nelements = grid_data.elements.shape[1]
     npoints = local_points.shape[1]
@@ -345,20 +305,12 @@ def get_local_interaction_matrix_impl(
     global_points = _np.zeros((nelements, 3, npoints), dtype=dtype)
 
     for element_index in range(nelements):
-        global_points[element_index, :, :] = grid_data.local2global(
-            element_index, local_points
-        )
+        global_points[element_index, :, :] = grid_data.local2global(element_index, local_points)
 
     for target_element in _numba.prange(nelements):
-        nneighbors = (
-            neighbor_indexptr[1 + target_element] - neighbor_indexptr[target_element]
-        )
+        nneighbors = neighbor_indexptr[1 + target_element] - neighbor_indexptr[target_element]
         source_elements = _np.sort(
-            neighbor_indices[
-                neighbor_indexptr[target_element] : neighbor_indexptr[
-                    1 + target_element
-                ]
-            ]
+            neighbor_indices[neighbor_indexptr[target_element] : neighbor_indexptr[1 + target_element]]
         )
 
         local_source_points = _np.empty((3, npoints * nneighbors), dtype=dtype)
@@ -379,9 +331,7 @@ def get_local_interaction_matrix_impl(
         local_count = 4 * npoints * npoints * neighbor_indexptr[target_element]
         for target_point_index in range(npoints):
             for i in range(4):
-                indexptr[
-                    4 * npoints * target_element + 4 * target_point_index + i
-                ] = local_count
+                indexptr[4 * npoints * target_element + 4 * target_point_index + i] = local_count
                 for source_element_index in range(nneighbors):
                     source_element = source_elements[source_element_index]
                     for source_point_index in range(npoints):
@@ -391,9 +341,7 @@ def get_local_interaction_matrix_impl(
                             + 4 * source_point_index
                             + i
                         ]
-                        indices[local_count] = (
-                            npoints * source_element + source_point_index
-                        )
+                        indices[local_count] = npoints * source_element + source_point_index
                         local_count += 1
 
     return data, indices, indexptr
@@ -427,17 +375,13 @@ def map_space_to_points(space, local_points, weights, return_transpose=False):
             shape=(space.localised_space.global_dof_count, number_of_vertices),
         )
 
-        return aslinearoperator(space.map_to_localised_space.T) @ aslinearoperator(
-            transform
-        )
+        return aslinearoperator(space.map_to_localised_space.T) @ aslinearoperator(transform)
     else:
         transform = coo_matrix(
             (data, (vertex_indices, global_indices)),
             shape=(number_of_vertices, space.localised_space.global_dof_count),
         )
-        return aslinearoperator(transform) @ aslinearoperator(
-            space.map_to_localised_space
-        )
+        return aslinearoperator(transform) @ aslinearoperator(space.map_to_localised_space)
 
 
 @_numba.njit
@@ -479,15 +423,9 @@ def map_space_to_points_impl(
         data[elem * nlocal : (1 + elem) * nlocal] = basis_values.ravel()
         for index in range(number_of_shape_functions):
             vertex_indices[
-                elem * nlocal
-                + index * number_of_local_points : elem * nlocal
-                + (1 + index) * number_of_local_points
-            ] = _np.arange(
-                elem * number_of_local_points, (1 + elem) * number_of_local_points
-            )
-        global_indices[elem * nlocal : (1 + elem) * nlocal] = _np.repeat(
-            local2global[elem, :], number_of_local_points
-        )
+                elem * nlocal + index * number_of_local_points : elem * nlocal + (1 + index) * number_of_local_points
+            ] = _np.arange(elem * number_of_local_points, (1 + elem) * number_of_local_points)
+        global_indices[elem * nlocal : (1 + elem) * nlocal] = _np.repeat(local2global[elem, :], number_of_local_points)
 
     return (data, global_indices, vertex_indices)
 
@@ -525,9 +463,7 @@ def grid_to_points(grid_data, local_points):
     return points
 
 
-def get_local_interaction_evaluator_opencl(
-    grid, local_points, kernel_function, kernel_parameters, dtype, result_type
-):
+def get_local_interaction_evaluator_opencl(grid, local_points, kernel_function, kernel_parameters, dtype, result_type):
     """Return an evaluator for the local interactions."""
     import pyopencl as _cl
     import bempp_cl.api
@@ -576,17 +512,11 @@ def get_local_interaction_evaluator_opencl(
         hostbuf=grid.element_neighbors.indices,
     )
 
-    neighbor_indexptr_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid.element_neighbors.indexptr
-    )
+    neighbor_indexptr_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid.element_neighbors.indexptr)
 
-    coefficients_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY, size=result_type.itemsize * ncoeffs
-    )
+    coefficients_buffer = _cl.Buffer(ctx, mf.READ_ONLY, size=result_type.itemsize * ncoeffs)
 
-    result_buffer = _cl.Buffer(
-        ctx, mf.READ_WRITE, size=4 * result_type.itemsize * ncoeffs
-    )
+    result_buffer = _cl.Buffer(ctx, mf.READ_WRITE, size=4 * result_type.itemsize * ncoeffs)
 
     if len(kernel_parameters) == 0:
         kernel_parameters = [0]
@@ -641,9 +571,7 @@ def debug_fmm(targets, sources, charges, mode, kernel_parameters, fmm_result):
     """Compare the result of an FMM result with the corresponding dense computation."""
     import bempp_cl.api
 
-    dense_result = dense_interaction_evaluator(
-        targets, sources, charges, mode, kernel_parameters
-    ).reshape(-1, 4)
+    dense_result = dense_interaction_evaluator(targets, sources, charges, mode, kernel_parameters).reshape(-1, 4)
 
     rel_error = _np.max(_np.abs(dense_result - fmm_result) / _np.abs(fmm_result))
 
@@ -686,17 +614,13 @@ def dense_interaction_evaluator(targets, sources, charges, mode, kernel_paramete
     else:
         raise ValueError("Unknown value for 'kernel_function'.")
 
-    return dense_interaction_evaluator_impl(
-        targets, sources, charges, kernel, kernel_parameters, kernel_type
-    ).reshape(-1, 4)
+    return dense_interaction_evaluator_impl(targets, sources, charges, kernel, kernel_parameters, kernel_type).reshape(
+        -1, 4
+    )
 
 
-@_numba.jit(
-    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
-)
-def dense_interaction_evaluator_impl(
-    targets, sources, charges, kernel, kernel_parameters, kernel_type
-):
+@_numba.jit(nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False)
+def dense_interaction_evaluator_impl(targets, sources, charges, kernel, kernel_parameters, kernel_type):
     """
     Dense evaluation of interaction between sources and targets.
 
@@ -733,8 +657,6 @@ def dense_interaction_evaluator_impl(
         vals = kernel(current_target, sources, kernel_parameters, dtype, kernel_type)
         for source_index in range(nsources):
             for local_index in range(4):
-                result[4 * target_index + local_index] += (
-                    vals[4 * source_index + local_index] * charges[source_index]
-                )
+                result[4 * target_index + local_index] += vals[4 * source_index + local_index] * charges[source_index]
 
     return result

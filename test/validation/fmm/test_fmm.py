@@ -168,9 +168,7 @@ def test_helmholtz_potential_fmm_complex(helpers, skip):
         fmm = operator(space, points, wavenumber, assembler="fmm")
         dense = operator(space, points, wavenumber, assembler="dense")
 
-        np.testing.assert_allclose(
-            dense.evaluate(grid_fun), fmm.evaluate(grid_fun), rtol=TOL
-        )
+        np.testing.assert_allclose(dense.evaluate(grid_fun), fmm.evaluate(grid_fun), rtol=TOL)
 
     bempp_cl.api.clear_fmm_cache()
 
@@ -320,12 +318,8 @@ def test_maxwell_boundary_fmm_complex(helpers):
         bempp_cl.api.operators.boundary.maxwell.electric_field,
         bempp_cl.api.operators.boundary.maxwell.magnetic_field,
     ]:
-        fmm = operator(
-            space, space, dual_space, wavenumber, assembler="fmm"
-        ).weak_form()
-        dense = operator(
-            space, space, dual_space, wavenumber, assembler="dense"
-        ).weak_form()
+        fmm = operator(space, space, dual_space, wavenumber, assembler="fmm").weak_form()
+        dense = operator(space, space, dual_space, wavenumber, assembler="dense").weak_form()
 
         np.testing.assert_allclose(dense @ vec, fmm @ vec, rtol=TOL)
 
@@ -350,8 +344,6 @@ def test_maxwell_potential_fmm_complex(helpers):
         fmm = operator(space, points, wavenumber, assembler="fmm")
         dense = operator(space, points, wavenumber, assembler="dense")
 
-        np.testing.assert_allclose(
-            dense.evaluate(grid_fun), fmm.evaluate(grid_fun), rtol=TOL
-        )
+        np.testing.assert_allclose(dense.evaluate(grid_fun), fmm.evaluate(grid_fun), rtol=TOL)
 
     bempp_cl.api.clear_fmm_cache()

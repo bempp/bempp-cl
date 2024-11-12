@@ -22,9 +22,7 @@ def test_laplace_operators(points, operator, space_type):
     """Test dense assembler for the Laplace operators."""
     grid = bempp_cl.api.shapes.regular_sphere(0)
     space = function_space(grid, *space_type)
-    fun = bempp_cl.api.GridFunction(
-        space, coefficients=np.random.rand(space.global_dof_count)
-    )
+    fun = bempp_cl.api.GridFunction(space, coefficients=np.random.rand(space.global_dof_count))
 
     operator(space, points).evaluate(fun)
 
@@ -36,9 +34,7 @@ def test_helmholtz_operators(points, operator, wavenumber, space_type):
     """Test dense assembler for the Helmholtz operators."""
     grid = bempp_cl.api.shapes.regular_sphere(0)
     space = function_space(grid, *space_type)
-    fun = bempp_cl.api.GridFunction(
-        space, coefficients=np.random.rand(space.global_dof_count)
-    )
+    fun = bempp_cl.api.GridFunction(space, coefficients=np.random.rand(space.global_dof_count))
 
     operator(space, points, wavenumber).evaluate(fun)
 
@@ -50,8 +46,6 @@ def test_maxwell_operators(points, operator, wavenumber, space_type):
     """Test dense assembler for the Helmholtz operators."""
     grid = bempp_cl.api.shapes.regular_sphere(0)
     space = function_space(grid, *space_type)
-    fun = bempp_cl.api.GridFunction(
-        space, coefficients=np.random.rand(space.global_dof_count)
-    )
+    fun = bempp_cl.api.GridFunction(space, coefficients=np.random.rand(space.global_dof_count))
 
     operator(space, points, wavenumber).evaluate(fun)

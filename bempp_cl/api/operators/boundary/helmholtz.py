@@ -1,4 +1,5 @@
 """Interfaces to Helmholtz operators."""
+
 import numpy as _np
 
 from bempp_cl.api.operators.boundary import common as _common
@@ -344,9 +345,7 @@ def osrc_dtn(
 class _OsrcDtN(_BoundaryOperator):
     """Implementation of the OSRC DtN operator."""
 
-    def __init__(
-        self, space, parameters, operator_options, device_interface=None, precision=None
-    ):
+    def __init__(self, space, parameters, operator_options, device_interface=None, precision=None):
         from bempp_cl.api.operators import OperatorDescriptor
 
         super().__init__(space, space, space, parameters)
@@ -409,12 +408,7 @@ class _OsrcDtN(_BoundaryOperator):
         series = c0 * mass
         for i in range(npade):
             element = (
-                alpha[i]
-                / (dk ** 2)
-                * stiff
-                * InverseSparseDiscreteBoundaryOperator(
-                    mass - beta[i] / (dk ** 2) * stiff
-                )
+                alpha[i] / (dk**2) * stiff * InverseSparseDiscreteBoundaryOperator(mass - beta[i] / (dk**2) * stiff)
             )
             series -= element * mass
         operator = 1.0j * wavenumber * series
@@ -448,9 +442,7 @@ def osrc_ntd(
 class _OsrcNtD(_BoundaryOperator):
     """Implementation of the OSRC NtD operator."""
 
-    def __init__(
-        self, space, parameters, operator_options, device_interface=None, precision=None
-    ):
+    def __init__(self, space, parameters, operator_options, device_interface=None, precision=None):
         from bempp_cl.api.operators import OperatorDescriptor
 
         super().__init__(space, space, space, parameters)
@@ -512,22 +504,13 @@ class _OsrcNtD(_BoundaryOperator):
         series = c0 * mass
         for i in range(npade):
             element = (
-                alpha[i]
-                / (dk ** 2)
-                * stiff
-                * InverseSparseDiscreteBoundaryOperator(
-                    mass - beta[i] / (dk ** 2) * stiff
-                )
+                alpha[i] / (dk**2) * stiff * InverseSparseDiscreteBoundaryOperator(mass - beta[i] / (dk**2) * stiff)
             )
             series -= element * mass
         operator = (
             1.0
             / (1.0j * wavenumber)
-            * (
-                mass
-                * InverseSparseDiscreteBoundaryOperator(mass - 1.0 / (dk ** 2) * stiff)
-                * series
-            )
+            * (mass * InverseSparseDiscreteBoundaryOperator(mass - 1.0 / (dk**2) * stiff) * series)
         )
 
         return operator

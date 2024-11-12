@@ -158,6 +158,4 @@ def get_inverse_mass_matrix(domain, dual_to_range):
     if domain == dual_to_range:
         return domain.inverse_mass_matrix()
     else:
-        return InverseSparseDiscreteBoundaryOperator(
-            get_mass_matrix(domain, dual_to_range)
-        )
+        return InverseSparseDiscreteBoundaryOperator(get_mass_matrix(domain, dual_to_range))

@@ -50,51 +50,25 @@ def singular_assembler(
     if operator_descriptor.is_complex:
         options["COMPLEX_KERNEL"] = None
 
-    kernel = get_kernel_from_operator_descriptor(
-        operator_descriptor, options, "singular"
-    )
+    kernel = get_kernel_from_operator_descriptor(operator_descriptor, options, "singular")
 
     # Initialize OpenCL Buffers
 
-    grid_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid.as_array.astype(dtype)
-    )
-    test_normals_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=dual_to_range.normal_multipliers
-    )
-    trial_normals_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=domain.normal_multipliers
-    )
-    test_points_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=test_points.astype(dtype)
-    )
-    trial_points_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=trial_points.astype(dtype)
-    )
-    quad_weights_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=quad_weights.astype(dtype)
-    )
-    test_elements_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=test_elements
-    )
-    trial_elements_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=trial_elements
-    )
-    test_offsets_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=test_offsets
-    )
-    trial_offsets_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=trial_offsets
-    )
-    weights_offsets_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=weights_offsets
-    )
+    grid_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=grid.as_array.astype(dtype))
+    test_normals_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=dual_to_range.normal_multipliers)
+    trial_normals_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=domain.normal_multipliers)
+    test_points_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=test_points.astype(dtype))
+    trial_points_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=trial_points.astype(dtype))
+    quad_weights_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=quad_weights.astype(dtype))
+    test_elements_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=test_elements)
+    trial_elements_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=trial_elements)
+    test_offsets_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=test_offsets)
+    trial_offsets_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=trial_offsets)
+    weights_offsets_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=weights_offsets)
 
     local_quad_points = number_of_quad_points // WORKGROUP_SIZE_GALERKIN
 
-    local_quad_points_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=local_quad_points
-    )
+    local_quad_points_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=local_quad_points)
 
     result_buffer = _cl.Buffer(ctx, mf.WRITE_ONLY, size=result.nbytes)
 
@@ -103,9 +77,7 @@ def singular_assembler(
 
     kernel_options_array = _np.array(kernel_options, dtype=dtype)
 
-    kernel_options_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=kernel_options_array
-    )
+    kernel_options_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=kernel_options_array)
 
     number_of_singular_indices = len(test_elements)
 
@@ -133,9 +105,7 @@ def singular_assembler(
         _cl.enqueue_copy(queue, result, result_buffer)
 
 
-def dense_assembler(
-    device_interface, operator_descriptor, domain, dual_to_range, parameters, result
-):
+def dense_assembler(device_interface, operator_descriptor, domain, dual_to_range, parameters, result):
     """Assemble dense with OpenCL."""
     import bempp_cl.api
     from bempp_cl.api.integration.triangle_gauss import rule
@@ -152,9 +122,7 @@ def dense_assembler(
     elif bempp_cl.api.BOUNDARY_OPERATOR_DEVICE_TYPE == "cpu":
         device_type = "cpu"
     else:
-        raise RuntimeError(
-            f"Unknown device type {bempp_cl.api.BOUNDARY_OPERATOR_DEVICE_TYPE}"
-        )
+        raise RuntimeError(f"Unknown device type {bempp_cl.api.BOUNDARY_OPERATOR_DEVICE_TYPE}")
 
     mf = _cl.mem_flags
     ctx = default_context(device_type)
@@ -185,9 +153,7 @@ def dense_assembler(
     if operator_descriptor.is_complex:
         options["COMPLEX_KERNEL"] = None
 
-    main_kernel = get_kernel_from_operator_descriptor(
-        operator_descriptor, options, "regular", device_type=device_type
-    )
+    main_kernel = get_kernel_from_operator_descriptor(operator_descriptor, options, "regular", device_type=device_type)
     remainder_kernel = get_kernel_from_operator_descriptor(
         operator_descriptor,
         options,
@@ -196,27 +162,17 @@ def dense_assembler(
         device_type=device_type,
     )
 
-    test_indices_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=test_indices
-    )
-    trial_indices_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=trial_indices
-    )
+    test_indices_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=test_indices)
+    trial_indices_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=trial_indices)
 
-    test_normals_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=dual_to_range.normal_multipliers
-    )
-    trial_normals_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=domain.normal_multipliers
-    )
+    test_normals_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=dual_to_range.normal_multipliers)
+    trial_normals_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=domain.normal_multipliers)
     test_grid_buffer = _cl.Buffer(
         ctx,
         mf.READ_ONLY | mf.COPY_HOST_PTR,
         hostbuf=dual_to_range.grid.as_array.astype(dtype),
     )
-    trial_grid_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=domain.grid.as_array.astype(dtype)
-    )
+    trial_grid_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=domain.grid.as_array.astype(dtype))
 
     test_elements_buffer = _cl.Buffer(
         ctx,
@@ -230,13 +186,9 @@ def dense_assembler(
         hostbuf=domain.grid.elements.ravel(order="F"),
     )
 
-    test_local2global_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=dual_to_range.local2global
-    )
+    test_local2global_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=dual_to_range.local2global)
 
-    trial_local2global_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=domain.local2global
-    )
+    trial_local2global_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=domain.local2global)
 
     test_multipliers_buffer = _cl.Buffer(
         ctx,
@@ -256,9 +208,7 @@ def dense_assembler(
         hostbuf=quad_points.ravel(order="F").astype(dtype),
     )
 
-    quad_weights_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=quad_weights.astype(dtype)
-    )
+    quad_weights_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=quad_weights.astype(dtype))
 
     result_buffer = _cl.Buffer(ctx, mf.READ_WRITE, size=result.nbytes)
 
@@ -267,9 +217,7 @@ def dense_assembler(
 
     kernel_options_array = _np.array(kernel_options, dtype=dtype)
 
-    kernel_options_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=kernel_options_array
-    )
+    kernel_options_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=kernel_options_array)
 
     vector_width = get_vector_width(precision, device_type=device_type)
 
@@ -328,24 +276,15 @@ def dense_assembler(
         _cl.enqueue_fill_buffer(queue, result_buffer, _np.uint8(0), 0, result.nbytes)
         for test_index in range(number_of_test_colors):
             test_offset = test_color_indexptr[test_index]
-            n_test_indices = (
-                test_color_indexptr[1 + test_index] - test_color_indexptr[test_index]
-            )
+            n_test_indices = test_color_indexptr[1 + test_index] - test_color_indexptr[test_index]
             for trial_index in range(number_of_trial_colors):
-                n_trial_indices = (
-                    trial_color_indexptr[1 + trial_index]
-                    - trial_color_indexptr[trial_index]
-                )
+                n_trial_indices = trial_color_indexptr[1 + trial_index] - trial_color_indexptr[trial_index]
                 trial_offset = trial_color_indexptr[trial_index]
-                kernel_runner(
-                    queue, test_offset, trial_offset, n_test_indices, n_trial_indices
-                )
+                kernel_runner(queue, test_offset, trial_offset, n_test_indices, n_trial_indices)
         _cl.enqueue_copy(queue, result, result_buffer)
 
 
-def potential_assembler(
-    device_interface, space, operator_descriptor, points, parameters
-):
+def potential_assembler(device_interface, space, operator_descriptor, points, parameters):
     """Assemble dense with OpenCL."""
     import bempp_cl.api
     from bempp_cl.api.integration.triangle_gauss import rule
@@ -363,9 +302,7 @@ def potential_assembler(
     elif bempp_cl.api.POTENTIAL_OPERATOR_DEVICE_TYPE == "cpu":
         device_type = "cpu"
     else:
-        raise RuntimeError(
-            f"Unknown device type {bempp_cl.api.POTENTIAL_OPERATOR_DEVICE_TYPE}"
-        )
+        raise RuntimeError(f"Unknown device type {bempp_cl.api.POTENTIAL_OPERATOR_DEVICE_TYPE}")
 
     mf = _cl.mem_flags
     ctx = default_context(device_type)
@@ -411,9 +348,7 @@ def potential_assembler(
         main_kernel = get_kernel_from_operator_descriptor(
             operator_descriptor, options, "potential", device_type=device_type
         )
-        sum_kernel = get_kernel_from_name(
-            "sum_for_potential_novec", options, precision, device_type=device_type
-        )
+        sum_kernel = get_kernel_from_name("sum_for_potential_novec", options, precision, device_type=device_type)
 
     if remainder_size > 0:
         options["WORKGROUP_SIZE"] = remainder_size
@@ -427,9 +362,7 @@ def potential_assembler(
 
     indices_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=indices)
 
-    normals_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=space.normal_multipliers
-    )
+    normals_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=space.normal_multipliers)
 
     points_buffer = _cl.Buffer(
         ctx,
@@ -437,9 +370,7 @@ def potential_assembler(
         hostbuf=points.ravel(order="F").astype(dtype),
     )
 
-    grid_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=space.grid.as_array.astype(dtype)
-    )
+    grid_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=space.grid.as_array.astype(dtype))
 
     # elements_buffer = _cl.Buffer(
     #     ctx,
@@ -453,25 +384,14 @@ def potential_assembler(
         hostbuf=quad_points.ravel(order="F").astype(dtype),
     )
 
-    quad_weights_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=quad_weights.astype(dtype)
-    )
+    quad_weights_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=quad_weights.astype(dtype))
 
-    result_buffer = _cl.Buffer(
-        ctx, mf.READ_WRITE, size=result_type.itemsize * kernel_dimension * npoints
-    )
+    result_buffer = _cl.Buffer(ctx, mf.READ_WRITE, size=result_type.itemsize * kernel_dimension * npoints)
 
-    coefficients_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY, size=result_type.itemsize * space.map_to_full_grid.shape[0]
-    )
+    coefficients_buffer = _cl.Buffer(ctx, mf.READ_ONLY, size=result_type.itemsize * space.map_to_full_grid.shape[0])
 
     if main_size > 0:
-        sum_size = (
-            kernel_dimension
-            * npoints
-            * (nelements // WORKGROUP_SIZE_POTENTIAL)
-            * result_type.itemsize
-        )
+        sum_size = kernel_dimension * npoints * (nelements // WORKGROUP_SIZE_POTENTIAL) * result_type.itemsize
         sum_buffer = _cl.Buffer(ctx, mf.READ_WRITE, size=sum_size)
 
     if not kernel_options:
@@ -479,9 +399,7 @@ def potential_assembler(
 
     kernel_options_array = _np.array(kernel_options, dtype=dtype)
 
-    kernel_options_buffer = _cl.Buffer(
-        ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=kernel_options_array
-    )
+    kernel_options_buffer = _cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=kernel_options_array)
 
     def evaluator(x):
         """Evaluate a potential."""

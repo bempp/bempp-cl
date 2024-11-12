@@ -1,4 +1,5 @@
 """Interfaces to Laplace operators."""
+
 from bempp_cl.api.operators.boundary import common as _common
 
 

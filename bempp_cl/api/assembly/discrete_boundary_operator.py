@@ -55,8 +55,7 @@ class _DiscreteOperatorBase(_LinearOperator):
     def A(self):
         """Return dense matrix."""
         warnings.warn(
-            "operator.A is deprecated and will be removed in a "
-            "future version. Use operator.to_dense() instead.",
+            "operator.A is deprecated and will be removed in a " "future version. Use operator.to_dense() instead.",
             DeprecationWarning,
         )
         return self.to_dense()
@@ -98,9 +97,7 @@ class _SumDiscreteOperator(_DiscreteOperatorBase):
     def __init__(self, op1, op2):
         """Construct."""
         if op1.shape != op2.shape:
-            raise ValueError(
-                f"Operators have incompatible shapes {op1.shape} != {op2.shape}"
-            )
+            raise ValueError(f"Operators have incompatible shapes {op1.shape} != {op2.shape}")
 
         self._op1 = op1
         self._op2 = op2
@@ -128,9 +125,7 @@ class _ProductDiscreteOperator(_DiscreteOperatorBase):
     def __init__(self, op1, op2):
         """Construct the product of two operators."""
         if op1.shape[1] != op2.shape[0]:
-            raise ValueError(
-                f"Incompatible dimensions shapes for multiplication with {op1.shape} and {op2.shape}"
-            )
+            raise ValueError(f"Incompatible dimensions shapes for multiplication with {op1.shape} and {op2.shape}")
 
         self._op1 = op1
         self._op2 = op2
@@ -166,9 +161,7 @@ class GenericDiscreteBoundaryOperator(_DiscreteOperatorBase):
         if self._is_complex:
             return self._evaluator.matvec(x)
         if _np.iscomplexobj(x):
-            return self._evaluator.matvec(_np.real(x)) + 1j * self._evaluator.matvec(
-                _np.imag(x)
-            )
+            return self._evaluator.matvec(_np.real(x)) + 1j * self._evaluator.matvec(_np.imag(x))
         else:
             return self._evaluator.matvec(x)
 
@@ -199,9 +192,9 @@ class DenseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     def _matmat(self, x):
         """Multiply the operator by a matrix or operator."""
         if _np.iscomplexobj(x) and not _np.iscomplexobj(self.to_dense()):
-            return self.to_dense().dot(
-                _np.real(x).astype(self.dtype)
-            ) + 1j * self.to_dense().dot(_np.imag(x).astype(self.dtype))
+            return self.to_dense().dot(_np.real(x).astype(self.dtype)) + 1j * self.to_dense().dot(
+                _np.imag(x).astype(self.dtype)
+            )
         return self.to_dense().dot(x.astype(self.dtype))
 
     def __add__(self, other):
@@ -228,13 +221,9 @@ class DenseDiscreteBoundaryOperator(_DiscreteOperatorBase):
                 # Necessary to ensure that scalar multiplication does not change
                 # precision to double precision.
                 if _np.iscomplexobj(other):
-                    return DenseDiscreteBoundaryOperator(
-                        self.to_dense() * _np.dtype("complex64").type(other)
-                    )
+                    return DenseDiscreteBoundaryOperator(self.to_dense() * _np.dtype("complex64").type(other))
                 else:
-                    return DenseDiscreteBoundaryOperator(
-                        self.to_dense() * _np.dtype("float32").type(other)
-                    )
+                    return DenseDiscreteBoundaryOperator(self.to_dense() * _np.dtype("float32").type(other))
             else:
                 return DenseDiscreteBoundaryOperator(self.to_dense() * other)
         return super().dot(other)
@@ -314,13 +303,9 @@ class DiagonalOperator(_DiscreteOperatorBase):
                 # Necessary to ensure that scalar multiplication does not change
                 # precision to double precision.
                 if _np.iscomplexobj(other):
-                    return DiagonalOperator(
-                        self.get_diagonal() * _np.dtype("complex64").type(other)
-                    )
+                    return DiagonalOperator(self.get_diagonal() * _np.dtype("complex64").type(other))
                 else:
-                    return DiagonalOperator(
-                        self.get_diagonal() * _np.dtype("float32").type(other)
-                    )
+                    return DiagonalOperator(self.get_diagonal() * _np.dtype("float32").type(other))
             else:
                 return DiagonalOperator(self.get_diagonal() * other)
         return super().dot(other)
@@ -369,9 +354,7 @@ class SparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     def _matmat(self, vec):
         """Multiply the operator with a numpy vector or matrix x."""
         if self.dtype == "float64" and _np.iscomplexobj(vec):
-            return self.to_sparse() * _np.real(vec) + 1j * (
-                self.to_sparse() * _np.imag(vec)
-            )
+            return self.to_sparse() * _np.real(vec) + 1j * (self.to_sparse() * _np.imag(vec))
         return self.to_sparse() * vec
 
     def _transpose(self):
@@ -418,8 +401,7 @@ class SparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     def A(self):
         """Return dense matrix."""
         warnings.warn(
-            "operator.A is deprecated and will be removed in a "
-            "future version. Use operator.to_dense() instead.",
+            "operator.A is deprecated and will be removed in a " "future version. Use operator.to_dense() instead.",
             DeprecationWarning,
         )
         return self.to_sparse()
@@ -491,9 +473,7 @@ class ZeroDiscreteBoundaryOperator(_DiscreteOperatorBase):
 
     def __init__(self, rows, columns):
         """Construct a zero operator."""
-        super(ZeroDiscreteBoundaryOperator, self).__init__(
-            _np.dtype("float64"), (rows, columns)
-        )
+        super(ZeroDiscreteBoundaryOperator, self).__init__(_np.dtype("float64"), (rows, columns))
 
     def _matmat(self, x):
         """Multiply operator by a matrix."""

@@ -300,7 +300,9 @@ plot_me[bem_x] -= slp_pot.evaluate(neumann_fun).flat
 
 fem_points = points[:, np.logical_not(bem_x)].transpose()
 tree = dolfinx.geometry.bb_tree(mesh, 3)
-midpoint_tree = dolfinx.geometry.create_midpoint_tree(mesh, 3, np.array(list(range(mesh.topology.connectivity(3, 0).num_nodes))))
+midpoint_tree = dolfinx.geometry.create_midpoint_tree(
+    mesh, 3, np.array(list(range(mesh.topology.connectivity(3, 0).num_nodes)))
+)
 entities = []
 for point in fem_points:
     entities.append(dolfinx.geometry.compute_closest_entity(tree, midpoint_tree, mesh, point)[0])

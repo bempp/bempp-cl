@@ -118,13 +118,9 @@ def dual1_function_space(
     from scipy.sparse import coo_matrix
 
     if include_boundary_dofs is not None:
-        log(
-            "Setting include_boundary_dofs has no effect on this space type.", "warning"
-        )
+        log("Setting include_boundary_dofs has no effect on this space type.", "warning")
 
-    coarse_space = p0_discontinuous_function_space(
-        grid, support_elements, segments, swapped_normals
-    )
+    coarse_space = p0_discontinuous_function_space(grid, support_elements, segments, swapped_normals)
 
     coarse_support = _np.zeros(grid.number_of_elements, dtype=_np.bool_)
     coarse_support[coarse_space.support_elements] = True
@@ -215,9 +211,7 @@ def dual1_function_space(
 
     coarse_elements = _np.array(support_elements, dtype=_np.uint32)
 
-    bary_support_elements = 6 * _np.repeat(coarse_elements, 6) + _np.tile(
-        _np.arange(6), number_of_support_elements
-    )
+    bary_support_elements = 6 * _np.repeat(coarse_elements, 6) + _np.tile(_np.arange(6), number_of_support_elements)
 
     bary_support_size = len(bary_support_elements)
 
@@ -227,9 +221,7 @@ def dual1_function_space(
     local2global = _np.zeros((bary_grid.number_of_elements, 3), dtype="uint32")
     local_multipliers = _np.zeros((bary_grid.number_of_elements, 3), dtype="uint32")
 
-    local2global[support] = _np.arange(3 * bary_support_size).reshape(
-        bary_support_size, 3
-    )
+    local2global[support] = _np.arange(3 * bary_support_size).reshape(bary_support_size, 3)
 
     local_multipliers[support] = 1
     global2local = invert_local2global(local2global, local_multipliers)

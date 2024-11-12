@@ -244,9 +244,7 @@ class Octree(object):
         for level_index in range(self.maximum_level + 1):
             sides = 1 << level_index
             level_nodes = self.non_empty_nodes_by_level[
-                self.non_empty_nodes_ptr[level_index] : self.non_empty_nodes_ptr[
-                    level_index + 1
-                ]
+                self.non_empty_nodes_ptr[level_index] : self.non_empty_nodes_ptr[level_index + 1]
             ]
             for node_index in level_nodes:
                 ind1, ind2, ind3 = de_morton(node_index)

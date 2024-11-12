@@ -17,19 +17,9 @@ def generate_bem_matrix(dual_to_range, domain, fname, operator, wavenumber=None)
     print("Generating " + fname)
 
     if wavenumber is None:
-        mat = (
-            operator(domain, domain, dual_to_range, use_projection_spaces=False)
-            .weak_form()
-            .A
-        )
+        mat = operator(domain, domain, dual_to_range, use_projection_spaces=False).weak_form().A
     else:
-        mat = (
-            operator(
-                domain, domain, dual_to_range, wavenumber, use_projection_spaces=False
-            )
-            .weak_form()
-            .A
-        )
+        mat = operator(domain, domain, dual_to_range, wavenumber, use_projection_spaces=False).weak_form().A
 
     if REGENERATE or not os.path.exists(fname + ".npy"):
         np.save(fname, mat)
@@ -374,29 +364,17 @@ generate_bem_matrix(
     wavenumber_complex,
 )
 
-generate_sparse_bem_matrix(
-    p0, p0, "sparse_identity_p0_p0", bempp_cl.api.operators.boundary.sparse.identity
-)
+generate_sparse_bem_matrix(p0, p0, "sparse_identity_p0_p0", bempp_cl.api.operators.boundary.sparse.identity)
 
-generate_sparse_bem_matrix(
-    p1, p1, "sparse_identity_p1_p1", bempp_cl.api.operators.boundary.sparse.identity
-)
+generate_sparse_bem_matrix(p1, p1, "sparse_identity_p1_p1", bempp_cl.api.operators.boundary.sparse.identity)
 
-generate_sparse_bem_matrix(
-    p0, p1, "sparse_identity_p0_p1", bempp_cl.api.operators.boundary.sparse.identity
-)
+generate_sparse_bem_matrix(p0, p1, "sparse_identity_p0_p1", bempp_cl.api.operators.boundary.sparse.identity)
 
-generate_sparse_bem_matrix(
-    p1, p0, "sparse_identity_p1_p0", bempp_cl.api.operators.boundary.sparse.identity
-)
+generate_sparse_bem_matrix(p1, p0, "sparse_identity_p1_p0", bempp_cl.api.operators.boundary.sparse.identity)
 
-generate_sparse_bem_matrix(
-    snc, rwg, "sparse_identity_snc_rwg", bempp_cl.api.operators.boundary.sparse.identity
-)
+generate_sparse_bem_matrix(snc, rwg, "sparse_identity_snc_rwg", bempp_cl.api.operators.boundary.sparse.identity)
 
-generate_sparse_bem_matrix(
-    bsnc, bc, "sparse_identity_snc_bc", bempp_cl.api.operators.boundary.sparse.identity
-)
+generate_sparse_bem_matrix(bsnc, bc, "sparse_identity_snc_bc", bempp_cl.api.operators.boundary.sparse.identity)
 
 generate_potential(
     p0,

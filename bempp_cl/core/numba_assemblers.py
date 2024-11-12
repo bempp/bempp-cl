@@ -1,4 +1,5 @@
 """Actual implementation of Numba assemblers."""
+
 import numpy as _np
 
 
@@ -24,9 +25,7 @@ def singular_assembler(
     from bempp_cl.api.utils.helpers import get_type
     from bempp_cl.core.numba_kernels import select_numba_kernels
 
-    numba_assembly_function, numba_kernel_function = select_numba_kernels(
-        operator_descriptor, mode="singular"
-    )
+    numba_assembly_function, numba_kernel_function = select_numba_kernels(operator_descriptor, mode="singular")
 
     # Perform Numba assembly always in double precision
     # precision = operator_descriptor.precision
@@ -56,9 +55,7 @@ def singular_assembler(
     )
 
 
-def dense_assembler(
-    device_interface, operator_descriptor, domain, dual_to_range, parameters, result
-):
+def dense_assembler(device_interface, operator_descriptor, domain, dual_to_range, parameters, result):
     """Numba based dense assembler."""
     from bempp_cl.core.numba_kernels import select_numba_kernels
     from bempp_cl.api.utils.helpers import get_type
@@ -96,11 +93,7 @@ def dense_assembler(
             domain.grid.data(precision),
             nshape_test,
             nshape_trial,
-            test_indices[
-                test_color_indexptr[test_color_index] : test_color_indexptr[
-                    1 + test_color_index
-                ]
-            ],
+            test_indices[test_color_indexptr[test_color_index] : test_color_indexptr[1 + test_color_index]],
             trial_indices,
             dual_to_range.local_multipliers.astype(data_type),
             domain.local_multipliers.astype(data_type),
@@ -119,9 +112,7 @@ def dense_assembler(
         )
 
 
-def potential_assembler(
-    device_interface, space, operator_descriptor, points, parameters
-):
+def potential_assembler(device_interface, space, operator_descriptor, points, parameters):
     """Return an evaluator function to evaluate a potential."""
     from bempp_cl.core.numba_kernels import select_numba_kernels
     from bempp_cl.api.integration.triangle_gauss import rule

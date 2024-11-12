@@ -1,4 +1,5 @@
 """Duffy transformation rules for singular integration for Galerkin integrals."""
+
 import numpy as _np
 
 
@@ -10,16 +11,13 @@ def number_of_quadrature_points(order, adjacency):
 
     """
     if adjacency == "coincident":
-        npoints = 6 * order ** 4
+        npoints = 6 * order**4
     elif adjacency == "edge_adjacent":
-        npoints = 5 * order ** 4
+        npoints = 5 * order**4
     elif adjacency == "vertex_adjacent":
-        npoints = 2 * order ** 4
+        npoints = 2 * order**4
     else:
-        raise ValueError(
-            "adjacency must be one of 'coincident', "
-            + "'edge_adjacent', 'vertex_adjacent'"
-        )
+        raise ValueError("adjacency must be one of 'coincident', " + "'edge_adjacent', 'vertex_adjacent'")
 
     return npoints
 
@@ -41,8 +39,8 @@ def rule(order, adjacency):
     number_of_1d_points = len(wreg)
     # Create tensor Gauss points
 
-    tensor_points = _np.empty((2, number_of_1d_points ** 2), dtype="float64")
-    tensor_weights = _np.empty(number_of_1d_points ** 2, dtype="float64")
+    tensor_points = _np.empty((2, number_of_1d_points**2), dtype="float64")
+    tensor_weights = _np.empty(number_of_1d_points**2, dtype="float64")
 
     for i in range(number_of_1d_points):
         for j in range(number_of_1d_points):
@@ -50,10 +48,10 @@ def rule(order, adjacency):
             tensor_points[1, i * number_of_1d_points + j] = xreg[i]
             tensor_weights[i * number_of_1d_points + j] = wreg[i] * wreg[j]
 
-    number_of_reg_points = number_of_1d_points ** 2
+    number_of_reg_points = number_of_1d_points**2
 
     if adjacency == "coincident":
-        number_of_points = 6 * number_of_reg_points ** 2
+        number_of_points = 6 * number_of_reg_points**2
         points_test = _np.empty((2, number_of_points), dtype="float64", order="F")
         points_trial = _np.empty((2, number_of_points), dtype="float64", order="F")
         weights = _np.empty(number_of_points, dtype="float64")
@@ -72,16 +70,7 @@ def rule(order, adjacency):
                 eta123 = eta1 * eta2 * eta3
                 eta12 = eta1 * eta2
 
-                weight = (
-                    tensor_weights[test_ind]
-                    * tensor_weights[trial_ind]
-                    * xsi
-                    * xsi
-                    * xsi
-                    * eta1
-                    * eta1
-                    * eta2
-                )
+                weight = tensor_weights[test_ind] * tensor_weights[trial_ind] * xsi * xsi * xsi * eta1 * eta1 * eta2
 
                 # Region 1
                 points_test[0, index] = xsi
@@ -132,7 +121,7 @@ def rule(order, adjacency):
                 index += 1
 
     if adjacency == "edge_adjacent":
-        number_of_points = 5 * number_of_reg_points ** 2
+        number_of_points = 5 * number_of_reg_points**2
         points_test = _np.empty((2, number_of_points), dtype="float64", order="F")
         points_trial = _np.empty((2, number_of_points), dtype="float64", order="F")
         weights = _np.empty(number_of_points, dtype="float64")
@@ -151,15 +140,7 @@ def rule(order, adjacency):
                 eta123 = eta1 * eta2 * eta3
                 eta12 = eta1 * eta2
 
-                weight = (
-                    tensor_weights[test_ind]
-                    * tensor_weights[trial_ind]
-                    * xsi
-                    * xsi
-                    * xsi
-                    * eta1
-                    * eta1
-                )
+                weight = tensor_weights[test_ind] * tensor_weights[trial_ind] * xsi * xsi * xsi * eta1 * eta1
 
                 # Region 1
                 points_test[0, index] = xsi
@@ -202,7 +183,7 @@ def rule(order, adjacency):
                 index += 1
 
     if adjacency == "vertex_adjacent":
-        number_of_points = 2 * number_of_reg_points ** 2
+        number_of_points = 2 * number_of_reg_points**2
         points_test = _np.empty((2, number_of_points), dtype="float64", order="F")
         points_trial = _np.empty((2, number_of_points), dtype="float64", order="F")
         weights = _np.empty(number_of_points, dtype="float64")
@@ -218,14 +199,7 @@ def rule(order, adjacency):
                 eta2 = ptrial[0]
                 eta3 = ptrial[1]
 
-                weight = (
-                    tensor_weights[test_ind]
-                    * tensor_weights[trial_ind]
-                    * xsi
-                    * xsi
-                    * xsi
-                    * eta2
-                )
+                weight = tensor_weights[test_ind] * tensor_weights[trial_ind] * xsi * xsi * xsi * eta2
 
                 # Region 1
                 points_test[0, index] = xsi

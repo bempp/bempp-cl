@@ -9,9 +9,7 @@ import pytest
 pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
 
-def test_sparse_identity_p0_p0(
-    default_parameters, helpers, device_interface, precision
-):
+def test_sparse_identity_p0_p0(default_parameters, helpers, device_interface, precision):
     """Test singular assembler for the sparse L^2 identity with p0/p0 basis."""
     from bempp_cl.api import function_space
     from bempp_cl.api.operators.boundary.sparse import identity
@@ -37,9 +35,7 @@ def test_sparse_identity_p0_p0(
     _np.testing.assert_allclose(actual, expected, helpers.default_tolerance(precision))
 
 
-def test_sparse_identity_p0_p1(
-    default_parameters, helpers, device_interface, precision
-):
+def test_sparse_identity_p0_p1(default_parameters, helpers, device_interface, precision):
     """Test singular assembler for the sparse L^2 identity with p0/p1 basis."""
     from bempp_cl.api import function_space
     from bempp_cl.api.operators.boundary.sparse import identity
@@ -66,9 +62,7 @@ def test_sparse_identity_p0_p1(
     _np.testing.assert_allclose(actual, expected, helpers.default_tolerance(precision))
 
 
-def test_sparse_identity_p1_p0(
-    default_parameters, helpers, device_interface, precision
-):
+def test_sparse_identity_p1_p0(default_parameters, helpers, device_interface, precision):
     """Test singular assembler for the sparse L^2 identity with p1/p0 basis."""
     from bempp_cl.api import function_space
     from bempp_cl.api.operators.boundary.sparse import identity
@@ -95,9 +89,7 @@ def test_sparse_identity_p1_p0(
     _np.testing.assert_allclose(actual, expected, helpers.default_tolerance(precision))
 
 
-def test_sparse_identity_p1_p1(
-    default_parameters, helpers, device_interface, precision
-):
+def test_sparse_identity_p1_p1(default_parameters, helpers, device_interface, precision):
     """Test singular assembler for the sparse L^2 identity with p1/p1 basis."""
     from bempp_cl.api import function_space
     from bempp_cl.api.operators.boundary.sparse import identity
@@ -123,9 +115,7 @@ def test_sparse_identity_p1_p1(
     _np.testing.assert_allclose(actual, expected, helpers.default_tolerance(precision))
 
 
-def test_sparse_identity_snc_rwg(
-    default_parameters, helpers, device_interface, precision
-):
+def test_sparse_identity_snc_rwg(default_parameters, helpers, device_interface, precision):
     """Test singular assembler for the sparse L^2 identity with snc/rwg basis."""
     from bempp_cl.api import function_space
     from bempp_cl.api.operators.boundary.sparse import identity
@@ -157,9 +147,7 @@ def test_sparse_identity_snc_rwg(
     _np.testing.assert_allclose(actual, expected, atol=atol)
 
 
-def test_sparse_identity_snc_bc(
-    default_parameters, helpers, device_interface, precision
-):
+def test_sparse_identity_snc_bc(default_parameters, helpers, device_interface, precision):
     """Test singular assembler for the sparse L^2 identity with snc/bc basis."""
     from bempp_cl.api import function_space
     from bempp_cl.api.operators.boundary.sparse import identity
@@ -191,9 +179,7 @@ def test_sparse_identity_snc_bc(
     _np.testing.assert_allclose(actual, expected, atol=atol)
 
 
-def test_sparse_identity_bc_bc_on_screen(
-    default_parameters, helpers, device_interface, precision
-):
+def test_sparse_identity_bc_bc_on_screen(default_parameters, helpers, device_interface, precision):
     """Test singular assembler for the sparse L^2 identity with p0/p0 basis."""
     from bempp_cl.api import function_space
     from bempp_cl.api.operators.boundary.sparse import identity

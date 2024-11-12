@@ -52,9 +52,7 @@ def _p0_shapeset_evaluate(local_coordinates):
 @_numba.njit
 def _p0_shapeset_gradient(local_coordinates):
     """Evaluate P0 gradient."""
-    return _np.zeros(
-        (1, 2, 1, local_coordinates.shape[1]), dtype=local_coordinates.dtype
-    )
+    return _np.zeros((1, 2, 1, local_coordinates.shape[1]), dtype=local_coordinates.dtype)
 
 
 @_numba.njit
@@ -99,12 +97,8 @@ def _rwg0_shapeset_evaluate(local_coordinates):
     """Evaluate RWG 0 shapeset."""
     dtype = local_coordinates.dtype
     vals = _np.zeros((2, 3, local_coordinates.shape[1]), dtype=dtype)
-    vals[0, :, :] = _np.vstack(
-        (local_coordinates[0], local_coordinates[0] - 1, local_coordinates[0])
-    )
-    vals[1, :, :] = _np.vstack(
-        (local_coordinates[1] - 1, local_coordinates[1], local_coordinates[1])
-    )
+    vals[0, :, :] = _np.vstack((local_coordinates[0], local_coordinates[0] - 1, local_coordinates[0]))
+    vals[1, :, :] = _np.vstack((local_coordinates[1] - 1, local_coordinates[1], local_coordinates[1]))
     return vals
 
 
@@ -127,7 +121,7 @@ def _snc0_shapeset_gradient(local_coordinates):
     dtype = local_coordinates.dtype
     temp = _np.eye(2, dtype=dtype)
     grad = _np.zeros((2, 2), dtype=dtype)
-    grad[0] = - temp[1]
+    grad[0] = -temp[1]
     grad[1] = temp[0]
     return grad
 

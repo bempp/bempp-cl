@@ -150,9 +150,12 @@ jobs:
       - run: python3 -m pip install .[style]
         name: Install Bempp with optional style dependencies
       - run: |
-            python3 -m flake8 bempp_cl
-            python3 -m flake8 test
-            python3 -m flake8 examples
+            python3 -m ruff check bempp_cl
+            python3 -m ruff check test
+            python3 -m ruff check examples
+            python3 -m ruff format --check bempp_cl
+            python3 -m ruff format --check test
+            python3 -m ruff format --check examples
         name: Run flake8 checks
       - run: python3 -m pydocstyle bempp_cl/api
         name: Run pydocstyle checks

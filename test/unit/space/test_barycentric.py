@@ -25,6 +25,4 @@ def test_barycentric(space_info, helpers, precision):
     fun = bempp_cl.api.GridFunction(space, coefficients=coeffs)
     fun_bary = bempp_cl.api.GridFunction(space_bary, coefficients=coeffs)
 
-    assert math.isclose(
-        fun.l2_norm(), fun_bary.l2_norm(), rel_tol=helpers.default_tolerance(precision)
-    )
+    assert math.isclose(fun.l2_norm(), fun_bary.l2_norm(), rel_tol=helpers.default_tolerance(precision))

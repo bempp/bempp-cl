@@ -12,9 +12,7 @@ WAVENUMBER = 2.5
 WAVENUMBER_COMPLEX = 2.5 + 1j
 
 
-def test_maxwell_electric_field_potential_complex(
-    default_parameters, helpers, device_interface, precision
-):
+def test_maxwell_electric_field_potential_complex(default_parameters, helpers, device_interface, precision):
     """Test Maxwell efield potential with complex wavenumber."""
     from bempp_cl.api import function_space
     from bempp_cl.api import GridFunction
@@ -40,14 +38,10 @@ def test_maxwell_electric_field_potential_complex(
         device_interface=device_interface,
     ).evaluate(fun)
 
-    _np.testing.assert_allclose(
-        actual, expected, rtol=helpers.default_tolerance(precision)
-    )
+    _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
 
 
-def test_maxwell_electric_field_potential_rwg(
-    default_parameters, helpers, device_interface, precision
-):
+def test_maxwell_electric_field_potential_rwg(default_parameters, helpers, device_interface, precision):
     """Test Maxwell efield potential."""
     from bempp_cl.api import function_space
     from bempp_cl.api import GridFunction
@@ -73,14 +67,10 @@ def test_maxwell_electric_field_potential_rwg(
         device_interface=device_interface,
     ).evaluate(fun)
 
-    _np.testing.assert_allclose(
-        actual, expected, rtol=helpers.default_tolerance(precision)
-    )
+    _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
 
 
-def test_maxwell_magnetic_field_potential_rwg(
-    default_parameters, helpers, device_interface, precision
-):
+def test_maxwell_magnetic_field_potential_rwg(default_parameters, helpers, device_interface, precision):
     """Test Maxwell magnetic potential."""
     from bempp_cl.api import function_space
     from bempp_cl.api import GridFunction
@@ -106,14 +96,10 @@ def test_maxwell_magnetic_field_potential_rwg(
         device_interface=device_interface,
     ).evaluate(fun)
 
-    _np.testing.assert_allclose(
-        actual, expected, rtol=helpers.default_tolerance(precision)
-    )
+    _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
 
 
-def test_maxwell_magnetic_field_potential_complex(
-    default_parameters, helpers, device_interface, precision
-):
+def test_maxwell_magnetic_field_potential_complex(default_parameters, helpers, device_interface, precision):
     """Test Maxwell magnetic potential with complex wavenumber."""
     from bempp_cl.api import function_space
     from bempp_cl.api import GridFunction
@@ -139,9 +125,7 @@ def test_maxwell_magnetic_field_potential_complex(
         device_interface=device_interface,
     ).evaluate(fun)
 
-    _np.testing.assert_allclose(
-        actual, expected, rtol=helpers.default_tolerance(precision)
-    )
+    _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
 
 
 # def test_maxwell_potentials_segments(

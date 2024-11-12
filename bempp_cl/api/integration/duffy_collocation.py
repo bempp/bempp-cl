@@ -24,9 +24,7 @@ def duffy_rule_on_reference_triangle(order):
                 gauss_points[index1],
                 gauss_points[index1] * gauss_points[index2],
             ]
-            weights[count] = (
-                gauss_weights[index1] * gauss_weights[index2] * gauss_points[index1]
-            )
+            weights[count] = gauss_weights[index1] * gauss_weights[index2] * gauss_points[index1]
             count += 1
     return points, weights
 
@@ -49,17 +47,11 @@ def singular_collocation_rule_piecewise_const(order):
         v0 = triangle_points[index][:, 0].reshape(2, 1)
         A = _np.hstack(
             [
-                (triangle_points[index][:, 1] - triangle_points[index][:, 0]).reshape(
-                    2, 1
-                ),
-                (triangle_points[index][:, 2] - triangle_points[index][:, 1]).reshape(
-                    2, 1
-                ),
+                (triangle_points[index][:, 1] - triangle_points[index][:, 0]).reshape(2, 1),
+                (triangle_points[index][:, 2] - triangle_points[index][:, 1]).reshape(2, 1),
             ]
         )
         points[:, index * npoints : (1 + index) * npoints] = v0 + A @ duffy_points
-        weights[index * npoints : (1 + index) * npoints] = (
-            _np.abs(_np.linalg.det(A)) * duffy_weights
-        )
+        weights[index * npoints : (1 + index) * npoints] = _np.abs(_np.linalg.det(A)) * duffy_weights
 
     return points, weights

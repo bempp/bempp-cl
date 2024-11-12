@@ -1,4 +1,5 @@
 """Interface to DOLFIN for FEM-BEM coupling."""
+
 import dolfin as _dolfin
 
 
@@ -144,9 +145,7 @@ def nc1_tangential_trace(fenics_space):
 
     family, degree = fenics_space_info(fenics_space)
     if not (family == "Nedelec 1st kind H(curl)" and degree == 1):
-        raise ValueError(
-            "fenics_space must be an order 1 Nedelec 1st kind H(curl) space"
-        )
+        raise ValueError("fenics_space must be an order 1 Nedelec 1st kind H(curl) space")
 
     fenics_mesh = fenics_space.mesh()
     bempp_boundary_grid, bm_nodes = boundary_grid_from_fenics_mesh(fenics_mesh)
@@ -252,9 +251,7 @@ def nc1_tangential_trace(fenics_space):
         edge_triples_to_tetrahedra[(all_es[0], all_es[1], all_es[3])] = tetra
         edge_triples_to_tetrahedra[(all_es[0], all_es[2], all_es[3])] = tetra
         edge_triples_to_tetrahedra[(all_es[1], all_es[2], all_es[3])] = tetra
-    triangles_to_tetrahedra = [
-        edge_triples_to_tetrahedra[triple] for triple in triangles_to_edge_triples
-    ]
+    triangles_to_tetrahedra = [edge_triples_to_tetrahedra[triple] for triple in triangles_to_edge_triples]
 
     # return None, None
     fenics_fun = _dolfin.Function(fenics_space)
@@ -263,9 +260,7 @@ def nc1_tangential_trace(fenics_space):
         fenics_fun.vector()[:] = [1.0 if k == j else 0.0 for k in range(fenics_dim)]
         bempp_fun = bempp_cl.api.GridFunction(
             space,
-            coefficients=[
-                1.0 if k == i else 0.0 for k in range(space.global_dof_count)
-            ],
+            coefficients=[1.0 if k == i else 0.0 for k in range(space.global_dof_count)],
         )
 
         v1 = v_list[dof_to_vertices_map[i][0]]
@@ -274,9 +269,7 @@ def nc1_tangential_trace(fenics_space):
 
         face = dof_to_face_map[i]
         fenics_values = np.zeros(3)
-        fenics_fun.eval_cell(
-            fenics_values, midpoint.T[0], triangles_to_tetrahedra[face[0].index]
-        )
+        fenics_fun.eval_cell(fenics_values, midpoint.T[0], triangles_to_tetrahedra[face[0].index])
 
         bempp_values = bempp_fun.evaluate(face[0].index, local_coords[face[1]])
         normal = face[0].geometry.normal

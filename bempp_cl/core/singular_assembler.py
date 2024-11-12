@@ -15,9 +15,7 @@ class SingularAssembler(_assembler.AssemblerBase):
         """Instantiate the assembler."""
         super().__init__(domain, dual_to_range, parameters)
 
-    def assemble(
-        self, operator_descriptor, device_interface, precision, *args, **kwargs
-    ):
+    def assemble(self, operator_descriptor, device_interface, precision, *args, **kwargs):
         """Assemble the singular part."""
         from bempp_cl.api.assembly.discrete_boundary_operator import (
             SparseDiscreteBoundaryOperator,
@@ -26,18 +24,14 @@ class SingularAssembler(_assembler.AssemblerBase):
         from scipy.sparse import coo_matrix, csr_matrix
         from bempp_cl.api.space.space import return_compatible_representation
 
-        domain, dual_to_range = return_compatible_representation(
-            self.domain, self.dual_to_range
-        )
+        domain, dual_to_range = return_compatible_representation(self.domain, self.dual_to_range)
         row_dof_count = dual_to_range.global_dof_count
         col_dof_count = domain.global_dof_count
         row_grid_dofs = dual_to_range.grid_dof_count
         col_grid_dofs = domain.grid_dof_count
 
         if domain.grid != dual_to_range.grid:
-            return SparseDiscreteBoundaryOperator(
-                csr_matrix((row_dof_count, col_dof_count), dtype="float64")
-            )
+            return SparseDiscreteBoundaryOperator(csr_matrix((row_dof_count, col_dof_count), dtype="float64"))
 
         trial_local2global = domain.local2global.ravel()
         test_local2global = dual_to_range.local2global.ravel()
@@ -72,9 +66,7 @@ class SingularAssembler(_assembler.AssemblerBase):
         return SparseDiscreteBoundaryOperator(mat)
 
 
-def assemble_singular_part(
-    domain, dual_to_range, parameters, operator_descriptor, device_interface
-):
+def assemble_singular_part(domain, dual_to_range, parameters, operator_descriptor, device_interface):
     """Actually assemble the Numba kernel."""
     from bempp_cl.api.utils.helpers import get_type
     from bempp_cl.core.dispatcher import singular_assembler_dispatcher
@@ -87,9 +79,7 @@ def assemble_singular_part(
     grid = domain.grid
     order = parameters.quadrature.singular
 
-    rule = _SingularQuadratureRuleInterfaceGalerkin(
-        grid, order, dual_to_range.support, domain.support
-    )
+    rule = _SingularQuadratureRuleInterfaceGalerkin(grid, order, dual_to_range.support, domain.support)
 
     number_of_test_shape_functions = dual_to_range.number_of_shape_functions
     number_of_trial_shape_functions = domain.number_of_shape_functions
@@ -112,17 +102,11 @@ def assemble_singular_part(
         result_type = get_type(precision).real
 
     result = _np.zeros(
-        number_of_test_shape_functions
-        * number_of_trial_shape_functions
-        * len(test_elements),
+        number_of_test_shape_functions * number_of_trial_shape_functions * len(test_elements),
         dtype=result_type,
     )
 
-    with bempp_cl.api.Timer(
-        message=(
-            f"Singular assembler:{operator_descriptor.identifier}:{device_interface}"
-        )
-    ):
+    with bempp_cl.api.Timer(message=(f"Singular assembler:{operator_descriptor.identifier}:{device_interface}")):
         singular_assembler_dispatcher(
             device_interface,
             operator_descriptor,
@@ -145,16 +129,12 @@ def assemble_singular_part(
     irange = _np.arange(number_of_test_shape_functions)
     jrange = _np.arange(number_of_trial_shape_functions)
 
-    i_ind = _np.tile(
-        _np.repeat(irange, number_of_trial_shape_functions), len(rule.trial_indices)
-    ) + _np.repeat(
+    i_ind = _np.tile(_np.repeat(irange, number_of_trial_shape_functions), len(rule.trial_indices)) + _np.repeat(
         rule.test_indices * number_of_test_shape_functions,
         number_of_test_shape_functions * number_of_trial_shape_functions,
     )
 
-    j_ind = _np.tile(
-        _np.tile(jrange, number_of_test_shape_functions), len(rule.trial_indices)
-    ) + _np.repeat(
+    j_ind = _np.tile(_np.tile(jrange, number_of_test_shape_functions), len(rule.trial_indices)) + _np.repeat(
         rule.trial_indices * number_of_trial_shape_functions,
         number_of_test_shape_functions * number_of_trial_shape_functions,
     )
@@ -162,9 +142,7 @@ def assemble_singular_part(
     return (i_ind, j_ind, result)
 
 
-_SingularQuadratureRule = _collections.namedtuple(
-    "_QuadratureRule", "test_points trial_points weights"
-)
+_SingularQuadratureRule = _collections.namedtuple("_QuadratureRule", "test_points trial_points weights")
 
 
 class _SingularQuadratureRuleInterfaceGalerkin(object):
@@ -177,17 +155,11 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
         self._test_indices = None
         self._trial_indices = None
 
-        self._coincident_rule = _SingularQuadratureRule(
-            *_duffy_galerkin.rule(order, "coincident")
-        )
+        self._coincident_rule = _SingularQuadratureRule(*_duffy_galerkin.rule(order, "coincident"))
 
-        self._edge_adjacent_rule = _SingularQuadratureRule(
-            *_duffy_galerkin.rule(order, "edge_adjacent")
-        )
+        self._edge_adjacent_rule = _SingularQuadratureRule(*_duffy_galerkin.rule(order, "edge_adjacent"))
 
-        self._vertex_adjacent_rule = _SingularQuadratureRule(
-            *_duffy_galerkin.rule(order, "vertex_adjacent")
-        )
+        self._vertex_adjacent_rule = _SingularQuadratureRule(*_duffy_galerkin.rule(order, "vertex_adjacent"))
 
         # Iterate through the singular pairs and only add those that are
         # in the support of the space.
@@ -201,15 +173,13 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
         # * operation corresponds to and op between the arrays.
 
         edge_adjacent_pairs = _np.flatnonzero(
-            test_support[grid.edge_adjacency[0, :]]
-            * trial_support[grid.edge_adjacency[1, :]]
+            test_support[grid.edge_adjacency[0, :]] * trial_support[grid.edge_adjacency[1, :]]
         )
 
         self._edge_adjacency = grid.edge_adjacency[:, edge_adjacent_pairs]
 
         vertex_adjacent_pairs = _np.flatnonzero(
-            test_support[grid.vertex_adjacency[0, :]]
-            * trial_support[grid.vertex_adjacency[1, :]]
+            test_support[grid.vertex_adjacency[0, :]] * trial_support[grid.vertex_adjacency[1, :]]
         )
 
         self._vertex_adjacency = grid.vertex_adjacency[:, vertex_adjacent_pairs]
@@ -218,9 +188,7 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
         self._index_count["vertex_adjacent"] = self._vertex_adjacency.shape[1]
 
         self._index_count["all"] = (
-            self._index_count["coincident"]
-            + self._index_count["edge_adjacent"]
-            + self._index_count["vertex_adjacent"]
+            self._index_count["coincident"] + self._index_count["edge_adjacent"] + self._index_count["vertex_adjacent"]
         )
 
     @property
@@ -374,11 +342,7 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
         nedge_adjacent = self.number_of_points("edge_adjacent")
         nvertex_adjacent = self.number_of_points("vertex_adjacent")
 
-        vertex_offsets = (
-            ncoincident
-            + 6 * nedge_adjacent
-            + nvertex_adjacent * _np.arange(3, dtype="uint32")
-        )
+        vertex_offsets = ncoincident + 6 * nedge_adjacent + nvertex_adjacent * _np.arange(3, dtype="uint32")
 
         return vertex_offsets
 
@@ -391,9 +355,7 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
             count = self._index_count["coincident"]
             array[:count] = self._coincident_indices
 
-            array[
-                count : (count + self.index_count["edge_adjacent"])
-            ] = self.edge_adjacency[index, :]
+            array[count : (count + self.index_count["edge_adjacent"])] = self.edge_adjacency[index, :]
 
             count += self.index_count["edge_adjacent"]
 
@@ -406,17 +368,11 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
         n = self.index_count["all"]
         number_of_quad_points = _np.empty(self.index_count["all"], dtype="uint32")
 
-        number_of_quad_points[: self.index_count["coincident"]] = self.number_of_points(
-            "coincident"
-        )
+        number_of_quad_points[: self.index_count["coincident"]] = self.number_of_points("coincident")
         number_of_quad_points[
-            self.index_count["coincident"] : (
-                self.index_count["coincident"] + self.index_count["edge_adjacent"]
-            )
+            self.index_count["coincident"] : (self.index_count["coincident"] + self.index_count["edge_adjacent"])
         ] = self.number_of_points("edge_adjacent")
-        number_of_quad_points[
-            n - self.index_count["vertex_adjacent"] :
-        ] = self.number_of_points("vertex_adjacent")
+        number_of_quad_points[n - self.index_count["vertex_adjacent"] :] = self.number_of_points("vertex_adjacent")
 
         return number_of_quad_points
 
@@ -425,24 +381,16 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
         test_points = _np.hstack(
             [
                 self.coincident_rule.test_points,
-                self._collect_remapped_quad_points_for_edge_adjacent_rule(
-                    self.edge_adjacent_rule.test_points
-                ),
-                self._collect_remapped_quad_points_for_vertex_adjacent_rule(
-                    self.vertex_adjacent_rule.test_points
-                ),
+                self._collect_remapped_quad_points_for_edge_adjacent_rule(self.edge_adjacent_rule.test_points),
+                self._collect_remapped_quad_points_for_vertex_adjacent_rule(self.vertex_adjacent_rule.test_points),
             ]
         )
 
         trial_points = _np.hstack(
             [
                 self.coincident_rule.trial_points,
-                self._collect_remapped_quad_points_for_edge_adjacent_rule(
-                    self.edge_adjacent_rule.trial_points
-                ),
-                self._collect_remapped_quad_points_for_vertex_adjacent_rule(
-                    self.vertex_adjacent_rule.trial_points
-                ),
+                self._collect_remapped_quad_points_for_edge_adjacent_rule(self.edge_adjacent_rule.trial_points),
+                self._collect_remapped_quad_points_for_vertex_adjacent_rule(self.vertex_adjacent_rule.trial_points),
             ]
         )
 
@@ -472,34 +420,26 @@ class _SingularQuadratureRuleInterfaceGalerkin(object):
         test_offsets[: self.index_count["coincident"]] = 0
 
         test_offsets[
-            self.index_count["coincident"] : (
-                self.index_count["coincident"] + self.index_count["edge_adjacent"]
-            )
+            self.index_count["coincident"] : (self.index_count["coincident"] + self.index_count["edge_adjacent"])
         ] = edge_offsets[self.edge_adjacency[2, :], self.edge_adjacency[3, :]]
 
-        test_offsets[
-            (self.index_count["coincident"] + self.index_count["edge_adjacent"]) :
-        ] = vertex_offsets[self.vertex_adjacency[2, :]]
+        test_offsets[(self.index_count["coincident"] + self.index_count["edge_adjacent"]) :] = vertex_offsets[
+            self.vertex_adjacency[2, :]
+        ]
 
-        trial_offsets[: self.index_count["coincident"]] = _np.zeros(
-            self.index_count["coincident"]
-        )
+        trial_offsets[: self.index_count["coincident"]] = _np.zeros(self.index_count["coincident"])
 
         trial_offsets[
-            self.index_count["coincident"] : (
-                self.index_count["coincident"] + self.index_count["edge_adjacent"]
-            )
+            self.index_count["coincident"] : (self.index_count["coincident"] + self.index_count["edge_adjacent"])
         ] = edge_offsets[self.edge_adjacency[4, :], self.edge_adjacency[5, :]]
 
-        trial_offsets[
-            (self.index_count["coincident"] + self._index_count["edge_adjacent"]) :
-        ] = vertex_offsets[self.vertex_adjacency[3, :]]
+        trial_offsets[(self.index_count["coincident"] + self._index_count["edge_adjacent"]) :] = vertex_offsets[
+            self.vertex_adjacency[3, :]
+        ]
 
         weights_offsets[: self.index_count["coincident"]] = 0
         weights_offsets[
-            self.index_count["coincident"] : (
-                self.index_count["coincident"] + self.index_count["edge_adjacent"]
-            )
+            self.index_count["coincident"] : (self.index_count["coincident"] + self.index_count["edge_adjacent"])
         ] = self.number_of_points("coincident")
         weights_offsets[(self.index_count["coincident"] + self.index_count["edge_adjacent"]) :] = self.number_of_points(
             "coincident"

@@ -24,9 +24,7 @@ def rwg0_function_space(
     from .space import SpaceBuilder, _process_segments
     from bempp_cl.api.utils.helpers import serialise_list_of_lists
 
-    support, normal_multipliers = _process_segments(
-        grid, support_elements, segments, swapped_normals
-    )
+    support, normal_multipliers = _process_segments(grid, support_elements, segments, swapped_normals)
 
     edge_neighbors, edge_neighbors_ptr = serialise_list_of_lists(grid.edge_neighbors)
 
@@ -82,9 +80,7 @@ def rwg0_barycentric_function_space(coarse_space):
 
     normal_multipliers = _np.repeat(coarse_space.normal_multipliers, 6)
 
-    local_coords = _np.array(
-        [[0, 0], [0.5, 0], [1, 0], [0.5, 0.5], [0, 1], [0, 0.5], [1.0 / 3, 1.0 / 3]]
-    ).T
+    local_coords = _np.array([[0, 0], [0.5, 0], [1, 0], [0.5, 0.5], [0, 1], [0, 0.5], [1.0 / 3, 1.0 / 3]]).T
 
     coeffs = (
         _np.array(
@@ -126,9 +122,7 @@ def rwg0_barycentric_function_space(coarse_space):
     local2global = _np.zeros((bary_grid_number_of_elements, 3), dtype="uint32")
     local_multipliers = _np.zeros((bary_grid_number_of_elements, 3), dtype="uint32")
 
-    local2global[support] = _np.arange(3 * bary_support_size).reshape(
-        bary_support_size, 3
-    )
+    local2global[support] = _np.arange(3 * bary_support_size).reshape(bary_support_size, 3)
 
     local_multipliers[support] = 1
 
@@ -170,9 +164,7 @@ def snc0_function_space(
     from .space import SpaceBuilder, _process_segments
     from bempp_cl.api.utils.helpers import serialise_list_of_lists
 
-    support, normal_multipliers = _process_segments(
-        grid, support_elements, segments, swapped_normals
-    )
+    support, normal_multipliers = _process_segments(grid, support_elements, segments, swapped_normals)
 
     edge_neighbors, edge_neighbors_ptr = serialise_list_of_lists(grid.edge_neighbors)
 
@@ -229,9 +221,7 @@ def snc0_barycentric_function_space(coarse_space):
 
     normal_multipliers = _np.repeat(coarse_space.normal_multipliers, 6)
 
-    local_coords = _np.array(
-        [[0, 0], [0.5, 0], [1, 0], [0.5, 0.5], [0, 1], [0, 0.5], [1.0 / 3, 1.0 / 3]]
-    ).T
+    local_coords = _np.array([[0, 0], [0.5, 0], [1, 0], [0.5, 0.5], [0, 1], [0, 0.5], [1.0 / 3, 1.0 / 3]]).T
 
     coeffs = (
         _np.array(
@@ -273,9 +263,7 @@ def snc0_barycentric_function_space(coarse_space):
     local2global = _np.zeros((bary_grid_number_of_elements, 3), dtype="uint32")
     local_multipliers = _np.zeros((bary_grid_number_of_elements, 3), dtype="uint32")
 
-    local2global[support] = _np.arange(3 * bary_support_size).reshape(
-        bary_support_size, 3
-    )
+    local2global[support] = _np.arange(3 * bary_support_size).reshape(bary_support_size, 3)
 
     local_multipliers[support] = 1
 
@@ -336,9 +324,7 @@ def bc_function_space(
         normal_multipliers,
         local2global,
         local_multipliers,
-    ) = _compute_bc_space_data(
-        grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals
-    )
+    ) = _compute_bc_space_data(grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals)
 
     return (
         SpaceBuilder(bary_grid)
@@ -389,9 +375,7 @@ def rbc_function_space(
         normal_multipliers,
         local2global,
         local_multipliers,
-    ) = _compute_bc_space_data(
-        grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals
-    )
+    ) = _compute_bc_space_data(grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals)
 
     return (
         SpaceBuilder(bary_grid)
@@ -411,28 +395,31 @@ def rbc_function_space(
     )
 
 
-def _compute_bc_space_data(
-    grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals
-):
+def _compute_bc_space_data(grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals):
     """Generate the BC map."""
-    from bempp_cl.api.grid.grid import _get_barycentric_support, _get_bary_coefficients, \
-        _get_coefficients_reference_edge, _get_data_multipliers, _get_barycentric_edges_associated_to_vertex
+    from bempp_cl.api.grid.grid import (
+        _get_barycentric_support,
+        _get_bary_coefficients,
+        _get_coefficients_reference_edge,
+        _get_data_multipliers,
+        _get_barycentric_edges_associated_to_vertex,
+    )
 
     from scipy.sparse import coo_matrix
 
-    support, bary_support_size, bary_support_elements =\
-        _get_barycentric_support(truncate_at_segment_edge, grid, bary_grid, coarse_space)
+    support, bary_support_size, bary_support_elements = _get_barycentric_support(
+        truncate_at_segment_edge, grid, bary_grid, coarse_space
+    )
 
-    bary_vertex_to_edge, local2global, edge_lengths, normal_multipliers, local_multipliers\
-        = _get_data_multipliers(support, bary_grid, bary_support_elements,
-                                swapped_normals, coarse_space, bary_support_size)
+    bary_vertex_to_edge, local2global, edge_lengths, normal_multipliers, local_multipliers = _get_data_multipliers(
+        support, bary_grid, bary_support_elements, swapped_normals, coarse_space, bary_support_size
+    )
 
     coarse_dofs = []
     bary_dofs = []
     values = []
 
     for global_dof_index in range(coarse_space.global_dof_count):
-
         # Local numbering of the edges consituting the support.
         local_dofs = coarse_space.global2local[global_dof_index]
 
@@ -489,27 +476,42 @@ def _compute_bc_space_data(
 
         # Starting from the upper minus cell or the lower minus cell, append in
         # anti clock-wise order the barycentric cells that follor
-        vertex_edges1, sorted_edges1, number_of_cells1, ref_edge1 =\
-            _get_barycentric_edges_associated_to_vertex(
-                vertex1, bary_vertex_to_edge, bary_upper_minus, bary_grid)
-        vertex_edges2, sorted_edges2, number_of_cells2, ref_edge2 =\
-            _get_barycentric_edges_associated_to_vertex(
-                vertex2, bary_vertex_to_edge, bary_lower_minus, bary_grid)
+        vertex_edges1, sorted_edges1, number_of_cells1, ref_edge1 = _get_barycentric_edges_associated_to_vertex(
+            vertex1, bary_vertex_to_edge, bary_upper_minus, bary_grid
+        )
+        vertex_edges2, sorted_edges2, number_of_cells2, ref_edge2 = _get_barycentric_edges_associated_to_vertex(
+            vertex2, bary_vertex_to_edge, bary_lower_minus, bary_grid
+        )
 
-        aux_values, aux_bary_dofs, aux_coarse_dofs =\
-            _get_bary_coefficients(edge_lengths, vertex_edges1, vertex_edges2, sorted_edges1,
-                                   sorted_edges2, bary_grid, local2global, number_of_cells1,
-                                   number_of_cells2, global_dof_index, ref_edge1, ref_edge2)
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _get_bary_coefficients(
+            edge_lengths,
+            vertex_edges1,
+            vertex_edges2,
+            sorted_edges1,
+            sorted_edges2,
+            bary_grid,
+            local2global,
+            number_of_cells1,
+            number_of_cells2,
+            global_dof_index,
+            ref_edge1,
+            ref_edge2,
+        )
 
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
 
-        aux_values, aux_bary_dofs, aux_coarse_dofs = \
-            _get_coefficients_reference_edge(
-                edge_lengths, bary_grid, local2global,
-                global_dof_index, bary_upper_minus,
-                bary_upper_plus, bary_lower_minus, bary_lower_plus)
+        aux_values, aux_bary_dofs, aux_coarse_dofs = _get_coefficients_reference_edge(
+            edge_lengths,
+            bary_grid,
+            local2global,
+            global_dof_index,
+            bary_upper_minus,
+            bary_upper_plus,
+            bary_lower_minus,
+            bary_lower_plus,
+        )
 
         values += aux_values
         bary_dofs += aux_bary_dofs
@@ -562,9 +564,7 @@ def _compute_rwg0_space_data(
             if edge_dofs[edge_index] != -1:
                 has_dof = True
             else:
-                current_neighbors = edge_neighbors[
-                    edge_neighbors_ptr[edge_index] : edge_neighbors_ptr[1 + edge_index]
-                ]
+                current_neighbors = edge_neighbors[edge_neighbors_ptr[edge_index] : edge_neighbors_ptr[1 + edge_index]]
                 supported_neighbors = [e for e in current_neighbors if support[e]]
                 if len(supported_neighbors) == 2:
                     if edge_dofs[edge_index]:
@@ -591,9 +591,7 @@ def _compute_rwg0_space_data(
             if edge_dofs[edge_index] != -1:
                 dofmap[local_index] = edge_dofs[edge_index]
 
-                current_neighbors = edge_neighbors[
-                    edge_neighbors_ptr[edge_index] : edge_neighbors_ptr[1 + edge_index]
-                ]
+                current_neighbors = edge_neighbors[edge_neighbors_ptr[edge_index] : edge_neighbors_ptr[1 + edge_index]]
                 supported_neighbors = [e for e in current_neighbors if support[e]]
 
                 if len(supported_neighbors) == 1:
@@ -670,9 +668,7 @@ def generate_rwg0_map(grid_data, support_elements, local_coords, coeffs):
             bary_coeffs = coeffs[local_dof]
             dof_coeffs = bary_coeffs * outer_edges[local_dof] / dof_mult
             coarse_dofs[count : count + 18] = coarse_dof
-            bary_dofs[count : count + 18] = _np.arange(
-                3 * bary_elements[0], 3 * bary_elements[0] + 18
-            )
+            bary_dofs[count : count + 18] = _np.arange(3 * bary_elements[0], 3 * bary_elements[0] + 18)
             values[count : count + 18] = dof_coeffs.ravel()
             count += 18
     return coarse_dofs, bary_dofs, values
@@ -775,11 +771,11 @@ def _numba_snc0_surface_curl(
     reference_derivatives = shapeset_gradient(local_coordinates)
     jac_inv_t = grid_data.jac_inv_trans[element_index]
     derivatives = jac_inv_t @ reference_derivatives @ jac_inv_t.T
-    reference_values = normal[0] * (
-        derivatives[2, 1] - derivatives[1, 2]
-    ) + normal[1] * (
-        derivatives[0, 2] - derivatives[2, 0]
-    ) + normal[2] * (derivatives[1, 0] - derivatives[0, 1])
+    reference_values = (
+        normal[0] * (derivatives[2, 1] - derivatives[1, 2])
+        + normal[1] * (derivatives[0, 2] - derivatives[2, 0])
+        + normal[2] * (derivatives[1, 0] - derivatives[0, 1])
+    )
 
     result = _np.empty(3, dtype=_np.float64)
 
@@ -798,8 +794,5 @@ def _numba_snc0_surface_curl(
     )
 
     for index in range(3):
-        result[index] = (
-            local_multipliers[element_index, index]
-            * edge_lengths[index] * reference_values
-        )
+        result[index] = local_multipliers[element_index, index] * edge_lengths[index] * reference_values
     return result

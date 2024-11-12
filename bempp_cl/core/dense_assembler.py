@@ -12,22 +12,15 @@ class DenseAssembler(_assembler.AssemblerBase):
         """Create a dense assembler instance."""
         super().__init__(domain, dual_to_range, parameters)
 
-    def assemble(
-        self, operator_descriptor, device_interface, precision, *args, **kwargs
-    ):
+    def assemble(self, operator_descriptor, device_interface, precision, *args, **kwargs):
         """Dense assembly of the integral operator."""
         from bempp_cl.api.assembly.discrete_boundary_operator import (
             DenseDiscreteBoundaryOperator,
         )
         from bempp_cl.api.utils.helpers import promote_to_double_precision
 
-        if (
-            self.domain.requires_dof_transformation
-            or self.dual_to_range.requires_dof_transformation
-        ):
-            raise ValueError(
-                "Spaces that require dof transformations not supported for dense assembly."
-            )
+        if self.domain.requires_dof_transformation or self.dual_to_range.requires_dof_transformation:
+            raise ValueError("Spaces that require dof transformations not supported for dense assembly.")
 
         # (
         # numba_assembly_function_regular,
@@ -53,9 +46,7 @@ class DenseAssembler(_assembler.AssemblerBase):
         return DenseDiscreteBoundaryOperator(mat)
 
 
-def assemble_dense(
-    domain, dual_to_range, parameters, operator_descriptor, device_interface
-):
+def assemble_dense(domain, dual_to_range, parameters, operator_descriptor, device_interface):
     """Assembles the operator and returns a dense matrix."""
     import bempp_cl.api
     from bempp_cl.api.utils.helpers import get_type
@@ -74,9 +65,7 @@ def assemble_dense(
 
     result = _np.zeros((rows, cols), dtype=result_type)
 
-    with bempp_cl.api.Timer(
-        message=f"Regular assembler:{operator_descriptor.identifier}:{device_interface}"
-    ):
+    with bempp_cl.api.Timer(message=f"Regular assembler:{operator_descriptor.identifier}:{device_interface}"):
         dense_assembler_dispatcher(
             device_interface,
             operator_descriptor,
@@ -89,7 +78,6 @@ def assemble_dense(
     grids_identical = domain.grid == dual_to_range.grid
 
     if grids_identical:
-
         trial_local2global = domain.local2global.ravel()
         test_local2global = dual_to_range.local2global.ravel()
         trial_multipliers = domain.local_multipliers.ravel()
@@ -105,11 +93,7 @@ def assemble_dense(
 
         rows = test_local2global[singular_rows]
         cols = trial_local2global[singular_cols]
-        values = (
-            singular_values
-            * trial_multipliers[singular_cols]
-            * test_multipliers[singular_rows]
-        )
+        values = singular_values * trial_multipliers[singular_cols] * test_multipliers[singular_rows]
 
         _np.add.at(result, (rows, cols), values)
 

@@ -1,4 +1,5 @@
 """Interfaces to Laplace operators."""
+
 from bempp_cl.api.operators.boundary import common as _common
 
 
@@ -77,9 +78,7 @@ def _curl_curl_product(
     )
 
 
-def multitrace_identity(
-    multitrace_operator, parameters=None, device_interface=None, precision=None
-):
+def multitrace_identity(multitrace_operator, parameters=None, device_interface=None, precision=None):
     """
     Create a multitrace identity operator.
 
@@ -163,10 +162,17 @@ def lambda_1(mte_operators, beta, kappa_eps):
     """
     from scipy.sparse import bmat
     from bempp_cl.api.assembly.discrete_boundary_operator import InverseSparseDiscreteBoundaryOperator
+
     IP, IC, N, LT, L = mte_operators
     return InverseSparseDiscreteBoundaryOperator(
-        bmat([[(IC - beta * N).weak_form().to_sparse(), (beta * LT).weak_form().to_sparse()],
-              [L.weak_form().to_sparse(), kappa_eps ** 2 * IP.weak_form().to_sparse()]], 'csc'))
+        bmat(
+            [
+                [(IC - beta * N).weak_form().to_sparse(), (beta * LT).weak_form().to_sparse()],
+                [L.weak_form().to_sparse(), kappa_eps**2 * IP.weak_form().to_sparse()],
+            ],
+            "csc",
+        )
+    )
 
 
 def lambda_2(mte_operators):

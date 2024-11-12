@@ -1,4 +1,5 @@
 """Common helpers uses for all boundary operators."""
+
 from bempp_cl.api.assembly import assembler as _assembler
 from bempp_cl.api.assembly import boundary_operator as _boundary_operator
 from bempp_cl.api.assembly import blocked_operator as _blocked_operator
@@ -46,9 +47,7 @@ def create_operator(
     else:
         singular_part = None
 
-    assembler = _assembler.AssemblerInterface(
-        domain, dual_to_range, assembler, device_interface, precision, parameters
-    )
+    assembler = _assembler.AssemblerInterface(domain, dual_to_range, assembler, device_interface, precision, parameters)
 
     kernel_dimension = 1
 
@@ -62,9 +61,7 @@ def create_operator(
         singular_part,
         kernel_dimension,
     )
-    return _boundary_operator.BoundaryOperatorWithAssembler(
-        domain, range_, dual_to_range, assembler, descriptor
-    )
+    return _boundary_operator.BoundaryOperatorWithAssembler(domain, range_, dual_to_range, assembler, descriptor)
 
 
 def create_multitrace_operator(
@@ -90,16 +87,10 @@ def create_multitrace_operator(
     if precision is None:
         precision = bempp_cl.api.DEFAULT_PRECISION
 
-    assembler = _assembler.AssemblerInterface(
-        domain, dual_to_range, assembler, device_interface, precision, parameters
-    )
+    assembler = _assembler.AssemblerInterface(domain, dual_to_range, assembler, device_interface, precision, parameters)
 
-    descriptor = MultitraceOperatorDescriptor(
-        identifier, operator_options, multitrace_kernel, singular_contribution
-    )
-    return _blocked_operator.MultitraceOperatorFromAssembler(
-        domain, range_, dual_to_range, assembler, descriptor
-    )
+    descriptor = MultitraceOperatorDescriptor(identifier, operator_options, multitrace_kernel, singular_contribution)
+    return _blocked_operator.MultitraceOperatorFromAssembler(domain, range_, dual_to_range, assembler, descriptor)
 
 
 def pade_coeffs(order, angle):
@@ -128,7 +119,7 @@ def pade_coeffs(order, angle):
     z_j = 1 + cos_j * z
 
     c_0 = _np.exp(0.5j * angle) * (1 + _np.sum(sin_j * z / z_j))
-    a_j = _np.exp(-0.5j * angle) * sin_j / z_j ** 2
+    a_j = _np.exp(-0.5j * angle) * sin_j / z_j**2
     b_j = _np.exp(-1j * angle) * cos_j / z_j
     r_0 = c_0 + _np.sum(a_j / b_j)
 

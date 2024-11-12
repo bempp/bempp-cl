@@ -1,4 +1,5 @@
 """Implementation of MPI based remote operators."""
+
 from bempp_cl.api.assembly.blocked_operator import BlockedOperator as _BlockedOperator
 from bempp_cl.api.assembly.discrete_boundary_operator import _DiscreteOperatorBase
 
@@ -62,9 +63,7 @@ class RemoteManager:
             elif msg == "SYNCHRONIZE":
                 self.send_data("SYNCHRONIZED", 0, tag)
             elif msg == "GET_DTYPE":
-                self.send_data(
-                    _np.dtype(self._op_data[tag].weak_form().dtype).name, 0, tag
-                )
+                self.send_data(_np.dtype(self._op_data[tag].weak_form().dtype).name, 0, tag)
             elif msg == "DATA":
                 result = self._op_data[tag].weak_form() @ data
                 self.send_data("DATA", 0, tag, result)
@@ -130,10 +129,7 @@ class RemoteManager:
             self.send_data("SYNCHRONIZE", rank, 0)
             msg, _, _ = self.receive_data(rank)
             if msg != "SYNCHRONIZED":
-                raise Exception(
-                    f"Error: expected message 'SYNCHRONIZED' from rank {0}, received"
-                    f" {msg}"
-                )
+                raise Exception(f"Error: expected message 'SYNCHRONIZED' from rank {0}, received" f" {msg}")
 
     def get_operator_dtype(self, tag):
         """Get dtype of remote operator."""
@@ -283,19 +279,13 @@ class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
                     continue
                 if self._rows[i] != -1:
                     if self._get_shape(ops[i, j])[0] != self._rows[i]:
-                        raise ValueError(
-                            "Block row {0} has incompatible ".format(i)
-                            + " operator sizes."
-                        )
+                        raise ValueError("Block row {0} has incompatible ".format(i) + " operator sizes.")
                 else:
                     self._rows[i] = self._get_shape(ops[i, j])[0]
 
                 if self._cols[j] != -1:
                     if self._get_shape(ops[i, j])[1] != self._cols[j]:
-                        raise ValueError(
-                            "Block column {0} has incompatible".format(j)
-                            + "operator sizes."
-                        )
+                        raise ValueError("Block column {0} has incompatible".format(j) + "operator sizes.")
                 else:
                     self._cols[j] = self._get_shape(ops[i, j])[1]
                 self._operators[i, j] = ops[i, j]

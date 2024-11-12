@@ -1,4 +1,5 @@
 """Implementation of an FMM Assembler."""
+
 from bempp_cl.api.assembly import assembler as _assembler
 import numba as _numba
 import numpy as _np
@@ -23,9 +24,7 @@ def get_mode_from_operator_identifier(identifier):
         raise ValueError("Unknown identifier string.")
 
 
-def get_fmm_interface(
-    domain, dual_to_range, mode, wavenumber, parameters=None, device_interface=None
-):
+def get_fmm_interface(domain, dual_to_range, mode, wavenumber, parameters=None, device_interface=None):
     """Get an Fmm instance."""
     import bempp_cl.api
 
@@ -95,26 +94,16 @@ def get_fmm_potential_interface(space, points, mode, wavenumber):
     return interface
 
 
-def create_evaluator(
-    operator_descriptor, fmm_interface, domain, dual_to_range, parameters
-):
+def create_evaluator(operator_descriptor, fmm_interface, domain, dual_to_range, parameters):
     """Return an Fmm evaluator for the requested kernel."""
     if operator_descriptor.assembly_type == "default_scalar":
-        return make_default_scalar(
-            operator_descriptor, fmm_interface, domain, dual_to_range
-        )
+        return make_default_scalar(operator_descriptor, fmm_interface, domain, dual_to_range)
     if operator_descriptor.assembly_type.split("_")[-1] == "hypersingular":
-        return make_scalar_hypersingular(
-            operator_descriptor, fmm_interface, domain, dual_to_range
-        )
+        return make_scalar_hypersingular(operator_descriptor, fmm_interface, domain, dual_to_range)
     if operator_descriptor.assembly_type == "maxwell_electric_field":
-        return make_maxwell_electric_field_boundary(
-            operator_descriptor, fmm_interface, domain, dual_to_range
-        )
+        return make_maxwell_electric_field_boundary(operator_descriptor, fmm_interface, domain, dual_to_range)
     if operator_descriptor.assembly_type == "maxwell_magnetic_field":
-        return make_maxwell_magnetic_field_boundary(
-            operator_descriptor, fmm_interface, domain, dual_to_range
-        )
+        return make_maxwell_magnetic_field_boundary(operator_descriptor, fmm_interface, domain, dual_to_range)
 
 
 def create_potential_evaluator(operator_descriptor, fmm_interface, space, parameters):
@@ -122,13 +111,9 @@ def create_potential_evaluator(operator_descriptor, fmm_interface, space, parame
     if operator_descriptor.assembly_type == "default_scalar":
         return make_default_scalar_potential(operator_descriptor, fmm_interface, space)
     elif operator_descriptor.assembly_type == "maxwell_electric_field":
-        return make_maxwell_electric_field_potential(
-            operator_descriptor, fmm_interface, space
-        )
+        return make_maxwell_electric_field_potential(operator_descriptor, fmm_interface, space)
     elif operator_descriptor.assembly_type == "maxwell_magnetic_field":
-        return make_maxwell_magnetic_field_potential(
-            operator_descriptor, fmm_interface, space
-        )
+        return make_maxwell_magnetic_field_potential(operator_descriptor, fmm_interface, space)
     else:
         raise ValueError("Unknown descriptor.")
 
@@ -136,29 +121,21 @@ def create_potential_evaluator(operator_descriptor, fmm_interface, space, parame
 class FmmPotentialAssembler(object):
     """Potential assembler for FMM."""
 
-    def __init__(
-        self, space, operator_descriptor, points, device_interface, parameters
-    ):
+    def __init__(self, space, operator_descriptor, points, device_interface, parameters):
         """Initialise FMM Potential Assembler."""
         mode = get_mode_from_operator_identifier(operator_descriptor.identifier)
 
         if mode == "laplace":
             wavenumber = None
         elif mode == "helmholtz":
-            wavenumber = (
-                operator_descriptor.options[0] + 1j * operator_descriptor.options[1]
-            )
+            wavenumber = operator_descriptor.options[0] + 1j * operator_descriptor.options[1]
         elif mode == "modified_helmholtz":
             wavenumber = operator_descriptor.options[0]
         else:
             raise ValueError(f"Unknown value {mode} for `mode`.")
 
-        fmm_potential_interface = get_fmm_potential_interface(
-            space, points, mode, wavenumber
-        )
-        self._evaluator = create_potential_evaluator(
-            operator_descriptor, fmm_potential_interface, space, parameters
-        )
+        fmm_potential_interface = get_fmm_potential_interface(space, points, mode, wavenumber)
+        self._evaluator = create_potential_evaluator(operator_descriptor, fmm_potential_interface, space, parameters)
 
     def evaluate(self, x):
         """Actually evaluate the potential."""
@@ -182,27 +159,21 @@ class FmmAssembler(_assembler.AssemblerBase):
         self._evaluator = None
         self.shape = (dual_to_range.global_dof_count, domain.global_dof_count)
 
-    def assemble(
-        self, operator_descriptor, device_interface, precision, *args, **kwargs
-    ):
+    def assemble(self, operator_descriptor, device_interface, precision, *args, **kwargs):
         """Actually assemble."""
         from bempp_cl.api.space.space import return_compatible_representation
         from bempp_cl.api.assembly.discrete_boundary_operator import (
             GenericDiscreteBoundaryOperator,
         )
 
-        actual_domain, actual_dual_to_range = return_compatible_representation(
-            self.domain, self.dual_to_range
-        )
+        actual_domain, actual_dual_to_range = return_compatible_representation(self.domain, self.dual_to_range)
 
         mode = get_mode_from_operator_identifier(operator_descriptor.identifier)
 
         if mode == "laplace":
             wavenumber = None
         elif mode == "helmholtz":
-            wavenumber = (
-                operator_descriptor.options[0] + 1j * operator_descriptor.options[1]
-            )
+            wavenumber = operator_descriptor.options[0] + 1j * operator_descriptor.options[1]
         elif mode == "modified_helmholtz":
             wavenumber = operator_descriptor.options[0]
         else:
@@ -237,9 +208,7 @@ class FmmAssembler(_assembler.AssemblerBase):
         ndim = len(x.shape)
 
         if ndim > 2:
-            raise ValueError(
-                "x must have shape (N, ) or (N, 1), where N is number of elements."
-            )
+            raise ValueError("x must have shape (N, ) or (N, 1), where N is number of elements.")
 
         result = self._evaluator(x.ravel())
 
@@ -249,9 +218,7 @@ class FmmAssembler(_assembler.AssemblerBase):
             return result.reshape([-1, 1])
 
 
-def make_scalar_hypersingular(
-    operator_descriptor, fmm_interface, domain, dual_to_range
-):
+def make_scalar_hypersingular(operator_descriptor, fmm_interface, domain, dual_to_range):
     """Create an evaluator for scalar hypersingular operators."""
     import bempp_cl.api
     from bempp_cl.api.integration.triangle_gauss import get_number_of_quad_points
@@ -259,9 +226,7 @@ def make_scalar_hypersingular(
     npoints = get_number_of_quad_points(bempp_cl.api.GLOBAL_PARAMETERS.quadrature.regular)
 
     source_map = domain.map_to_points(bempp_cl.api.GLOBAL_PARAMETERS.quadrature.regular)
-    target_map = dual_to_range.map_to_points(
-        bempp_cl.api.GLOBAL_PARAMETERS.quadrature.regular, return_transpose=True
-    )
+    target_map = dual_to_range.map_to_points(bempp_cl.api.GLOBAL_PARAMETERS.quadrature.regular, return_transpose=True)
 
     singular_part = operator_descriptor.singular_part.weak_form().to_sparse()
 
@@ -281,49 +246,26 @@ def make_scalar_hypersingular(
 
     def evaluate_laplace_hypersingular(x):
         """Evaluate the Laplace hypersingular kernel."""
-        fmm_res0 = (
-            target_curls_trans[0] @ fmm_interface.evaluate(source_curls[0] @ x)[:, 0]
-        )
-        fmm_res1 = (
-            target_curls_trans[1] @ fmm_interface.evaluate(source_curls[1] @ x)[:, 0]
-        )
-        fmm_res2 = (
-            target_curls_trans[2] @ fmm_interface.evaluate(source_curls[2] @ x)[:, 0]
-        )
+        fmm_res0 = target_curls_trans[0] @ fmm_interface.evaluate(source_curls[0] @ x)[:, 0]
+        fmm_res1 = target_curls_trans[1] @ fmm_interface.evaluate(source_curls[1] @ x)[:, 0]
+        fmm_res2 = target_curls_trans[2] @ fmm_interface.evaluate(source_curls[2] @ x)[:, 0]
 
         return fmm_res0 + fmm_res1 + fmm_res2 + singular_part @ x
 
     def evaluate_helmholtz_hypersingular(x):
         """Evaluate the Helmholtz hypersingular kernel."""
-        wavenumber = (
-            operator_descriptor.options[0] + 1j * operator_descriptor.options[1]
-        )
+        wavenumber = operator_descriptor.options[0] + 1j * operator_descriptor.options[1]
         x_transformed = source_map @ x
 
-        fmm_res0 = (
-            target_curls_trans[0] @ fmm_interface.evaluate(source_curls[0] @ x)[:, 0]
-        )
-        fmm_res1 = (
-            target_curls_trans[1] @ fmm_interface.evaluate(source_curls[1] @ x)[:, 0]
-        )
-        fmm_res2 = (
-            target_curls_trans[2] @ fmm_interface.evaluate(source_curls[2] @ x)[:, 0]
-        )
+        fmm_res0 = target_curls_trans[0] @ fmm_interface.evaluate(source_curls[0] @ x)[:, 0]
+        fmm_res1 = target_curls_trans[1] @ fmm_interface.evaluate(source_curls[1] @ x)[:, 0]
+        fmm_res2 = target_curls_trans[2] @ fmm_interface.evaluate(source_curls[2] @ x)[:, 0]
 
         first_part = fmm_res0 + fmm_res1 + fmm_res2
 
-        fmm_n1 = (
-            target_normals[:, 0]
-            * fmm_interface.evaluate(source_normals[:, 0] * x_transformed)[:, 0]
-        )
-        fmm_n2 = (
-            target_normals[:, 1]
-            * fmm_interface.evaluate(source_normals[:, 1] * x_transformed)[:, 0]
-        )
-        fmm_n3 = (
-            target_normals[:, 2]
-            * fmm_interface.evaluate(source_normals[:, 2] * x_transformed)[:, 0]
-        )
+        fmm_n1 = target_normals[:, 0] * fmm_interface.evaluate(source_normals[:, 0] * x_transformed)[:, 0]
+        fmm_n2 = target_normals[:, 1] * fmm_interface.evaluate(source_normals[:, 1] * x_transformed)[:, 0]
+        fmm_n3 = target_normals[:, 2] * fmm_interface.evaluate(source_normals[:, 2] * x_transformed)[:, 0]
 
         second_part = target_map @ (fmm_n1 + fmm_n2 + fmm_n3)
 
@@ -334,30 +276,15 @@ def make_scalar_hypersingular(
         wavenumber = operator_descriptor.options[0]
         x_transformed = source_map @ x
 
-        fmm_res0 = (
-            target_curls_trans[0] @ fmm_interface.evaluate(source_curls[0] @ x)[:, 0]
-        )
-        fmm_res1 = (
-            target_curls_trans[1] @ fmm_interface.evaluate(source_curls[1] @ x)[:, 0]
-        )
-        fmm_res2 = (
-            target_curls_trans[2] @ fmm_interface.evaluate(source_curls[2] @ x)[:, 0]
-        )
+        fmm_res0 = target_curls_trans[0] @ fmm_interface.evaluate(source_curls[0] @ x)[:, 0]
+        fmm_res1 = target_curls_trans[1] @ fmm_interface.evaluate(source_curls[1] @ x)[:, 0]
+        fmm_res2 = target_curls_trans[2] @ fmm_interface.evaluate(source_curls[2] @ x)[:, 0]
 
         first_part = fmm_res0 + fmm_res1 + fmm_res2
 
-        fmm_n1 = (
-            target_normals[:, 0]
-            * fmm_interface.evaluate(source_normals[:, 0] * x_transformed)[:, 0]
-        )
-        fmm_n2 = (
-            target_normals[:, 1]
-            * fmm_interface.evaluate(source_normals[:, 1] * x_transformed)[:, 0]
-        )
-        fmm_n3 = (
-            target_normals[:, 2]
-            * fmm_interface.evaluate(source_normals[:, 2] * x_transformed)[:, 0]
-        )
+        fmm_n1 = target_normals[:, 0] * fmm_interface.evaluate(source_normals[:, 0] * x_transformed)[:, 0]
+        fmm_n2 = target_normals[:, 1] * fmm_interface.evaluate(source_normals[:, 1] * x_transformed)[:, 0]
+        fmm_n3 = target_normals[:, 2] * fmm_interface.evaluate(source_normals[:, 2] * x_transformed)[:, 0]
 
         second_part = target_map @ (fmm_n1 + fmm_n2 + fmm_n3)
 
@@ -381,9 +308,7 @@ def make_default_scalar(operator_descriptor, fmm_interface, domain, dual_to_rang
     npoints = get_number_of_quad_points(bempp_cl.api.GLOBAL_PARAMETERS.quadrature.regular)
 
     source_map = domain.map_to_points(bempp_cl.api.GLOBAL_PARAMETERS.quadrature.regular)
-    target_map = dual_to_range.map_to_points(
-        bempp_cl.api.GLOBAL_PARAMETERS.quadrature.regular, return_transpose=True
-    )
+    target_map = dual_to_range.map_to_points(bempp_cl.api.GLOBAL_PARAMETERS.quadrature.regular, return_transpose=True)
 
     singular_part = operator_descriptor.singular_part.weak_form().to_sparse()
 
@@ -401,9 +326,7 @@ def make_default_scalar(operator_descriptor, fmm_interface, domain, dual_to_rang
         import numpy as np
 
         x_transformed = source_map @ x
-        fmm_res = np.sum(
-            fmm_interface.evaluate(x_transformed)[:, 1:] * target_normals, axis=1
-        )
+        fmm_res = np.sum(fmm_interface.evaluate(x_transformed)[:, 1:] * target_normals, axis=1)
         return target_map @ fmm_res + singular_part @ x
 
     def evaluate_double_layer(x):
@@ -438,9 +361,7 @@ def get_normals(space, npoints):
     normals = np.empty((npoints * number_of_elements, 3), dtype="float64")
     for element in range(number_of_elements):
         for n in range(npoints):
-            normals[npoints * element + n, :] = (
-                grid.normals[element] * space.normal_multipliers[element]
-            )
+            normals[npoints * element + n, :] = grid.normals[element] * space.normal_multipliers[element]
     return normals
 
 
@@ -501,9 +422,7 @@ def compute_p1_curl_transformation(space, quadrature_order):
 
 
 @_numba.njit
-def compute_p1_curl_transformation_impl(
-    grid_data, support_elements, normal_multipliers, quad_points, weights
-):
+def compute_p1_curl_transformation_impl(grid_data, support_elements, normal_multipliers, quad_points, weights):
     """Implement the curl transformation."""
     number_of_quad_points = quad_points.shape[1]
     number_of_support_elements = len(support_elements)
@@ -524,14 +443,8 @@ def compute_p1_curl_transformation_impl(
             )
 
             for point_index in range(number_of_quad_points):
-                index = (
-                    nlocal * element_index
-                    + function_index * number_of_quad_points
-                    + point_index
-                )
-                data[:, index] = surface_curl * (
-                    weights[point_index] * grid_data.integration_elements[element]
-                )
+                index = nlocal * element_index + function_index * number_of_quad_points + point_index
+                data[:, index] = surface_curl * (weights[point_index] * grid_data.integration_elements[element])
                 iind[index] = number_of_quad_points * element_index + point_index
                 jind[index] = 3 * element_index + function_index
 
@@ -627,11 +540,7 @@ def compute_rwg_basis_transform_impl(
         )
         for function_index in range(3):
             for point_index in range(number_of_quad_points):
-                index = (
-                    nlocal * element_index
-                    + function_index * number_of_quad_points
-                    + point_index
-                )
+                index = nlocal * element_index + function_index * number_of_quad_points + point_index
                 data[:, index] = basis_values[:, function_index, point_index] * (
                     weights[point_index] * grid_data.integration_elements[element]
                 )
@@ -727,14 +636,8 @@ def compute_rwg_div_transform_impl(
 
         for function_index in range(3):
             for point_index in range(number_of_quad_points):
-                index = (
-                    nlocal * element_index
-                    + function_index * number_of_quad_points
-                    + point_index
-                )
-                data[index] = (
-                    2.0 * edge_lengths[function_index] * (weights[point_index])
-                )
+                index = nlocal * element_index + function_index * number_of_quad_points + point_index
+                data[index] = 2.0 * edge_lengths[function_index] * (weights[point_index])
                 iind[index] = number_of_quad_points * element_index + point_index
                 jind[index] = 3 * element_index + function_index
 
@@ -770,9 +673,7 @@ def make_default_scalar_potential(operator_descriptor, fmm_interface, space):
         return evaluate_double_layer
 
 
-def make_maxwell_electric_field_boundary(
-    operator_descriptor, fmm_interface, domain, dual_to_range
-):
+def make_maxwell_electric_field_boundary(operator_descriptor, fmm_interface, domain, dual_to_range):
     """Make a Maxwell electric field boundary operator."""
     import bempp_cl.api
 
@@ -792,25 +693,16 @@ def make_maxwell_electric_field_boundary(
         result = _np.zeros(dual_to_range.global_dof_count, dtype=_np.complex128)
 
         for index in range(3):
-            result += (
-                dual_rwg_map[index]
-                @ fmm_interface.evaluate(domain_rwg_map[index] @ x)[:, 0]
-            )
+            result += dual_rwg_map[index] @ fmm_interface.evaluate(domain_rwg_map[index] @ x)[:, 0]
 
         result *= -1j * wavenumber
-        result -= (
-            1
-            / (1j * wavenumber)
-            * (dual_div_map @ fmm_interface.evaluate(domain_div_map @ x))[:, 0]
-        )
+        result -= 1 / (1j * wavenumber) * (dual_div_map @ fmm_interface.evaluate(domain_div_map @ x))[:, 0]
         return result + singular_part @ x
 
     return evaluate
 
 
-def make_maxwell_magnetic_field_boundary(
-    operator_descriptor, fmm_interface, domain, dual_to_range
-):
+def make_maxwell_magnetic_field_boundary(operator_descriptor, fmm_interface, domain, dual_to_range):
     """Make a Maxwell magnetic field boundary operator."""
     import bempp_cl.api
 
@@ -847,9 +739,7 @@ def make_maxwell_magnetic_field_boundary(
 
         # Finally, compute the negative inner product
         result = -(
-            dual_rwg_map[0] @ curl_val[:, 0]
-            + dual_rwg_map[1] @ curl_val[:, 1]
-            + dual_rwg_map[2] @ curl_val[:, 2]
+            dual_rwg_map[0] @ curl_val[:, 0] + dual_rwg_map[1] @ curl_val[:, 1] + dual_rwg_map[2] @ curl_val[:, 2]
         )
 
         return result + singular_part @ x

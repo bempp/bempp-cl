@@ -1046,9 +1046,7 @@ def rule(order):
     Orders between 1 and 30 are supported.
     """
     if order < 1 or order > 30:
-        raise ValueError(
-            f"Gauss quadrature order must be between 1 and 30. Provided: {order}"
-        )
+        raise ValueError(f"Gauss quadrature order must be between 1 and 30. Provided: {order}")
     npoints = order
     address = (npoints * (npoints - 1)) // 2
     return (

@@ -30,7 +30,5 @@ def test_export(filename, folder, space_type):
     """Return geometries of two element grid."""
     grid = bempp_cl.api.shapes.cube(h=0.5)
     space = bempp_cl.api.function_space(grid, *space_type)
-    function = bempp_cl.api.GridFunction(
-        space, coefficients=np.random.rand(space.global_dof_count)
-    )
+    function = bempp_cl.api.GridFunction(space, coefficients=np.random.rand(space.global_dof_count))
     bempp_cl.api.export(os.path.join(folder, filename), grid_function=function)

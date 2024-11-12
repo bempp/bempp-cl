@@ -1,4 +1,5 @@
 """Maxwell far-field operators."""
+
 import numpy as _np
 
 
@@ -32,9 +33,7 @@ def electric_field(
     )
 
     return PotentialOperator(
-        PotentialAssembler(
-            space, points, operator_descriptor, device_interface, assembler, parameters
-        )
+        PotentialAssembler(space, points, operator_descriptor, device_interface, assembler, parameters)
     )
 
 
@@ -68,9 +67,7 @@ def magnetic_field(
     )
 
     return PotentialOperator(
-        PotentialAssembler(
-            space, points, operator_descriptor, device_interface, assembler, parameters
-        )
+        PotentialAssembler(space, points, operator_descriptor, device_interface, assembler, parameters)
     )
 
 

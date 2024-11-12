@@ -15,13 +15,9 @@ def test_laplace_mixed_neumann_dirichlet(helpers, precision):
     global_neumann_space = bempp_cl.api.function_space(grid, "DP", 0)
     global_dirichlet_space = bempp_cl.api.function_space(grid, "P", 1)
 
-    neumann_space_dirichlet_segment = bempp_cl.api.function_space(
-        grid, "DP", 0, segments=dirichlet_segments
-    )
+    neumann_space_dirichlet_segment = bempp_cl.api.function_space(grid, "DP", 0, segments=dirichlet_segments)
 
-    neumann_space_neumann_segment = bempp_cl.api.function_space(
-        grid, "DP", 0, segments=neumann_segments
-    )
+    neumann_space_neumann_segment = bempp_cl.api.function_space(grid, "DP", 0, segments=neumann_segments)
 
     dirichlet_space_dirichlet_segment = bempp_cl.api.function_space(
         grid,
@@ -32,9 +28,7 @@ def test_laplace_mixed_neumann_dirichlet(helpers, precision):
         truncate_at_segment_edge=False,
     )
 
-    dirichlet_space_neumann_segment = bempp_cl.api.function_space(
-        grid, "P", 1, segments=neumann_segments
-    )
+    dirichlet_space_neumann_segment = bempp_cl.api.function_space(grid, "P", 1, segments=neumann_segments)
 
     dual_dirichlet_space = bempp_cl.api.function_space(
         grid, "P", 1, segments=dirichlet_segments, include_boundary_dofs=True
@@ -130,9 +124,7 @@ def test_laplace_mixed_neumann_dirichlet(helpers, precision):
     rhs_fun1 = (0.5 * id_DD + dlp_DD) * dirichlet_grid_fun - slp_DN * neumann_grid_fun
     rhs_fun2 = -hyp_ND * dirichlet_grid_fun + (0.5 * id_NN - adlp_NN) * neumann_grid_fun
 
-    (neumann_solution, dirichlet_solution), _ = bempp_cl.api.linalg.gmres(
-        blocked, [rhs_fun1, rhs_fun2]
-    )
+    (neumann_solution, dirichlet_solution), _ = bempp_cl.api.linalg.gmres(blocked, [rhs_fun1, rhs_fun2])
 
     neumann_imbedding_dirichlet_segment = bempp_cl.api.operators.boundary.sparse.identity(
         neumann_space_dirichlet_segment, global_neumann_space, global_neumann_space
@@ -142,12 +134,10 @@ def test_laplace_mixed_neumann_dirichlet(helpers, precision):
         neumann_space_neumann_segment, global_neumann_space, global_neumann_space
     )
 
-    dirichlet_imbedding_dirichlet_segment = (
-        bempp_cl.api.operators.boundary.sparse.identity(
-            dirichlet_space_dirichlet_segment,
-            global_dirichlet_space,
-            global_dirichlet_space,
-        )
+    dirichlet_imbedding_dirichlet_segment = bempp_cl.api.operators.boundary.sparse.identity(
+        dirichlet_space_dirichlet_segment,
+        global_dirichlet_space,
+        global_dirichlet_space,
     )
 
     dirichlet_imbedding_neumann_segment = bempp_cl.api.operators.boundary.sparse.identity(
@@ -160,8 +150,7 @@ def test_laplace_mixed_neumann_dirichlet(helpers, precision):
     )
 
     neumann = (
-        neumann_imbedding_neumann_segment * neumann_grid_fun
-        + neumann_imbedding_dirichlet_segment * neumann_solution
+        neumann_imbedding_neumann_segment * neumann_grid_fun + neumann_imbedding_dirichlet_segment * neumann_solution
     )
 
     data = helpers.load_npz_data("mixed_dirichlet_neumann_sol")
@@ -172,13 +161,9 @@ def test_laplace_mixed_neumann_dirichlet(helpers, precision):
     actual_dirichlet = dirichlet.evaluate_on_element_centers()
     actual_neumann = neumann.evaluate_on_element_centers()
 
-    np.testing.assert_allclose(
-        actual_dirichlet, expected_dirichlet, rtol=helpers.default_tolerance(precision)
-    )
+    np.testing.assert_allclose(actual_dirichlet, expected_dirichlet, rtol=helpers.default_tolerance(precision))
 
-    np.testing.assert_allclose(
-        actual_neumann, expected_neumann, rtol=helpers.default_tolerance(precision)
-    )
+    np.testing.assert_allclose(actual_neumann, expected_neumann, rtol=helpers.default_tolerance(precision))
 
     # rel_diff_dirichlet = np.abs(actual_dirichlet - expected_dirichlet) / np.abs(
     # expected_dirichlet

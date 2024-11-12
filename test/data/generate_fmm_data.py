@@ -29,9 +29,7 @@ def generate_points(size, filename):
     if filename not in data:
         if REGENERATE or not os.path.exists(filename + ".npy"):
             rand = np.random.RandomState(0)
-            points = np.vstack(
-                [2 * np.ones(size, dtype="float64"), rand.randn(size), rand.randn(size)]
-            )
+            points = np.vstack([2 * np.ones(size, dtype="float64"), rand.randn(size), rand.randn(size)])
             np.save(filename, points)
         else:
             points = np.load(filename + ".npy")
@@ -42,9 +40,7 @@ def generate_points(size, filename):
 def save_matvec_result(operator, space1, space2, space3, vec, filename, *args):
     if REGENERATE or not os.path.exists(filename + ".npy"):
         print("Generating " + filename)
-        dense_mat = operator(
-            space1, space2, space3, *args, assembler="dense"
-        ).weak_form()
+        dense_mat = operator(space1, space2, space3, *args, assembler="dense").weak_form()
         np.save(filename, dense_mat @ vec)
     else:
         print("Skipping " + filename + " (already generated)")

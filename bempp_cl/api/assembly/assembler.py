@@ -1,9 +1,7 @@
 """Various assemblers to discretize boundary operators."""
 
 
-def _create_assembler(
-    domain, dual_to_range, identifier, parameters, device_interface=None
-):
+def _create_assembler(domain, dual_to_range, identifier, parameters, device_interface=None):
     """Create assembler based on string."""
     from bempp_cl.core.singular_assembler import SingularAssembler
     from bempp_cl.core.dense_assembler import DenseAssembler
@@ -31,9 +29,7 @@ def _create_assembler(
         return SparseAssembler(domain, dual_to_range, parameters)
     if identifier == "fmm":
         if not check_for_fmm():
-            raise ValueError(
-                "No compatible FMM library found. Please install Exafmm from github.com/exafmm/exafmm-t."
-            )
+            raise ValueError("No compatible FMM library found. Please install Exafmm from github.com/exafmm/exafmm-t.")
         return FmmAssembler(domain, dual_to_range, parameters)
     else:
         raise ValueError("Unknown assembler type.")
@@ -160,18 +156,14 @@ class PotentialAssembler(object):
 
         if not self._is_complex:
             if np.iscomplexobj(x):
-                return self._implementation.evaluate(
-                    np.real(x)
-                ) + 1j * self._implementation.evaluate(np.imag(x))
+                return self._implementation.evaluate(np.real(x)) + 1j * self._implementation.evaluate(np.imag(x))
             else:
                 return self._implementation.evaluate(x)
         else:
             return self._implementation.evaluate(x)
 
 
-def select_potential_implementation(
-    space, points, operator_descriptor, device_interface, assembler, parameters
-):
+def select_potential_implementation(space, points, operator_descriptor, device_interface, assembler, parameters):
     """Select a potential operator implementation."""
     import bempp_cl.api
 
@@ -182,19 +174,13 @@ def select_potential_implementation(
     if assembler == "dense":
         from bempp_cl.core.dense_potential_assembler import DensePotentialAssembler
 
-        return DensePotentialAssembler(
-            space, operator_descriptor, points, device_interface, parameters
-        )
+        return DensePotentialAssembler(space, operator_descriptor, points, device_interface, parameters)
     elif assembler == "fmm":
         from bempp_cl.api.fmm.fmm_assembler import FmmPotentialAssembler
 
         if not bempp_cl.api.check_for_fmm():
-            raise ValueError(
-                "No compatible FMM library found. Please install Exafmm from github.com/exafmm/exafmm-t."
-            )
+            raise ValueError("No compatible FMM library found. Please install Exafmm from github.com/exafmm/exafmm-t.")
 
-        return FmmPotentialAssembler(
-            space, operator_descriptor, points, device_interface, parameters
-        )
+        return FmmPotentialAssembler(space, operator_descriptor, points, device_interface, parameters)
     else:
         raise ValueError(f"Unknown potential assembler: {assembler}")

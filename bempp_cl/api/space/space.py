@@ -40,9 +40,7 @@ def function_space(grid, kind, degree, scatter=True, **kwargs):
     space_f = None
 
     if "support_elements" in kwargs and "segments" in kwargs:
-        raise ValueError(
-            "Only one of 'support_elements' and 'segments' must be nonzero."
-        )
+        raise ValueError("Only one of 'support_elements' and 'segments' must be nonzero.")
 
     if kind == "DP":
         if degree == 0:
@@ -245,9 +243,7 @@ class SpaceBuilder(object):
             self._support = _np.ones(self._grid.number_of_elements, dtype=_np.bool)
 
         if self._normal_multipliers is None:
-            self._normal_multipliers = _np.ones(
-                self._grid.number_of_elements, dtype=_np.int32
-            )
+            self._normal_multipliers = _np.ones(self._grid.number_of_elements, dtype=_np.int32)
 
         if self._dof_transformation is None:
             ndofs = 1 + _np.max(self._local2global_map)
@@ -387,9 +383,7 @@ class FunctionSpace(object):
                 self._local_multipliers[self._support].ravel(),
                 (
                     nshape_fun * _np.repeat(self._support_elements, nshape_fun)
-                    + _np.tile(
-                        _np.arange(nshape_fun), self._number_of_support_elements
-                    ),
+                    + _np.tile(_np.arange(nshape_fun), self._number_of_support_elements),
                     self._local2global_map[self._support].ravel(),
                 ),
             ),
@@ -443,9 +437,7 @@ class FunctionSpace(object):
         """Return the DOF numbers associated with the cell."""
         return [
             None if _np.isclose(j, 0) else i
-            for i, j in zip(
-                self.local2global[cell_index], self.local_multipliers[cell_index]
-            )
+            for i, j in zip(self.local2global[cell_index], self.local_multipliers[cell_index])
         ]
 
     @property
@@ -467,9 +459,7 @@ class FunctionSpace(object):
     def global2local(self):
         """Return global to local map."""
         if self._global2local_map is None:
-            self._global2local_map = invert_local2global(
-                self.local2global, self.local_multipliers
-            )
+            self._global2local_map = invert_local2global(self.local2global, self.local_multipliers)
         return self._global2local_map
 
     @property
@@ -617,9 +607,7 @@ class FunctionSpace(object):
         is the quadrature order of the underlying quadrature rule. If
         'return_transpose' is true then then transpose of the operator is returned.
         """
-        return map_space_to_points(
-            self, quadrature_order=quadrature_order, return_transpose=return_transpose
-        )
+        return map_space_to_points(self, quadrature_order=quadrature_order, return_transpose=return_transpose)
 
     def get_elements_by_color(self):
         """
@@ -665,11 +653,7 @@ class FunctionSpace(object):
     def surface_curl(self, element_index, element, local_coordinates):
         """Return the surface gradient."""
         return self.numba_surface_curl(
-            element_index,
-            element,
-            self.shapeset.gradient,
-            local_coordinates,
-            self.grid.data()
+            element_index, element, self.shapeset.gradient, local_coordinates, self.grid.data()
         )
 
     def mass_matrix(self):
@@ -688,9 +672,7 @@ class FunctionSpace(object):
         )
 
         if self._inverse_mass_matrix is None:
-            self._inverse_mass_matrix = InverseSparseDiscreteBoundaryOperator(
-                self.mass_matrix()
-            )
+            self._inverse_mass_matrix = InverseSparseDiscreteBoundaryOperator(self.mass_matrix())
         return self._inverse_mass_matrix
 
     def _generate_hash(self):
@@ -732,9 +714,7 @@ class FunctionSpace(object):
 
             neighbor_colors = self._color_map[list(neighbors)]
             self._color_map[element_index] = next(
-                color
-                for color in range(self.number_of_support_elements)
-                if color not in neighbor_colors
+                color for color in range(self.number_of_support_elements) if color not in neighbor_colors
             )
 
     def _sort_elements_by_color(self):
@@ -876,15 +856,9 @@ def map_space_to_points_impl(
         data[elem * nlocal : (1 + elem) * nlocal] = basis_values.ravel()
         for index in range(number_of_shape_functions):
             vertex_indices[
-                elem * nlocal
-                + index * number_of_local_points : elem * nlocal
-                + (1 + index) * number_of_local_points
-            ] = _np.arange(
-                elem * number_of_local_points, (1 + elem) * number_of_local_points
-            )
-        global_indices[elem * nlocal : (1 + elem) * nlocal] = _np.repeat(
-            local2global[elem, :], number_of_local_points
-        )
+                elem * nlocal + index * number_of_local_points : elem * nlocal + (1 + index) * number_of_local_points
+            ] = _np.arange(elem * number_of_local_points, (1 + elem) * number_of_local_points)
+        global_indices[elem * nlocal : (1 + elem) * nlocal] = _np.repeat(local2global[elem, :], number_of_local_points)
 
     return (data, global_indices, vertex_indices)
 
@@ -892,9 +866,7 @@ def map_space_to_points_impl(
 def _process_segments(grid, support_elements, segments, swapped_normals):
     """Process information from support_elements and segments vars."""
     if support_elements is not None and segments is not None:
-        raise ValueError(
-            "Only one of 'support_elements' and 'segments' must be nonzero."
-        )
+        raise ValueError("Only one of 'support_elements' and 'segments' must be nonzero.")
 
     if swapped_normals is None:
         swapped_normals = {}
@@ -947,20 +919,16 @@ def make_localised_space(space):
     local_size = space.number_of_shape_functions
 
     local2global_map = _np.zeros((number_of_elements, local_size), dtype="uint32")
-    local2global_map[space.support] = _np.arange(
-        local_size * support_size, dtype="uint32"
-    ).reshape((support_size, local_size))
+    local2global_map[space.support] = _np.arange(local_size * support_size, dtype="uint32").reshape(
+        (support_size, local_size)
+    )
 
     local_multipliers = _np.zeros((number_of_elements, local_size), dtype="float64")
     local_multipliers[space.support] = 1
 
-    surface_gradient = (
-        space.numba_surface_gradient if space.has_surface_gradient else None
-    )
+    surface_gradient = space.numba_surface_gradient if space.has_surface_gradient else None
 
-    surface_curl = (
-        space.numba_surface_curl if space.has_surface_curl else None
-    )
+    surface_curl = space.numba_surface_curl if space.has_surface_curl else None
 
     global2local_map = invert_local2global(local2global_map, local_multipliers)
 

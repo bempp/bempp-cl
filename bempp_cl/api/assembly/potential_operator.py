@@ -30,10 +30,7 @@ class PotentialOperator(object):
 
         return (
             self.component_count == other.component_count
-            and np.linalg.norm(
-                self.evaluation_points - other.evaluation_points, ord=np.inf
-            )
-            == 0
+            and np.linalg.norm(self.evaluation_points - other.evaluation_points, ord=np.inf) == 0
             and self.space.is_compatible(other.space)
         )
 
@@ -97,7 +94,6 @@ class _ScaledPotentialOperator(PotentialOperator):
     """Scaled potential operator."""
 
     def __init__(self, op, alpha):
-
         self._op = op
         self._alpha = alpha
 

@@ -14,9 +14,7 @@ class SparseAssembler(_assembler.AssemblerBase):
         """Create a dense assembler instance."""
         super().__init__(domain, dual_to_range, parameters)
 
-    def assemble(
-        self, operator_descriptor, device_interface, precision, *args, **kwargs
-    ):
+    def assemble(self, operator_descriptor, device_interface, precision, *args, **kwargs):
         """Sparse assembly of operators."""
         from bempp_cl.api.utils.helpers import promote_to_double_precision
         from bempp_cl.api.space.space import return_compatible_representation
@@ -26,25 +24,19 @@ class SparseAssembler(_assembler.AssemblerBase):
             SparseDiscreteBoundaryOperator,
         )
 
-        domain, dual_to_range = return_compatible_representation(
-            self.domain, self.dual_to_range
-        )
+        domain, dual_to_range = return_compatible_representation(self.domain, self.dual_to_range)
         row_grid_dofs = dual_to_range.grid_dof_count
         col_grid_dofs = domain.grid_dof_count
 
         if domain.grid != dual_to_range.grid:
-            raise ValueError(
-                "For sparse operators the domain and dual_to_range grids must be identical."
-            )
+            raise ValueError("For sparse operators the domain and dual_to_range grids must be identical.")
 
         trial_local2global = domain.local2global.ravel()
         test_local2global = dual_to_range.local2global.ravel()
         trial_multipliers = domain.local_multipliers.ravel()
         test_multipliers = dual_to_range.local_multipliers.ravel()
 
-        numba_assembly_function, numba_kernel_function = select_numba_kernels(
-            operator_descriptor, mode="sparse"
-        )
+        numba_assembly_function, numba_kernel_function = select_numba_kernels(operator_descriptor, mode="sparse")
 
         rows, cols, values = assemble_sparse(
             domain.localised_space,
@@ -110,9 +102,7 @@ def assemble_sparse(
     else:
         result_type = get_type(precision).real
 
-    result = _np.zeros(
-        nshape_test * nshape_trial * number_of_elements, dtype=result_type
-    )
+    result = _np.zeros(nshape_test * nshape_trial * number_of_elements, dtype=result_type)
 
     if operator_descriptor.identifier == "laplace_beltrami":
         dual_to_range_shapeset_evaluation = dual_to_range.shapeset.gradient

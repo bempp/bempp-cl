@@ -1,4 +1,5 @@
 """Routines to administrate a process pool."""
+
 import numpy as _np
 
 # Variables used inside the workers.
@@ -33,7 +34,6 @@ def worker(in_queue, out_queue, worker_id, nworkers, buf, log, log_level):
     put = out_queue.put
 
     while True:
-
         job = get()
         if job is None:
             break
@@ -73,9 +73,7 @@ def as_array(dtype, offset, shape):
 
     nitems = _np.prod(shape)
 
-    return _np.frombuffer(
-        pool._BUFFER, dtype=dtype, count=nitems, offset=offset
-    ).reshape(*shape)
+    return _np.frombuffer(pool._BUFFER, dtype=dtype, count=nitems, offset=offset).reshape(*shape)
 
 
 def to_buffer(*args):
@@ -87,9 +85,7 @@ def to_buffer(*args):
 
     for arr in args:
         ar_size = arr.nbytes
-        pool._BUFFER[offset : offset + ar_size] = _np.require(
-            arr.flat, requirements="C"
-        ).view(dtype="uint8")
+        pool._BUFFER[offset : offset + ar_size] = _np.require(arr.flat, requirements="C").view(dtype="uint8")
         offset += ar_size
         result.append((arr.dtype, arr.shape))
     return result
@@ -317,14 +313,11 @@ def create_device_pool(
     bempp_cl.api.log(f"Creating pool for Platform: {ctx.platform_name}")
 
     if precision not in [None, "single", "double"]:
-        raise ValueError(
-            f"'precision' is {precision}. Allowed values are: 'single', 'double'"
-        )
+        raise ValueError(f"'precision' is {precision}. Allowed values are: 'single', 'double'")
 
     if max_workers > len(ctx.devices):
         raise ValueError(
-            f"Maximum number of workers ({max_workers}) "
-            + f"is bigger than number of devices {len(ctx.devices)}"
+            f"Maximum number of workers ({max_workers}) " + f"is bigger than number of devices {len(ctx.devices)}"
         )
     if max_workers == -1:
         ndevices = len(ctx.devices)

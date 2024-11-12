@@ -20,18 +20,14 @@ def p0_discontinuous_function_space(
     from .space import SpaceBuilder, _process_segments
 
     if include_boundary_dofs is not None:
-        log(
-            "Setting include_boundary_dofs has no effect on this space type.", "warning"
-        )
+        log("Setting include_boundary_dofs has no effect on this space type.", "warning")
     if truncate_at_segment_edge is not None:
         log(
             "Setting truncate_at_segment_edge has no effect on this space type.",
             "warning",
         )
 
-    support, normal_multipliers = _process_segments(
-        grid, support_elements, segments, swapped_normals
-    )
+    support, normal_multipliers = _process_segments(grid, support_elements, segments, swapped_normals)
 
     elements_in_support = _np.flatnonzero(support)
     support_size = len(elements_in_support)
@@ -82,9 +78,7 @@ def p0_barycentric_discontinuous_function_space(coarse_space):
 
     normal_multipliers = _np.repeat(coarse_space.normal_multipliers, 6)
 
-    coarse_dofs = _np.repeat(
-        _np.arange(number_of_support_elements, dtype=_np.uint32), 6
-    )
+    coarse_dofs = _np.repeat(_np.arange(number_of_support_elements, dtype=_np.uint32), 6)
     bary_dofs = _np.arange(6 * number_of_support_elements, dtype=_np.uint32)
     values = _np.ones(6 * number_of_support_elements, dtype=_np.float64)
 
@@ -137,18 +131,14 @@ def p1_discontinuous_function_space(
     from .space import SpaceBuilder, _process_segments
 
     if include_boundary_dofs is not None:
-        log(
-            "Setting include_boundary_dofs has no effect on this space type.", "warning"
-        )
+        log("Setting include_boundary_dofs has no effect on this space type.", "warning")
     if truncate_at_segment_edge is not None:
         log(
             "Setting truncate_at_segment_edge has no effect on this space type.",
             "warning",
         )
 
-    support, normal_multipliers = _process_segments(
-        grid, support_elements, segments, swapped_normals
-    )
+    support, normal_multipliers = _process_segments(grid, support_elements, segments, swapped_normals)
 
     elements_in_support = _np.flatnonzero(support)
     support_size = len(elements_in_support)
@@ -187,9 +177,7 @@ def p1_continuous_function_space(
     """Define a space of continuous piecewise linear functions."""
     from .space import SpaceBuilder, _process_segments
 
-    support, normal_multipliers = _process_segments(
-        grid, support_elements, segments, swapped_normals
-    )
+    support, normal_multipliers = _process_segments(grid, support_elements, segments, swapped_normals)
 
     # Create list of vertex neighbors. Needed for dofmap computation
 
@@ -280,16 +268,12 @@ def p1_barycentric_continuous_function_space(coarse_space):
         ),
     ]
 
-    coarse_dofs, bary_dofs, values = generate_p1_map(
-        coarse_space.grid.data(), coarse_space.support_elements, coeffs
-    )
+    coarse_dofs, bary_dofs, values = generate_p1_map(coarse_space.grid.data(), coarse_space.support_elements, coeffs)
 
     local2global = _np.zeros((bary_grid_number_of_elements, 3), dtype="uint32")
     local_multipliers = _np.zeros((bary_grid_number_of_elements, 3), dtype="uint32")
 
-    local2global[support] = _np.arange(3 * bary_support_size).reshape(
-        bary_support_size, 3
-    )
+    local2global[support] = _np.arange(3 * bary_support_size).reshape(bary_support_size, 3)
 
     local_multipliers[support] = 1
 
@@ -344,9 +328,7 @@ def generate_p1_map(grid_data, support_elements, coeffs):
             coarse_dof = 3 * index + local_dof
             bary_coeffs = coeffs[local_dof]
             coarse_dofs[count : count + 18] = coarse_dof
-            bary_dofs[count : count + 18] = _np.arange(
-                3 * bary_elements[0], 3 * bary_elements[0] + 18
-            )
+            bary_dofs[count : count + 18] = _np.arange(3 * bary_elements[0], 3 * bary_elements[0] + 18)
             values[count : count + 18] = bary_coeffs.ravel()
             count += 18
     return coarse_dofs, bary_dofs, values
@@ -388,19 +370,12 @@ def _compute_p1_dof_map(
             vertex = grid_data.elements[local_index, element_index]
             neighbors = vertex_neighbors[index_ptr[vertex] : index_ptr[vertex + 1]]
             non_support_neighbors = [n for n in neighbors if not support[n]]
-            node_is_interior = (
-                len(non_support_neighbors) == 0
-                and not grid_data.vertex_on_boundary[vertex]
-            )
+            node_is_interior = len(non_support_neighbors) == 0 and not grid_data.vertex_on_boundary[vertex]
             if include_boundary_dofs or node_is_interior:
                 # Just add dof
                 local2global[element_index, local_index] = vertex
                 vertex_is_dof[vertex] = True
-            if (
-                len(non_support_neighbors) > 0
-                and not truncate_at_segment_edge
-                and include_boundary_dofs
-            ):
+            if len(non_support_neighbors) > 0 and not truncate_at_segment_edge and include_boundary_dofs:
                 for en in non_support_neighbors:
                     extended_support.append(en)
                     other_local_index = find_index(grid_data.elements[:, en], vertex)
@@ -476,7 +451,5 @@ def _numba_p1_surface_gradient(
     reference_values = shapeset_gradient(local_coordinates)
     result = _np.empty((1, 3, 3, local_coordinates.shape[1]), dtype=_np.float64)
     for index in range(3):
-        result[0, :, index, :] = grid_data.jac_inv_trans[element_index].dot(
-            reference_values[0, :, index, :]
-        )
+        result[0, :, index, :] = grid_data.jac_inv_trans[element_index].dot(reference_values[0, :, index, :])
     return result

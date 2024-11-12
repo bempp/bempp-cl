@@ -124,13 +124,9 @@ rhs_fun_osrc = dirichlet_grid_fun - ntd * neumann_grid_fun
 # +
 from bempp_cl.api.linalg import gmres
 
-sol_bm, info, it_count_bm = gmres(
-    burton_miller, rhs_fun_bm, use_strong_form=True, return_iteration_count=True
-)
+sol_bm, info, it_count_bm = gmres(burton_miller, rhs_fun_bm, use_strong_form=True, return_iteration_count=True)
 
-sol_osrc, info, it_count_osrc = gmres(
-    osrc_bm, rhs_fun_osrc, use_strong_form=True, return_iteration_count=True
-)
+sol_osrc, info, it_count_osrc = gmres(osrc_bm, rhs_fun_osrc, use_strong_form=True, return_iteration_count=True)
 
 print("The linear system was solved in")
 print("  {0} iterations for the Burton-Miller formulation, and".format(it_count_bm))

@@ -103,12 +103,8 @@ def test_hypersingular_operators():
 
     space = function_space(grid, "P", 1)
 
-    bempp_cl.api.operators.boundary.laplace.hypersingular(
-        space, space, space, assembler="dense"
-    ).weak_form()
-    bempp_cl.api.operators.boundary.helmholtz.hypersingular(
-        space, space, space, 1.5, assembler="dense"
-    ).weak_form()
+    bempp_cl.api.operators.boundary.laplace.hypersingular(space, space, space, assembler="dense").weak_form()
+    bempp_cl.api.operators.boundary.helmholtz.hypersingular(space, space, space, 1.5, assembler="dense").weak_form()
     bempp_cl.api.operators.boundary.modified_helmholtz.hypersingular(
         space, space, space, 1.5, assembler="dense"
     ).weak_form()
@@ -127,13 +123,9 @@ def test_hypersingular_fails_for_wrong_space(type0, type1):
     with pytest.raises(ValueError):
         laplace.hypersingular(space0, space1, space1, assembler="dense").weak_form()
     with pytest.raises(ValueError):
-        helmholtz.hypersingular(
-            space0, space1, space1, 1.5, assembler="dense"
-        ).weak_form()
+        helmholtz.hypersingular(space0, space1, space1, 1.5, assembler="dense").weak_form()
     with pytest.raises(ValueError):
-        modified_helmholtz.hypersingular(
-            space0, space1, space1, 1.5, assembler="dense"
-        ).weak_form()
+        modified_helmholtz.hypersingular(space0, space1, space1, 1.5, assembler="dense").weak_form()
 
 
 @pytest.mark.parametrize("operator", [maxwell.magnetic_field, maxwell.electric_field])

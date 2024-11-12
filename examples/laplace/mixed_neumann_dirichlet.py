@@ -63,7 +63,9 @@ dirichlet_space_dirichlet_segment = bempp_cl.api.function_space(
 
 dirichlet_space_neumann_segment = bempp_cl.api.function_space(grid, "P", 1, segments=neumann_segments)
 
-dual_dirichlet_space = bempp_cl.api.function_space(grid, "P", 1, segments=dirichlet_segments, include_boundary_dofs=True)
+dual_dirichlet_space = bempp_cl.api.function_space(
+    grid, "P", 1, segments=dirichlet_segments, include_boundary_dofs=True
+)
 # -
 
 # In the following, we define all operators on the corresponding spaces and the overall blocked operator.

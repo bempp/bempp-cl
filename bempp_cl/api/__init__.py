@@ -132,16 +132,10 @@ def enable_console_logging(level="info"):
         console_handler.setLevel(LOG_LEVEL[level])
         if pool.is_worker():
             console_handler.setFormatter(
-                _logging.Formatter(
-                    f"%(name)s:PROC{pool._MY_ID}:%(levelname)s: %(message)s", "%H:%M:%S"
-                )
+                _logging.Formatter(f"%(name)s:PROC{pool._MY_ID}:%(levelname)s: %(message)s", "%H:%M:%S")
             )
         else:
-            console_handler.setFormatter(
-                _logging.Formatter(
-                    "%(name)s:HOST:%(levelname)s: %(message)s", "%H:%M:%S"
-                )
-            )
+            console_handler.setFormatter(_logging.Formatter("%(name)s:HOST:%(levelname)s: %(message)s", "%H:%M:%S"))
         LOGGER.addHandler(console_handler)
         CONSOLE_LOGGING_HANDLER = console_handler
     return CONSOLE_LOGGING_HANDLER
@@ -195,9 +189,7 @@ class Timer:
 
 LOGGER = _init_logger()
 
-BEMPP_PATH = _os.path.abspath(
-    _os.path.join(_os.path.dirname(_os.path.realpath(__file__)), "..")
-)
+BEMPP_PATH = _os.path.abspath(_os.path.join(_os.path.dirname(_os.path.realpath(__file__)), ".."))
 
 # pylint: disable=W0702
 # try:
@@ -222,10 +214,7 @@ def _gmsh_path():
     else:
         gmp = which("gmsh")
     if gmp is None:
-        print(
-            "Could not find Gmsh."
-            + "Interactive plotting and shapes module not available."
-        )
+        print("Could not find Gmsh." + "Interactive plotting and shapes module not available.")
     return gmp
 
 
@@ -290,9 +279,7 @@ else:
         DEFAULT_DEVICE_INTERFACE = "numba"
 
 if DEFAULT_DEVICE_INTERFACE == "numba":
-    log(
-        "Numba backend activated. For full performance the OpenCL backend with an OpenCL CPU driver is required."
-    )
+    log("Numba backend activated. For full performance the OpenCL backend with an OpenCL CPU driver is required.")
 
 DEFAULT_PRECISION = "double"
 VECTORIZATION_MODE = "auto"

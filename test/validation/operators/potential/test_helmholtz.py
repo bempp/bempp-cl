@@ -11,9 +11,7 @@ WAVENUMBER = 2.5
 pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
 
-def test_helmholtz_single_layer_potential_p1(
-    default_parameters, helpers, device_interface, precision
-):
+def test_helmholtz_single_layer_potential_p1(default_parameters, helpers, device_interface, precision):
     """Test Helmholtz slp potential with p1 basis."""
     from bempp_cl.api import function_space
     from bempp_cl.api import GridFunction
@@ -39,14 +37,10 @@ def test_helmholtz_single_layer_potential_p1(
         device_interface=device_interface,
     ).evaluate(fun)
 
-    _np.testing.assert_allclose(
-        actual, expected, rtol=helpers.default_tolerance(precision)
-    )
+    _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
 
 
-def test_helmholtz_double_layer_potential_p1(
-    default_parameters, helpers, device_interface, precision
-):
+def test_helmholtz_double_layer_potential_p1(default_parameters, helpers, device_interface, precision):
     """Test Helmholtz dlp potential with p1 basis."""
     from bempp_cl.api import function_space
     from bempp_cl.api import GridFunction
@@ -72,14 +66,10 @@ def test_helmholtz_double_layer_potential_p1(
         device_interface=device_interface,
     ).evaluate(fun)
 
-    _np.testing.assert_allclose(
-        actual, expected, rtol=helpers.default_tolerance(precision)
-    )
+    _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
 
 
-def test_helmholtz_single_layer_potential_p1_complex_coeffs(
-    default_parameters, helpers, device_interface, precision
-):
+def test_helmholtz_single_layer_potential_p1_complex_coeffs(default_parameters, helpers, device_interface, precision):
     """Test Helmholtz slp potential with p1 basis and complex coeffs."""
     from bempp_cl.api import function_space
     from bempp_cl.api import GridFunction
@@ -91,9 +81,7 @@ def test_helmholtz_single_layer_potential_p1_complex_coeffs(
     data = helpers.load_npz_data("helmholtz_single_layer_potential_p1")
 
     points = data["points"]
-    coefficients = _np.random.rand(space.global_dof_count) + 1j * _np.random.rand(
-        space.global_dof_count
-    )
+    coefficients = _np.random.rand(space.global_dof_count) + 1j * _np.random.rand(space.global_dof_count)
 
     fun = GridFunction(space, coefficients=coefficients)
     fun_real = GridFunction(space, coefficients=_np.real(coefficients))
@@ -111,14 +99,10 @@ def test_helmholtz_single_layer_potential_p1_complex_coeffs(
     expected = op.evaluate(fun_real) + 1j * op.evaluate(fun_complex)
     actual = op.evaluate(fun)
 
-    _np.testing.assert_allclose(
-        actual, expected, rtol=helpers.default_tolerance(precision)
-    )
+    _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
 
 
-def test_helmholtz_potentials_segments(
-    default_parameters, helpers, device_interface, precision
-):
+def test_helmholtz_potentials_segments(default_parameters, helpers, device_interface, precision):
     """Test Helmholtz potentials on segments."""
     import bempp_cl.api
     from bempp_cl.api import function_space
@@ -156,14 +140,10 @@ def test_helmholtz_potentials_segments(
             actual = op(space1, points, 2.5) * fun1
             expected = op(space2, points, 2.5) * fun2
 
-            _np.testing.assert_allclose(
-                actual, expected, rtol=helpers.default_tolerance(precision)
-            )
+            _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))
 
 
-def test_helmholtz_potentials_segments_complex_coeffs(
-    default_parameters, helpers, device_interface, precision
-):
+def test_helmholtz_potentials_segments_complex_coeffs(default_parameters, helpers, device_interface, precision):
     """Test Helmholtz potentials on segments with complex coeffs."""
     import bempp_cl.api
     from bempp_cl.api import function_space
@@ -182,9 +162,7 @@ def test_helmholtz_potentials_segments_complex_coeffs(
         for seglist, swapped_normals in zip(seglists, swapped_normal_lists):
             new_grid = grid_from_segments(grid, seglist)
 
-            coeffs = rand.rand(new_grid.number_of_vertices) + 1j * rand.rand(
-                new_grid.number_of_vertices
-            )
+            coeffs = rand.rand(new_grid.number_of_vertices) + 1j * rand.rand(new_grid.number_of_vertices)
 
             space1 = function_space(
                 grid,
@@ -203,6 +181,4 @@ def test_helmholtz_potentials_segments_complex_coeffs(
             actual = op(space1, points, 2.5) * fun1
             expected = op(space2, points, 2.5) * fun2
 
-            _np.testing.assert_allclose(
-                actual, expected, rtol=helpers.default_tolerance(precision)
-            )
+            _np.testing.assert_allclose(actual, expected, rtol=helpers.default_tolerance(precision))

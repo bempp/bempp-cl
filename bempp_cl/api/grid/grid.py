@@ -16,9 +16,7 @@ class Grid(object):
     """The Grid class."""
 
     @_timeit
-    def __init__(
-        self, vertices, elements, domain_indices=None, grid_id=None, scatter=True
-    ):
+    def __init__(self, vertices, elements, domain_indices=None, grid_id=None, scatter=True):
         """Create a grid from a vertices and an elements array."""
         from bempp_cl.api import log
         from bempp_cl.api.utils import pool
@@ -338,9 +336,7 @@ class Grid(object):
         """Initialise the grid on all workers."""
         from bempp_cl.api.utils import pool
 
-        array_proxies = pool.to_buffer(
-            self.vertices, self.elements, self.domain_indices
-        )
+        array_proxies = pool.to_buffer(self.vertices, self.elements, self.domain_indices)
 
         pool.execute(_grid_scatter_worker, self.id, array_proxies)
         self._is_scattered = True
@@ -436,9 +432,7 @@ class Grid(object):
         """Return a new grid with all elements refined."""
         new_number_of_vertices = self.number_of_edges + self.number_of_vertices
 
-        new_vertices = _np.empty(
-            (3, new_number_of_vertices), dtype="float64", order="F"
-        )
+        new_vertices = _np.empty((3, new_number_of_vertices), dtype="float64", order="F")
 
         new_vertices[:, : self.number_of_vertices] = self.vertices
 
@@ -447,9 +441,7 @@ class Grid(object):
             self.vertices[:, self.edges[0, :]] + self.vertices[:, self.edges[1, :]]
         )
 
-        new_elements = _np.empty(
-            (3, 4 * self.number_of_elements), order="F", dtype="uint32"
-        )
+        new_elements = _np.empty((3, 4 * self.number_of_elements), order="F", dtype="uint32")
 
         new_domain_indices = _np.repeat(self.domain_indices, 4)
 
@@ -513,9 +505,7 @@ class Grid(object):
             value_type=_numba.types.int64,
         )
 
-        self._edges, self._element_edges = _numba_enumerate_edges(
-            self._elements, edge_tuple_to_index
-        )
+        self._edges, self._element_edges = _numba_enumerate_edges(self._elements, edge_tuple_to_index)
 
     def _get_element_adjacency_for_edges_and_vertices(self):
         """Get element adjacency.
@@ -537,39 +527,27 @@ class Grid(object):
         """
         from bempp_cl.helpers import IndexList
 
-        self._element_to_vertex_matrix = get_element_to_vertex_matrix(
-            self._vertices, self._elements
-        )
+        self._element_to_vertex_matrix = get_element_to_vertex_matrix(self._vertices, self._elements)
 
-        elem_to_elem_matrix = get_element_to_element_matrix(
-            self._vertices, self._elements
-        )
+        elem_to_elem_matrix = get_element_to_element_matrix(self._vertices, self._elements)
 
         self._element_to_element_matrix = elem_to_elem_matrix
 
-        elements1, elements2, nvertices = _get_element_to_element_vertex_count(
-            elem_to_elem_matrix
-        )
+        elements1, elements2, nvertices = _get_element_to_element_vertex_count(elem_to_elem_matrix)
 
         vertex_connected_elements1, vertex_connected_elements2 = _element_filter(
             elements1, elements2, nvertices, VERTICES_ID
         )
 
-        edge_connected_elements1, edge_connected_elements2 = _element_filter(
-            elements1, elements2, nvertices, EDGES_ID
-        )
+        edge_connected_elements1, edge_connected_elements2 = _element_filter(elements1, elements2, nvertices, EDGES_ID)
 
         self._vertex_adjacency = _find_vertex_adjacency(
             self._elements, vertex_connected_elements1, vertex_connected_elements2
         )
 
-        self._edge_adjacency = _find_edge_adjacency(
-            self._elements, edge_connected_elements1, edge_connected_elements2
-        )
+        self._edge_adjacency = _find_edge_adjacency(self._elements, edge_connected_elements1, edge_connected_elements2)
 
-        self._element_neighbors = IndexList(
-            elem_to_elem_matrix.indices, elem_to_elem_matrix.indptr
-        )
+        self._element_neighbors = IndexList(elem_to_elem_matrix.indices, elem_to_elem_matrix.indptr)
 
     def _compute_geometric_quantities(self):
         """Compute geometric quantities for the grid."""
@@ -577,17 +555,9 @@ class Grid(object):
         indexptr = 3 * _np.arange(self.number_of_elements)
         indices = _np.repeat(indexptr, 2) + _np.tile([1, 2], self.number_of_elements)
 
-        centroids = (
-            1.0
-            / 3
-            * _np.sum(
-                _np.reshape(element_vertices, (self.number_of_elements, 3, 3)), axis=1
-            )
-        )
+        centroids = 1.0 / 3 * _np.sum(_np.reshape(element_vertices, (self.number_of_elements, 3, 3)), axis=1)
 
-        jacobians = (element_vertices - _np.repeat(element_vertices[::3], 3, axis=0))[
-            indices
-        ]
+        jacobians = (element_vertices - _np.repeat(element_vertices[::3], 3, axis=0))[indices]
 
         normal_directions = _np.cross(jacobians[::2], jacobians[1::2], axis=1)
         normal_direction_norms = _np.linalg.norm(normal_directions, axis=1)
@@ -599,38 +569,25 @@ class Grid(object):
         diff_norms = _np.linalg.norm(jacobian_diff, axis=1)
         jac_vector_norms = _np.linalg.norm(jacobians, axis=1)
 
-        diameters = (
-            jac_vector_norms[::2]
-            * jac_vector_norms[1::2]
-            * diff_norms
-            / normal_direction_norms
-        )
+        diameters = jac_vector_norms[::2] * jac_vector_norms[1::2] * diff_norms / normal_direction_norms
 
         self._volumes = volumes
         self._normals = normals
-        self._jacobians = _np.swapaxes(
-            _np.reshape(jacobians, (self.number_of_elements, 2, 3)), 1, 2
-        )
+        self._jacobians = _np.swapaxes(_np.reshape(jacobians, (self.number_of_elements, 2, 3)), 1, 2)
         self._diameters = diameters
         self._centroids = centroids
 
         jac_transpose_jac = _np.empty((self.number_of_elements, 2, 2), dtype="float64")
         for index in range(self.number_of_elements):
-            jac_transpose_jac[index] = self.jacobians[index].T.dot(
-                self.jacobians[index]
-            )
+            jac_transpose_jac[index] = self.jacobians[index].T.dot(self.jacobians[index])
         self._integration_elements = _np.sqrt(_np.linalg.det(jac_transpose_jac))
 
         jac_transpose_jac_inv = _np.linalg.inv(jac_transpose_jac)
 
-        self._jacobian_inverse_transposed = _np.empty(
-            (self.number_of_elements, 3, 2), dtype="float64"
-        )
+        self._jacobian_inverse_transposed = _np.empty((self.number_of_elements, 3, 2), dtype="float64")
 
         for index in range(self.number_of_elements):
-            self._jacobian_inverse_transposed[index] = self.jacobians[index].dot(
-                jac_transpose_jac_inv[index]
-            )
+            self._jacobian_inverse_transposed[index] = self.jacobians[index].dot(jac_transpose_jac_inv[index])
 
     def _compute_boundary_information(self):
         """
@@ -672,9 +629,7 @@ class Grid(object):
 
         for element_index in range(self.number_of_elements):
             for local_index in range(3):
-                edge_neighbors[self.element_edges[local_index, element_index]].append(
-                    element_index
-                )
+                edge_neighbors[self.element_edges[local_index, element_index]].append(element_index)
         self._edge_neighbors = [tuple(elem) for elem in edge_neighbors]
 
 
@@ -737,9 +692,9 @@ class GridDataDouble(object):
 
     def local2global(self, elem_index, local_coords):
         """Map local to global coordinates."""
-        return _np.expand_dims(
-            self.vertices[:, self.elements[0, elem_index]], 1
-        ) + self.jacobians[elem_index].dot(local_coords)
+        return _np.expand_dims(self.vertices[:, self.elements[0, elem_index]], 1) + self.jacobians[elem_index].dot(
+            local_coords
+        )
 
 
 @_numba.experimental.jitclass(
@@ -801,9 +756,9 @@ class GridDataFloat(object):
 
     def local2global(self, elem_index, local_coords):
         """Map local to global coordinates."""
-        return _np.expand_dims(
-            self.vertices[:, self.elements[0, elem_index]], 1
-        ) + self.jacobians[elem_index].dot(local_coords)
+        return _np.expand_dims(self.vertices[:, self.elements[0, elem_index]], 1) + self.jacobians[elem_index].dot(
+            local_coords
+        )
 
 
 class ElementGeometry(object):
@@ -863,7 +818,6 @@ class Element(object):
     """Provides a view onto an element of the grid."""
 
     def __init__(self, grid, index):
-
         self._grid = grid
         self._index = index
 
@@ -1051,13 +1005,9 @@ def _find_two_common_array_index_pairs(array1, array2):
     """Return two index pairs (i, j) such that array1[i] = array2[j]."""
     offset = 0
     index_pairs = _np.empty((2, 2), dtype=_np.int32)
-    index_pairs[:, 0] = _find_first_common_array_index_pair_from_position(
-        array1, array2, offset
-    )
+    index_pairs[:, 0] = _find_first_common_array_index_pair_from_position(array1, array2, offset)
     offset = index_pairs[0, 0] + 1  # Next search starts behind found pair
-    index_pairs[:, 1] = _find_first_common_array_index_pair_from_position(
-        array1, array2, offset
-    )
+    index_pairs[:, 1] = _find_first_common_array_index_pair_from_position(array1, array2, offset)
     return index_pairs
 
 
@@ -1068,9 +1018,7 @@ def _get_shared_vertex_information_for_two_elements(elements, elem0, elem1):
 
     The tuple has the property elements[i, elem0] == elements[j, elem1]
     """
-    i, j = _find_first_common_array_index_pair_from_position(
-        elements[:, elem0], elements[:, elem1]
-    )
+    i, j = _find_first_common_array_index_pair_from_position(elements[:, elem0], elements[:, elem1])
     return (i, j)
 
 
@@ -1083,9 +1031,7 @@ def _get_shared_edge_information_for_two_elements(elements, elem0, elem1):
     elements[i, elem0] = elements[j, elem1]
 
     """
-    index_pairs = _find_two_common_array_index_pairs(
-        elements[:, elem0], elements[:, elem1]
-    )
+    index_pairs = _find_two_common_array_index_pairs(elements[:, elem0], elements[:, elem1])
 
     # Ensure that order of indices is the same as Bempp 3
 
@@ -1118,9 +1064,7 @@ def _find_vertex_adjacency(elements, test_indices, trial_indices):
         # Now find the position of the shared vertex
         test_index = test_indices[index]
         trial_index = trial_indices[index]
-        i, j = _get_shared_vertex_information_for_two_elements(
-            elements, test_index, trial_index
-        )
+        i, j = _get_shared_vertex_information_for_two_elements(elements, test_index, trial_index)
         adjacency[:, index] = (test_index, trial_index, i, j)
 
     return adjacency
@@ -1146,9 +1090,7 @@ def _find_edge_adjacency(elements, elem0_indices, elem1_indices):
     for index in range(number_of_indices):
         elem0 = elem0_indices[index]
         elem1 = elem1_indices[index]
-        index_pairs = _get_shared_edge_information_for_two_elements(
-            elements, elem0, elem1
-        )
+        index_pairs = _get_shared_edge_information_for_two_elements(elements, elem0, elem1)
         adjacency[0, index] = elem0
         adjacency[1, index] = elem1
         adjacency[2:, index] = index_pairs.flatten()
@@ -1228,9 +1170,7 @@ def grid_from_segments(grid, segments):
 
 
 @_numba.njit
-def _create_barycentric_connectivity_array(
-    vertices, elements, element_edges, edges, number_of_edges
-):
+def _create_barycentric_connectivity_array(vertices, elements, element_edges, edges, number_of_edges):
     """Return the vertices and elements of refined barycentric grid."""
     number_of_vertices = vertices.shape[1]
     number_of_elements = elements.shape[1]
@@ -1246,9 +1186,7 @@ def _create_barycentric_connectivity_array(
 
     for index in range(number_of_elements):
         # Create barycentric mid-point
-        new_vertices[:, number_of_vertices] = (
-            1.0 / 3 * _np.sum(vertices[:, elements[:, index]], axis=1)
-        )
+        new_vertices[:, number_of_vertices] = 1.0 / 3 * _np.sum(vertices[:, elements[:, index]], axis=1)
         midpoint_index = number_of_vertices
         number_of_vertices += 1
         for local_index in range(3):
@@ -1258,9 +1196,7 @@ def _create_barycentric_connectivity_array(
                 local_vertex_ids[local_index] = edge_to_vertex[edge_index]
             else:
                 # Vertex needs to be created
-                new_vertices[:, number_of_vertices] = 0.5 * _np.sum(
-                    vertices[:, edges[:, edge_index]], axis=1
-                )
+                new_vertices[:, number_of_vertices] = 0.5 * _np.sum(vertices[:, edges[:, edge_index]], axis=1)
                 local_vertex_ids[local_index] = number_of_vertices
                 edge_to_vertex[edge_index] = number_of_vertices
                 number_of_vertices += 1
@@ -1307,9 +1243,7 @@ def barycentric_refinement(grid):
         grid.number_of_edges,
     )
 
-    return Grid(
-        new_vertices, new_elements, _np.repeat(grid.domain_indices, 6), scatter=False
-    )
+    return Grid(new_vertices, new_elements, _np.repeat(grid.domain_indices, 6), scatter=False)
 
 
 def union(grids, domain_indices=None, swapped_normals=None, normalize_domain_indices=True):
@@ -1380,12 +1314,8 @@ def union(grids, domain_indices=None, swapped_normals=None, normalize_domain_ind
             current_elements = grid.elements[[0, 2, 1], :]
         else:
             current_elements = grid.elements
-        elements[:, element_offset : element_offset + nelements] = (
-            current_elements + vertex_offset
-        )
-        all_domain_indices[
-            element_offset : element_offset + nelements
-        ] = domain_indices[index]
+        elements[:, element_offset : element_offset + nelements] = current_elements + vertex_offset
+        all_domain_indices[element_offset : element_offset + nelements] = domain_indices[index]
         vertex_offset += nvertices
         element_offset += nelements
     return Grid(vertices, elements, all_domain_indices)
@@ -1410,9 +1340,7 @@ def enumerate_vertex_adjacent_elements(grid, support_elements, swapped_normals=N
     for element_index in support_elements:
         for local_index, edge_index in enumerate(grid.element_edges[:, element_index]):
             for ind in range(2):
-                vertex_edges[grid.edges[ind, edge_index]].append(
-                    (element_index, local_index)
-                )
+                vertex_edges[grid.edges[ind, edge_index]].append((element_index, local_index))
 
     for vertex_index, neighbors in enumerate(vertex_edges):
         # First sort by element
@@ -1458,26 +1386,18 @@ def enumerate_vertex_adjacent_elements(grid, support_elements, swapped_normals=N
                 # Check if element is successor of last element in sorted list
                 last = sorted_neighbors[-1]
                 first = sorted_neighbors[0]
-                if (
-                    grid.data().element_edges[elem[1], elem[0]]
-                    == grid.data().element_edges[last[2], last[0]]
-                ):
+                if grid.data().element_edges[elem[1], elem[0]] == grid.data().element_edges[last[2], last[0]]:
                     locally_sorted_neighbors.pop(index)
                     found = True
                     sorted_neighbors.append(elem)
                     break
-                if (
-                    grid.data().element_edges[elem[2], elem[0]]
-                    == grid.data().element_edges[first[1], first[0]]
-                ):
+                if grid.data().element_edges[elem[2], elem[0]] == grid.data().element_edges[first[1], first[0]]:
                     locally_sorted_neighbors.pop(index)
                     found = True
                     sorted_neighbors.insert(0, elem)
                     break
             if not found:
-                raise Exception(
-                    "Two elements seem to be connected only by a vertex, not by an edge."
-                )
+                raise Exception("Two elements seem to be connected only by a vertex, not by an edge.")
 
         vertex_edges[vertex_index] = sorted_neighbors
 
@@ -1573,7 +1493,6 @@ def grid_to_points(grid_data, local_points):
 
 
 def _get_barycentric_support(truncate_at_segment_edge, grid, bary_grid, coarse_space):
-
     coarse_support = _np.zeros(grid.entity_count(0), dtype=_np.bool_)
     coarse_support[coarse_space.support_elements] = True
 
@@ -1603,16 +1522,10 @@ def _get_barycentric_support(truncate_at_segment_edge, grid, bary_grid, coarse_s
     return support, bary_support_size, bary_support_elements
 
 
-def _get_data_multipliers(support, bary_grid, bary_support_elements,
-                          swapped_normals, coarse_space, bary_support_size):
-    bary_vertex_to_edge = enumerate_vertex_adjacent_elements(
-        bary_grid, bary_support_elements, swapped_normals
-    )
+def _get_data_multipliers(support, bary_grid, bary_support_elements, swapped_normals, coarse_space, bary_support_size):
+    bary_vertex_to_edge = enumerate_vertex_adjacent_elements(bary_grid, bary_support_elements, swapped_normals)
 
-    edge_vectors = (
-        bary_grid.vertices[:, bary_grid.edges[0, :]]
-        - bary_grid.vertices[:, bary_grid.edges[1, :]]
-    )
+    edge_vectors = bary_grid.vertices[:, bary_grid.edges[0, :]] - bary_grid.vertices[:, bary_grid.edges[1, :]]
 
     edge_lengths = _np.linalg.norm(edge_vectors, axis=0)
 
@@ -1620,17 +1533,14 @@ def _get_data_multipliers(support, bary_grid, bary_support_elements,
     local2global = _np.zeros((bary_grid.number_of_elements, 3), dtype="uint32")
     local_multipliers = _np.zeros((bary_grid.number_of_elements, 3), dtype="uint32")
 
-    local2global[support] = _np.arange(3 * bary_support_size).reshape(
-        bary_support_size, 3
-    )
+    local2global[support] = _np.arange(3 * bary_support_size).reshape(bary_support_size, 3)
 
     local_multipliers[support] = 1
 
     return bary_vertex_to_edge, local2global, edge_lengths, normal_multipliers, local_multipliers
 
 
-def _get_barycentric_edges_associated_to_vertex(vertex_index, bary_vertex_to_edge,
-                                                bary_element, bary_grid):
+def _get_barycentric_edges_associated_to_vertex(vertex_index, bary_vertex_to_edge, bary_element, bary_grid):
     """Get all the barycentryc vertices of the elements associated to a reference edge."""
     # Get barycentric elements associated to a vertex
     for ind, elem in enumerate(bary_vertex_to_edge[vertex_index]):
@@ -1641,9 +1551,7 @@ def _get_barycentric_edges_associated_to_vertex(vertex_index, bary_vertex_to_edg
     num_bary_elements = len(bary_vertex_to_edge[vertex_index])
     vertex_edges = []
     for index in range(num_bary_elements):
-        elem_edge_pair = bary_vertex_to_edge[vertex_index][
-            (index + ind) % num_bary_elements
-        ]
+        elem_edge_pair = bary_vertex_to_edge[vertex_index][(index + ind) % num_bary_elements]
         for n in range(1, 3):
             vertex_edges.append((elem_edge_pair[0], elem_edge_pair[n]))
     edges = []
@@ -1665,9 +1573,10 @@ def _get_barycentric_edges_associated_to_vertex(vertex_index, bary_vertex_to_edg
 
     # If the basis function is on the border, sort the rest of the elements accordingly.
     # The basis functions on the borders do not need to remove the reference edge.
-    if (len(sorted_edges) > 0):
-        new_vertex_edges, sorted_edges =\
-            _sort_vertex_edges(vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1)
+    if len(sorted_edges) > 0:
+        new_vertex_edges, sorted_edges = _sort_vertex_edges(
+            vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1
+        )
         sorted_edges = sorted(set(sorted_edges), key=sorted_edges.index, reverse=True)
         new_vertex_edges = sorted(set(new_vertex_edges), key=new_vertex_edges.index, reverse=True)
         ref_edge = sorted_edges.index(bary_grid.data().element_edges[vertex_edges[0][1]][vertex_edges[0][0]])
@@ -1690,9 +1599,7 @@ def get_vertex_edges(vertex_index, bary_vertex_to_edge, bary_element, bary_grid)
     num_bary_elements = len(bary_vertex_to_edge[vertex_index])
     vertex_edges = []
     for index in range(num_bary_elements):
-        elem_edge_pair = bary_vertex_to_edge[vertex_index][
-            (index + ind) % num_bary_elements
-        ]
+        elem_edge_pair = bary_vertex_to_edge[vertex_index][(index + ind) % num_bary_elements]
         for n in range(1, 3):
             vertex_edges.append((elem_edge_pair[0], elem_edge_pair[n]))
     edges = []
@@ -1708,9 +1615,10 @@ def get_vertex_edges(vertex_index, bary_vertex_to_edge, bary_element, bary_grid)
             sorted_edges.append(el)
             new_vertex_edges.append(vertex_edges[edges.index(el)])
 
-    if (len(sorted_edges) > 0):
+    if len(sorted_edges) > 0:
         new_vertex_edges, sorted_edges = _sort_vertex_edges(
-            vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1)
+            vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1
+        )
         sorted_edges = sorted(set(sorted_edges), key=sorted_edges.index, reverse=True)
         new_vertex_edges = sorted(set(new_vertex_edges), key=new_vertex_edges.index, reverse=True)
         ref_edge = sorted_edges.index(bary_grid.data().element_edges[vertex_edges[0][1]][vertex_edges[0][0]])
@@ -1738,14 +1646,23 @@ def _sort_vertex_edges(vertex_edges, edges, set_edges, sorted_edges, new_vertex_
             sorted_edges.append(sorted_edges[-1])
             new_vertex_edges.append(vertex_edges[indexes[1]])
     if len(new_vertex_edges) < len(vertex_edges):
-        return _sort_vertex_edges(
-            vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1 - edge_number)
+        return _sort_vertex_edges(vertex_edges, edges, set_edges, sorted_edges, new_vertex_edges, 1 - edge_number)
     return new_vertex_edges, sorted_edges
 
 
 def _get_bary_coefficients(
-    edge_lengths, vertex_edges1, vertex_edges2, sorted_edges1, sorted_edges2,
-    bary_grid, local2global, nc1, nc2, global_dof_index, ref_edge1, ref_edge2,
+    edge_lengths,
+    vertex_edges1,
+    vertex_edges2,
+    sorted_edges1,
+    sorted_edges2,
+    bary_grid,
+    local2global,
+    nc1,
+    nc2,
+    global_dof_index,
+    ref_edge1,
+    ref_edge2,
 ):
     """Obtain the edge coefficients associated to the barycentric edges of a grid."""
     values = []
@@ -1758,49 +1675,53 @@ def _get_bary_coefficients(
 
     if border_edges1 and not border_edges2:
         aux_values, aux_bary_dofs, aux_coarse_dofs = _border_barycentric_edges_coefficients(
-            edge_lengths, vertex_edges1, sorted_edges1, bary_grid, local2global, -1.0,
-            nc1, global_dof_index, ref_edge1)
+            edge_lengths, vertex_edges1, sorted_edges1, bary_grid, local2global, -1.0, nc1, global_dof_index, ref_edge1
+        )
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
         aux_values, aux_bary_dofs, aux_coarse_dofs = _interior_barycentric_edges_coefficients(
-            edge_lengths, vertex_edges2, bary_grid, local2global, 1.0, nc2, global_dof_index)
+            edge_lengths, vertex_edges2, bary_grid, local2global, 1.0, nc2, global_dof_index
+        )
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
     elif not border_edges1 and border_edges2:
         aux_values, aux_bary_dofs, aux_coarse_dofs = _interior_barycentric_edges_coefficients(
-            edge_lengths, vertex_edges1, bary_grid, local2global, - 1.0, nc1, global_dof_index)
+            edge_lengths, vertex_edges1, bary_grid, local2global, -1.0, nc1, global_dof_index
+        )
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
         aux_values, aux_bary_dofs, aux_coarse_dofs = _border_barycentric_edges_coefficients(
-            edge_lengths, vertex_edges2, sorted_edges2, bary_grid, local2global, 1.0, nc2,
-            global_dof_index, ref_edge2)
+            edge_lengths, vertex_edges2, sorted_edges2, bary_grid, local2global, 1.0, nc2, global_dof_index, ref_edge2
+        )
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
     elif border_edges1 and border_edges2:
         aux_values, aux_bary_dofs, aux_coarse_dofs = _border_barycentric_edges_coefficients(
-            edge_lengths, vertex_edges1, sorted_edges1, bary_grid, local2global, -1.0, nc1,
-            global_dof_index, ref_edge1)
+            edge_lengths, vertex_edges1, sorted_edges1, bary_grid, local2global, -1.0, nc1, global_dof_index, ref_edge1
+        )
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
         aux_values, aux_bary_dofs, aux_coarse_dofs = _border_barycentric_edges_coefficients(
-            edge_lengths, vertex_edges2, sorted_edges2, bary_grid, local2global, 1.0, nc2,
-            global_dof_index, ref_edge2)
+            edge_lengths, vertex_edges2, sorted_edges2, bary_grid, local2global, 1.0, nc2, global_dof_index, ref_edge2
+        )
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
     else:
         aux_values, aux_bary_dofs, aux_coarse_dofs = _interior_barycentric_edges_coefficients(
-            edge_lengths, vertex_edges1, bary_grid, local2global, -1.0, nc1, global_dof_index)
+            edge_lengths, vertex_edges1, bary_grid, local2global, -1.0, nc1, global_dof_index
+        )
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
         aux_values, aux_bary_dofs, aux_coarse_dofs = _interior_barycentric_edges_coefficients(
-            edge_lengths, vertex_edges2, bary_grid, local2global, 1.0, nc2, global_dof_index)
+            edge_lengths, vertex_edges2, bary_grid, local2global, 1.0, nc2, global_dof_index
+        )
         values += aux_values
         bary_dofs += aux_bary_dofs
         coarse_dofs += aux_coarse_dofs
@@ -1821,8 +1742,7 @@ def _check_if_border_edges(vertex_edges, bary_grid):
 
 
 def _border_barycentric_edges_coefficients(
-    edge_lengths, vertex_edges, sorted_edges, bary_grid, local2global, sign, nc,
-    global_dof_index, ref_edge
+    edge_lengths, vertex_edges, sorted_edges, bary_grid, local2global, sign, nc, global_dof_index, ref_edge
 ):
     """Calculate barycentric edge coefficients associated to an interior vertex of the grid."""
     values = []
@@ -1870,8 +1790,14 @@ def _interior_barycentric_edges_coefficients(
 
 
 def _get_coefficients_reference_edge(
-    edge_lengths, bary_grid, local2global, global_dof_index, bary_upper_minus, bary_upper_plus,
-    bary_lower_minus, bary_lower_plus
+    edge_lengths,
+    bary_grid,
+    local2global,
+    global_dof_index,
+    bary_upper_minus,
+    bary_upper_plus,
+    bary_lower_minus,
+    bary_lower_plus,
 ):
     """Calculate upper and lower coefficients of the barycentric edges associated to a reference edge."""
     values = []

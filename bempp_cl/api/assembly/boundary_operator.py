@@ -45,7 +45,6 @@ class BoundaryOperator(object):
         from bempp_cl.api.utils.helpers import get_inverse_mass_matrix
 
         if self._range_map is None:
-
             # This is the most frequent case and we cache the mass
             # matrix from the space object.
             self._range_map = get_inverse_mass_matrix(self.range, self.dual_to_range)
@@ -63,9 +62,7 @@ class BoundaryOperator(object):
             return _ProductBoundaryOperator(self, other)
         elif isinstance(other, GridFunction):
             if not self.domain.is_compatible(other.space):
-                raise ValueError(
-                    "Operator domain space does not match GridFunction space."
-                )
+                raise ValueError("Operator domain space does not match GridFunction space.")
             return GridFunction(
                 self.range,
                 projections=self.weak_form() * other.coefficients,
@@ -130,8 +127,8 @@ class BoundaryOperatorWithAssembler(BoundaryOperator):
 
     def _transpose(self, _range):
         return BoundaryOperatorWithAssembler(
-            self._dual_to_range, self._domain, _range, self._assembler,
-            self._operator_descriptor, True)
+            self._dual_to_range, self._domain, _range, self._assembler, self._operator_descriptor, True
+        )
 
 
 class _SumBoundaryOperator(BoundaryOperator):
@@ -146,9 +143,7 @@ class _SumBoundaryOperator(BoundaryOperator):
         ):
             raise ValueError("Spaces not compatible.")
 
-        super(_SumBoundaryOperator, self).__init__(
-            op1.domain, op1.range, op1.dual_to_range, None
-        )
+        super(_SumBoundaryOperator, self).__init__(op1.domain, op1.range, op1.dual_to_range, None)
 
         self._op1 = op1
         self._op2 = op2
@@ -163,9 +158,7 @@ class _ScaledBoundaryOperator(BoundaryOperator):
 
     def __init__(self, op, alpha):
         """Construct a scaled boundary operator."""
-        super(_ScaledBoundaryOperator, self).__init__(
-            op.domain, op.range, op.dual_to_range, op.parameters
-        )
+        super(_ScaledBoundaryOperator, self).__init__(op.domain, op.range, op.dual_to_range, op.parameters)
 
         self._op = op
         self._alpha = alpha
@@ -182,13 +175,10 @@ class _ProductBoundaryOperator(BoundaryOperator):
         """Construct a product boundary operator."""
         if not op2.range.is_compatible(op1.domain):
             raise ValueError(
-                "Range space of second operator must be compatible to "
-                + "domain space of first operator."
+                "Range space of second operator must be compatible to " + "domain space of first operator."
             )
 
-        super(_ProductBoundaryOperator, self).__init__(
-            op2.domain, op1.range, op1.dual_to_range, None
-        )
+        super(_ProductBoundaryOperator, self).__init__(op2.domain, op1.range, op1.dual_to_range, None)
 
         self._op1 = op1
         self._op2 = op2
@@ -215,38 +205,25 @@ class ZeroBoundaryOperator(BoundaryOperator):
     def __init__(self, domain, range_, dual_to_range):
         import bempp_cl.api
 
-        super(ZeroBoundaryOperator, self).__init__(
-            domain, range_, dual_to_range, bempp_cl.api.GLOBAL_PARAMETERS
-        )
+        super(ZeroBoundaryOperator, self).__init__(domain, range_, dual_to_range, bempp_cl.api.GLOBAL_PARAMETERS)
 
     def _assemble(self):
-
         from bempp_cl.api.assembly.discrete_boundary_operator import (
             ZeroDiscreteBoundaryOperator,
         )
 
-        return ZeroDiscreteBoundaryOperator(
-            self.dual_to_range.global_dof_count, self.domain.global_dof_count
-        )
+        return ZeroDiscreteBoundaryOperator(self.dual_to_range.global_dof_count, self.domain.global_dof_count)
 
     def __iadd__(self, other):
         """Add."""
-        if (
-            self.domain != other.domain
-            or self.range != other.range
-            or self.dual_to_range != other.dual_to_range
-        ):
+        if self.domain != other.domain or self.range != other.range or self.dual_to_range != other.dual_to_range:
             raise ValueError("Spaces not compatible.")
 
         return other
 
     def __isub__(self, other):
         """Subtract."""
-        if (
-            self.domain != other.domain
-            or self.range != other.range
-            or self.dual_to_range != other.dual_to_range
-        ):
+        if self.domain != other.domain or self.range != other.range or self.dual_to_range != other.dual_to_range:
             raise ValueError("Spaces not compatible.")
 
         return -other
@@ -350,9 +327,7 @@ class MultiplicationOperator(BoundaryOperator):
         if self._mode == "component":
             op = _np.multiply
         elif self._mode == "inner":
-            op = lambda x, y: _np.sum(
-                x * y.reshape[:, _np.newaxis, :], axis=0, keepdims=True
-            )
+            op = lambda x, y: _np.sum(x * y.reshape[:, _np.newaxis, :], axis=0, keepdims=True)
 
         elements = (
             set(comp_test.support_elements)
@@ -360,9 +335,7 @@ class MultiplicationOperator(BoundaryOperator):
             .intersection(set(comp_fun.support_elements))
         )
 
-        elements = _np.flatnonzero(
-            comp_trial.support * comp_test.support * comp_fun.support
-        )
+        elements = _np.flatnonzero(comp_trial.support * comp_test.support * comp_fun.support)
 
         number_of_elements = len(elements)
         nshape_trial = comp_trial.shapeset.number_of_shape_functions
@@ -377,11 +350,7 @@ class MultiplicationOperator(BoundaryOperator):
         data = _np.zeros(number_of_elements * nshape_trial * nshape_test, dtype=dtype)
 
         for index, elem_index in enumerate(elements):
-            scale_vals = (
-                self._grid_fun.evaluate(elem_index, points)
-                * weights
-                * grid.integration_elements[index]
-            )
+            scale_vals = self._grid_fun.evaluate(elem_index, points) * weights * grid.integration_elements[index]
             domain_vals = comp_trial.evaluate(elem_index, points)
             trial_vals = op(domain_vals, scale_vals)
             test_vals = _np.conj(comp_test.evaluate(elem_index, points))
@@ -391,13 +360,11 @@ class MultiplicationOperator(BoundaryOperator):
         irange = _np.arange(nshape_test)
         jrange = _np.arange(nshape_trial)
 
-        rows = _np.tile(
-            _np.repeat(irange, nshape_trial), number_of_elements
-        ) + _np.repeat(elements * nshape_test, nshape)
-
-        cols = _np.tile(_np.tile(jrange, nshape_test), number_of_elements) + _np.repeat(
-            elements * nshape_trial, nshape
+        rows = _np.tile(_np.repeat(irange, nshape_trial), number_of_elements) + _np.repeat(
+            elements * nshape_test, nshape
         )
+
+        cols = _np.tile(_np.tile(jrange, nshape_test), number_of_elements) + _np.repeat(elements * nshape_trial, nshape)
 
         new_rows = comp_test.local2global.ravel()[rows]
         new_cols = comp_trial.local2global.ravel()[cols]

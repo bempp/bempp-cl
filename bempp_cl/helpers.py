@@ -5,6 +5,7 @@ This is for module level helpers that should be available without importing
 bempp_cl.api first.
 
 """
+
 import time as _time
 import functools as _functools
 import collections as _collections

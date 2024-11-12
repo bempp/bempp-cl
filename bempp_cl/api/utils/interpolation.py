@@ -10,7 +10,6 @@ class ChebychevInterpolation(object):
     """Class providing methods for Chebychev interpolation."""
 
     def __init__(self, order):
-
         self._order = order
         self._nterms = 1 + order
 
@@ -19,9 +18,7 @@ class ChebychevInterpolation(object):
 
         self._nodes, self._weights = chebychev_nodes_and_weights_second_kind(order)
 
-        self._cheb_diff_mat = chebychev_differentiation_matrix(
-            self._nodes, self._weights
-        )
+        self._cheb_diff_mat = chebychev_differentiation_matrix(self._nodes, self._weights)
 
     @property
     def nodes(self):
@@ -46,9 +43,7 @@ class ChebychevInterpolation(object):
         given in the array values at the points in
         the array evaluation_points.
         """
-        return evaluate_interp_polynomial(
-            self.nodes, self.weights, values, evaluation_points
-        )
+        return evaluate_interp_polynomial(self.nodes, self.weights, values, evaluation_points)
 
     def differentiate(self, values):
         """Differentiate the polynomial defined by values."""
@@ -271,9 +266,7 @@ def evaluate_kernel_on_interpolation_points(
         return evaluate_laplace_kernel_on_interpolation_points(pointsx, pointsy)
 
     if kernel_type == "helmholtz":
-        return evaluate_helmholtz_kernel_on_interpolation_points(
-            pointsx, pointsy, kwargs["wavenumber"]
-        )
+        return evaluate_helmholtz_kernel_on_interpolation_points(pointsx, pointsy, kwargs["wavenumber"])
 
     raise ValueError(f"Unknown kernel: {kernel_type}")
 
@@ -294,9 +287,7 @@ def evaluate_helmholtz_kernel_on_interpolation_points(pointsx, pointsy, wavenumb
     values = _np.empty((pointsx.shape[0], pointsy.shape[0]), _np.complex128)
     for i, x in enumerate(pointsx):
         for j, y in enumerate(pointsy):
-            values[i, :] = _np.exp(1j * wavenumber * _np.linalg.norm(x - y)) / (
-                4 * _np.pi * _np.linalg.norm(x - y)
-            )
+            values[i, :] = _np.exp(1j * wavenumber * _np.linalg.norm(x - y)) / (4 * _np.pi * _np.linalg.norm(x - y))
     return values
 
 
@@ -308,11 +299,11 @@ def chebychev_tensor_points_3d(lbound, ubound, nodes):
     points_k = lbound[2] + 0.5 * (ubound[2] - lbound[2]) * (1 + nodes)
 
     npoints = len(nodes)
-    tensor_points = _np.empty((npoints ** 3, 3), _np.float64)
+    tensor_points = _np.empty((npoints**3, 3), _np.float64)
     for i in range(npoints):
         for j in range(npoints):
             for k in range(npoints):
-                tensor_points[i * npoints ** 2 + j * npoints + k, :] = (
+                tensor_points[i * npoints**2 + j * npoints + k, :] = (
                     points_i[i],
                     points_j[j],
                     points_k[k],

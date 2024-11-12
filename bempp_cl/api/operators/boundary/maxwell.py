@@ -1,4 +1,5 @@
 """Interfaces to Maxwell operators."""
+
 import numpy as _np
 
 from bempp_cl.api.operators.boundary import common as _common
@@ -204,9 +205,7 @@ def multitrace_operator(
         dual_to_range = [snc_target, rbc_target]
 
     else:
-        raise ValueError(
-            "space_type must be one of 'all_rwg', 'all_dual', 'electric_dual', 'magnetic_dual'"
-        )
+        raise ValueError("space_type must be one of 'all_rwg', 'all_dual', 'electric_dual', 'magnetic_dual'")
     return _multitrace_operator_impl(
         domain,
         range_,
@@ -233,7 +232,6 @@ def _multitrace_operator_impl(
     device_interface=None,
     precision=None,
 ):
-
     from bempp_cl.api.assembly.blocked_operator import BlockedOperator
 
     rho = _np.sqrt(epsilon_r / mu_r)
@@ -291,7 +289,7 @@ def _multitrace_operator_impl(
     return blocked
 
 
-class _OsrcMtE():
+class _OsrcMtE:
     """Implementation of the OSRC DtN operator."""
 
     def __init__(
@@ -324,10 +322,11 @@ class _OsrcMtE():
 
     def _matvec1(self, v):
         import itertools
+
         res = 0
         rhs = list(itertools.chain(*[v.tolist(), _np.zeros(self.pi[0].shape[0] - v.shape[0]).tolist()]))
         for element in self.pi:
-            res -= element.matvec(rhs)[0:self.domains_[0].global_dof_count]
+            res -= element.matvec(rhs)[0 : self.domains_[0].global_dof_count]
         res = self.mass * res + self.pade_coeffs[3] * v
         return self.lambda_2_inv * res
 
@@ -356,11 +355,12 @@ class _OsrcMtE():
 
         self.pade_coeffs = _common.pade_coeffs(npade, theta)
         self.mass = mte_op[1].weak_form()
-        if self.type == 1 :
+        if self.type == 1:
             self.pi = []
             for i in range(npade):
-                self.pi.append((self.pade_coeffs[1][i] / self.pade_coeffs[2][i]) * lambda_1(
-                    mte_op, self.pade_coeffs[2][i], dk))
+                self.pi.append(
+                    (self.pade_coeffs[1][i] / self.pade_coeffs[2][i]) * lambda_1(mte_op, self.pade_coeffs[2][i], dk)
+                )
             return LinearOperator(self.lambda_2_inv.shape, matvec=self._matvec1)
         else:
             for j in range(int(_np.floor(4.0 * npade / 5)), npade):
@@ -369,7 +369,9 @@ class _OsrcMtE():
 
 
 def osrc_mte(
-    domains, ranges, dual_to_ranges,
+    domains,
+    ranges,
+    dual_to_ranges,
     wavenumber,
     npade=2,
     theta=_np.pi / 2.0,
@@ -400,7 +402,9 @@ def osrc_mte(
 
     return _OsrcMtE(
         type,
-        domains, ranges, dual_to_ranges,
+        domains,
+        ranges,
+        dual_to_ranges,
         parameters,
         [wavenumber, npade, theta, damped_wavenumber],
         device_interface,

@@ -31,9 +31,7 @@ def __generate_grid_from_gmsh_string(gmsh_string):
 
     if bempp_cl.api.mpi_rank == 0:
         # First create the grid.
-        handle, fname = tempfile.mkstemp(
-            suffix=".msh", dir=bempp_cl.api.TMP_PATH, text=True
-        )
+        handle, fname = tempfile.mkstemp(suffix=".msh", dir=bempp_cl.api.TMP_PATH, text=True)
         with os.fdopen(handle, "w") as f:
             f.write(gmsh_string)
     grid = bempp_cl.api.import_grid(fname)
@@ -134,9 +132,7 @@ def regular_sphere(refine_level):
     if refine_level > 9:
         raise ValueError("'refine_level larger than 9 not supported.")
 
-    filename = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "regular_spheres.npz"
-    )
+    filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), "regular_spheres.npz")
 
     spheres = np.load(filename)
     return Grid(spheres["v" + str(refine_level)], spheres["e" + str(refine_level)])
@@ -587,13 +583,7 @@ def reentrant_cube(h=0.1, refinement_factor=0.2):
     Mesh.Algorithm = 6;
     """
     reentrant_cube_geometry = (
-        "h = "
-        + str(h)
-        + ";\n"
-        + "r = h * "
-        + str(refinement_factor)
-        + ";\n"
-        + reentrant_cube_stub
+        "h = " + str(h) + ";\n" + "r = h * " + str(refinement_factor) + ";\n" + reentrant_cube_stub
     )
     return __generate_grid_from_geo_string(reentrant_cube_geometry)
 
@@ -1209,9 +1199,7 @@ def cylinders(h=1.0, z=1.0, r=[0.5, 1, 1.5, 1.7], origin=(0.0, 0.0, 0.0), square
         else:
             stub += f"Plane Surface({21 + 3 * i}) = {{{11 + i}, {-(11 + i - 1)}}};\n"
     for i, _ in enumerate(r):
-        stub += (
-            f"out[] = Extrude {{0,0,z}} {{Surface{{{21 + 3 * i}}}; Layers{{cl}};}};\n"
-        )
+        stub += f"out[] = Extrude {{0,0,z}} {{Surface{{{21 + 3 * i}}}; Layers{{cl}};}};\n"
         stub += f"Reverse Surface{{{21 + 3 * i}}};\n"
         if i < len(r) - 1:
             stub += (

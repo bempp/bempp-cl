@@ -38,12 +38,8 @@ def callable(*args, complex=False, jit=True, parameterized=False, vectorized=Fal
         else:
             wrap_type = _numba.float64[:]
 
-        signature_parameterized = _numba.void(
-            _numba.float64[:], _numba.float64[:], _numba.uint32, wrap_type, wrap_type
-        )
-        signature_not_parameterized = _numba.void(
-            _numba.float64[:], _numba.float64[:], _numba.uint32, wrap_type
-        )
+        signature_parameterized = _numba.void(_numba.float64[:], _numba.float64[:], _numba.uint32, wrap_type, wrap_type)
+        signature_not_parameterized = _numba.void(_numba.float64[:], _numba.float64[:], _numba.uint32, wrap_type)
 
         if parameterized:
             signature = signature_parameterized
@@ -238,18 +234,12 @@ class GridFunction(object):
         if not comp_domain.grid == comp_dual.grid or not _np.all(
             comp_domain.normal_multipliers == comp_dual.normal_multipliers
         ):
-            raise ValueError(
-                "Space and dual space must be defined on the "
-                + "same grid with same normal directions."
-            )
+            raise ValueError("Space and dual space must be defined on the " + "same grid with same normal directions.")
 
         self._parameters = assign_parameters(parameters)
 
         if sum(1 for e in [fun, coefficients, projections] if e is not None) != 1:
-            raise ValueError(
-                "Exactly one of 'fun', 'coefficients' or 'projections' "
-                + "must be nonzero."
-            )
+            raise ValueError("Exactly one of 'fun', 'coefficients' or 'projections' " + "must be nonzero.")
 
         if coefficients is not None:
             self._coefficients = coefficients
@@ -501,17 +491,13 @@ class GridFunction(object):
         # Get global dof ids and weights
         global_dofs = self.space.local2global[element_index]
         element_values = self.space.evaluate(element_index, local_coordinates)
-        return _np.tensordot(
-            element_values, self.grid_coefficients[global_dofs], axes=([1], [0])
-        )
+        return _np.tensordot(element_values, self.grid_coefficients[global_dofs], axes=([1], [0]))
 
     def evaluate_on_element_centers(self):
         """Evaluate the grid function on all element centers."""
         local_coordinates = _np.array([[1.0 / 3], [1.0 / 3]])
 
-        values = _np.zeros(
-            (self.component_count, self.space.grid.number_of_elements), dtype=self.dtype
-        )
+        values = _np.zeros((self.component_count, self.space.grid.number_of_elements), dtype=self.dtype)
 
         for index in self.space.support_elements:
             local_values = self.evaluate(index, local_coordinates)
@@ -528,9 +514,7 @@ class GridFunction(object):
         grid = self.space.grid
         local_coordinates = _np.array([[0, 1, 0], [0, 0, 1]], dtype="float64")
 
-        values = _np.zeros(
-            (self.component_count, grid.number_of_vertices), dtype=self.dtype
-        )
+        values = _np.zeros((self.component_count, grid.number_of_vertices), dtype=self.dtype)
 
         # Sum up the areas of all elements adjacent to the vertices
         vertex_areas = _np.zeros(grid.number_of_vertices, dtype="float64")
@@ -592,9 +576,7 @@ class GridFunction(object):
                     dual_space=self.dual_space,
                 )
 
-        return GridFunction(
-            self.space, coefficients=self.coefficients + other.coefficients
-        )
+        return GridFunction(self.space, coefficients=self.coefficients + other.coefficients)
 
     def __mul__(self, alpha):
         """Multiply a grid function."""
@@ -745,9 +727,9 @@ def _integrate(
             _np.sum(
                 _np.sum(
                     (element_vals * weights)
-                    * (
-                        coefficients[local2global[index]] * local_multipliers[index]
-                    ).reshape(number_of_shape_functions, 1),
+                    * (coefficients[local2global[index]] * local_multipliers[index]).reshape(
+                        number_of_shape_functions, 1
+                    ),
                     axis=-1,
                 ),
                 axis=-1,
@@ -759,9 +741,7 @@ def _integrate(
 
 
 @_numba.njit
-def get_function_quadrature_information(
-    grid_data, support_elements, normal_multipliers, quad_points
-):
+def get_function_quadrature_information(grid_data, support_elements, normal_multipliers, quad_points):
     """Return vectorized version of quad_points, normals and domain_indices."""
     nelements = len(support_elements)
     nlocal = quad_points.shape[1]
@@ -772,16 +752,10 @@ def get_function_quadrature_information(
     global_domain_indices = _np.empty(npoints, dtype=_np.float64)
 
     for index, element in enumerate(support_elements):
-        global_quad_points[
-            :, nlocal * index : nlocal * (1 + index)
-        ] = grid_data.local2global(element, quad_points)
+        global_quad_points[:, nlocal * index : nlocal * (1 + index)] = grid_data.local2global(element, quad_points)
         for local_index in range(nlocal):
-            global_normals[:, nlocal * index + local_index] = (
-                grid_data.normals[element] * normal_multipliers[element]
-            )
-            global_domain_indices[
-                nlocal * index + local_index
-            ] = grid_data.domain_indices[element]
+            global_normals[:, nlocal * index + local_index] = grid_data.normals[element] * normal_multipliers[element]
+            global_domain_indices[nlocal * index + local_index] = grid_data.domain_indices[element]
 
     return (global_quad_points, global_normals, global_domain_indices)
 
@@ -811,7 +785,6 @@ def _project_function(
     point = _np.empty(3, dtype=_np.float64)
 
     for index in support_elements:
-
         element_vals = evaluate_on_element(
             index,
             shapeset_evaluate,
@@ -823,8 +796,7 @@ def _project_function(
 
         for j in range(3):
             global_points[j] = (
-                (1.0 - points[0] - points[1])
-                * grid_data.vertices[j, grid_data.elements[0, index]]
+                (1.0 - points[0] - points[1]) * grid_data.vertices[j, grid_data.elements[0, index]]
                 + points[0] * grid_data.vertices[j, grid_data.elements[1, index]]
                 + points[1] * grid_data.vertices[j, grid_data.elements[2, index]]
             )
@@ -843,11 +815,7 @@ def _project_function(
 
         for local_fun_index in range(element_vals.shape[1]):
             projections[local2global[index, local_fun_index]] += (
-                _np.sum(
-                    _np.sum(
-                        element_vals[:, local_fun_index, :] * fvalues * weights, axis=0
-                    )
-                )
+                _np.sum(_np.sum(element_vals[:, local_fun_index, :] * fvalues * weights, axis=0))
                 * grid_data.integration_elements[index]
             )
 
@@ -872,7 +840,6 @@ def _project_function_vectorized(
     npoints = points.shape[1]
 
     for index, element in enumerate(support_elements):
-
         element_vals = evaluate_on_element(
             element,
             shapeset_evaluate,

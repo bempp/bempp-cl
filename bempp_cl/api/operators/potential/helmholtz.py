@@ -1,4 +1,5 @@
 """Helmholtz potential operators."""
+
 import numpy as _np
 
 
@@ -44,9 +45,7 @@ def single_layer(
     )
 
     return PotentialOperator(
-        PotentialAssembler(
-            space, points, operator_descriptor, device_interface, assembler, parameters
-        )
+        PotentialAssembler(space, points, operator_descriptor, device_interface, assembler, parameters)
     )
 
 
@@ -92,7 +91,5 @@ def double_layer(
     )
 
     return PotentialOperator(
-        PotentialAssembler(
-            space, points, operator_descriptor, device_interface, assembler, parameters
-        )
+        PotentialAssembler(space, points, operator_descriptor, device_interface, assembler, parameters)
     )

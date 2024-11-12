@@ -139,14 +139,9 @@ def cg(
     callback = IterationCounter(return_residuals, True, A_op, b_vec)
     bempp_cl.api.log("Starting CG iteration")
     start_time = time.time()
-    x, info = scipy.sparse.linalg.cg(
-        A_op, b_vec, rtol=tol, maxiter=maxiter, callback=callback
-    )
+    x, info = scipy.sparse.linalg.cg(A_op, b_vec, rtol=tol, maxiter=maxiter, callback=callback)
     end_time = time.time()
-    bempp_cl.api.log(
-        "CG finished in %i iterations and took %.2E sec."
-        % (callback.count, end_time - start_time)
-    )
+    bempp_cl.api.log("CG finished in %i iterations and took %.2E sec." % (callback.count, end_time - start_time))
 
     res_fun = GridFunction(A.domain, coefficients=x.ravel())
 
@@ -201,14 +196,9 @@ def _gmres_single_op_imp(
 
     bempp_cl.api.log("Starting GMRES iteration")
     start_time = time.time()
-    x, info = scipy.sparse.linalg.gmres(
-        A_op, b_vec, rtol=tol, restart=restart, maxiter=maxiter, callback=callback
-    )
+    x, info = scipy.sparse.linalg.gmres(A_op, b_vec, rtol=tol, restart=restart, maxiter=maxiter, callback=callback)
     end_time = time.time()
-    bempp_cl.api.log(
-        "GMRES finished in %i iterations and took %.2E sec."
-        % (callback.count, end_time - start_time)
-    )
+    bempp_cl.api.log("GMRES finished in %i iterations and took %.2E sec." % (callback.count, end_time - start_time))
 
     res_fun = GridFunction(A.domain, coefficients=x.ravel())
 
@@ -258,14 +248,9 @@ def _gmres_block_op_imp(
 
     bempp_cl.api.log("Starting GMRES iteration")
     start_time = time.time()
-    x, info = scipy.sparse.linalg.gmres(
-        A_op, b_vec, rtol=tol, restart=restart, maxiter=maxiter, callback=callback
-    )
+    x, info = scipy.sparse.linalg.gmres(A_op, b_vec, rtol=tol, restart=restart, maxiter=maxiter, callback=callback)
     end_time = time.time()
-    bempp_cl.api.log(
-        "GMRES finished in %i iterations and took %.2E sec."
-        % (callback.count, end_time - start_time)
-    )
+    bempp_cl.api.log("GMRES finished in %i iterations and took %.2E sec." % (callback.count, end_time - start_time))
 
     res_fun = grid_function_list_from_coefficients(x.ravel(), A.domain_spaces)
 

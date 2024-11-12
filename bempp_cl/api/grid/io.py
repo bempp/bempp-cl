@@ -113,17 +113,13 @@ def export(
         grid = grid_function.space.grid
 
         if data_type == "node":
-            data = _transform_array(
-                grid_function.evaluate_on_vertices(), transformation
-            ).T
+            data = _transform_array(grid_function.evaluate_on_vertices(), transformation).T
             if _np.iscomplexobj(data):
                 point_data = {"real": _np.real(data), "imag": _np.imag(data)}
             else:
                 point_data = {"data": data}
         elif data_type == "element":
-            data = _transform_array(
-                grid_function.evaluate_on_element_centers(), transformation
-            ).T
+            data = _transform_array(grid_function.evaluate_on_element_centers(), transformation).T
             if _np.iscomplexobj(data):
                 cell_data["real"] = _np.real(data)
                 cell_data["imag"] = _np.imag(data)
@@ -139,9 +135,7 @@ def export(
     if gmsh:
         # physical and geometrical index must be 2 dim arrays with first dimension
         # equal to the number of different element types (here always 1
-        cell_data["gmsh:physical"] = grid.domain_indices.astype("int32").reshape(
-            (1, -1)
-        )
+        cell_data["gmsh:physical"] = grid.domain_indices.astype("int32").reshape((1, -1))
         unique_dom_indices = set(grid.domain_indices)
         unique_geom_indices = range(1, 1 + len(unique_dom_indices))
         geom_indices_map = dict(zip(unique_dom_indices, unique_geom_indices))

@@ -9,9 +9,7 @@ import pytest
 pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
 
-def test_maxwell_electric_field_sphere(
-    default_parameters, helpers, device_interface, precision
-):
+def test_maxwell_electric_field_sphere(default_parameters, helpers, device_interface, precision):
     """Test Maxwell electric field on sphere."""
     from bempp_cl.api import function_space
     from bempp_cl.api.operators.boundary.maxwell import electric_field
@@ -43,9 +41,7 @@ def test_maxwell_electric_field_sphere(
     _np.testing.assert_allclose(discrete_op.to_dense(), expected, rtol=rtol, atol=atol)
 
 
-def test_maxwell_electric_field_rbc_bc_sphere(
-    default_parameters, helpers, device_interface, precision, skip
-):
+def test_maxwell_electric_field_rbc_bc_sphere(default_parameters, helpers, device_interface, precision, skip):
     """Test Maxwell electric field on sphere with RBC/BC basis."""
     if skip == "ci":
         pytest.skip()
@@ -95,9 +91,7 @@ def test_maxwell_electric_field_rbc_bc_sphere(
     bempp_cl.api.clear_fmm_cache()
 
 
-def test_maxwell_electric_field_bc_sphere(
-    default_parameters, helpers, device_interface, precision, skip
-):
+def test_maxwell_electric_field_bc_sphere(default_parameters, helpers, device_interface, precision, skip):
     """Test Maxwell electric field on sphere with BC basis."""
     if skip == "ci":
         pytest.skip()
@@ -145,9 +139,7 @@ def test_maxwell_electric_field_bc_sphere(
     bempp_cl.api.clear_fmm_cache()
 
 
-def test_maxwell_magnetic_field_sphere(
-    default_parameters, helpers, device_interface, precision
-):
+def test_maxwell_magnetic_field_sphere(default_parameters, helpers, device_interface, precision):
     """Test Maxwell magnetic field on sphere."""
     from bempp_cl.api import function_space
     from bempp_cl.api.operators.boundary.maxwell import magnetic_field

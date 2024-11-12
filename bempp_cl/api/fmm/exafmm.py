@@ -1,4 +1,5 @@
 """Main interface class to ExaFMM."""
+
 import numpy as _np
 import atexit as _atexit
 
@@ -46,9 +47,7 @@ class ExafmmInterface(object):
                 try:
                     os.mkdir(FMM_TMP_DIR)
                 except:  # noqa: E722
-                    raise FileExistsError(
-                        f"A file with the name {FMM_TMP_DIR} exists. Please delete it."
-                    )
+                    raise FileExistsError(f"A file with the name {FMM_TMP_DIR} exists. Please delete it.")
 
         for _ in range(10):
             tmp_name = create_unique_id() + ".tmp"
@@ -68,28 +67,21 @@ class ExafmmInterface(object):
         if mode == "laplace":
             self._kernel_parameters = _np.array([], dtype="float64")
         elif mode == "helmholtz":
-            self._kernel_parameters = _np.array(
-                [_np.real(wavenumber), _np.imag(wavenumber)], dtype="float64"
-            )
+            self._kernel_parameters = _np.array([_np.real(wavenumber), _np.imag(wavenumber)], dtype="float64")
         elif mode == "modified_helmholtz":
             self._kernel_parameters = _np.array([wavenumber], dtype="float64")
 
         with bempp_cl.api.Timer(message="Initialising Exafmm."):
-
             if mode == "laplace":
                 import exafmm.laplace
 
                 self._module = exafmm.laplace
 
-                sources = exafmm.laplace.init_sources(
-                    source_points, _np.zeros(len(source_points), dtype=_np.float64)
-                )
+                sources = exafmm.laplace.init_sources(source_points, _np.zeros(len(source_points), dtype=_np.float64))
 
                 targets = exafmm.laplace.init_targets(target_points)
 
-                self._fmm = exafmm.laplace.LaplaceFmm(
-                    expansion_order, ncrit, filename=fname
-                )
+                self._fmm = exafmm.laplace.LaplaceFmm(expansion_order, ncrit, filename=fname)
                 self._tree = exafmm.laplace.setup(sources, targets, self._fmm)
 
             elif mode == "helmholtz":
@@ -97,15 +89,11 @@ class ExafmmInterface(object):
 
                 self._module = exafmm.helmholtz
 
-                sources = exafmm.helmholtz.init_sources(
-                    source_points, _np.zeros(len(source_points), dtype=_np.float64)
-                )
+                sources = exafmm.helmholtz.init_sources(source_points, _np.zeros(len(source_points), dtype=_np.float64))
 
                 targets = exafmm.helmholtz.init_targets(target_points)
 
-                self._fmm = exafmm.helmholtz.HelmholtzFmm(
-                    expansion_order, ncrit, wavenumber, filename=fname
-                )
+                self._fmm = exafmm.helmholtz.HelmholtzFmm(expansion_order, ncrit, wavenumber, filename=fname)
                 self._tree = exafmm.helmholtz.setup(sources, targets, self._fmm)
 
             elif mode == "modified_helmholtz":
@@ -122,9 +110,7 @@ class ExafmmInterface(object):
                 self._fmm = exafmm.modified_helmholtz.ModifiedHelmholtzFmm(
                     expansion_order, ncrit, wavenumber, filename=fname
                 )
-                self._tree = exafmm.modified_helmholtz.setup(
-                    sources, targets, self._fmm
-                )
+                self._tree = exafmm.modified_helmholtz.setup(sources, targets, self._fmm)
 
     @property
     def number_of_source_points(self):
@@ -237,14 +223,10 @@ class ExafmmInterface(object):
         if target_grid is None:
             target_grid = source_grid
 
-        source_points = source_grid.map_to_point_cloud(
-            quadrature_order, precision=precision
-        )
+        source_points = source_grid.map_to_point_cloud(quadrature_order, precision=precision)
 
         if target_grid != source_grid:
-            target_points = target_grid.map_to_point_cloud(
-                quadrature_order, precision=precision
-            )
+            target_points = target_grid.map_to_point_cloud(quadrature_order, precision=precision)
         else:
             target_points = source_points
 
@@ -268,9 +250,7 @@ class ExafmmInterface(object):
                     source_grid,
                     local_points,
                     "helmholtz",
-                    np.array(
-                        [_np.real(wavenumber), _np.imag(wavenumber)], dtype="float64"
-                    ),
+                    np.array([_np.real(wavenumber), _np.imag(wavenumber)], dtype="float64"),
                     precision,
                     True,
                     device_interface,

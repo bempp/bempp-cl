@@ -49,7 +49,6 @@ class BlockedOperatorBase(object):
         from bempp_cl.api.utils.helpers import get_inverse_mass_matrix
 
         if self._range_map is None:
-
             nrows = len(self.range_spaces)
 
             _range_ops = _np.empty((nrows, nrows), dtype="O")
@@ -121,17 +120,13 @@ class BlockedOperatorBase(object):
                 )
             for item in list_input:
                 if not isinstance(item, GridFunction):
-                    raise ValueError(
-                        "All items in the input list must be grid functions."
-                    )
+                    raise ValueError("All items in the input list must be grid functions.")
             weak_op = self.weak_form()
             x_in = coefficients_from_grid_functions_list(list_input)
             res = weak_op * x_in
 
             # Now assemble the output grid functions back together.
-            output_list = grid_function_list_from_projections(
-                res, self.range_spaces, self.dual_to_range_spaces
-            )
+            output_list = grid_function_list_from_projections(res, self.range_spaces, self.dual_to_range_spaces)
             return output_list
 
         else:
@@ -186,24 +181,17 @@ class BlockedOperator(BlockedOperatorBase):
 
         if self.range_spaces[row] is not None:
             if operator.range != self.range_spaces[row]:
-                raise ValueError(
-                    "Range space not compatible with "
-                    + "self.range_spaces[{0}]".format(row)
-                )
+                raise ValueError("Range space not compatible with " + "self.range_spaces[{0}]".format(row))
 
         if self.dual_to_range_spaces[row] is not None:
             if operator.dual_to_range != self.dual_to_range_spaces[row]:
                 raise ValueError(
-                    "Dual to range space not compatible with "
-                    + "self.dual_to_range_spaces[{0}]".format(row)
+                    "Dual to range space not compatible with " + "self.dual_to_range_spaces[{0}]".format(row)
                 )
 
         if self.domain_spaces[col] is not None:
             if operator.domain != self.domain_spaces[col]:
-                raise ValueError(
-                    "Domain space not compatible with "
-                    + "self.domain_spaces[{0}]".format(col)
-                )
+                raise ValueError("Domain space not compatible with " + "self.domain_spaces[{0}]".format(col))
 
         self._range_spaces[row] = operator.range
         self._dual_to_range_spaces[row] = operator.dual_to_range
@@ -295,9 +283,7 @@ class GeneralizedBlockedOperator(BlockedOperatorBase):
                 elif isinstance(elem, BlockedOperatorBase):
                     current_row.append(elem)
                 else:
-                    raise ValueError(
-                        "Cannot process element of type: {0}".format(type(elem))
-                    )
+                    raise ValueError("Cannot process element of type: {0}".format(type(elem)))
             self._ops.append(current_row)
 
             all_domain_spaces = []
@@ -415,7 +401,6 @@ class SumBlockedOperator(BlockedOperatorBase):
         super().__init__()
 
     def _assemble(self):
-
         return self._op1.weak_form() + self._op2.weak_form()
 
     @property
@@ -448,7 +433,6 @@ class ProductBlockedOperator(BlockedOperatorBase):
         super().__init__()
 
     def _assemble(self):
-
         return self._op1.weak_form() * self._op2.strong_form()
 
     @property
@@ -602,19 +586,13 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
                     continue
                 if self._rows[i] != -1:
                     if ops[i, j].shape[0] != self._rows[i]:
-                        raise ValueError(
-                            "Block row {0} has incompatible ".format(i)
-                            + " operator sizes."
-                        )
+                        raise ValueError("Block row {0} has incompatible ".format(i) + " operator sizes.")
                 else:
                     self._rows[i] = ops[i, j].shape[0]
 
                 if self._cols[j] != -1:
                     if ops[i, j].shape[1] != self._cols[j]:
-                        raise ValueError(
-                            "Block column {0} has incompatible".format(j)
-                            + "operator sizes."
-                        )
+                        raise ValueError("Block column {0} has incompatible".format(j) + "operator sizes.")
                 else:
                     self._cols[j] = ops[i, j].shape[1]
                 self._operators[i, j] = ops[i, j]
@@ -625,9 +603,7 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
         for i in range(rows):
             for j in range(cols):
                 if self._operators[i, j] is None:
-                    self._operators[i, j] = ZeroDiscreteBoundaryOperator(
-                        self._rows[i], self._cols[j]
-                    )
+                    self._operators[i, j] = ZeroDiscreteBoundaryOperator(self._rows[i], self._cols[j])
 
         shape = (_np.sum(self._rows), _np.sum(self._cols))
 
@@ -666,9 +642,9 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
                 local_x = x[col_dim : col_dim + self._cols[j]]
                 op_is_complex = _np.iscomplexobj(self._operators[i, j].dtype.type(1))
                 if _np.iscomplexobj(x) and not op_is_complex:
-                    local_res += self._operators[i, j].dot(
-                        _np.real(local_x)
-                    ) + 1j * self._operators[i, j].dot(_np.imag(local_x))
+                    local_res += self._operators[i, j].dot(_np.real(local_x)) + 1j * self._operators[i, j].dot(
+                        _np.imag(local_x)
+                    )
                 else:
                     local_res += self._operators[i, j].dot(local_x)
                 col_dim += self._cols[j]
@@ -683,9 +659,7 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
             raise ValueError("Not all rows or columns contain operators.")
 
         row_dim = 0
-        res = _np.zeros(
-            (self.shape[0], x.shape[1]), dtype=combined_type(self.dtype, x.dtype)
-        )
+        res = _np.zeros((self.shape[0], x.shape[1]), dtype=combined_type(self.dtype, x.dtype))
 
         for i in range(self._ndims[0]):
             col_dim = 0
@@ -694,9 +668,9 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
                 local_x = x[col_dim : col_dim + self._cols[j], :]
                 op_is_complex = _np.iscomplexobj(self._operators[i, j].dtype.type(1))
                 if _np.iscomplexobj(x) and not op_is_complex:
-                    local_res[:] += self._operators[i, j].dot(
-                        _np.real(local_x)
-                    ) + 1j * self._operators[i, j].dot(_np.imag(local_x))
+                    local_res[:] += self._operators[i, j].dot(_np.real(local_x)) + 1j * self._operators[i, j].dot(
+                        _np.imag(local_x)
+                    )
                 else:
                     local_res[:] += self._operators[i, j].dot(local_x)
                 col_dim += self._cols[j]
@@ -810,9 +784,7 @@ def grid_function_list_from_coefficients(coefficients, spaces):
     res_list = []
     for space in spaces:
         dof_count = space.global_dof_count
-        res_list.append(
-            GridFunction(space, coefficients=coefficients[pos : pos + dof_count])
-        )
+        res_list.append(GridFunction(space, coefficients=coefficients[pos : pos + dof_count]))
         pos += dof_count
     return res_list
 
@@ -842,10 +814,6 @@ def grid_function_list_from_projections(projections, spaces, dual_spaces=None):
         raise ValueError("spaces must have the same length as dual_spaces")
     for space, dual in zip(spaces, dual_spaces):
         dof_count = space.global_dof_count
-        res_list.append(
-            GridFunction(
-                space, projections=projections[pos : pos + dof_count], dual_space=dual
-            )
-        )
+        res_list.append(GridFunction(space, projections=projections[pos : pos + dof_count], dual_space=dual))
         pos += dof_count
     return res_list

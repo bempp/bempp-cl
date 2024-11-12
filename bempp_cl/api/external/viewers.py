@@ -1,4 +1,5 @@
 """Define interfaces to external viewers."""
+
 import numpy as _np
 
 
@@ -38,9 +39,7 @@ def visualize(obj, mode=None, transformation=None):
     elif transformation == "abs":
         transform = lambda x: np.sqrt(np.sum(np.abs(x) ** 2, axis=0, keepdims=True))
     elif transformation == "log_abs":
-        transform = lambda x: np.log(
-            np.sqrt(np.sum(np.abs(x) ** 2, axis=0, keepdims=True))
-        )
+        transform = lambda x: np.log(np.sqrt(np.sum(np.abs(x) ** 2, axis=0, keepdims=True)))
     elif transformation == "abs_squared":
         transform = lambda x: np.sum(np.abs(x) ** 2, axis=0, keepdims=True)
     else:
@@ -95,9 +94,7 @@ def visualize_with_jupyter_notebook(obj, mode=None, transformation=None):
         values = _np.zeros(grid.entity_count(0), dtype="float64")
         for element in grid.entity_iterator(0):
             index = element.index
-            local_values = np.real(
-                transformation(obj.evaluate(index, local_coordinates))
-            )
+            local_values = np.real(transformation(obj.evaluate(index, local_coordinates)))
             values[index] = local_values.flatten()
 
         norm = mpl.colors.Normalize(vmin=_np.min(values), vmax=_np.max(values))
@@ -193,10 +190,7 @@ def visualize_with_paraview(obj, mode=None, transformation=None):
         pview = which("paraview")
 
     if pview is None:
-        raise EnvironmentError(
-            "Could not find Paraview."
-            + "Interactive plotting with Paraview not available."
-        )
+        raise EnvironmentError("Could not find Paraview." + "Interactive plotting with Paraview not available.")
 
     outfile = tempfile.NamedTemporaryFile(suffix=".vtu", dir=TMP_PATH, delete=False)
     if isinstance(obj, Grid):

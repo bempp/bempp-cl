@@ -1,4 +1,5 @@
 """Interfaces to modified Helmholtz operators."""
+
 from bempp_cl.api.operators.boundary import common as _common
 import numpy as _np
 
