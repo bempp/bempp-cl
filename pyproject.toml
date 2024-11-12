@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "bempp-cl"
 version = "0.3.2"
@@ -18,28 +22,26 @@ repository = "https://github.com/bempp/bempp-cl"
 [project.optional-dependencies]
 docs = ["sphinx-autoapi"]
 optional = ["matplotlib"]
-style = ["pydocstyle", "flake8"]
+style = ["pydocstyle", "ruff"]
 test = ["pytest", "pytest-xdist", "bempp-cl[optional]"]
 
-[build-system]
-requires = ["setuptools"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["bempp_cl*", "*.npz"]
 
-[tool.setuptools]
-packages = [
-    "bempp_cl",
-    "bempp_cl.api",
-    "bempp_cl.api.assembly",
-    "bempp_cl.api.external",
-    "bempp_cl.api.fmm",
-    "bempp_cl.api.grid",
-    "bempp_cl.api.integration",
-    "bempp_cl.api.linalg",
-    "bempp_cl.api.operators",
-    "bempp_cl.api.operators.boundary",
-    "bempp_cl.api.operators.far_field",
-    "bempp_cl.api.operators.potential",
-    "bempp_cl.api.shapes",
-    "bempp_cl.api.space",
-    "bempp_cl.api.utils",
-    "bempp_cl.core"
-]
+[tool.setuptools.package-data]
+"*" = ["*.npz"]
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+lint.ignore = ["E203", "E731"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"shapes.py" = ["E501"]
+"examples/*" = ["E402", "E501"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
