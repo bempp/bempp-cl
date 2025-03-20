@@ -25,7 +25,6 @@ def boundary_grid_from_fenics_mesh(fenics_mesh):
     )
 
     c23 = fenics_mesh.topology.connectivity(2, 3)
-    c30 = fenics_mesh.topology.connectivity(3, 0)
 
     tet_indices = np.array([c23.links(facet)[0] for facet in facets])
     tet_vertices = entities_to_geometry(
