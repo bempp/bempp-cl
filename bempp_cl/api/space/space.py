@@ -217,7 +217,7 @@ class SpaceBuilder(object):
 
         # Check if enough information was provided.
         if self._codomain_dimension is None:
-            raise ValueError("Codomain dimension not defined." "")
+            raise ValueError("Codomain dimension not defined.")
 
         if self._order is None:
             raise ValueError("order not defined.")

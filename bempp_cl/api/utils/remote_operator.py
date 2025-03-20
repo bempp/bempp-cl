@@ -129,7 +129,7 @@ class RemoteManager:
             self.send_data("SYNCHRONIZE", rank, 0)
             msg, _, _ = self.receive_data(rank)
             if msg != "SYNCHRONIZED":
-                raise Exception(f"Error: expected message 'SYNCHRONIZED' from rank {0}, received" f" {msg}")
+                raise Exception(f"Error: expected message 'SYNCHRONIZED' from rank {0}, received {msg}")
 
     def get_operator_dtype(self, tag):
         """Get dtype of remote operator."""

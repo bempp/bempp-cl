@@ -55,7 +55,7 @@ class _DiscreteOperatorBase(_LinearOperator):
     def A(self):
         """Return dense matrix."""
         warnings.warn(
-            "operator.A is deprecated and will be removed in a " "future version. Use operator.to_dense() instead.",
+            "operator.A is deprecated and will be removed in a future version. Use operator.to_dense() instead.",
             DeprecationWarning,
         )
         return self.to_dense()
@@ -401,7 +401,7 @@ class SparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
     def A(self):
         """Return dense matrix."""
         warnings.warn(
-            "operator.A is deprecated and will be removed in a " "future version. Use operator.to_dense() instead.",
+            "operator.A is deprecated and will be removed in a future version. Use operator.to_dense() instead.",
             DeprecationWarning,
         )
         return self.to_sparse()

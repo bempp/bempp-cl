@@ -46,7 +46,7 @@ def boundary_grid_from_fenics_mesh(fenics_mesh):
         to_other_vertex = v3 - v0
         normal = np.cross(v1 - v0, v2 - v0)
         if np.dot(normal, to_other_vertex) > 0:
-            bm_cells[1, i], bm_cells[2, i] =  bm_cells[2, i], bm_cells[1, i]
+            bm_cells[1, i], bm_cells[2, i] = bm_cells[2, i], bm_cells[1, i]
 
     bm_coords = fenics_mesh.geometry.x[bm_nodes].transpose()
 
