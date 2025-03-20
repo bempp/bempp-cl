@@ -73,3 +73,29 @@ def test_fenics_operator(has_dolfinx):
     op = FenicsOperator(ufl.inner(u, v) * ufl.dx)
     weak_op = op.weak_form()
     weak_op * np.ones(space.dofmap.index_map.size_global)
+
+
+def test_outward_normals(has_dolfinx):
+    """Test that normals of a trace mesh are oriented so that the normals point outwards."""
+    try:
+        from mpi4py import MPI
+        import dolfinx
+    except ImportError:
+        if has_dolfinx:
+            raise ImportError("DOLFINx is not installed")
+        pytest.skip("DOLFINx must be installed to run this test")
+
+    fenics_mesh = dolfinx.mesh.create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+    fenics_space = dolfinx.fem.functionspace(fenics_mesh, ("CG", 1))
+
+    p1_space, trace_matrix = fenics_to_bempp_trace_data(fenics_space)
+    dp0_space = bempp_cl.api.function_space(p1_space.grid, "DP", 0)
+
+    @bempp_cl.api.real_callable
+    def f(x, n, d, r):
+        r[:] = 2 * (x - np.array([0.5, 0.5, 0.5])).dot(n)
+
+    bempp_fun = bempp_cl.api.GridFunction(dp0_space, fun=f)
+
+    for i in bempp_fun.coefficients:
+        assert np.isclose(i, 1)
