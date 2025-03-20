@@ -4,7 +4,7 @@
 You will need to update the version number in three places. These are:
 
 - [VERSION](VERSION)
-- [bempp/version.py](bempp/version.py)
+- [bempp_cl/version.py](bempp_cl/version.py)
 - [codemeta.json](codemeta.json)
 - [pyproject.toml](pyporoject.toml)
 
