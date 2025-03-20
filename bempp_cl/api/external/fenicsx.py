@@ -16,22 +16,42 @@ def boundary_grid_from_fenics_mesh(fenics_mesh):
     fenics_mesh.topology.create_connectivity(2, 3)
     fenics_mesh.topology.create_entity_permutations()
 
+    facets = exterior_facet_indices(fenics_mesh.topology)
     boundary = entities_to_geometry(
         fenics_mesh,
         fenics_mesh.topology.dim - 1,
-        exterior_facet_indices(fenics_mesh.topology),
+        facets,
         True,
     )
 
-    bm_nodes = set()
-    for tri in boundary:
-        for node in tri:
-            bm_nodes.add(node)
-    bm_nodes = list(bm_nodes)
-    bm_cells = np.array([[bm_nodes.index(i) for i in tri] for tri in boundary])
-    bm_coords = fenics_mesh.geometry.x[bm_nodes]
+    c23 = fenics_mesh.topology.connectivity(2, 3)
+    c30 = fenics_mesh.topology.connectivity(3, 0)
 
-    bempp_boundary_grid = bempp_cl.api.Grid(bm_coords.transpose(), bm_cells.transpose())
+    tet_indices = np.array([c23.links(facet)[0] for facet in facets])
+    tet_vertices = entities_to_geometry(
+        fenics_mesh,
+        fenics_mesh.topology.dim,
+        tet_indices,
+        True,
+    )
+
+    bm_nodes = list(set(node for tri in boundary for node in tri))
+    bm_cells = np.zeros([3, len(boundary)])
+    for i, (tri, tet) in enumerate(zip(boundary, tet_vertices)):
+        for j in range(3):
+            bm_cells[j, i] = bm_nodes.index(tri[j])
+        v0 = fenics_mesh.geometry.x[tri[0]]
+        v1 = fenics_mesh.geometry.x[tri[1]]
+        v2 = fenics_mesh.geometry.x[tri[2]]
+        v3 = fenics_mesh.geometry.x[[i for i in tet if i not in tri][0]]
+        to_other_vertex = v3 - v0
+        normal = np.cross(v1 - v0, v2 - v0)
+        if np.dot(normal, to_other_vertex) > 0:
+            bm_cells[1, i], bm_cells[2, i] =  bm_cells[2, i], bm_cells[1, i]
+
+    bm_coords = fenics_mesh.geometry.x[bm_nodes].transpose()
+
+    bempp_boundary_grid = bempp_cl.api.Grid(bm_coords, bm_cells)
 
     return bempp_boundary_grid, bm_nodes
 
