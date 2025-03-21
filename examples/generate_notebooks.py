@@ -40,7 +40,7 @@ for dir in ["laplace", "helmholtz", "maxwell", "other"]:
                 "%matplotlib inline",
             )
             content = content.replace(
-                "try:\n" "    get_ipython().run_line_magic('matplotlib', 'inline')\n" "except NameError:\n" "    pass",
+                "try:\n    get_ipython().run_line_magic('matplotlib', 'inline')\nexcept NameError:\n    pass",
                 "%matplotlib inline",
             )
             with open(file_copy, "w") as f:

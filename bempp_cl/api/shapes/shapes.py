@@ -1212,6 +1212,6 @@ def cylinders(h=1.0, z=1.0, r=[0.5, 1, 1.5, 1.7], origin=(0.0, 0.0, 0.0), square
     for i, _ in enumerate(r):
         stub += f"b() = Boundary{{Volume{{{i + 1}}};}};\n"
 
-    geometry = f"cl = {h};\n" f"z = {z};\n" f"{stub}\n" "Mesh.Algorithm = 3;"
+    geometry = f"cl = {h};\nz = {z};\n{stub}\nMesh.Algorithm = 3;"
 
     return __generate_grid_from_geo_string(geometry)
