@@ -69,7 +69,7 @@ def test_blocked_matvec_only_linear_operator():
 
     block01 = laplace.single_layer(space, space, space).weak_form()
     block10 = laplace.adjoint_double_layer(space, space, space).weak_form()
-    block21 = LinearOperator([ndofs, ndofs], matvec=lambda x: x * np.arange(ndofs))
+    block21 = LinearOperator([ndofs, ndofs], matvec=lambda x: x * np.arange(ndofs), dtype=np.float64)
 
     op = BlockedDiscreteOperator([[None, block01], [block10, None], [None, block21]])
 
