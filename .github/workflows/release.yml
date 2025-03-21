@@ -4,7 +4,6 @@ on:
   push:
     # Sequence of patterns matched against refs/tags
     tags: ['v*']
-    branches: [main]
 
 jobs:
   build-and-publish-docker:
