@@ -4,6 +4,7 @@ on:
   push:
     # Sequence of patterns matched against refs/tags
     tags: ['v*']
+    branches: [main]
 
 jobs:
   build-and-publish-docker:
@@ -42,6 +43,8 @@ jobs:
       with:
         python-version: "3.12"
     - name: Build a binary wheel and a source tarball
-      run: python -m build .
+      run: |
+        python3 -m pip install build
+        python3 -m build .
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
