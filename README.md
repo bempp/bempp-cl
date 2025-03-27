@@ -17,7 +17,7 @@ support for SYCL-based heterogeneous compute devices).
 ## Installation
 Bempp-cl can be installed from this repository by running:
 ```bash
-python setup.py install
+python -m pip install .
 ```
 
 Full installation instuctions, including installation of dependencies, can be found at
