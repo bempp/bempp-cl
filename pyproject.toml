@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bempp-cl"
-version = "0.4.0"
+version = "0.4.1"
 authors = [
     { name = "Timo Betcke", email="timo.betcke@gmail.com" },
     { name = "Matthew Scroggs", email="bempp@mscroggs.co.uk" }
@@ -27,7 +27,7 @@ test = ["pytest", "pytest-xdist", "bempp-cl[optional]"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["bempp_cl*", "*.npz"]
+include = ["bempp_cl*", "*.npz", "*.cl"]
 
 [tool.setuptools.package-data]
 "*" = ["*.npz"]
