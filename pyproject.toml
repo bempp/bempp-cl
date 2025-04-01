@@ -27,10 +27,10 @@ test = ["pytest", "pytest-xdist", "bempp-cl[optional]"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["bempp_cl*", "*.npz", "*.cl"]
+include = ["bempp_cl*", "*.npz", "*.cl", "*.h"]
 
 [tool.setuptools.package-data]
-"*" = ["*.npz"]
+"*" = ["*.npz", "*.cl", "*.h"]
 
 [tool.ruff]
 line-length = 120
