@@ -136,6 +136,8 @@ def visualize_with_gmsh(obj, mode=None, transformation=None):
     import subprocess
     from bempp_cl.api import export, GMSH_PATH, TMP_PATH, GridFunction
     from bempp_cl.api.grid.grid import Grid
+    import shutil
+    import os
 
     if GMSH_PATH is None:
         print("Gmsh not available for visualization.")
@@ -153,7 +155,12 @@ def visualize_with_gmsh(obj, mode=None, transformation=None):
         )
     outfile.close()
 
-    subprocess.Popen([GMSH_PATH, outfile.name])
+    gmsh_path = shutil.which("gmsh")
+    env = os.environ.copy()
+    if gmsh_path.lower().endswith(".bat"):
+        subprocess.Popen(f'"{gmsh_path}" "{outfile.name}"', shell=True, env=env)
+    else:
+        subprocess.Popen([gmsh_path, outfile.name], env=env)
 
 
 def visualize_with_paraview(obj, mode=None, transformation=None):
