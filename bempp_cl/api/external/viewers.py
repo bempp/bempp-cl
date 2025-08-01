@@ -3,7 +3,6 @@
 import numpy as _np
 
 
-
 def visualize(obj, mode=None, transformation=None):
     """
     Create a visualisation.
@@ -234,4 +233,3 @@ def enable_jupyter_viewer():
     import bempp_cl.api
 
     bempp_cl.api.PLOT_BACKEND = "jupyter_notebook"
-    
