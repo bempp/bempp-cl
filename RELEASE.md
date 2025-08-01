@@ -1,7 +1,7 @@
 # How to make a new Bempp-cl release
 
 ## Updating the version number
-You will need to update the version number in three places. These are:
+You will need to update the version number in four places. These are:
 
 - [VERSION](VERSION)
 - [bempp_cl/version.py](bempp_cl/version.py)
