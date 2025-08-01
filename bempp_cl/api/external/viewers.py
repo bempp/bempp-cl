@@ -1,8 +1,7 @@
 """Define interfaces to external viewers."""
 
 import numpy as _np
-import shutil
-import os
+
 
 
 def visualize(obj, mode=None, transformation=None):
@@ -138,6 +137,8 @@ def visualize_with_gmsh(obj, mode=None, transformation=None):
     import subprocess
     from bempp_cl.api import export, GMSH_PATH, TMP_PATH, GridFunction
     from bempp_cl.api.grid.grid import Grid
+    import shutil
+    import os
 
     if GMSH_PATH is None:
         print("Gmsh not available for visualization.")
@@ -233,3 +234,4 @@ def enable_jupyter_viewer():
     import bempp_cl.api
 
     bempp_cl.api.PLOT_BACKEND = "jupyter_notebook"
+    
