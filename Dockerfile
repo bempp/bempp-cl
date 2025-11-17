@@ -192,7 +192,6 @@ ENV PATH=/usr/local/dolfinx-complex/bin:$PATH
 ENV PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH
 ENV CMAKE_PREFIX_PATH=/usr/local/dolfinx-complex/lib/cmake:$CMAKE_PREFIX_PATH
 RUN cd dolfinx/python && \
-    python3 -m pip install -r build-requirements.txt && \
     python3 -m pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Release" .
 
 # Download and install ExaFMM
@@ -254,7 +253,6 @@ ENV PATH=/usr/local/dolfinx-complex/bin:$PATH
 ENV PKG_CONFIG_PATH=/usr/local/dolfinx-complex/lib/pkgconfig:$PKG_CONFIG_PATH
 ENV CMAKE_PREFIX_PATH=/usr/local/dolfinx-complex/lib/cmake:$CMAKE_PREFIX_PATH
 RUN cd dolfinx/python && \
-    python3 -m pip install -r build-requirements.txt && \
     python3 -m pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Release" .
 
 # Download and install ExaFMM
