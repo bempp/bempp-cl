@@ -292,7 +292,7 @@ def p1_barycentric_continuous_function_space(coarse_space):
         .set_codomain_dimension(1)
         .set_support(support)
         .set_normal_multipliers(normal_multipliers)
-        .set_order(0)
+        .set_order(1)
         .set_is_localised(True)
         .set_is_barycentric(True)
         .set_shapeset("p1_discontinuous")
@@ -301,7 +301,7 @@ def p1_barycentric_continuous_function_space(coarse_space):
         .set_local_multipliers(local_multipliers)
         .set_collocation_points(collocation_points)
         .set_dof_transformation(dof_transformation)
-        .set_numba_surface_gradient(_numba_p0_surface_gradient)
+        .set_numba_surface_gradient(_numba_p1_surface_gradient)
         .build()
     )
 
