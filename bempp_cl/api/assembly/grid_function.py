@@ -460,7 +460,7 @@ class GridFunction(object):
 
         return GridFunction(space, projections=ident @ self.coefficients)
 
-    def plot(self, mode=None, transformation=None):
+    def plot(self, mode=None, transformation=None, notebook_toggle=True):
         """
         Plot the grid function.
 
@@ -484,7 +484,7 @@ class GridFunction(object):
         """
         from bempp_cl.api.external.viewers import visualize
 
-        visualize(self, mode, transformation)
+        visualize(self, mode, transformation, notebook_toggle=notebook_toggle)
 
     def evaluate(self, element_index, local_coordinates):
         """Evaluate grid function on a single element."""

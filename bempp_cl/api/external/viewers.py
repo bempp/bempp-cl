@@ -3,7 +3,7 @@
 import numpy as _np
 
 
-def visualize(obj, mode=None, transformation=None):
+def visualize(obj, mode=None, transformation=None, notebook_toggle=True):
     """
     Create a visualisation.
 
@@ -51,6 +51,8 @@ def visualize(obj, mode=None, transformation=None):
         visualize_with_paraview(obj, mode, transform)
     if bempp_cl.api.PLOT_BACKEND == "jupyter_notebook":
         visualize_with_jupyter_notebook(obj, mode, transform)
+    if bempp_cl.api.PLOT_BACKEND == "pyvista":
+        visualize_with_pyvista(obj, mode, transform, notebook_toggle=notebook_toggle)
 
 
 def visualize_with_jupyter_notebook(obj, mode=None, transformation=None):
@@ -109,7 +111,8 @@ def visualize_with_jupyter_notebook(obj, mode=None, transformation=None):
         )
         fig["layout"]["scene"].update(go.layout.Scene(aspectmode="data"))
         plotly.offline.iplot(fig)
-
+    else:
+        raise TypeError("Unsupported type")
 
 def visualize_with_gmsh(obj, mode=None, transformation=None):
     """
@@ -153,6 +156,8 @@ def visualize_with_gmsh(obj, mode=None, transformation=None):
             transformation=transformation,
             data_type=mode,
         )
+    else:
+        raise TypeError("Unsupported type")
     outfile.close()
 
     gmsh_path = shutil.which("gmsh")
@@ -209,10 +214,68 @@ def visualize_with_paraview(obj, mode=None, transformation=None):
             transformation=transformation,
             data_type=mode,
         )
+    else:
+        raise TypeError("Unsupported type")
     outfile.close()
 
     subprocess.Popen([pview, outfile.name])
 
+def visualize_with_pyvista(obj, mode=None, transformation=None, notebook_toggle=True):
+    from bempp_cl.api import GridFunction
+    from bempp_cl.api.grid.grid import Grid
+    import numpy as np
+    import pyvista as pv
+    from pyvistaqt import BackgroundPlotter
+
+    pv.set_jupyter_backend("trame")
+    
+    if transformation is None:
+        transformation = np.real
+
+    if isinstance(obj, Grid):
+        vertices = obj.vertices
+        elements = obj.elements
+ 
+        faces = np.hstack([3 * np.ones((elements.shape[1], 1)), elements.T]).astype(np.int32).ravel()
+        mesh = pv.PolyData(vertices.T, faces)
+        if notebook_toggle == True:
+            pl = pv.Plotter(notebook=notebook_toggle)
+            pl.add_mesh(mesh, color="#FFDEAD", lighting=True, show_edges=True, ambient=0.6,diffuse=1, specular=0.2, specular_power=10) 
+            pl.show()
+        elif notebook_toggle == False:
+            pl = BackgroundPlotter()
+            pl.add_mesh(mesh, color="#FFDEAD", lighting=True, show_edges=True, ambient=0.6,diffuse=1, specular=0.2, specular_power=10)
+        else:
+            raise ValueError("input bool value")
+        
+    elif isinstance(obj, GridFunction):
+
+        grid = obj.space.grid
+        vertices = grid.vertices
+        elements = grid.elements
+
+        faces = np.hstack([3 * np.ones((elements.shape[1], 1)), elements.T]).astype(np.int32).ravel()
+        mesh = pv.PolyData(vertices.T, faces)
+
+        local_coordinates = _np.array([[1.0 / 3], [1.0 / 3]])
+        values = _np.zeros(grid.entity_count(0), dtype="float64")
+        for element in grid.entity_iterator(0):
+            index = element.index
+            local_values = np.real(transformation(obj.evaluate(index, local_coordinates)))
+            values[index] = local_values.flatten()
+        mesh.cell_data["data"] = values
+        if notebook_toggle == True:
+            pl2 = pv.Plotter(notebook=notebook_toggle)
+            pl2.add_mesh(mesh, scalars="data", categories=True, cmap="jet", show_edges=True, lighting=True, ambient=0.6,diffuse=1, specular=0.2, specular_power=10)
+            pl2.show()
+
+        elif notebook_toggle == False:
+            pl2 = BackgroundPlotter()
+            pl2.add_mesh(mesh, scalars="data", categories=True, cmap="jet", show_edges=True, lighting=True, ambient=0.6,diffuse=1, specular=0.2, specular_power=10)
+        else:
+            raise ValueError("input bool value")
+    else:
+        raise TypeError("Unsupported type")
 
 def enable_gmsh_viewer():
     """Change plotting default to Gmsh."""
@@ -233,3 +296,9 @@ def enable_jupyter_viewer():
     import bempp_cl.api
 
     bempp_cl.api.PLOT_BACKEND = "jupyter_notebook"
+
+def enable_pyvista_viewer():
+    """Change plotting default to PyVista."""
+    import bempp_cl.api
+
+    bempp_cl.api.PLOT_BACKEND = "pyvista"
