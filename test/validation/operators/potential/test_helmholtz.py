@@ -13,8 +13,7 @@ pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
 def test_helmholtz_single_layer_potential_p1(default_parameters, helpers, device_interface, precision):
     """Test Helmholtz slp potential with p1 basis."""
-    from bempp_cl.api import function_space
-    from bempp_cl.api import GridFunction
+    from bempp_cl.api import GridFunction, function_space
     from bempp_cl.api.operators.potential.helmholtz import single_layer
 
     grid = helpers.load_grid("sphere")
@@ -42,8 +41,7 @@ def test_helmholtz_single_layer_potential_p1(default_parameters, helpers, device
 
 def test_helmholtz_double_layer_potential_p1(default_parameters, helpers, device_interface, precision):
     """Test Helmholtz dlp potential with p1 basis."""
-    from bempp_cl.api import function_space
-    from bempp_cl.api import GridFunction
+    from bempp_cl.api import GridFunction, function_space
     from bempp_cl.api.operators.potential.helmholtz import double_layer
 
     grid = helpers.load_grid("sphere")
@@ -71,8 +69,7 @@ def test_helmholtz_double_layer_potential_p1(default_parameters, helpers, device
 
 def test_helmholtz_single_layer_potential_p1_complex_coeffs(default_parameters, helpers, device_interface, precision):
     """Test Helmholtz slp potential with p1 basis and complex coeffs."""
-    from bempp_cl.api import function_space
-    from bempp_cl.api import GridFunction
+    from bempp_cl.api import GridFunction, function_space
     from bempp_cl.api.operators.potential.helmholtz import single_layer
 
     grid = helpers.load_grid("sphere")
@@ -106,9 +103,8 @@ def test_helmholtz_potentials_segments(default_parameters, helpers, device_inter
     """Test Helmholtz potentials on segments."""
     import bempp_cl.api
     from bempp_cl.api import function_space
-    from bempp_cl.api.operators.potential.helmholtz import single_layer
-    from bempp_cl.api.operators.potential.helmholtz import double_layer
     from bempp_cl.api.grid.grid import grid_from_segments
+    from bempp_cl.api.operators.potential.helmholtz import double_layer, single_layer
 
     grid = bempp_cl.api.shapes.multitrace_cube()
 
@@ -147,9 +143,8 @@ def test_helmholtz_potentials_segments_complex_coeffs(default_parameters, helper
     """Test Helmholtz potentials on segments with complex coeffs."""
     import bempp_cl.api
     from bempp_cl.api import function_space
-    from bempp_cl.api.operators.potential.helmholtz import single_layer
-    from bempp_cl.api.operators.potential.helmholtz import double_layer
     from bempp_cl.api.grid.grid import grid_from_segments
+    from bempp_cl.api.operators.potential.helmholtz import double_layer, single_layer
 
     grid = bempp_cl.api.shapes.multitrace_cube()
 

@@ -16,13 +16,15 @@ class SparseAssembler(_assembler.AssemblerBase):
 
     def assemble(self, operator_descriptor, device_interface, precision, *args, **kwargs):
         """Sparse assembly of operators."""
-        from bempp_cl.api.utils.helpers import promote_to_double_precision
-        from bempp_cl.api.space.space import return_compatible_representation
-        from .numba_kernels import select_numba_kernels
         from scipy.sparse import coo_matrix
+
         from bempp_cl.api.assembly.discrete_boundary_operator import (
             SparseDiscreteBoundaryOperator,
         )
+        from bempp_cl.api.space.space import return_compatible_representation
+        from bempp_cl.api.utils.helpers import promote_to_double_precision
+
+        from .numba_kernels import select_numba_kernels
 
         domain, dual_to_range = return_compatible_representation(self.domain, self.dual_to_range)
         row_grid_dofs = dual_to_range.grid_dof_count

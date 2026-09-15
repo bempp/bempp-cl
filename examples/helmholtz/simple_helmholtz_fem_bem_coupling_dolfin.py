@@ -106,8 +106,9 @@
 # We begin by importing DOLFIN, the FEniCS python library, Bempp and NumPy.
 
 import dolfin
-import bempp_cl.api
 import numpy as np
+
+import bempp_cl.api
 
 # Next, we set the wavenumber ``k`` and the direction ``d`` of the incoming wave.
 
@@ -132,8 +133,8 @@ fenics_space = dolfin.FunctionSpace(mesh, "CG", 1)
 trace_space, trace_matrix = fenics.fenics_to_bempp_trace_data(fenics_space)
 bempp_space = bempp_cl.api.function_space(trace_space.grid, "DP", 0)
 
-print("FEM dofs: {0}".format(mesh.num_vertices()))
-print("BEM dofs: {0}".format(bempp_space.global_dof_count))
+print(f"FEM dofs: {mesh.num_vertices()}")
+print(f"BEM dofs: {bempp_space.global_dof_count}")
 # -
 
 # We create the boundary operators that we need.
@@ -179,9 +180,10 @@ rhs = np.concatenate([rhs_fem, rhs_bem])
 # $$
 
 # +
+from scipy.sparse.linalg.interface import LinearOperator
+
 from bempp_cl.api.assembly.blocked_operator import BlockedDiscreteOperator
 from bempp_cl.api.external.fenics import FenicsOperator
-from scipy.sparse.linalg.interface import LinearOperator
 
 blocks = [[None, None], [None, None]]
 
@@ -200,8 +202,9 @@ blocked = BlockedDiscreteOperator(np.array(blocks))
 # Next, we solve the system, then split the solution into the parts assosiated with u and &lambda;. For an efficient solve, preconditioning is required.
 
 # +
-from bempp_cl.api.assembly.discrete_boundary_operator import InverseSparseDiscreteBoundaryOperator
 from scipy.sparse.linalg import LinearOperator
+
+from bempp_cl.api.assembly.discrete_boundary_operator import InverseSparseDiscreteBoundaryOperator
 
 # Compute the sparse inverse of the Helmholtz operator
 # Although it is not a boundary operator we can use
@@ -245,7 +248,7 @@ soln, info = gmres(blocked, rhs, M=P, callback=count_iterations)
 soln_fem = soln[: mesh.num_vertices()]
 soln_bem = soln[mesh.num_vertices() :]
 
-print("Number of iterations: {0}".format(it_count))
+print(f"Number of iterations: {it_count}")
 # -
 
 # Next, we make DOLFIN and Bempp functions from the solution.

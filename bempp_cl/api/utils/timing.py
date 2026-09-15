@@ -11,8 +11,7 @@ def timeit(message):
 
         def timed_fun(*args, **kwargs):
             """Time something."""
-            from bempp_cl.api import GLOBAL_PARAMETERS
-            from bempp_cl.api import log
+            from bempp_cl.api import GLOBAL_PARAMETERS, log
 
             if not GLOBAL_PARAMETERS.verbosity.extended_verbosity:
                 return fun(*args, **kwargs)
@@ -20,7 +19,7 @@ def timeit(message):
             start_time = _time.time()
             res = fun(*args, **kwargs)
             end_time = _time.time()
-            log(message + " : {0:.3e}s".format(end_time - start_time))
+            log(message + f" : {end_time - start_time:.3e}s")
             return res
 
         return timed_fun

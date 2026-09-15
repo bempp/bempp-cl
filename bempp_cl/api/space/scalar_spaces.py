@@ -1,10 +1,10 @@
 """Definition of scalar function spaces."""
 
-from bempp_cl.helpers import timeit as _timeit
-
-import numpy as _np
 import numba as _numba
+import numpy as _np
+
 from bempp_cl.api import log
+from bempp_cl.helpers import timeit as _timeit
 
 
 @_timeit
@@ -61,8 +61,9 @@ def p0_discontinuous_function_space(
 @_timeit
 def p0_barycentric_discontinuous_function_space(coarse_space):
     """Define a space of piecewise constant functions over a barycentric grid."""
-    from .space import SpaceBuilder
     from scipy.sparse import coo_matrix
+
+    from .space import SpaceBuilder
 
     number_of_support_elements = coarse_space.number_of_support_elements
     bary_grid_number_of_elements = 6 * coarse_space.grid.number_of_elements
@@ -218,8 +219,9 @@ def p1_continuous_function_space(
 @_timeit
 def p1_barycentric_continuous_function_space(coarse_space):
     """Define a space of piecewise constant functions over a barycentric grid."""
-    from .space import SpaceBuilder
     from scipy.sparse import coo_matrix
+
+    from .space import SpaceBuilder
 
     number_of_support_elements = coarse_space.number_of_support_elements
     bary_grid_number_of_elements = 6 * coarse_space.grid.number_of_elements

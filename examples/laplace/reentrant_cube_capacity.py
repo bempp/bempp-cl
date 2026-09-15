@@ -42,8 +42,9 @@
 # ## Implementation
 # We start with the usual imports.
 
-import bempp_cl.api
 import numpy as np
+
+import bempp_cl.api
 
 # The grid re-entrant cube is predefined in the shapes module. By default it refines towards the singular corner. As function space on the grid we choose a simple space of piecewise constant functions.
 
@@ -71,10 +72,10 @@ op = bempp_cl.api.operators.boundary.laplace.single_layer(space, space, space)
 # +
 sol, _, iteration_count = bempp_cl.api.linalg.gmres(op, rhs, use_strong_form=True, return_iteration_count=True)
 
-print("Number of iterations: {0}".format(iteration_count))
+print(f"Number of iterations: {iteration_count}")
 # -
 
 # To obtain the capacity we simply integrate the solution across the boundary.
 
 normalized_capacity = 1.0 / (4 * np.pi) * sol.integrate()[0]
-print("The normalized capacity is {0}.".format(normalized_capacity))
+print(f"The normalized capacity is {normalized_capacity}.")

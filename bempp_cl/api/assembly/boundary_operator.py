@@ -1,7 +1,7 @@
 """Implementation of boundary operators."""
 
 
-class BoundaryOperator(object):
+class BoundaryOperator:
     """A base class for boundary operators."""
 
     def __init__(self, domain, range_, dual_to_range, parameters):
@@ -54,6 +54,7 @@ class BoundaryOperator(object):
     def __mul__(self, other):
         """Return product with a scalar, grid function or other operator."""
         import numpy as np
+
         from bempp_cl.api import GridFunction
 
         if np.isscalar(other):
@@ -143,7 +144,7 @@ class _SumBoundaryOperator(BoundaryOperator):
         ):
             raise ValueError("Spaces not compatible.")
 
-        super(_SumBoundaryOperator, self).__init__(op1.domain, op1.range, op1.dual_to_range, None)
+        super().__init__(op1.domain, op1.range, op1.dual_to_range, None)
 
         self._op1 = op1
         self._op2 = op2
@@ -158,7 +159,7 @@ class _ScaledBoundaryOperator(BoundaryOperator):
 
     def __init__(self, op, alpha):
         """Construct a scaled boundary operator."""
-        super(_ScaledBoundaryOperator, self).__init__(op.domain, op.range, op.dual_to_range, op.parameters)
+        super().__init__(op.domain, op.range, op.dual_to_range, op.parameters)
 
         self._op = op
         self._alpha = alpha
@@ -178,7 +179,7 @@ class _ProductBoundaryOperator(BoundaryOperator):
                 "Range space of second operator must be compatible to " + "domain space of first operator."
             )
 
-        super(_ProductBoundaryOperator, self).__init__(op2.domain, op1.range, op1.dual_to_range, None)
+        super().__init__(op2.domain, op1.range, op1.dual_to_range, None)
 
         self._op1 = op1
         self._op2 = op2
@@ -205,7 +206,7 @@ class ZeroBoundaryOperator(BoundaryOperator):
     def __init__(self, domain, range_, dual_to_range):
         import bempp_cl.api
 
-        super(ZeroBoundaryOperator, self).__init__(domain, range_, dual_to_range, bempp_cl.api.GLOBAL_PARAMETERS)
+        super().__init__(domain, range_, dual_to_range, bempp_cl.api.GLOBAL_PARAMETERS)
 
     def _assemble(self):
         from bempp_cl.api.assembly.discrete_boundary_operator import (
@@ -307,14 +308,14 @@ class MultiplicationOperator(BoundaryOperator):
 
     def _assemble(self):
         """Assemble the operator."""
-        from bempp_cl.api.space.space import return_compatible_representation
+        import numpy as _np
+        from scipy.sparse import coo_matrix
+
         from bempp_cl.api.assembly.discrete_boundary_operator import (
             SparseDiscreteBoundaryOperator,
         )
         from bempp_cl.api.integration.triangle_gauss import rule
-        from scipy.sparse import coo_matrix
-
-        import numpy as _np
+        from bempp_cl.api.space.space import return_compatible_representation
 
         points, weights = rule(self._parameters.quadrature.regular)
 

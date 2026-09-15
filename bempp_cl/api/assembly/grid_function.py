@@ -100,7 +100,7 @@ def complex_callable(*args, jit=True):
     return callable(*args, complex=True, jit=jit)
 
 
-class GridFunction(object):
+class GridFunction:
     """
     Representation of functions on a grid.
 
@@ -208,8 +208,8 @@ class GridFunction(object):
                 space,dual_space=dual_space, projections=proj)
 
         """
-        from bempp_cl.api.utils.helpers import assign_parameters
         from bempp_cl.api.space.space import return_compatible_representation
+        from bempp_cl.api.utils.helpers import assign_parameters
 
         self._space = None
         self._dual_space = None
@@ -386,6 +386,7 @@ class GridFunction(object):
     def real(self):
         """Return a new grid function consisting of the real part of this function."""
         import numpy as np
+
         import bempp_cl.api
 
         if self.representation == "primal":
@@ -405,6 +406,7 @@ class GridFunction(object):
     def imag(self):
         """Return a new grid function consisting of the imaginary part of this function."""
         import numpy as np
+
         import bempp_cl.api
 
         if self.representation == "primal":
@@ -568,13 +570,12 @@ class GridFunction(object):
         if self.space != other.space:
             raise ValueError("Spaces are not identical.")
 
-        if self.representation == "dual" and other.representation == "dual":
-            if self.dual_space == other.dual_space:
-                return GridFunction(
-                    self.space,
-                    projections=self.projections() + other.projections(),
-                    dual_space=self.dual_space,
-                )
+        if self.representation == "dual" and other.representation == "dual" and self.dual_space == other.dual_space:
+            return GridFunction(
+                self.space,
+                projections=self.projections() + other.projections(),
+                dual_space=self.dual_space,
+            )
 
         return GridFunction(self.space, coefficients=self.coefficients + other.coefficients)
 

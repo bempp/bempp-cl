@@ -30,7 +30,7 @@ def import_grid(filename):
     if domain_indices is None or _np.all(domain_indices == 0):
         try:
             domain_indices = mesh.cell_data_dict["gmsh:geometrical"]["triangle"]
-        except:  # noqa: E722
+        except:  # noqa: E722, S110
             pass
 
     return Grid(vertices, elements, domain_indices=domain_indices)

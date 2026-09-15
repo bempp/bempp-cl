@@ -5,6 +5,7 @@
 
 import numpy as _np
 import pytest
+
 import bempp_cl.api
 
 
@@ -34,11 +35,9 @@ import bempp_cl.api
 @pytest.mark.parametrize("truncate_at_segment_edge", [True, False])
 def test_local2global(grid, space_type, include_boundary_dofs, truncate_at_segment_edge):
     """Check that data in local2global and global2local agree."""
-    if len(grid.vertices[0]) - len(grid.edges[0]) + len(grid.elements[0]) != 2:
-        # grid is a screen, not a polyhedron
-        if space_type[0] in ["BC", "RBC"]:
-            print("BC spaces not yet supported on screens")
-            return
+    if len(grid.vertices[0]) - len(grid.edges[0]) + len(grid.elements[0]) != 2 and space_type[0] in ["BC", "RBC"]:
+        print("BC spaces not yet supported on screens")
+        return
 
     space = bempp_cl.api.function_space(
         grid,

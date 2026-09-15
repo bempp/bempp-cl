@@ -1,6 +1,7 @@
-import bempp_cl.api
 import numpy as np
 import pytest
+
+import bempp_cl.api
 
 pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 

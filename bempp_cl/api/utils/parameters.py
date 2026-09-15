@@ -3,7 +3,7 @@
 # pylint: disable=too-few-public-methods
 
 
-class _Verbosity(object):
+class _Verbosity:
     """Verbosity Parameters."""
 
     def __init__(self):
@@ -11,7 +11,7 @@ class _Verbosity(object):
         self.extended_verbosity = False
 
 
-class _Output(object):
+class _Output:
     """Output parameters."""
 
     def __init__(self):
@@ -19,7 +19,7 @@ class _Output(object):
         self.gmsh_use_binary = True
 
 
-class _Quadrature(object):
+class _Quadrature:
     """Quadrature orders."""
 
     def __init__(self):
@@ -28,7 +28,7 @@ class _Quadrature(object):
         self.singular = 4
 
 
-class _Fmm(object):
+class _Fmm:
     """Fmm options."""
 
     def __init__(self):
@@ -41,7 +41,7 @@ class _Fmm(object):
         self.dense_evaluation = False
 
 
-class _DenseAssembly(object):
+class _DenseAssembly:
     """Dense assembly options."""
 
     def __init__(self):
@@ -49,7 +49,7 @@ class _DenseAssembly(object):
         self.workgroup_size_multiple = 2
 
 
-class _Assembly(object):
+class _Assembly:
     """Assembly options."""
 
     def __init__(self):
@@ -59,7 +59,7 @@ class _Assembly(object):
         self.discretization_type = "galerkin"
 
 
-class DefaultParameters(object):
+class DefaultParameters:
     """Default parameters for Bempp."""
 
     def __init__(self):

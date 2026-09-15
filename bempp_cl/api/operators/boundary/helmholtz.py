@@ -2,8 +2,8 @@
 
 import numpy as _np
 
-from bempp_cl.api.operators.boundary import common as _common
 from bempp_cl.api.assembly.boundary_operator import BoundaryOperator as _BoundaryOperator
+from bempp_cl.api.operators.boundary import common as _common
 
 
 def single_layer(
@@ -370,11 +370,10 @@ class _OsrcDtN(_BoundaryOperator):
 
     def _assemble(self):
         """Assemble the operator."""
-        from bempp_cl.api.operators.boundary.sparse import identity
-        from bempp_cl.api.operators.boundary.sparse import laplace_beltrami
         from bempp_cl.api.assembly.discrete_boundary_operator import (
             InverseSparseDiscreteBoundaryOperator,
         )
+        from bempp_cl.api.operators.boundary.sparse import identity, laplace_beltrami
 
         space = self._domain
         wavenumber, npade, theta, damped_wavenumber = self.descriptor.options
@@ -466,11 +465,10 @@ class _OsrcNtD(_BoundaryOperator):
         return self._operator_descriptor
 
     def _assemble(self):
-        from bempp_cl.api.operators.boundary.sparse import identity
-        from bempp_cl.api.operators.boundary.sparse import laplace_beltrami
         from bempp_cl.api.assembly.discrete_boundary_operator import (
             InverseSparseDiscreteBoundaryOperator,
         )
+        from bempp_cl.api.operators.boundary.sparse import identity, laplace_beltrami
 
         space = self._domain
         wavenumber, npade, theta, damped_wavenumber = self.descriptor.options

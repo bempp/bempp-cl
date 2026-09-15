@@ -18,9 +18,10 @@ _BUFFER = None
 
 def worker(in_queue, out_queue, worker_id, nworkers, buf, log, log_level):
     """Definition of a worker."""
-    import bempp_cl.api
-    from bempp_cl.api.utils import pool
     import traceback
+
+    import bempp_cl.api
+    from bempp_cl.api.utils import pool  # noqa: PLW0406
 
     pool._MY_ID = worker_id
     pool._NWORKERS = nworkers
@@ -48,7 +49,7 @@ def worker(in_queue, out_queue, worker_id, nworkers, buf, log, log_level):
             else:
                 raise ValueError("Unknown options.")
             put(result)
-        except Exception:
+        except BaseException:  # noqa: BLE001
             traceback.print_exc()
 
     bempp_cl.api.flush_log()
@@ -69,7 +70,7 @@ def as_array(dtype, offset, shape):
         Number of items of type dtype
 
     """
-    from bempp_cl.api.utils import pool
+    from bempp_cl.api.utils import pool  # noqa: PLW0406
 
     nitems = _np.prod(shape)
 
@@ -78,7 +79,7 @@ def as_array(dtype, offset, shape):
 
 def to_buffer(*args):
     """Save a number of numpy arrays to a buffer."""
-    from bempp_cl.api.utils import pool
+    from bempp_cl.api.utils import pool  # noqa: PLW0406
 
     offset = 0
     result = []
@@ -101,7 +102,7 @@ def from_buffer(arrays):
     is a shape tuple.
 
     """
-    from bempp_cl.api.utils import pool
+    from bempp_cl.api.utils import pool  # noqa: PLW0406
 
     result = []
 
@@ -114,7 +115,7 @@ def from_buffer(arrays):
     return result
 
 
-class Pool(object):
+class Pool:
     """
     A simple pool.
 
@@ -142,11 +143,11 @@ class Pool(object):
             One of 'debug', 'info', 'warning', 'error', 'critical'
 
         """
-        import bempp_cl.api
-        from bempp_cl.api.utils import pool
-        from bempp_cl.api.utils.pool import worker
-
         from multiprocessing import get_context
+
+        import bempp_cl.api
+        from bempp_cl.api.utils import pool  # noqa: PLW0406
+        from bempp_cl.api.utils.pool import worker
 
         self._nworkers = nworkers
 
@@ -212,22 +213,22 @@ class Pool(object):
 def _raise_if_not_worker(name):
     """Raise exception if not in worker."""
     if not is_worker():
-        raise Exception(f"Method {name} can only be called inside a worker.")
+        raise RuntimeError(f"Method {name} can only be called inside a worker.")
 
 
 def number_of_workers():
     """Return number of workers."""
-    from bempp_cl.api.utils import pool
+    from bempp_cl.api.utils import pool  # noqa: PLW0406
 
     if not is_initialised():
-        raise Exception("Pool is not initialised.")
+        raise RuntimeError("Pool is not initialised.")
 
     return pool._POOL.number_of_workers
 
 
 def insert_data(key, data):
     """Insert data."""
-    from bempp_cl.api.utils import pool
+    from bempp_cl.api.utils import pool  # noqa: PLW0406
 
     _raise_if_not_worker("insert_data")
     pool._DATA[key] = data
@@ -240,14 +241,14 @@ def is_initialised():
 
 def clear_data():
     """Clear the data in all workers."""
-    from bempp_cl.api.utils import pool
+    from bempp_cl.api.utils import pool  # noqa: PLW0406
 
     pool.execute(_clear_data_worker)
 
 
 def get_data(key):
     """Return data."""
-    from bempp_cl.api.utils import pool
+    from bempp_cl.api.utils import pool  # noqa: PLW0406
 
     _raise_if_not_worker("get_data")
     return pool._DATA[key]
@@ -265,7 +266,7 @@ def remove_key(key):
 
 def has_key(key):
     """Return if key exists in pool data."""
-    from bempp_cl.api.utils import pool
+    from bempp_cl.api.utils import pool  # noqa: PLW0406
 
     return key in pool._DATA
 
@@ -331,7 +332,7 @@ def create_device_pool(
 
 def create_pool(nworkers, buffer_size=100, log=False, log_level="info"):
     """Create a pool."""
-    from bempp_cl.api.utils import pool
+    from bempp_cl.api.utils import pool  # noqa: PLW0406
 
     pool._POOL = Pool(nworkers, buffer_size=buffer_size, log=log, log_level=log_level)
     pool._NWORKERS = nworkers
@@ -368,7 +369,7 @@ def _assign_ids(nworkers):
 
 def shutdown():
     """Shutdown the pool."""
-    from bempp_cl.api.utils import pool
+    from bempp_cl.api.utils import pool  # noqa: PLW0406
 
     pool._POOL.shutdown()
     pool._POOL = None
@@ -382,7 +383,7 @@ def _execute_function_without_arguments(fun):
 
 
 def _remove_key_worker(key):
-    from bempp_cl.api.utils import pool
+    from bempp_cl.api.utils import pool  # noqa: PLW0406
 
     del pool._DATA[key]
 
@@ -393,7 +394,7 @@ def _init_device_worker(identifier, precision):
     from bempp_cl.api.utils.pool import get_id
     from bempp_cl.core.cl_helpers import get_context_by_name
 
-    ctx, platform_index = get_context_by_name(identifier)
+    _ctx, platform_index = get_context_by_name(identifier)
     bempp_cl.api.set_default_device(platform_index, get_id())
     if precision is not None:
         bempp_cl.api.DEVICE_PRECISION_CPU = precision
@@ -402,6 +403,6 @@ def _init_device_worker(identifier, precision):
 
 def _clear_data_worker():
     """Clear worker."""
-    from bempp_cl.api.utils import pool
+    from bempp_cl.api.utils import pool  # noqa: PLW0406
 
     pool._DATA = {}

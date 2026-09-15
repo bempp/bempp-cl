@@ -2,9 +2,10 @@
 
 import numpy as np
 import pytest
+
 import bempp_cl.api
-from bempp_cl.api import function_space, check_for_fmm
-from bempp_cl.api.operators.boundary import laplace, helmholtz
+from bempp_cl.api import check_for_fmm, function_space
+from bempp_cl.api.operators.boundary import helmholtz, laplace
 
 
 def test_laplace_single_layer(has_exafmm):

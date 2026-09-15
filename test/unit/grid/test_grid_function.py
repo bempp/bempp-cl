@@ -1,5 +1,6 @@
-import numpy as np
 from math import sqrt
+
+import numpy as np
 
 import bempp_cl.api
 
@@ -45,8 +46,8 @@ def test_interpolation_python_callable():
 
 def test_vectorized_assembly():
     """Test vectorized assembly of grid functions."""
-    from bempp_cl.api.integration.triangle_gauss import rule
     from bempp_cl.api.assembly.grid_function import get_function_quadrature_information
+    from bempp_cl.api.integration.triangle_gauss import rule
 
     grid = bempp_cl.api.shapes.cube()
 

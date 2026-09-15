@@ -6,7 +6,7 @@ import numpy as _np
 # pylint: disable = C0103
 
 
-class ChebychevInterpolation(object):
+class ChebychevInterpolation:
     """Class providing methods for Chebychev interpolation."""
 
     def __init__(self, order):

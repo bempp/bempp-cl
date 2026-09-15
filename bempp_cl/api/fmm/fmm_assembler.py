@@ -1,8 +1,9 @@
 """Implementation of an FMM Assembler."""
 
-from bempp_cl.api.assembly import assembler as _assembler
 import numba as _numba
 import numpy as _np
+
+from bempp_cl.api.assembly import assembler as _assembler
 
 _FMM_CACHE = {}
 _FMM_POTENTIAL_CACHE = {}
@@ -27,8 +28,6 @@ def get_mode_from_operator_identifier(identifier):
 def get_fmm_interface(domain, dual_to_range, mode, wavenumber, parameters=None, device_interface=None):
     """Get an Fmm instance."""
     import bempp_cl.api
-
-    global _FMM_CACHE
 
     parameters = bempp_cl.api.assign_parameters(parameters)
 
@@ -64,8 +63,6 @@ def get_fmm_interface(domain, dual_to_range, mode, wavenumber, parameters=None, 
 def get_fmm_potential_interface(space, points, mode, wavenumber):
     """Get an Fmm potential instance."""
     import bempp_cl.api
-
-    global _FMM_POTENTIAL_CACHE
 
     points_hash = hash(points.data.tobytes())
 
@@ -118,7 +115,7 @@ def create_potential_evaluator(operator_descriptor, fmm_interface, space, parame
         raise ValueError("Unknown descriptor.")
 
 
-class FmmPotentialAssembler(object):
+class FmmPotentialAssembler:
     """Potential assembler for FMM."""
 
     def __init__(self, space, operator_descriptor, points, device_interface, parameters):
@@ -161,10 +158,10 @@ class FmmAssembler(_assembler.AssemblerBase):
 
     def assemble(self, operator_descriptor, device_interface, precision, *args, **kwargs):
         """Actually assemble."""
-        from bempp_cl.api.space.space import return_compatible_representation
         from bempp_cl.api.assembly.discrete_boundary_operator import (
             GenericDiscreteBoundaryOperator,
         )
+        from bempp_cl.api.space.space import return_compatible_representation
 
         actual_domain, actual_dual_to_range = return_compatible_representation(self.domain, self.dual_to_range)
 
@@ -238,9 +235,9 @@ def make_scalar_hypersingular(operator_descriptor, fmm_interface, domain, dual_t
     )
 
     if dual_to_range == domain:
-        target_curls, target_curls_trans = source_curls, source_curls_trans
+        _target_curls, target_curls_trans = source_curls, source_curls_trans
     else:
-        target_curls, target_curls_trans = compute_p1_curl_transformation(
+        _target_curls, target_curls_trans = compute_p1_curl_transformation(
             dual_to_range, bempp_cl.api.GLOBAL_PARAMETERS.quadrature.regular
         )
 
@@ -375,9 +372,10 @@ def compute_p1_curl_transformation(space, quadrature_order):
     quadrature points, multiplied with the quadrature weights and integration element. The
     list curl_transforms_transpose contains the transpose of these matrices.
     """
-    from bempp_cl.api.integration.triangle_gauss import rule
     from scipy.sparse import coo_matrix
     from scipy.sparse.linalg import aslinearoperator
+
+    from bempp_cl.api.integration.triangle_gauss import rule
 
     grid_data = space.grid.data("double")
     number_of_elements = space.grid.number_of_elements
@@ -453,11 +451,12 @@ def compute_p1_curl_transformation_impl(grid_data, support_elements, normal_mult
 
 def compute_rwg_basis_transform(space, quadrature_order):
     """Compute the transformation matrices for RWG basis functions."""
-    from bempp_cl.api.integration.triangle_gauss import rule
     from scipy.sparse import coo_matrix
     from scipy.sparse.linalg import aslinearoperator
-    from bempp_cl.api.space.shapesets import _rwg0_shapeset_evaluate
+
+    from bempp_cl.api.integration.triangle_gauss import rule
     from bempp_cl.api.space.maxwell_spaces import _numba_rwg0_evaluate
+    from bempp_cl.api.space.shapesets import _rwg0_shapeset_evaluate
 
     grid_data = space.grid.data("double")
     number_of_elements = space.grid.number_of_elements
@@ -552,11 +551,12 @@ def compute_rwg_basis_transform_impl(
 
 def compute_rwg_div_transform(space, quadrature_order):
     """Compute the div transformation matrices for RWG basis functions."""
-    from bempp_cl.api.integration.triangle_gauss import rule
-    from bempp_cl.api.space.shapesets import _rwg0_shapeset_evaluate
-    from bempp_cl.api.space.maxwell_spaces import _numba_rwg0_evaluate
     from scipy.sparse import coo_matrix
     from scipy.sparse.linalg import aslinearoperator
+
+    from bempp_cl.api.integration.triangle_gauss import rule
+    from bempp_cl.api.space.maxwell_spaces import _numba_rwg0_evaluate
+    from bempp_cl.api.space.shapesets import _rwg0_shapeset_evaluate
 
     grid_data = space.grid.data("double")
     number_of_elements = space.grid.number_of_elements
@@ -711,10 +711,10 @@ def make_maxwell_magnetic_field_boundary(operator_descriptor, fmm_interface, dom
     # wavenumber = operator_descriptor.options[0]
     order = bempp_cl.api.GLOBAL_PARAMETERS.quadrature.regular
     domain_rwg_map, dual_rwg_map = compute_rwg_basis_transform(domain, order)
-    domain_div_map, dual_div_map = compute_rwg_div_transform(domain, order)
+    _domain_div_map, _dual_div_map = compute_rwg_div_transform(domain, order)
     if domain != dual_to_range:
         _, dual_rwg_map = compute_rwg_basis_transform(dual_to_range, order)
-        _, dual_div_map = compute_rwg_div_transform(dual_to_range, order)
+        _, _dual_div_map = compute_rwg_div_transform(dual_to_range, order)
 
     singular_part = operator_descriptor.singular_part.weak_form().to_sparse()
 
@@ -755,8 +755,8 @@ def make_maxwell_electric_field_potential(operator_descriptor, fmm_interface, sp
 
     wavenumber = operator_descriptor.options[0] + 1j * operator_descriptor.options[1]
     order = bempp_cl.api.GLOBAL_PARAMETERS.quadrature.regular
-    rwg_map, rwg_map_trans = compute_rwg_basis_transform(space, order)
-    div_map, div_map_trans = compute_rwg_div_transform(space, order)
+    rwg_map, _rwg_map_trans = compute_rwg_basis_transform(space, order)
+    div_map, _div_map_trans = compute_rwg_div_transform(space, order)
 
     def evaluate(x):
         """Evaluate the potential operator."""
@@ -786,8 +786,8 @@ def make_maxwell_magnetic_field_potential(operator_descriptor, fmm_interface, sp
 
     # wavenumber = operator_descriptor.options[0]
     order = bempp_cl.api.GLOBAL_PARAMETERS.quadrature.regular
-    rwg_map, rwg_map_trans = compute_rwg_basis_transform(space, order)
-    div_map, div_map_trans = compute_rwg_div_transform(space, order)
+    rwg_map, _rwg_map_trans = compute_rwg_basis_transform(space, order)
+    _div_map, _div_map_trans = compute_rwg_div_transform(space, order)
 
     def evaluate(x):
         """Evaluate the potential operator."""

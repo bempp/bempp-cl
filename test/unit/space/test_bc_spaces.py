@@ -1,7 +1,8 @@
 """Unit tests for Buffa-Christansen spaces."""
 
-import bempp_cl.api
 import pytest
+
+import bempp_cl.api
 
 
 @pytest.mark.parametrize("space_type", ["BC", "RBC"])

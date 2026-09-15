@@ -13,8 +13,7 @@ pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
 def test_helmholtz_single_layer_far_field(default_parameters, helpers, device_interface, precision):
     """Test Helmholtz slp far-field with p1 basis."""
-    from bempp_cl.api import function_space
-    from bempp_cl.api import GridFunction
+    from bempp_cl.api import GridFunction, function_space
     from bempp_cl.api.operators.far_field.helmholtz import single_layer
 
     grid = helpers.load_grid("sphere")
@@ -42,8 +41,7 @@ def test_helmholtz_single_layer_far_field(default_parameters, helpers, device_in
 
 def test_helmholtz_double_layer_potential_p1(default_parameters, helpers, device_interface, precision):
     """Test Helmholtz dlp far field with p1 basis."""
-    from bempp_cl.api import function_space
-    from bempp_cl.api import GridFunction
+    from bempp_cl.api import GridFunction, function_space
     from bempp_cl.api.operators.far_field.helmholtz import double_layer
 
     grid = helpers.load_grid("sphere")
@@ -73,9 +71,8 @@ def test_helmholtz_far_field_segments(default_parameters, helpers, device_interf
     """Test Helmholtz far field on segments."""
     import bempp_cl.api
     from bempp_cl.api import function_space
-    from bempp_cl.api.operators.far_field.helmholtz import single_layer
-    from bempp_cl.api.operators.far_field.helmholtz import double_layer
     from bempp_cl.api.grid.grid import grid_from_segments
+    from bempp_cl.api.operators.far_field.helmholtz import double_layer, single_layer
 
     grid = bempp_cl.api.shapes.multitrace_cube()
 
@@ -132,8 +129,7 @@ def test_helmholtz_far_field_segments(default_parameters, helpers, device_interf
 def test_helmholtz_far_field_complex_coeffs(default_parameters, helpers, device_interface, precision):
     """Test Helmholtz far field ops with complex coefficients."""
     import bempp_cl.api
-    from bempp_cl.api.operators.far_field.helmholtz import single_layer
-    from bempp_cl.api.operators.far_field.helmholtz import double_layer
+    from bempp_cl.api.operators.far_field.helmholtz import double_layer, single_layer
 
     grid = bempp_cl.api.shapes.regular_sphere(3)
 
@@ -171,9 +167,8 @@ def test_helmholtz_far_field_segments_complex_coeffs(default_parameters, helpers
     """Test Maxwell potentials on segments with complex coeffs."""
     import bempp_cl.api
     from bempp_cl.api import function_space
-    from bempp_cl.api.operators.far_field.helmholtz import single_layer
-    from bempp_cl.api.operators.far_field.helmholtz import double_layer
     from bempp_cl.api.grid.grid import grid_from_segments
+    from bempp_cl.api.operators.far_field.helmholtz import double_layer, single_layer
 
     grid = bempp_cl.api.shapes.multitrace_cube()
 

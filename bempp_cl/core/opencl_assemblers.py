@@ -29,8 +29,7 @@ def singular_assembler(
 ):
     """Assemble singular part of integral operators with OpenCL."""
     from bempp_cl.api.utils.helpers import get_type
-    from bempp_cl.core.opencl_kernels import get_kernel_from_operator_descriptor
-    from bempp_cl.core.opencl_kernels import default_context, default_device
+    from bempp_cl.core.opencl_kernels import default_context, default_device, get_kernel_from_operator_descriptor
 
     mf = _cl.mem_flags
     ctx = default_context()
@@ -110,10 +109,10 @@ def dense_assembler(device_interface, operator_descriptor, domain, dual_to_range
     import bempp_cl.api
     from bempp_cl.api.integration.triangle_gauss import rule
     from bempp_cl.api.utils.helpers import get_type
-    from bempp_cl.core.opencl_kernels import get_kernel_from_operator_descriptor
     from bempp_cl.core.opencl_kernels import (
         default_context,
         default_device,
+        get_kernel_from_operator_descriptor,
         get_vector_width,
     )
 
@@ -289,11 +288,11 @@ def potential_assembler(device_interface, space, operator_descriptor, points, pa
     import bempp_cl.api
     from bempp_cl.api.integration.triangle_gauss import rule
     from bempp_cl.api.utils.helpers import get_type
-    from bempp_cl.core.opencl_kernels import get_kernel_from_name
-    from bempp_cl.core.opencl_kernels import get_kernel_from_operator_descriptor
     from bempp_cl.core.opencl_kernels import (
         default_context,
         default_device,
+        get_kernel_from_name,
+        get_kernel_from_operator_descriptor,
         get_vector_width,
     )
 

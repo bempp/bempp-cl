@@ -1,7 +1,7 @@
 """Implementation of potential operators."""
 
 
-class DensePotentialAssembler(object):
+class DensePotentialAssembler:
     """Implementation of a potential assembler."""
 
     # pylint: disable=useless-super-delegation

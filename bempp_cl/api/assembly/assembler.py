@@ -3,11 +3,11 @@
 
 def _create_assembler(domain, dual_to_range, identifier, parameters, device_interface=None):
     """Create assembler based on string."""
-    from bempp_cl.core.singular_assembler import SingularAssembler
+    from bempp_cl.api import check_for_fmm
+    from bempp_cl.api.fmm.fmm_assembler import FmmAssembler
     from bempp_cl.core.dense_assembler import DenseAssembler
     from bempp_cl.core.diagonal_assembler import DiagonalAssembler
-    from bempp_cl.api.fmm.fmm_assembler import FmmAssembler
-    from bempp_cl.api import check_for_fmm
+    from bempp_cl.core.singular_assembler import SingularAssembler
 
     # from bempp_cl.core.numba.dense_assembler import DenseAssembler
     from bempp_cl.core.sparse_assembler import SparseAssembler
@@ -39,7 +39,7 @@ def _create_assembler(domain, dual_to_range, identifier, parameters, device_inte
     # return DenseMultitraceEvaluatorAssembler(domain, dual_to_range, parameters)
 
 
-class AssemblerInterface(object):
+class AssemblerInterface:
     """Default Assembler interface object."""
 
     def __init__(
@@ -97,12 +97,12 @@ class AssemblerInterface(object):
         )
 
 
-class AssemblerBase(object):
+class AssemblerBase:
     """Base class for assemblers."""
 
     def __init__(self, domain, dual_to_range, parameters=None):
         """Instantiate the base class."""
-        import bempp_cl.api as api
+        from bempp_cl import api
 
         self._domain = domain
         self._dual_to_range = dual_to_range
@@ -128,7 +128,7 @@ class AssemblerBase(object):
         raise NotImplementedError("Needs to be implemented by derived class.")
 
 
-class PotentialAssembler(object):
+class PotentialAssembler:
     """Base class for potential assemblers."""
 
     def __init__(

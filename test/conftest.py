@@ -57,7 +57,7 @@ def skip(request):
 @pytest.fixture()
 def device_interface(request):
     """Not needed anymore. We once set the default device in a session fixture."""
-    return None
+    return
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -139,7 +139,7 @@ def helpers():
     return Helpers
 
 
-class Helpers(object):
+class Helpers:
     """Helper class with static helper methods for unit tests."""
 
     @staticmethod

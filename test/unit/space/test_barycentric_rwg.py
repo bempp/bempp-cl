@@ -9,8 +9,9 @@ pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
 def test_rwg_barycentric(helpers, precision):
     """Test B-RWG space."""
-    import bempp_cl.api
     import math
+
+    import bempp_cl.api
 
     grid = bempp_cl.api.shapes.regular_sphere(0)
     space = bempp_cl.api.function_space(grid, "RWG", 0, include_boundary_dofs=True)

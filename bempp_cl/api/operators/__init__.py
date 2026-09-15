@@ -1,12 +1,10 @@
 """Basic operator imports and definitions."""
 
 import collections as _collections
+
 import numpy as _np
 
-from . import boundary
-from . import potential
-from . import far_field
-
+from . import boundary, far_field, potential
 
 OperatorDescriptor = _collections.namedtuple(
     "OperatorDescriptor",

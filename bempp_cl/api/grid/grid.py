@@ -1,10 +1,11 @@
 """The basic grid class."""
 
-from bempp_cl.helpers import timeit as _timeit
 import collections as _collections
 
 import numba as _numba
 import numpy as _np
+
+from bempp_cl.helpers import timeit as _timeit
 
 EDGES_ID = 2
 VERTICES_ID = 1
@@ -12,7 +13,7 @@ VERTICES_ID = 1
 _EDGE_LOCAL = _np.array([[0, 1], [2, 0], [1, 2]])
 
 
-class Grid(object):
+class Grid:
     """The Grid class."""
 
     @_timeit
@@ -106,10 +107,8 @@ class Grid(object):
             self._scatter()
         if not pool.is_worker():
             log(
-                (
-                    f"Created grid with id {self.id}. Elements: {self.number_of_elements}. "
-                    + f"Edges: {self.number_of_edges}. Vertices: {self.number_of_vertices}"
-                )
+                f"Created grid with id {self.id}. Elements: {self.number_of_elements}. "
+                + f"Edges: {self.number_of_edges}. Vertices: {self.number_of_vertices}"
             )
 
     @property
@@ -652,7 +651,7 @@ class Grid(object):
         ("element_neighbor_indexptr", _numba.uint32[:]),
     ]
 )
-class GridDataDouble(object):
+class GridDataDouble:
     """A Numba container class for the grid data."""
 
     def __init__(
@@ -716,7 +715,7 @@ class GridDataDouble(object):
         ("element_neighbor_indexptr", _numba.uint32[:]),
     ]
 )
-class GridDataFloat(object):
+class GridDataFloat:
     """A Numba container class for the grid data."""
 
     def __init__(
@@ -761,7 +760,7 @@ class GridDataFloat(object):
         )
 
 
-class ElementGeometry(object):
+class ElementGeometry:
     """Provides geometry information for an element."""
 
     def __init__(self, grid, index):
@@ -814,7 +813,7 @@ class ElementGeometry(object):
         return _np.expand_dims(self.corners[:, 0], 1) + self.jacobian @ points
 
 
-class Element(object):
+class Element:
     """Provides a view onto an element of the grid."""
 
     def __init__(self, grid, index):
@@ -868,16 +867,13 @@ class Element(object):
 
     def __eq__(self, other):
         """Check if elements are equal."""
-        if isinstance(other, Element):
-            if other.grid == self.grid and other.index == self.index:
-                return True
-        return False
+        return bool(isinstance(other, Element) and other.grid == self.grid and other.index == self.index)
 
 
 VertexGeometry = _collections.namedtuple("VertexGeometry", "corners")
 
 
-class Vertex(object):
+class Vertex:
     """Provides a view onto a vertex of the grid."""
 
     def __init__(self, grid, index):
@@ -896,7 +892,7 @@ class Vertex(object):
         return VertexGeometry(self._grid.vertices[:, self.index].reshape(3, 1))
 
 
-class EdgeGeometry(object):
+class EdgeGeometry:
     """Implementation of a geometry for edges."""
 
     def __init__(self, corners):
@@ -915,7 +911,7 @@ class EdgeGeometry(object):
         return self._volume
 
 
-class Edge(object):
+class Edge:
     """Provides a view onto an edge of the grid."""
 
     def __init__(self, grid, index):
@@ -1397,7 +1393,7 @@ def enumerate_vertex_adjacent_elements(grid, support_elements, swapped_normals=N
                     sorted_neighbors.insert(0, elem)
                     break
             if not found:
-                raise Exception("Two elements seem to be connected only by a vertex, not by an edge.")
+                raise RuntimeError("Two elements seem to be connected only by a vertex, not by an edge.")
 
         vertex_edges[vertex_index] = sorted_neighbors
 
@@ -1442,9 +1438,9 @@ def _numba_enumerate_edges(elements, edge_tuple_to_index):
 
 def _grid_scatter_worker(grid_id, array_proxies):
     """Assign a new grid on the worker."""
-    from bempp_cl.api.utils import pool
-    from bempp_cl.api.grid.grid import Grid
     from bempp_cl.api import log
+    from bempp_cl.api.grid.grid import Grid
+    from bempp_cl.api.utils import pool
 
     vertices, elements, domain_indices = pool.from_buffer(array_proxies)
 

@@ -161,6 +161,7 @@ def lambda_1(mte_operators, beta, kappa_eps):
     Block operator that approximates (I+Delta)^(1/2)
     """
     from scipy.sparse import bmat
+
     from bempp_cl.api.assembly.discrete_boundary_operator import InverseSparseDiscreteBoundaryOperator
 
     IP, IC, N, LT, L = mte_operators
@@ -187,7 +188,7 @@ def lambda_2(mte_operators):
     IC-N = (I-curlcurl)
 
     """
-    IP, IC, N, LT, L = mte_operators
+    _IP, IC, N, _LT, _L = mte_operators
     return IC - N
 
 

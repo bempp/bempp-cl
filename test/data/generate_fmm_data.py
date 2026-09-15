@@ -1,10 +1,11 @@
 # Script to be run with legacy Bempp to generate the comparison data.
 
-import bempp_cl.api
-import numpy as np
-
 import os.path
 import sys
+
+import numpy as np
+
+import bempp_cl.api
 
 # run `python generate_fmm_data.py REGENERATE` to regenerate everything
 REGENERATE = "REGENERATE" in sys.argv
@@ -12,7 +13,6 @@ data = {}
 
 
 def generate_vector(size, filename):
-    global data
     if filename not in data:
         if REGENERATE or not os.path.exists(filename + ".npy"):
             rand = np.random.RandomState(0)
@@ -25,7 +25,6 @@ def generate_vector(size, filename):
 
 
 def generate_points(size, filename):
-    global data
     if filename not in data:
         if REGENERATE or not os.path.exists(filename + ".npy"):
             rand = np.random.RandomState(0)

@@ -1,8 +1,7 @@
 """Benchmarks for dense assembly."""
 
-import pytest
-
 import bempp.api
+import pytest
 
 PYTESTMARK = pytest.mark.usefixtures("default_parameters", "helpers")
 
@@ -11,9 +10,9 @@ PYTESTMARK = pytest.mark.usefixtures("default_parameters", "helpers")
 def laplace_potential_dense_large_p0_benchmark(benchmark, default_parameters):
     """Benchmark for Laplace potential evaluation on large sphere"""
 
-    from bempp.api.operators.potential.laplace import single_layer
-    from bempp.api import function_space
     import numpy as np
+    from bempp.api import function_space
+    from bempp.api.operators.potential.laplace import single_layer
 
     grid = bempp.api.shapes.regular_sphere(6)
     space = function_space(grid, "DP", 0)
@@ -34,9 +33,9 @@ def laplace_potential_dense_large_p0_benchmark(benchmark, default_parameters):
 def helmholtz_potential_dense_large_p0_benchmark(benchmark, default_parameters):
     """Benchmark for Helmholtz potential evaluation on large sphere"""
 
-    from bempp.api.operators.potential.helmholtz import single_layer
-    from bempp.api import function_space
     import numpy as np
+    from bempp.api import function_space
+    from bempp.api.operators.potential.helmholtz import single_layer
 
     grid = bempp.api.shapes.regular_sphere(6)
     space = function_space(grid, "DP", 0)

@@ -4,7 +4,7 @@ import numba as _numba
 import numpy as _np
 
 
-class Shapeset(object):
+class Shapeset:
     """Definintion of a shapeset on a reference element."""
 
     def __init__(self, identifier):

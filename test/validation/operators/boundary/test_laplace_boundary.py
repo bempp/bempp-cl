@@ -34,8 +34,8 @@ def test_laplace_single_layer_p0(default_parameters, helpers, precision, device_
 
 def test_laplace_single_layer_p1_disc(default_parameters, helpers, precision, device_interface):
     """Test dense assembler for the Laplace slp with disc. p1 basis."""
-    from bempp_cl.api.operators.boundary.laplace import single_layer
     from bempp_cl.api import function_space
+    from bempp_cl.api.operators.boundary.laplace import single_layer
 
     grid = helpers.load_grid("sphere")
     space = function_space(grid, "DP", 1)
@@ -56,8 +56,8 @@ def test_laplace_single_layer_p1_disc(default_parameters, helpers, precision, de
 
 def test_laplace_single_layer_p1_p0(default_parameters, helpers, precision, device_interface):
     """Test dense assembler for the slp with disc. p1/p0 basis."""
-    from bempp_cl.api.operators.boundary.laplace import single_layer
     from bempp_cl.api import function_space
+    from bempp_cl.api.operators.boundary.laplace import single_layer
 
     grid = helpers.load_grid("sphere")
 
@@ -80,8 +80,8 @@ def test_laplace_single_layer_p1_p0(default_parameters, helpers, precision, devi
 
 def test_laplace_single_layer_p0_p1(default_parameters, helpers, precision, device_interface):
     """Test dense assembler for the slp with disc. p0/p1 basis."""
-    from bempp_cl.api.operators.boundary.laplace import single_layer
     from bempp_cl.api import function_space
+    from bempp_cl.api.operators.boundary.laplace import single_layer
 
     grid = helpers.load_grid("sphere")
 

@@ -1,4 +1,3 @@
 """Far field operators."""
 
-from . import helmholtz
-from . import maxwell
+from . import helmholtz, maxwell

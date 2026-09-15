@@ -39,9 +39,10 @@
 # ## General Setup
 # In this section we define the general objects that we need in all benchmarks.
 
-import bempp_cl.api
 import numpy as np
 import pandas as pd
+
+import bempp_cl.api
 
 grid = bempp_cl.api.shapes.regular_sphere(5)
 p1_space = bempp_cl.api.function_space(grid, "P", 1)

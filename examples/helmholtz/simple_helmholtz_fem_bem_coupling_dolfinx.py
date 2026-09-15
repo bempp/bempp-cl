@@ -106,13 +106,14 @@
 # We begin by importing DOLFINx (the FEniCSx python library), UFL (FEniCS's unified form language), MPI, Bempp and NumPy.
 
 import dolfinx
-from dolfinx.fem import functionspace, Function
-from dolfinx.mesh import create_unit_cube
 import dolfinx.geometry
-import ufl
-from mpi4py import MPI
-import bempp_cl.api
 import numpy as np
+import ufl
+from dolfinx.fem import Function, functionspace
+from dolfinx.mesh import create_unit_cube
+from mpi4py import MPI
+
+import bempp_cl.api
 
 # Next, we set the wavenumber ``k`` and the direction ``d`` of the incoming wave.
 
@@ -138,8 +139,8 @@ bempp_space = bempp_cl.api.function_space(trace_space.grid, "DP", 0)
 fem_size = fenics_space.dofmap.index_map.size_global
 bem_size = bempp_space.global_dof_count
 
-print("FEM dofs: {0}".format(fem_size))
-print("BEM dofs: {0}".format(bem_size))
+print(f"FEM dofs: {fem_size}")
+print(f"BEM dofs: {bem_size}")
 # -
 
 # We create the boundary operators that we need.
@@ -183,8 +184,9 @@ rhs = np.concatenate([rhs_fem, rhs_bem])
 # $$
 
 # +
-from bempp_cl.api.assembly.blocked_operator import BlockedDiscreteOperator
 from scipy.sparse.linalg.interface import LinearOperator
+
+from bempp_cl.api.assembly.blocked_operator import BlockedDiscreteOperator
 
 blocks = [[None, None], [None, None]]
 
@@ -203,8 +205,9 @@ blocked = BlockedDiscreteOperator(np.array(blocks))
 # Next, we solve the system, then split the solution into the parts assosiated with u and &lambda;. For an efficient solve, preconditioning is required.
 
 # +
-from bempp_cl.api.assembly.discrete_boundary_operator import InverseSparseDiscreteBoundaryOperator
 from scipy.sparse.linalg import LinearOperator
+
+from bempp_cl.api.assembly.discrete_boundary_operator import InverseSparseDiscreteBoundaryOperator
 
 # Compute the sparse inverse of the Helmholtz operator
 # Although it is not a boundary operator we can use
@@ -248,7 +251,7 @@ soln, info = gmres(blocked, rhs, M=P, callback=count_iterations)
 soln_fem = soln[:fem_size]
 soln_bem = soln[fem_size:]
 
-print("Number of iterations: {0}".format(it_count))
+print(f"Number of iterations: {it_count}")
 # -
 
 # Next, we make DOLFINx and Bempp functions from the solution.

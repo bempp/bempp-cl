@@ -1,11 +1,10 @@
 """Implementation of MPI based remote operators."""
 
+import numpy as _np
+from mpi4py import MPI
+
 from bempp_cl.api.assembly.blocked_operator import BlockedOperator as _BlockedOperator
 from bempp_cl.api.assembly.discrete_boundary_operator import _DiscreteOperatorBase
-
-
-from mpi4py import MPI
-import numpy as _np
 
 MPI_SIZE = MPI.COMM_WORLD.Get_size()
 MPI_RANK = MPI.COMM_WORLD.Get_rank()
@@ -129,7 +128,7 @@ class RemoteManager:
             self.send_data("SYNCHRONIZE", rank, 0)
             msg, _, _ = self.receive_data(rank)
             if msg != "SYNCHRONIZED":
-                raise Exception(f"Error: expected message 'SYNCHRONIZED' from rank {0}, received {msg}")
+                raise RuntimeError(f"Error: expected message 'SYNCHRONIZED' from rank {0}, received {msg}")
 
     def get_operator_dtype(self, tag):
         """Get dtype of remote operator."""
@@ -279,13 +278,13 @@ class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
                     continue
                 if self._rows[i] != -1:
                     if self._get_shape(ops[i, j])[0] != self._rows[i]:
-                        raise ValueError("Block row {0} has incompatible ".format(i) + " operator sizes.")
+                        raise ValueError(f"Block row {i} has incompatible " + " operator sizes.")
                 else:
                     self._rows[i] = self._get_shape(ops[i, j])[0]
 
                 if self._cols[j] != -1:
                     if self._get_shape(ops[i, j])[1] != self._cols[j]:
-                        raise ValueError("Block column {0} has incompatible".format(j) + "operator sizes.")
+                        raise ValueError(f"Block column {j} has incompatible" + "operator sizes.")
                 else:
                     self._cols[j] = self._get_shape(ops[i, j])[1]
                 self._operators[i, j] = ops[i, j]
@@ -336,9 +335,7 @@ class RemoteBlockedDiscreteOperator(_DiscreteOperatorBase):
 
     def _fill_complete(self):
         """Check if the fill is complete."""
-        if (-1 in self._rows) or (-1 in self._cols):
-            return False
-        return True
+        return not (-1 in self._rows or -1 in self._cols)
 
     def _matvec(self, x):
         """Perform matrix vector multiplication."""
