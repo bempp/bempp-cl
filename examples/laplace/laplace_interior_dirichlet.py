@@ -52,8 +52,9 @@
 # ## Implementation
 # We now demonstrate how to solve this problem with Bempp. We begin by importing Bempp and NumPy.
 
-import bempp_cl.api
 import numpy as np
+
+import bempp_cl.api
 
 # We next define a mesh or grid. For this problem, we will use the built-in function `sphere` that defines a simple spherical grid.
 

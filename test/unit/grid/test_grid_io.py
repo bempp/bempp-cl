@@ -1,7 +1,9 @@
 """Unit tests for grid io."""
 
 import os
+
 import pytest
+
 import bempp_cl.api
 
 

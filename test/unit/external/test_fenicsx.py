@@ -1,16 +1,17 @@
 """Unit tests for the FEniCSx interface."""
 
-import pytest
 import numpy as np
+import pytest
+
 import bempp_cl.api
-from bempp_cl.api.external.fenicsx import fenics_to_bempp_trace_data, FenicsOperator
+from bempp_cl.api.external.fenicsx import FenicsOperator, fenics_to_bempp_trace_data
 
 
 def test_p1_trace(has_dolfinx):
     """Test the trace of a P1 DOLFINx function."""
     try:
-        from mpi4py import MPI
         import dolfinx
+        from mpi4py import MPI
     except ImportError:
         if has_dolfinx:
             raise ImportError("DOLFINx is not installed")
@@ -56,9 +57,9 @@ def test_fenics_operator(has_dolfinx):
             raise ImportError("UFL is not installed")
         pytest.skip("UFL must be installed to run this test")
     try:
-        from mpi4py import MPI
         from dolfinx.fem import functionspace
         from dolfinx.mesh import create_unit_cube
+        from mpi4py import MPI
     except ImportError:
         if has_dolfinx:
             raise ImportError("DOLFINx is not installed")
@@ -78,8 +79,8 @@ def test_fenics_operator(has_dolfinx):
 def test_outward_normals(has_dolfinx):
     """Test that normals of a trace mesh are oriented so that the normals point outwards."""
     try:
-        from mpi4py import MPI
         import dolfinx
+        from mpi4py import MPI
     except ImportError:
         if has_dolfinx:
             raise ImportError("DOLFINx is not installed")
@@ -88,7 +89,7 @@ def test_outward_normals(has_dolfinx):
     fenics_mesh = dolfinx.mesh.create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     fenics_space = dolfinx.fem.functionspace(fenics_mesh, ("CG", 1))
 
-    p1_space, trace_matrix = fenics_to_bempp_trace_data(fenics_space)
+    p1_space, _trace_matrix = fenics_to_bempp_trace_data(fenics_space)
     dp0_space = bempp_cl.api.function_space(p1_space.grid, "DP", 0)
 
     @bempp_cl.api.real_callable

@@ -10,8 +10,9 @@ def boundary_grid_from_fenics_mesh(fenics_mesh):
     Return the Bempp grid and a map from the node numberings of the FEniCS
     mesh to the node numbers of the boundary grid.
     """
-    import bempp_cl.api
     import numpy as np
+
+    import bempp_cl.api
 
     boundary_mesh = _dolfin.BoundaryMesh(fenics_mesh, "exterior", False)
     bm_coords = boundary_mesh.coordinates()
@@ -47,7 +48,7 @@ def fenics_space_info(fenics_space):
     return (family, degree)
 
 
-class FenicsOperator(object):
+class FenicsOperator:
     """Wrap a FEniCS Operator into a Bempp operator."""
 
     def __init__(self, fenics_weak_form):
@@ -57,11 +58,12 @@ class FenicsOperator(object):
 
     def weak_form(self):
         """Return the weak form."""
+        from dolfin import as_backend_type, assemble, parameters
+        from scipy.sparse import csr_matrix
+
         from bempp_cl.api.assembly.discrete_boundary_operator import (
             SparseDiscreteBoundaryOperator,
         )
-        from dolfin import as_backend_type, assemble, parameters
-        from scipy.sparse import csr_matrix
 
         if self._sparse_mat is not None:
             return SparseDiscreteBoundaryOperator(self._sparse_mat)
@@ -87,9 +89,10 @@ def p1_trace(fenics_space):
     trace coefficients in the corresponding Bempp space.
 
     """
-    import bempp_cl.api
-    from scipy.sparse import coo_matrix
     import numpy as np
+    from scipy.sparse import coo_matrix
+
+    import bempp_cl.api
 
     family, degree = fenics_space_info(fenics_space)
     if not (family == "Lagrange" and degree == 1):
@@ -139,9 +142,10 @@ def nc1_tangential_trace(fenics_space):
     trace coefficients in the corresponding Bempp space.
 
     """
-    import bempp_cl.api
-    from scipy.sparse import coo_matrix
     import numpy as np
+    from scipy.sparse import coo_matrix
+
+    import bempp_cl.api
 
     family, degree = fenics_space_info(fenics_space)
     if not (family == "Nedelec 1st kind H(curl)" and degree == 1):

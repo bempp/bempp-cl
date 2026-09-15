@@ -8,9 +8,10 @@ def boundary_grid_from_fenics_mesh(fenics_mesh):
     Return the Bempp grid and a map from the node numberings of the FEniCS
     mesh to the node numbers of the boundary grid.
     """
-    import bempp_cl.api
     import numpy as np
     from dolfinx.mesh import entities_to_geometry, exterior_facet_indices
+
+    import bempp_cl.api
 
     fenics_mesh.topology.create_entities(2)
     fenics_mesh.topology.create_connectivity(2, 3)
@@ -34,7 +35,7 @@ def boundary_grid_from_fenics_mesh(fenics_mesh):
         True,
     )
 
-    bm_nodes = list(set(node for tri in boundary for node in tri))
+    bm_nodes = list({node for tri in boundary for node in tri})
     bm_cells = np.zeros([3, len(boundary)])
     for i, (tri, tet) in enumerate(zip(boundary, tet_vertices)):
         for j in range(3):
@@ -42,7 +43,7 @@ def boundary_grid_from_fenics_mesh(fenics_mesh):
         v0 = fenics_mesh.geometry.x[tri[0]]
         v1 = fenics_mesh.geometry.x[tri[1]]
         v2 = fenics_mesh.geometry.x[tri[2]]
-        v3 = fenics_mesh.geometry.x[[i for i in tet if i not in tri][0]]
+        v3 = fenics_mesh.geometry.x[next(i for i in tet if i not in tri)]
         to_other_vertex = v3 - v0
         normal = np.cross(v1 - v0, v2 - v0)
         if np.dot(normal, to_other_vertex) > 0:
@@ -84,9 +85,10 @@ def p1_trace(fenics_space):
     matrix that maps the coefficients of a FEniCS function to its boundary
     trace coefficients in the corresponding Bempp space.
     """
-    import bempp_cl.api
-    from scipy.sparse import coo_matrix
     import numpy as np
+    from scipy.sparse import coo_matrix
+
+    import bempp_cl.api
 
     family, degree = fenics_space_info(fenics_space)
     if not (family in ["Lagrange", "P"] and degree == 1):
@@ -142,7 +144,7 @@ def p1_trace(fenics_space):
     return space, trace_matrix
 
 
-class FenicsOperator(object):
+class FenicsOperator:
     """Wrap a FEniCS-X Operator into a Bempp operator."""
 
     def __init__(self, fenics_weak_form):
@@ -152,11 +154,12 @@ class FenicsOperator(object):
 
     def weak_form(self):
         """Return the weak form."""
+        from dolfinx.fem import assemble_matrix, form
+        from scipy.sparse import csr_matrix
+
         from bempp_cl.api.assembly.discrete_boundary_operator import (
             SparseDiscreteBoundaryOperator,
         )
-        from dolfinx.fem import assemble_matrix, form
-        from scipy.sparse import csr_matrix
 
         if self._sparse_mat is None:
             mat = assemble_matrix(form(self._fenics_weak_form))

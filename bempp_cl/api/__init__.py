@@ -20,41 +20,12 @@
 
 # numba.core.registry.CPUDispatcher.compile = compile_with_log
 
-import os as _os
-import tempfile as _tempfile
 import logging as _logging
-import time as _time
+import os as _os
 import platform as _platform
-
-from bempp_cl.api.utils import DefaultParameters
-from bempp_cl.api.utils.helpers import MemProfiler
-
-from bempp_cl.api.utils.helpers import assign_parameters
-from bempp_cl.api.grid.io import import_grid
-from bempp_cl.api.grid.io import export
-from bempp_cl.api.grid.grid import Grid
-from bempp_cl.api.assembly.grid_function import GridFunction
-from bempp_cl.api.assembly.grid_function import real_callable
-from bempp_cl.api.assembly.grid_function import complex_callable
-from bempp_cl.api.assembly.grid_function import callable
-
-from bempp_cl.api.space import function_space
-
-from bempp_cl.api import shapes
-from bempp_cl.api import integration
-from bempp_cl.api import operators
-from bempp_cl.api.linalg.direct_solvers import lu, compute_lu_factors
-from bempp_cl.api.linalg.iterative_solvers import gmres, cg
-from bempp_cl.api.assembly.discrete_boundary_operator import as_matrix
-from bempp_cl.api.assembly.boundary_operator import ZeroBoundaryOperator
-from bempp_cl.api.assembly.boundary_operator import MultiplicationOperator
-from bempp_cl.api.assembly.blocked_operator import BlockedOperator
-from bempp_cl.api.assembly.blocked_operator import GeneralizedBlockedOperator
-
-from bempp_cl.api.fmm.fmm_assembler import clear_fmm_cache
-
-from bempp_cl.api.utils import pool
-from bempp_cl.api.utils.pool import create_device_pool
+import tempfile as _tempfile
+import time as _time
+import warnings
 
 from numba.core.errors import (
     NumbaDeprecationWarning,
@@ -62,7 +33,20 @@ from numba.core.errors import (
     NumbaPerformanceWarning,
 )
 
-import warnings
+from bempp_cl.api import integration, operators, shapes
+from bempp_cl.api.assembly.blocked_operator import BlockedOperator, GeneralizedBlockedOperator
+from bempp_cl.api.assembly.boundary_operator import MultiplicationOperator, ZeroBoundaryOperator
+from bempp_cl.api.assembly.discrete_boundary_operator import as_matrix
+from bempp_cl.api.assembly.grid_function import GridFunction, callable, complex_callable, real_callable
+from bempp_cl.api.fmm.fmm_assembler import clear_fmm_cache
+from bempp_cl.api.grid.grid import Grid
+from bempp_cl.api.grid.io import export, import_grid
+from bempp_cl.api.linalg.direct_solvers import compute_lu_factors, lu
+from bempp_cl.api.linalg.iterative_solvers import cg, gmres
+from bempp_cl.api.space import function_space
+from bempp_cl.api.utils import DefaultParameters, pool
+from bempp_cl.api.utils.helpers import MemProfiler, assign_parameters
+from bempp_cl.api.utils.pool import create_device_pool
 
 warnings.simplefilter("ignore", category=NumbaDeprecationWarning)
 warnings.simplefilter("ignore", category=NumbaPendingDeprecationWarning)
@@ -72,10 +56,12 @@ warnings.filterwarnings("ignore", message="splu requires CSC matrix format")
 # Try importing OpenCL routines
 
 try:
-    from bempp_cl.core.opencl_kernels import set_default_cpu_device
-    from bempp_cl.core.opencl_kernels import set_default_cpu_device_by_name
-    from bempp_cl.core.opencl_kernels import set_default_gpu_device_by_name
-    from bempp_cl.core.opencl_kernels import set_default_gpu_device
+    from bempp_cl.core.opencl_kernels import (
+        set_default_cpu_device,
+        set_default_cpu_device_by_name,
+        set_default_gpu_device,
+        set_default_gpu_device_by_name,
+    )
 except ImportError:
     pass
 
@@ -263,14 +249,14 @@ else:
         from bempp_cl.core.opencl_kernels import find_cpu_driver
 
         CPU_OPENCL_DRIVER_FOUND = find_cpu_driver()
-    except:  # noqa: E722
+    except:  # noqa: E722, S110
         pass
 
     try:
         from bempp_cl.core.opencl_kernels import find_gpu_driver
 
         GPU_OPENCL_DRIVER_FOUND = find_gpu_driver()
-    except:  # noqa: E722
+    except:  # noqa: E722, S110
         pass
 
     if CPU_OPENCL_DRIVER_FOUND:

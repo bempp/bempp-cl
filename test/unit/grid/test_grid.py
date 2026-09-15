@@ -3,11 +3,11 @@
 # pylint: disable=redefined-outer-name
 
 import numpy as np
-import bempp_cl.api
 import pytest
 
+import bempp_cl.api
 
-@pytest.mark.usefixtures("two_element_grid", "helpers")
+
 @pytest.fixture
 def two_element_geometries(two_element_grid):
     """Return geometries of two element grid."""

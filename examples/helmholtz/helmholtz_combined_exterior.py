@@ -57,8 +57,9 @@
 #
 # First we import the Bempp module and NumPy.
 
-import bempp_cl.api
 import numpy as np
+
+import bempp_cl.api
 
 # We define the wavenumber
 

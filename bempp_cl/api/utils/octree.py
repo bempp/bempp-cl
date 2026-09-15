@@ -1,7 +1,7 @@
 """Implementation of an octree in Python."""
 
-import numpy as _np
 import numba as _numba
+import numpy as _np
 
 
 @_numba.experimental.jitclass(
@@ -19,7 +19,7 @@ import numba as _numba
         ("_near_field_nodes", _numba.int32[:]),
     ]
 )
-class Octree(object):
+class Octree:
     """Data structure for handling Octrees."""
 
     def __init__(self, lbound, ubound, maximum_level, vertices):
@@ -224,7 +224,7 @@ class Octree(object):
 
         tmp = 0
 
-        for index in range(0, 1 + self.maximum_level):
+        for index in range(1 + self.maximum_level):
             self._level_nodes_index_ptr[index] = tmp
             tmp += nnodes[index]
         self._level_nodes_index_ptr[1 + self.maximum_level] = tmp
@@ -264,7 +264,6 @@ class Octree(object):
 
     def _compute_interaction_list(self):
         """Compute the interaction list for each non empty node."""
-        pass
 
 
 @_numba.njit

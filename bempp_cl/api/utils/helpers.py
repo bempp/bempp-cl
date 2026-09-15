@@ -1,7 +1,8 @@
 """Various helper routines."""
 
-import numpy as _np
 import collections as _collections
+
+import numpy as _np
 
 
 def create_unique_id():
@@ -90,8 +91,9 @@ class MemProfiler:
 
     def __init__(self):
         """Construct."""
-        import psutil
         import os
+
+        import psutil
 
         self._process = psutil.Process(os.getpid())
         self.start = 0
@@ -111,8 +113,9 @@ class MemProfiler:
 
 def numba_decorate(fun):
     """Decorate a function for Numba."""
-    import bempp_cl.api
     import numba
+
+    import bempp_cl.api
 
     if not bempp_cl.api.USE_JIT:
         return fun

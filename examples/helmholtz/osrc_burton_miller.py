@@ -63,8 +63,9 @@
 #
 # Let us start with importing the relevant libraries.
 
-import bempp_cl.api
 import numpy as np
+
+import bempp_cl.api
 
 # The following defines the wavenumber $k$ and the Dirichlet and Neumann data of the incident plane wave travelling in the positive $x$ direction. Notice that we need both traces in the Burton-Miller formulation.
 #
@@ -94,7 +95,7 @@ h = wavelength / 6
 grid = bempp_cl.api.shapes.ellipsoid(3, 1, 1, h=h)
 
 space = bempp_cl.api.function_space(grid, "P", 1)
-print("The discrete function space has {0} degrees of freedom.".format(space.global_dof_count))
+print(f"The discrete function space has {space.global_dof_count} degrees of freedom.")
 # -
 
 # We can now form the Burton-Miller operator and its OSRC-preconditioned variant. The NtD operator only works for continuous function spaces as the OSRC approximation assembles a Laplace-Beltrami operator. Optionally, the damped wavenumber $k + \imath\epsilon$ in the OSRC approximation, and the number of expansion terms and branch cut angle for the Padé series can be specified for the NtD operator to fine-tune its accuracy.
@@ -129,8 +130,8 @@ sol_bm, info, it_count_bm = gmres(burton_miller, rhs_fun_bm, use_strong_form=Tru
 sol_osrc, info, it_count_osrc = gmres(osrc_bm, rhs_fun_osrc, use_strong_form=True, return_iteration_count=True)
 
 print("The linear system was solved in")
-print("  {0} iterations for the Burton-Miller formulation, and".format(it_count_bm))
-print("  {0} iterations with the OSRC preconditioner.".format(it_count_osrc))
+print(f"  {it_count_bm} iterations for the Burton-Miller formulation, and")
+print(f"  {it_count_osrc} iterations with the OSRC preconditioner.")
 # -
 
 # The number of iterations is indeed smaller when using the OSRC preconditioner, without incurring much computational overhead.

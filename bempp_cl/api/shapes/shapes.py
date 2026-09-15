@@ -15,6 +15,7 @@ def get_gmsh_file():
     """
     import os
     import tempfile
+
     import bempp_cl.api
 
     geo, geo_name = tempfile.mkstemp(suffix=".geo", dir=bempp_cl.api.TMP_PATH, text=True)
@@ -27,6 +28,7 @@ def __generate_grid_from_gmsh_string(gmsh_string):
     """Return a grid from a string containing a gmsh mesh."""
     import os
     import tempfile
+
     import bempp_cl.api
 
     if bempp_cl.api.mpi_rank == 0:
@@ -45,6 +47,7 @@ def __generate_grid_from_geo_string(geo_string):
     """Create a grid from a gmsh geo string."""
     import os
     import subprocess
+
     import bempp_cl.api
 
     def msh_from_string(geo_string):
@@ -56,16 +59,15 @@ def __generate_grid_from_geo_string(geo_string):
         f.write(geo_string)
         f.close()
 
-        fnull = open(os.devnull, "w")
-        cmd = gmsh_command + " -2 " + geo_name
-        try:
-            subprocess.check_call(cmd, shell=True, stdout=fnull, stderr=fnull)
-        except:  # noqa: E722
-            print("The following command failed: " + cmd)
-            fnull.close()
-            raise
-        os.remove(geo_name)
-        fnull.close()
+        with open(os.devnull, "w") as fnull:
+            cmd = gmsh_command + " -2 " + geo_name
+            try:
+                subprocess.check_call(cmd, shell=True, stdout=fnull, stderr=fnull)
+            except:
+                print("The following command failed: " + cmd)
+                fnull.close()
+                raise
+            os.remove(geo_name)
         return msh_name
 
     msh_name = msh_from_string(geo_string)
@@ -125,9 +127,11 @@ def regular_sphere(refine_level):
     The maximum allowed refinement level is 9.
 
     """
-    from bempp_cl.api.grid.grid import Grid
     import os
+
     import numpy as np
+
+    from bempp_cl.api.grid.grid import Grid
 
     if refine_level > 9:
         raise ValueError("'refine_level larger than 9 not supported.")
@@ -700,7 +704,7 @@ def cube(length=1, origin=(0, 0, 0), h=0.1):
 
 def almond(h=0.01):
     """Return the Nasa almond shape with element size h."""
-    almond_geometry = "cl = {0};\n".format(h) + _almond_geo
+    almond_geometry = f"cl = {h};\n" + _almond_geo
     return __generate_grid_from_geo_string(almond_geometry)
 
 
@@ -1140,7 +1144,7 @@ Physical Surface(1) = {518, 520, 750, 718, 516, 714, 748, 603, 491, 489, 487, 60
 """
 
 
-def cylinders(h=1.0, z=1.0, r=[0.5, 1, 1.5, 1.7], origin=(0.0, 0.0, 0.0), square=False):
+def cylinders(h=1.0, z=1.0, r=None, origin=(0.0, 0.0, 0.0), square=False):
     """
     Create a sequence of concentric cylindrical or cuboidal objects.
 
@@ -1163,6 +1167,8 @@ def cylinders(h=1.0, z=1.0, r=[0.5, 1, 1.5, 1.7], origin=(0.0, 0.0, 0.0), square
         A structured grid.
 
     """
+    if r is None:
+        r = [0.5, 1, 1.5, 1.7]
     if square:
         stub = ""
     else:

@@ -1,7 +1,7 @@
 """FMM helper functions."""
 
-import numpy as _np
 import numba as _numba
+import numpy as _np
 
 M_INV_4PI = 1.0 / (4 * _np.pi)
 
@@ -141,12 +141,12 @@ def get_local_interaction_operator(
     device_interface=None,
 ):
     """Get the local interaction operator."""
+    from scipy.sparse import csr_matrix
+    from scipy.sparse.linalg import LinearOperator, aslinearoperator
+
     import bempp_cl.api
     from bempp_cl.api import GLOBAL_PARAMETERS
     from bempp_cl.api.utils.helpers import get_type
-    from scipy.sparse import csr_matrix
-    from scipy.sparse.linalg import aslinearoperator
-    from scipy.sparse.linalg import LinearOperator
 
     npoints = local_points.shape[1]
 
@@ -466,9 +466,9 @@ def grid_to_points(grid_data, local_points):
 def get_local_interaction_evaluator_opencl(grid, local_points, kernel_function, kernel_parameters, dtype, result_type):
     """Return an evaluator for the local interactions."""
     import pyopencl as _cl
+
     import bempp_cl.api
-    from bempp_cl.core.opencl_kernels import get_kernel_from_name
-    from bempp_cl.core.opencl_kernels import default_context, default_device
+    from bempp_cl.core.opencl_kernels import default_context, default_device, get_kernel_from_name
 
     if "laplace" in kernel_function:
         mode = "laplace"
@@ -537,30 +537,31 @@ def get_local_interaction_evaluator_opencl(grid, local_points, kernel_function, 
     def evaluator(coeffs):
         """Actually evaluate the near-field correction."""
         result = _np.empty(4 * ncoeffs, dtype=result_type)
-        with bempp_cl.api.Timer(message="Singular Corrections Evaluator"):
-            with _cl.CommandQueue(ctx, device=device) as queue:
-                _cl.enqueue_copy(queue, coefficients_buffer, coeffs.astype(result_type))
-                _cl.enqueue_fill_buffer(
-                    queue,
-                    result_buffer,
-                    _np.uint8(0),
-                    0,
-                    result_type.itemsize * ncoeffs,
-                )
-                kernel(
-                    queue,
-                    (grid.number_of_elements,),
-                    (1,),
-                    grid_buffer,
-                    neighbor_indices_buffer,
-                    neighbor_indexptr_buffer,
-                    points_buffer,
-                    coefficients_buffer,
-                    result_buffer,
-                    kernel_parameters_buffer,
-                    _np.uint32(grid.number_of_elements),
-                )
-                _cl.enqueue_copy(queue, result, result_buffer)
+        with bempp_cl.api.Timer(message="Singular Corrections Evaluator"), _cl.CommandQueue(
+            ctx, device=device
+        ) as queue:
+            _cl.enqueue_copy(queue, coefficients_buffer, coeffs.astype(result_type))
+            _cl.enqueue_fill_buffer(
+                queue,
+                result_buffer,
+                _np.uint8(0),
+                0,
+                result_type.itemsize * ncoeffs,
+            )
+            kernel(
+                queue,
+                (grid.number_of_elements,),
+                (1,),
+                grid_buffer,
+                neighbor_indices_buffer,
+                neighbor_indexptr_buffer,
+                points_buffer,
+                coefficients_buffer,
+                result_buffer,
+                kernel_parameters_buffer,
+                _np.uint32(grid.number_of_elements),
+            )
+            _cl.enqueue_copy(queue, result, result_buffer)
 
         return result
 

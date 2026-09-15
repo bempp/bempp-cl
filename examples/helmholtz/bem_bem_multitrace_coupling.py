@@ -53,8 +53,9 @@
 #
 # We start with the ususal imports.
 
-import bempp_cl.api
 import numpy as np
+
+import bempp_cl.api
 
 # The following defines the wavenumber and the grid. We use roughly 10 elements per wavelength. The wavenumber in the interior domain is $n * k$, where $n$ is a refractive index.
 
@@ -117,7 +118,7 @@ def iteration_counter(x):
 
 
 x, info = gmres(op_discrete_squared, rhs, callback=iteration_counter)
-print("The linear system was solved in {0} iterations".format(it_count))
+print(f"The linear system was solved in {it_count} iterations")
 
 total_field_dirichlet = bempp_cl.api.GridFunction(dirichlet_space, coefficients=x[: dirichlet_space.global_dof_count])
 total_field_neumann = bempp_cl.api.GridFunction(neumann_space, coefficients=x[dirichlet_space.global_dof_count :])

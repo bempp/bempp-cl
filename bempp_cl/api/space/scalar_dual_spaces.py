@@ -1,13 +1,14 @@
 """Define scalar spaces on the dual grid."""
 
 import numpy as _np
+
 from bempp_cl.api import log
 
 from .scalar_spaces import (
-    p1_continuous_function_space,
-    p0_discontinuous_function_space,
     _numba_p0_surface_gradient,
     _numba_p1_surface_gradient,
+    p0_discontinuous_function_space,
+    p1_continuous_function_space,
 )
 
 
@@ -20,8 +21,9 @@ def dual0_function_space(
     truncate_at_segment_edge=False,
 ):
     """Define a space of DP0 functions on the dual grid."""
-    from .space import SpaceBuilder, invert_local2global
     from scipy.sparse import coo_matrix
+
+    from .space import SpaceBuilder, invert_local2global
 
     coarse_space = p1_continuous_function_space(
         grid,
@@ -114,8 +116,9 @@ def dual1_function_space(
     truncate_at_segment_edge=False,
 ):
     """Define a space of DP1 functions on the dual grid."""
-    from .space import SpaceBuilder, invert_local2global
     from scipy.sparse import coo_matrix
+
+    from .space import SpaceBuilder, invert_local2global
 
     if include_boundary_dofs is not None:
         log("Setting include_boundary_dofs has no effect on this space type.", "warning")

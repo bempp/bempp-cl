@@ -1,9 +1,10 @@
-import pytest
-import bempp_cl.api
 import numpy as np
-from bempp_cl.api.operators.boundary import laplace
-from bempp_cl.api.assembly.blocked_operator import BlockedOperator, BlockedDiscreteOperator
+import pytest
 from scipy.sparse.linalg.interface import LinearOperator
+
+import bempp_cl.api
+from bempp_cl.api.assembly.blocked_operator import BlockedDiscreteOperator, BlockedOperator
+from bempp_cl.api.operators.boundary import laplace
 
 
 @pytest.mark.parametrize("cols", range(4))

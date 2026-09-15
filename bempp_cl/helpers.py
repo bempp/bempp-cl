@@ -6,9 +6,9 @@ bempp_cl.api first.
 
 """
 
-import time as _time
-import functools as _functools
 import collections as _collections
+import functools as _functools
+import time as _time
 
 
 def timeit(fun):
@@ -22,7 +22,7 @@ def timeit(fun):
         start_time = _time.time()
         res = fun(*args, **kwargs)
         end_time = _time.time()
-        log(fun.__qualname__ + " : {0:.3e}s".format(end_time - start_time), "timing")
+        log(fun.__qualname__ + f" : {end_time - start_time:.3e}s", "timing")
         return res
 
     return timed_fun

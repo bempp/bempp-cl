@@ -1,7 +1,7 @@
 """Generic access to spaces."""
 
-import numpy as _np
 import numba as _numba
+import numpy as _np
 
 
 def function_space(grid, kind, degree, scatter=True, **kwargs):
@@ -33,9 +33,7 @@ def function_space(grid, kind, degree, scatter=True, **kwargs):
     """
     from bempp_cl.api.utils import pool
 
-    from . import scalar_spaces
-    from . import scalar_dual_spaces
-    from . import maxwell_spaces
+    from . import maxwell_spaces, scalar_dual_spaces, scalar_spaces
 
     space_f = None
 
@@ -48,9 +46,8 @@ def function_space(grid, kind, degree, scatter=True, **kwargs):
         if degree == 1:
             space_f = scalar_spaces.p1_discontinuous_function_space
 
-    if kind == "P":
-        if degree == 1:
-            space_f = scalar_spaces.p1_continuous_function_space
+    if kind == "P" and degree == 1:
+        space_f = scalar_spaces.p1_continuous_function_space
 
     if kind == "DUAL":
         if degree == 0:
@@ -58,21 +55,17 @@ def function_space(grid, kind, degree, scatter=True, **kwargs):
         if degree == 1:
             space_f = scalar_dual_spaces.dual1_function_space
 
-    if kind == "RWG" or kind == "RT":
-        if degree == 0:
-            space_f = maxwell_spaces.rwg0_function_space
+    if (kind == "RWG" or kind == "RT") and degree == 0:
+        space_f = maxwell_spaces.rwg0_function_space
 
-    if kind == "SNC" or kind == "NC":
-        if degree == 0:
-            space_f = maxwell_spaces.snc0_function_space
+    if (kind == "SNC" or kind == "NC") and degree == 0:
+        space_f = maxwell_spaces.snc0_function_space
 
-    if kind == "BC":
-        if degree == 0:
-            space_f = maxwell_spaces.bc_function_space
+    if kind == "BC" and degree == 0:
+        space_f = maxwell_spaces.bc_function_space
 
-    if kind == "RBC":
-        if degree == 0:
-            space_f = maxwell_spaces.rbc_function_space
+    if kind == "RBC" and degree == 0:
+        space_f = maxwell_spaces.rbc_function_space
 
     if space_f is None:
         raise ValueError("Requested space not implemented.")
@@ -93,7 +86,7 @@ def function_space(grid, kind, degree, scatter=True, **kwargs):
     return space
 
 
-class SpaceBuilder(object):
+class SpaceBuilder:
     """Configure and builds a space object."""
 
     def __init__(self, grid):
@@ -280,7 +273,7 @@ class SpaceBuilder(object):
         return self._space
 
 
-class FunctionSpace(object):
+class FunctionSpace:
     """
     Main class for function spaces.
 
@@ -314,9 +307,11 @@ class FunctionSpace(object):
         collocation_points,
     ):
         """Initialize the space."""
-        from .shapesets import Shapeset
         from scipy.sparse import coo_matrix
+
         from bempp_cl.api.utils.helpers import create_unique_id
+
+        from .shapesets import Shapeset
 
         self._grid = grid
         self._grid_id = self._grid.id
@@ -740,7 +735,7 @@ class FunctionSpace(object):
 def return_compatible_representation(*args):
     """Return representation of spaces on same grid."""
     # Check if at least one space is barycentric.
-    is_barycentric = any([space.is_barycentric for space in args])
+    is_barycentric = any(space.is_barycentric for space in args)
 
     if not is_barycentric:
         return args
@@ -766,9 +761,10 @@ def check_if_compatible(space1, space2):
 
 def map_space_to_points(space, quadrature_order=None, return_transpose=False):
     """Return mapper from grid coeffs to point evaluations."""
-    import bempp_cl.api
     from scipy.sparse import coo_matrix
     from scipy.sparse.linalg import aslinearoperator
+
+    import bempp_cl.api
     from bempp_cl.api.integration.triangle_gauss import rule
 
     grid = space.grid

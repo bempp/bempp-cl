@@ -14,8 +14,9 @@
 #
 # First, we import Bempp and NumPy.
 
-import bempp_cl.api
 import numpy as np
+
+import bempp_cl.api
 
 # Next, we define the grid for our problem, and the function spaces that we will use. In this example, we use a sphere with P1 and DUAL0 function spaces.
 

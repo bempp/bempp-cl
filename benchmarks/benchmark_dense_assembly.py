@@ -1,8 +1,7 @@
 """Benchmarks for dense assembly."""
 
-import pytest
-
 import bempp.api
+import pytest
 
 PYTESTMARK = pytest.mark.usefixtures("default_parameters", "helpers")
 
@@ -11,8 +10,8 @@ PYTESTMARK = pytest.mark.usefixtures("default_parameters", "helpers")
 def laplace_single_layer_dense_benchmark(benchmark, default_parameters):
     """Benchmark for Laplace assembly on a small sphere"""
 
-    from bempp.api.operators.boundary.laplace import single_layer
     from bempp.api import function_space
+    from bempp.api.operators.boundary.laplace import single_layer
 
     grid = bempp.api.shapes.regular_sphere(4)
     space = function_space(grid, "DP", 0)
@@ -25,8 +24,8 @@ def laplace_single_layer_dense_benchmark(benchmark, default_parameters):
 def laplace_single_layer_dense_large_benchmark(benchmark, default_parameters):
     """Benchmark for Laplace assembly on a larger sphere"""
 
-    from bempp.api.operators.boundary.laplace import single_layer
     from bempp.api import function_space
+    from bempp.api.operators.boundary.laplace import single_layer
 
     grid = bempp.api.shapes.regular_sphere(5)
     space = function_space(grid, "DP", 0)
@@ -39,8 +38,8 @@ def laplace_single_layer_dense_large_benchmark(benchmark, default_parameters):
 def laplace_single_layer_dense_p1_disc_benchmark(benchmark, default_parameters):
     """Benchmark for Laplace assembly with disc p1 functions"""
 
-    from bempp.api.operators.boundary.laplace import single_layer
     from bempp.api import function_space
+    from bempp.api.operators.boundary.laplace import single_layer
 
     grid = bempp.api.shapes.regular_sphere(4)
     space = function_space(grid, "DP", 1)
@@ -53,8 +52,8 @@ def laplace_single_layer_dense_p1_disc_benchmark(benchmark, default_parameters):
 def laplace_single_layer_dense_p1_cont_benchmark(benchmark, default_parameters):
     """Benchmark for Laplace assembly with cont p1 functions"""
 
-    from bempp.api.operators.boundary.laplace import single_layer
     from bempp.api import function_space
+    from bempp.api.operators.boundary.laplace import single_layer
 
     grid = bempp.api.shapes.regular_sphere(4)
     space = function_space(grid, "P", 1)
@@ -66,8 +65,8 @@ def laplace_single_layer_dense_p1_cont_benchmark(benchmark, default_parameters):
 
 def helmholtz_single_layer_dense_p1_cont_large_benchmark(benchmark, default_parameters):
     """Helmholtz benchmark with P1 functions on large grid."""
-    from bempp.api.operators.boundary.helmholtz import single_layer
     from bempp.api import function_space
+    from bempp.api.operators.boundary.helmholtz import single_layer
 
     grid = bempp.api.shapes.regular_sphere(5)
     space = function_space(grid, "P", 1)
@@ -88,8 +87,8 @@ def helmholtz_single_layer_dense_p1_cont_large_benchmark(benchmark, default_para
 
 def maxwell_electric_field_dense_large_benchmark(benchmark, default_parameters):
     """Maxwell electric field benchmark on large grid."""
-    from bempp.api.operators.boundary.maxwell import electric_field
     from bempp.api import function_space
+    from bempp.api.operators.boundary.maxwell import electric_field
 
     grid = bempp.api.shapes.regular_sphere(5)
     rwg = function_space(grid, "RWG", 0)
@@ -111,8 +110,8 @@ def maxwell_electric_field_dense_large_benchmark(benchmark, default_parameters):
 
 def maxwell_magnetic_field_dense_large_benchmark(benchmark, default_parameters):
     """Maxwell magnetic field benchmark on large grid."""
-    from bempp.api.operators.boundary.maxwell import magnetic_field
     from bempp.api import function_space
+    from bempp.api.operators.boundary.maxwell import magnetic_field
 
     grid = bempp.api.shapes.regular_sphere(5)
     rwg = function_space(grid, "RWG", 0)

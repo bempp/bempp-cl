@@ -13,8 +13,9 @@ def compute_lu_factors(A):
     not recomputed at each call to lu.
 
     """
-    from bempp_cl.api import as_matrix
     from scipy.linalg import lu_factor
+
+    from bempp_cl.api import as_matrix
 
     return lu_factor(as_matrix(A.weak_form()))
 
@@ -38,11 +39,14 @@ def lu(A, b, lu_factor=None):
          obtained by the scipy method scipy.linalg.lu_factor
 
     """
+    from scipy.linalg import lu_solve, solve
+
     from bempp_cl.api import GridFunction
-    from scipy.linalg import solve, lu_solve
-    from bempp_cl.api.assembly.blocked_operator import BlockedOperatorBase
-    from bempp_cl.api.assembly.blocked_operator import projections_from_grid_functions_list
-    from bempp_cl.api.assembly.blocked_operator import grid_function_list_from_coefficients
+    from bempp_cl.api.assembly.blocked_operator import (
+        BlockedOperatorBase,
+        grid_function_list_from_coefficients,
+        projections_from_grid_functions_list,
+    )
 
     if isinstance(A, BlockedOperatorBase):
         vec = projections_from_grid_functions_list(b, A.dual_to_range_spaces)

@@ -3,8 +3,9 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=C0103
 
-import pytest
 import numpy as np
+import pytest
+
 import bempp_cl.api
 
 pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")

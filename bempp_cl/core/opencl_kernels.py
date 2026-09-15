@@ -1,7 +1,8 @@
 """OpenCL routines."""
 
-import pyopencl as _cl
 import os as _os
+
+import pyopencl as _cl
 
 _CURRENT_PATH = _os.path.dirname(_os.path.realpath(__file__))
 _INCLUDE_PATH = _os.path.abspath(_os.path.join(_CURRENT_PATH, "./sources/include"))
@@ -88,13 +89,13 @@ def get_kernel_compile_options(options, precision):
     compile_options = []
     for key, value in options.items():
         if value is None:
-            compile_options += ["-D", "{0}".format(key)]
+            compile_options += ["-D", f"{key}"]
         else:
             if isinstance(value, numbers.Real) and not isinstance(value, numbers.Integral):
                 value_string = str(value) + literal
             else:
                 value_string = str(value)
-            compile_options += ["-D", "{0}={1}".format(key, value_string)]
+            compile_options += ["-D", f"{key}={value_string}"]
 
     compile_options += ["-I", _INCLUDE_PATH]
 
@@ -105,7 +106,7 @@ def get_kernel_compile_options(options, precision):
     else:
         val = 1
 
-    compile_options.append("-DPRECISION={0}".format(val))
+    compile_options.append(f"-DPRECISION={val}")
 
     return compile_options
 
@@ -115,7 +116,8 @@ def build_program(assembly_function, options, precision, device_type="cpu"):
     file_name = assembly_function + ".cl"
     kernel_file = _os.path.join(_KERNEL_PATH, file_name)
 
-    kernel_string = open(kernel_file).read()
+    with open(kernel_file) as f:
+        kernel_string = f.read()
     kernel_options = get_kernel_compile_options(options, precision)
 
     return _cl.Program(default_context(device_type), kernel_string).build(options=kernel_options).kernel_function
@@ -129,7 +131,7 @@ def get_kernel_from_operator_descriptor(operator_descriptor, options, mode, forc
     vec_length = get_vector_width(precision, device_type)
     vec_string = get_vec_string(precision, device_type)
 
-    if not mode == "singular":
+    if mode != "singular":
         if force_novec or vec_length == 1:
             assembly_function += "_novec"
         else:
@@ -174,8 +176,9 @@ def get_vec_string(precision, device_type="cpu"):
 
 def default_cpu_device():
     """Return the default CPU device."""
-    import bempp_cl.api
     import os
+
+    import bempp_cl.api
 
     # pylint: disable=W0603
     global _DEFAULT_CPU_DEVICE
@@ -199,8 +202,9 @@ def default_cpu_device():
 
 def default_gpu_device():
     """Return the default GPU device."""
-    import bempp_cl.api
     import os
+
+    import bempp_cl.api
 
     # pylint: disable=W0603
     global _DEFAULT_GPU_DEVICE

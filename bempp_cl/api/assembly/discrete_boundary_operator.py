@@ -1,9 +1,11 @@
 """Data structures for assembled boundary operators."""
 
 import warnings
+
 import numpy as _np
-from bempp_cl.helpers import timeit as _timeit
 from scipy.sparse.linalg.interface import LinearOperator as _LinearOperator
+
+from bempp_cl.helpers import timeit as _timeit
 
 # Disable warnings for differing overridden parameters
 # pylint: disable=W0221
@@ -348,7 +350,7 @@ class SparseDiscreteBoundaryOperator(_DiscreteOperatorBase):
 
     def __init__(self, impl):
         """Construct. Should not be called by the user."""
-        super(SparseDiscreteBoundaryOperator, self).__init__(impl.dtype, impl.shape)
+        super().__init__(impl.dtype, impl.shape)
         self._impl = impl
 
     def _matmat(self, vec):
@@ -473,7 +475,7 @@ class ZeroDiscreteBoundaryOperator(_DiscreteOperatorBase):
 
     def __init__(self, rows, columns):
         """Construct a zero operator."""
-        super(ZeroDiscreteBoundaryOperator, self).__init__(_np.dtype("float64"), (rows, columns))
+        super().__init__(_np.dtype("float64"), (rows, columns))
 
     def _matmat(self, x):
         """Multiply operator by a matrix."""
@@ -572,7 +574,7 @@ def as_matrix(operator):
     return operator.to_dense()
 
 
-class _Solver(object):  # pylint: disable=too-few-public-methods
+class _Solver:  # pylint: disable=too-few-public-methods
     """Actual solve of a sparse linear system."""
 
     # pylint: disable=too-many-locals
@@ -586,7 +588,7 @@ class _Solver(object):  # pylint: disable=too-few-public-methods
         elif isinstance(operator, csc_matrix):
             mat = operator
         else:
-            raise ValueError(
+            raise TypeError(
                 "op must be either of type "
                 + "SparseDiscreteBoundaryOperator or of type "
                 + "csc_matrix. Actual type: "

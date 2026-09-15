@@ -1,6 +1,7 @@
 """Definition of blocked operator structures."""
 
 import numpy as _np
+
 from bempp_cl.api.assembly.discrete_boundary_operator import _DiscreteOperatorBase
 
 
@@ -22,7 +23,7 @@ def _prod(op1, op2):
         return op1 * op2
 
 
-class BlockedOperatorBase(object):
+class BlockedOperatorBase:
     """Base class for blocked operators."""
 
     def __init__(self):
@@ -114,13 +115,13 @@ class BlockedOperatorBase(object):
             list_input = list(other)
             if len(list_input) != self.ndims[1]:
                 raise ValueError(
-                    "Length of input list is {0}.".format(len(list_input))
+                    f"Length of input list is {len(list_input)}."
                     + ". But domain dimension of blocked operator"
-                    + "is {0}".format(self.ndims[1])
+                    + f"is {self.ndims[1]}"
                 )
             for item in list_input:
                 if not isinstance(item, GridFunction):
-                    raise ValueError("All items in the input list must be grid functions.")
+                    raise TypeError("All items in the input list must be grid functions.")
             weak_op = self.weak_form()
             x_in = coefficients_from_grid_functions_list(list_input)
             res = weak_op * x_in
@@ -179,19 +180,14 @@ class BlockedOperator(BlockedOperatorBase):
         row = key[0]
         col = key[1]
 
-        if self.range_spaces[row] is not None:
-            if operator.range != self.range_spaces[row]:
-                raise ValueError("Range space not compatible with " + "self.range_spaces[{0}]".format(row))
+        if self.range_spaces[row] is not None and operator.range != self.range_spaces[row]:
+            raise ValueError("Range space not compatible with " + f"self.range_spaces[{row}]")
 
-        if self.dual_to_range_spaces[row] is not None:
-            if operator.dual_to_range != self.dual_to_range_spaces[row]:
-                raise ValueError(
-                    "Dual to range space not compatible with " + "self.dual_to_range_spaces[{0}]".format(row)
-                )
+        if self.dual_to_range_spaces[row] is not None and operator.dual_to_range != self.dual_to_range_spaces[row]:
+            raise ValueError("Dual to range space not compatible with " + f"self.dual_to_range_spaces[{row}]")
 
-        if self.domain_spaces[col] is not None:
-            if operator.domain != self.domain_spaces[col]:
-                raise ValueError("Domain space not compatible with " + "self.domain_spaces[{0}]".format(col))
+        if self.domain_spaces[col] is not None and operator.domain != self.domain_spaces[col]:
+            raise ValueError("Domain space not compatible with " + f"self.domain_spaces[{col}]")
 
         self._range_spaces[row] = operator.range
         self._dual_to_range_spaces[row] = operator.dual_to_range
@@ -257,8 +253,9 @@ class GeneralizedBlockedOperator(BlockedOperatorBase):
         accepted.
 
         """
-        from bempp_cl.api.assembly.boundary_operator import BoundaryOperator
         from collections.abc import Iterable
+
+        from bempp_cl.api.assembly.boundary_operator import BoundaryOperator
 
         def make_blocked(operator):
             """Turn a BoundaryOperator into a 1x1 blocked operator."""
@@ -283,7 +280,7 @@ class GeneralizedBlockedOperator(BlockedOperatorBase):
                 elif isinstance(elem, BlockedOperatorBase):
                     current_row.append(elem)
                 else:
-                    raise ValueError("Cannot process element of type: {0}".format(type(elem)))
+                    raise TypeError(f"Cannot process element of type: {type(elem)}")
             self._ops.append(current_row)
 
             all_domain_spaces = []
@@ -459,7 +456,7 @@ class ScaledBlockedOperator(BlockedOperatorBase):
         self._op = op
         self._alpha = alpha
 
-        super(ScaledBlockedOperator, self).__init__()
+        super().__init__()
 
     def _assemble(self):
         """Assemble operator."""
@@ -563,10 +560,10 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
 
         """
         # pylint: disable=too-many-branches
-        from bempp_cl.api.utils.data_types import combined_type
         from bempp_cl.api.assembly.discrete_boundary_operator import (
             ZeroDiscreteBoundaryOperator,
         )
+        from bempp_cl.api.utils.data_types import combined_type
 
         if not isinstance(ops, _np.ndarray):
             ops = _np.array(ops)
@@ -586,13 +583,13 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
                     continue
                 if self._rows[i] != -1:
                     if ops[i, j].shape[0] != self._rows[i]:
-                        raise ValueError("Block row {0} has incompatible ".format(i) + " operator sizes.")
+                        raise ValueError(f"Block row {i} has incompatible " + " operator sizes.")
                 else:
                     self._rows[i] = ops[i, j].shape[0]
 
                 if self._cols[j] != -1:
                     if ops[i, j].shape[1] != self._cols[j]:
-                        raise ValueError("Block column {0} has incompatible".format(j) + "operator sizes.")
+                        raise ValueError(f"Block column {j} has incompatible" + "operator sizes.")
                 else:
                     self._cols[j] = ops[i, j].shape[1]
                 self._operators[i, j] = ops[i, j]
@@ -619,9 +616,7 @@ class BlockedDiscreteOperator(_DiscreteOperatorBase):
         return self._operators[key]
 
     def _fill_complete(self):
-        if (-1 in self._rows) or (-1 in self._cols):
-            return False
-        return True
+        return not (-1 in self._rows or -1 in self._cols)
 
     def _matvec(self, x):
         from bempp_cl.api.utils.data_types import combined_type

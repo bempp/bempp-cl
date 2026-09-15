@@ -1,7 +1,7 @@
 """Unit tests for the FEniCS interface."""
 
-import pytest
 import numpy as np
+import pytest
 
 
 def test_p1_trace(has_dolfin):

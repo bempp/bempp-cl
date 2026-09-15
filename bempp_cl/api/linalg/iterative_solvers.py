@@ -7,7 +7,7 @@ import numpy as _np
 # pylint: disable=too-many-locals
 
 
-class IterationCounter(object):
+class IterationCounter:
     """Iteration Counter class."""
 
     def __init__(self, store_residuals, iteration_is_cg=False, operator=None, rhs=None):
@@ -63,8 +63,8 @@ def gmres(
     in the correct spaces.
 
     """
-    from bempp_cl.api.assembly.boundary_operator import BoundaryOperator
     from bempp_cl.api.assembly.blocked_operator import BlockedOperatorBase
+    from bempp_cl.api.assembly.boundary_operator import BoundaryOperator
 
     if isinstance(A, BoundaryOperator):
         return _gmres_single_op_imp(
@@ -90,7 +90,7 @@ def gmres(
             return_iteration_count,
         )
 
-    raise ValueError("A must be a BoundaryOperator or BlockedBoundaryOperator")
+    raise TypeError("A must be a BoundaryOperator or BlockedBoundaryOperator")
 
 
 def cg(
@@ -110,19 +110,19 @@ def cg(
     correct space.
 
     """
-    from bempp_cl.api.assembly.boundary_operator import BoundaryOperator
-    from bempp_cl.api.assembly.grid_function import GridFunction
+    import time
 
     import scipy.sparse.linalg
 
     import bempp_cl.api
-    import time
+    from bempp_cl.api.assembly.boundary_operator import BoundaryOperator
+    from bempp_cl.api.assembly.grid_function import GridFunction
 
     if not isinstance(A, BoundaryOperator):
-        raise ValueError("A must be of type BoundaryOperator")
+        raise TypeError("A must be of type BoundaryOperator")
 
     if not isinstance(b, GridFunction):
-        raise ValueError("b must be of type GridFunction")
+        raise TypeError("b must be of type GridFunction")
 
     if use_strong_form:
         if not A.range.is_compatible(b.space):
@@ -141,7 +141,7 @@ def cg(
     start_time = time.time()
     x, info = scipy.sparse.linalg.cg(A_op, b_vec, rtol=tol, maxiter=maxiter, callback=callback)
     end_time = time.time()
-    bempp_cl.api.log("CG finished in %i iterations and took %.2E sec." % (callback.count, end_time - start_time))
+    bempp_cl.api.log(f"CG finished in {callback.count} iterations and took {end_time - start_time:.2E} sec.")
 
     res_fun = GridFunction(A.domain, coefficients=x.ravel())
 
@@ -168,15 +168,15 @@ def _gmres_single_op_imp(
     return_iteration_count=False,
 ):
     """Run implementation of GMRES for single operators."""
-    from bempp_cl.api.assembly.grid_function import GridFunction
+    import time
 
     import scipy.sparse.linalg
 
     import bempp_cl.api
-    import time
+    from bempp_cl.api.assembly.grid_function import GridFunction
 
     if not isinstance(b, GridFunction):
-        raise ValueError("b must be of type GridFunction")
+        raise TypeError("b must be of type GridFunction")
 
     # Assemble weak form before the logging messages
 
@@ -198,7 +198,7 @@ def _gmres_single_op_imp(
     start_time = time.time()
     x, info = scipy.sparse.linalg.gmres(A_op, b_vec, rtol=tol, restart=restart, maxiter=maxiter, callback=callback)
     end_time = time.time()
-    bempp_cl.api.log("GMRES finished in %i iterations and took %.2E sec." % (callback.count, end_time - start_time))
+    bempp_cl.api.log(f"GMRES finished in {callback.count} iterations and took {end_time - start_time:.2E} sec.")
 
     res_fun = GridFunction(A.domain, coefficients=x.ravel())
 
@@ -225,14 +225,15 @@ def _gmres_block_op_imp(
     return_iteration_count=False,
 ):
     """Run implementation of GMRES for blocked operators."""
+    import time
+
     import scipy.sparse.linalg
 
     import bempp_cl.api
-    import time
     from bempp_cl.api.assembly.blocked_operator import (
         coefficients_from_grid_functions_list,
-        projections_from_grid_functions_list,
         grid_function_list_from_coefficients,
+        projections_from_grid_functions_list,
     )
 
     # Assemble weak form before the logging messages
@@ -250,7 +251,7 @@ def _gmres_block_op_imp(
     start_time = time.time()
     x, info = scipy.sparse.linalg.gmres(A_op, b_vec, rtol=tol, restart=restart, maxiter=maxiter, callback=callback)
     end_time = time.time()
-    bempp_cl.api.log("GMRES finished in %i iterations and took %.2E sec." % (callback.count, end_time - start_time))
+    bempp_cl.api.log(f"GMRES finished in {callback.count} iterations and took {end_time - start_time:.2E} sec.")
 
     res_fun = grid_function_list_from_coefficients(x.ravel(), A.domain_spaces)
 

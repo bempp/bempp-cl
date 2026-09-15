@@ -14,9 +14,10 @@ def single_layer(
 ):
     """Return a Helmholtz single-layer potential operator."""
     import bempp_cl.api
-    from bempp_cl.api.operators import OperatorDescriptor
-    from bempp_cl.api.assembly.potential_operator import PotentialOperator
     from bempp_cl.api.assembly.assembler import PotentialAssembler
+    from bempp_cl.api.assembly.potential_operator import PotentialOperator
+    from bempp_cl.api.operators import OperatorDescriptor
+
     from .modified_helmholtz import single_layer as modified_single_layer
 
     if _np.real(wavenumber) == 0:
@@ -60,9 +61,10 @@ def double_layer(
 ):
     """Return a Helmholtz double-layer potential operator."""
     import bempp_cl.api
-    from bempp_cl.api.operators import OperatorDescriptor
-    from bempp_cl.api.assembly.potential_operator import PotentialOperator
     from bempp_cl.api.assembly.assembler import PotentialAssembler
+    from bempp_cl.api.assembly.potential_operator import PotentialOperator
+    from bempp_cl.api.operators import OperatorDescriptor
+
     from .modified_helmholtz import double_layer as modified_double_layer
 
     if _np.real(wavenumber) == 0:

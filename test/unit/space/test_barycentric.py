@@ -10,8 +10,9 @@ pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 @pytest.mark.parametrize("space_info", [("RWG", 0), ("DP", 0), ("P", 1)])
 def test_barycentric(space_info, helpers, precision):
     """Test barycentric space."""
-    import bempp_cl.api
     import math
+
+    import bempp_cl.api
 
     grid = bempp_cl.api.shapes.regular_sphere(2)
     space = bempp_cl.api.function_space(grid, space_info[0], space_info[1])

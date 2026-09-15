@@ -1,11 +1,11 @@
 """Singular assembly."""
 
+import collections as _collections
+
 import numpy as _np
 
 from bempp_cl.api.assembly import assembler as _assembler
 from bempp_cl.api.integration import duffy_galerkin as _duffy_galerkin
-
-import collections as _collections
 
 
 class SingularAssembler(_assembler.AssemblerBase):
@@ -17,12 +17,13 @@ class SingularAssembler(_assembler.AssemblerBase):
 
     def assemble(self, operator_descriptor, device_interface, precision, *args, **kwargs):
         """Assemble the singular part."""
+        from scipy.sparse import coo_matrix, csr_matrix
+
         from bempp_cl.api.assembly.discrete_boundary_operator import (
             SparseDiscreteBoundaryOperator,
         )
-        from bempp_cl.api.utils.helpers import promote_to_double_precision
-        from scipy.sparse import coo_matrix, csr_matrix
         from bempp_cl.api.space.space import return_compatible_representation
+        from bempp_cl.api.utils.helpers import promote_to_double_precision
 
         domain, dual_to_range = return_compatible_representation(self.domain, self.dual_to_range)
         row_dof_count = dual_to_range.global_dof_count
@@ -68,9 +69,9 @@ class SingularAssembler(_assembler.AssemblerBase):
 
 def assemble_singular_part(domain, dual_to_range, parameters, operator_descriptor, device_interface):
     """Actually assemble the Numba kernel."""
+    import bempp_cl.api
     from bempp_cl.api.utils.helpers import get_type
     from bempp_cl.core.dispatcher import singular_assembler_dispatcher
-    import bempp_cl.api
 
     precision = operator_descriptor.precision
     kernel_options = operator_descriptor.options
@@ -145,7 +146,7 @@ def assemble_singular_part(domain, dual_to_range, parameters, operator_descripto
 _SingularQuadratureRule = _collections.namedtuple("_QuadratureRule", "test_points trial_points weights")
 
 
-class _SingularQuadratureRuleInterfaceGalerkin(object):
+class _SingularQuadratureRuleInterfaceGalerkin:
     """Interface for a singular quadrature rule."""
 
     def __init__(self, grid, order, test_support, trial_support):

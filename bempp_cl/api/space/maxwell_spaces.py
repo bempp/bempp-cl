@@ -1,7 +1,7 @@
 """Definition of Maxwell spaces."""
 
-import numpy as _np
 import numba as _numba
+import numpy as _np
 
 
 def _is_screen(grid):
@@ -21,15 +21,16 @@ def rwg0_function_space(
     truncate_at_segment_edge=True,
 ):
     """Define a space of RWG functions of order 0."""
-    from .space import SpaceBuilder, _process_segments
     from bempp_cl.api.utils.helpers import serialise_list_of_lists
+
+    from .space import SpaceBuilder, _process_segments
 
     support, normal_multipliers = _process_segments(grid, support_elements, segments, swapped_normals)
 
     edge_neighbors, edge_neighbors_ptr = serialise_list_of_lists(grid.edge_neighbors)
 
     (
-        global_dof_count,
+        _global_dof_count,
         support,
         local2global,
         local_multipliers,
@@ -63,8 +64,9 @@ def rwg0_function_space(
 
 def rwg0_barycentric_function_space(coarse_space):
     """Define a space of RWG functions of order 0 over a barycentric grid."""
-    from .space import SpaceBuilder
     from scipy.sparse import coo_matrix
+
+    from .space import SpaceBuilder
 
     number_of_support_elements = coarse_space.number_of_support_elements
     bary_grid_number_of_elements = 6 * coarse_space.grid.number_of_elements
@@ -161,15 +163,16 @@ def snc0_function_space(
     truncate_at_segment_edge=True,
 ):
     """Define a space of SNC functions of order 0."""
-    from .space import SpaceBuilder, _process_segments
     from bempp_cl.api.utils.helpers import serialise_list_of_lists
+
+    from .space import SpaceBuilder, _process_segments
 
     support, normal_multipliers = _process_segments(grid, support_elements, segments, swapped_normals)
 
     edge_neighbors, edge_neighbors_ptr = serialise_list_of_lists(grid.edge_neighbors)
 
     (
-        global_dof_count,
+        _global_dof_count,
         support,
         local2global,
         local_multipliers,
@@ -204,8 +207,9 @@ def snc0_function_space(
 
 def snc0_barycentric_function_space(coarse_space):
     """Define a space of SNC functions of order 0 over a barycentric grid."""
-    from .space import SpaceBuilder
     from scipy.sparse import coo_matrix
+
+    from .space import SpaceBuilder
 
     number_of_support_elements = coarse_space.number_of_support_elements
     bary_grid_number_of_elements = 6 * coarse_space.grid.number_of_elements
@@ -397,15 +401,15 @@ def rbc_function_space(
 
 def _compute_bc_space_data(grid, bary_grid, coarse_space, truncate_at_segment_edge, swapped_normals):
     """Generate the BC map."""
+    from scipy.sparse import coo_matrix
+
     from bempp_cl.api.grid.grid import (
-        _get_barycentric_support,
         _get_bary_coefficients,
+        _get_barycentric_edges_associated_to_vertex,
+        _get_barycentric_support,
         _get_coefficients_reference_edge,
         _get_data_multipliers,
-        _get_barycentric_edges_associated_to_vertex,
     )
-
-    from scipy.sparse import coo_matrix
 
     support, bary_support_size, bary_support_elements = _get_barycentric_support(
         truncate_at_segment_edge, grid, bary_grid, coarse_space

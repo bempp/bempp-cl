@@ -13,10 +13,10 @@ def electric_field(
     precision=None,
 ):
     """Return a Maxwell electric field potential operator."""
-    from bempp_cl.api.operators import OperatorDescriptor
-    from bempp_cl.api.assembly.potential_operator import PotentialOperator
-    from bempp_cl.api.assembly.assembler import PotentialAssembler
     import bempp_cl.api
+    from bempp_cl.api.assembly.assembler import PotentialAssembler
+    from bempp_cl.api.assembly.potential_operator import PotentialOperator
+    from bempp_cl.api.operators import OperatorDescriptor
 
     if space.identifier != "rwg0":
         raise ValueError("Space must be an RWG type function space.")
@@ -50,10 +50,10 @@ def magnetic_field(
     precision=None,
 ):
     """Return a Maxwell magnetic field potential operator."""
-    from bempp_cl.api.operators import OperatorDescriptor
-    from bempp_cl.api.assembly.potential_operator import PotentialOperator
-    from bempp_cl.api.assembly.assembler import PotentialAssembler
     import bempp_cl.api
+    from bempp_cl.api.assembly.assembler import PotentialAssembler
+    from bempp_cl.api.assembly.potential_operator import PotentialOperator
+    from bempp_cl.api.operators import OperatorDescriptor
 
     if space.identifier != "rwg0":
         raise ValueError("Space must be an RWG type function space.")

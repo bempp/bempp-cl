@@ -1,8 +1,9 @@
 """Unit tests for Buffa-Christansen spaces."""
 
-import bempp_cl.api
-import pytest
 import numpy as np
+import pytest
+
+import bempp_cl.api
 
 local_vertices = [[0, 0], [1, 0], [0, 1]]
 

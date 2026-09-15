@@ -1,13 +1,14 @@
 """Unit tests for the dense assembler."""
 
 import pytest
+
 import bempp_cl.api
 from bempp_cl.api import function_space
 from bempp_cl.api.operators.boundary import (
-    laplace,
     helmholtz,
-    modified_helmholtz,
+    laplace,
     maxwell,
+    modified_helmholtz,
     sparse,
 )
 

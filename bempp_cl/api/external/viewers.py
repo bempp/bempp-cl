@@ -27,8 +27,9 @@ def visualize(obj, mode=None, transformation=None):
         with the same number of dimensions as before.
 
     """
-    import bempp_cl.api
     import numpy as np
+
+    import bempp_cl.api
 
     transform = None
 
@@ -55,12 +56,13 @@ def visualize(obj, mode=None, transformation=None):
 
 def visualize_with_jupyter_notebook(obj, mode=None, transformation=None):
     """View a grid or grid function in an IPython Notebook."""
+    import numpy as np
     import plotly
     import plotly.figure_factory as ff
     import plotly.graph_objs as go
+
     from bempp_cl.api import GridFunction
     from bempp_cl.api.grid.grid import Grid
-    import numpy as np
 
     if transformation is None:
         transformation = np.real
@@ -99,7 +101,7 @@ def visualize_with_jupyter_notebook(obj, mode=None, transformation=None):
 
         norm = mpl.colors.Normalize(vmin=_np.min(values), vmax=_np.max(values))
         colorfun = lambda x: _np.rint(_np.array(cmap(norm(x))) * 255)
-        color_codes = ["rgb({0}, {1}, {2})".format(*colorfun(x)) for x in values]
+        color_codes = ["rgb({}, {}, {})".format(*colorfun(x)) for x in values]
         fig = ff.create_trisurf(
             x=vertices[0, :],
             y=vertices[1, :],
@@ -132,28 +134,28 @@ def visualize_with_gmsh(obj, mode=None, transformation=None):
     visualizes it.
 
     """
-    import tempfile
-    import subprocess
-    from bempp_cl.api import export, GMSH_PATH, TMP_PATH, GridFunction
-    from bempp_cl.api.grid.grid import Grid
-    import shutil
     import os
+    import shutil
+    import subprocess
+    import tempfile
+
+    from bempp_cl.api import GMSH_PATH, TMP_PATH, GridFunction, export
+    from bempp_cl.api.grid.grid import Grid
 
     if GMSH_PATH is None:
         print("Gmsh not available for visualization.")
-        return None
+        return
 
-    outfile = tempfile.NamedTemporaryFile(suffix=".msh", dir=TMP_PATH, delete=False)
-    if isinstance(obj, Grid):
-        export(outfile.name, grid=obj)
-    elif isinstance(obj, GridFunction):
-        export(
-            outfile.name,
-            grid_function=obj,
-            transformation=transformation,
-            data_type=mode,
-        )
-    outfile.close()
+    with tempfile.NamedTemporaryFile(suffix=".msh", dir=TMP_PATH, delete=False) as outfile:
+        if isinstance(obj, Grid):
+            export(outfile.name, grid=obj)
+        elif isinstance(obj, GridFunction):
+            export(
+                outfile.name,
+                grid_function=obj,
+                transformation=transformation,
+                data_type=mode,
+            )
 
     gmsh_path = shutil.which("gmsh")
     env = os.environ.copy()
@@ -184,12 +186,13 @@ def visualize_with_paraview(obj, mode=None, transformation=None):
     visualizes it.
 
     """
-    import tempfile
+    import os
     import subprocess
-    from bempp_cl.api import export, TMP_PATH, GridFunction
+    import tempfile
+
+    from bempp_cl.api import TMP_PATH, GridFunction, export
     from bempp_cl.api.grid.grid import Grid
     from bempp_cl.api.utils import which
-    import os
 
     if os.name == "nt":
         pview = which("paraview.exe")
@@ -197,19 +200,18 @@ def visualize_with_paraview(obj, mode=None, transformation=None):
         pview = which("paraview")
 
     if pview is None:
-        raise EnvironmentError("Could not find Paraview." + "Interactive plotting with Paraview not available.")
+        raise OSError("Could not find Paraview." + "Interactive plotting with Paraview not available.")
 
-    outfile = tempfile.NamedTemporaryFile(suffix=".vtu", dir=TMP_PATH, delete=False)
-    if isinstance(obj, Grid):
-        export(outfile.name, grid=obj)
-    elif isinstance(obj, GridFunction):
-        export(
-            outfile.name,
-            grid_function=obj,
-            transformation=transformation,
-            data_type=mode,
-        )
-    outfile.close()
+    with tempfile.NamedTemporaryFile(suffix=".vtu", dir=TMP_PATH, delete=False) as outfile:
+        if isinstance(obj, Grid):
+            export(outfile.name, grid=obj)
+        elif isinstance(obj, GridFunction):
+            export(
+                outfile.name,
+                grid_function=obj,
+                transformation=transformation,
+                data_type=mode,
+            )
 
     subprocess.Popen([pview, outfile.name])
 

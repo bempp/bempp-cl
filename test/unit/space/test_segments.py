@@ -23,8 +23,9 @@ import pytest
 )
 def test_segment_space(space_info, helpers, precision):
     """Test that a space on a face of a cube has fewer DOFs."""
-    import bempp_cl.api
     import math
+
+    import bempp_cl.api
 
     grid = bempp_cl.api.shapes.cube(h=0.4)
 
@@ -98,8 +99,9 @@ def test_segments_space_with_boundary_dofs(space_info):
 @pytest.mark.parametrize("space_info", [("DP", 0), ("DP", 1), ("DUAL", 1)])
 def test_segments_space_without_boundary_dofs(space_info, helpers, precision):
     """Test that including boundary DOFs has no effect on these spaces."""
-    import bempp_cl.api
     import math
+
+    import bempp_cl.api
 
     grid = bempp_cl.api.shapes.cube(h=0.4)
 
@@ -175,8 +177,9 @@ def test_truncating(space_info):
 @pytest.mark.parametrize("space_info", [("DUAL", 0)])
 def test_truncating_node_dual_spaces(space_info, helpers, precision):
     """Test spaces on segments."""
-    import bempp_cl.api
     import math
+
+    import bempp_cl.api
 
     grid = bempp_cl.api.shapes.cube(h=0.4)
 

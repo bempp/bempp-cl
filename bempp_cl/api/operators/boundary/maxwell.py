@@ -336,11 +336,10 @@ class _OsrcMtE:
 
     def _assemble(self):
         """Assemble the operator."""
-        from bempp_cl.api.operators.boundary.sparse import lambda_1
-        from bempp_cl.api.operators.boundary.sparse import lambda_2
-        from bempp_cl.api.operators.boundary.sparse import mte_operators
-        from bempp_cl.api.assembly.discrete_boundary_operator import InverseSparseDiscreteBoundaryOperator
         from scipy.sparse.linalg import LinearOperator
+
+        from bempp_cl.api.assembly.discrete_boundary_operator import InverseSparseDiscreteBoundaryOperator
+        from bempp_cl.api.operators.boundary.sparse import lambda_1, lambda_2, mte_operators
 
         wavenumber, npade, theta, damped_wavenumber = self.descriptor.options
 

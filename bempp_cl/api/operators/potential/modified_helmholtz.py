@@ -14,9 +14,9 @@ def single_layer(
 ):
     """Return a modified Helmholtz single-layer potential operator."""
     import bempp_cl.api
-    from bempp_cl.api.operators import OperatorDescriptor
-    from bempp_cl.api.assembly.potential_operator import PotentialOperator
     from bempp_cl.api.assembly.assembler import PotentialAssembler
+    from bempp_cl.api.assembly.potential_operator import PotentialOperator
+    from bempp_cl.api.operators import OperatorDescriptor
 
     if _np.imag(omega) != 0:
         raise ValueError("'omega' must be real.")
@@ -51,9 +51,9 @@ def double_layer(
 ):
     """Return a modified Helmholtz double-layer potential operator."""
     import bempp_cl.api
-    from bempp_cl.api.operators import OperatorDescriptor
-    from bempp_cl.api.assembly.potential_operator import PotentialOperator
     from bempp_cl.api.assembly.assembler import PotentialAssembler
+    from bempp_cl.api.assembly.potential_operator import PotentialOperator
+    from bempp_cl.api.operators import OperatorDescriptor
 
     if _np.imag(omega) != 0:
         raise ValueError("'omega' must be real.")

@@ -1,8 +1,9 @@
 """Unit tests for the dense assembler."""
 
-import pytest
-import bempp_cl.api
 import numpy as np
+import pytest
+
+import bempp_cl.api
 from bempp_cl.api import function_space
 from bempp_cl.api.operators.far_field import helmholtz, maxwell
 

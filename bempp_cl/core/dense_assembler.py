@@ -1,6 +1,7 @@
 """Dense assembly."""
 
 import numpy as _np
+
 from bempp_cl.api.assembly import assembler as _assembler
 
 

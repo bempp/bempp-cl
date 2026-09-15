@@ -2,11 +2,10 @@
 
 import os
 
-import numpy as np
-import pytest
-
 import bempp.api
 import bempp.core
+import numpy as np
+import pytest
 
 
 def pytest_addoption(parser):
@@ -33,7 +32,7 @@ def pytest_addoption(parser):
 @pytest.fixture()
 def device_interface(request):
     """Not needed anymore. We once set the default device in a session fixture."""
-    return None
+    return
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -115,7 +114,7 @@ def helpers():
     return Helpers
 
 
-class Helpers(object):
+class Helpers:
     """Helper class with static helper methods for unit tests."""
 
     @staticmethod

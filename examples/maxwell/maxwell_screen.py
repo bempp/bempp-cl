@@ -56,8 +56,9 @@
 # ## Implementation
 # We start with the usual imports.
 
-import bempp_cl.api
 import numpy as np
+
+import bempp_cl.api
 
 # We next define the wavenumber of the problem.
 

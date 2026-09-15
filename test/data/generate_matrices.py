@@ -1,10 +1,11 @@
 # Script to be run with legacy Bempp to generate the comparison data.
 
-import bempp_cl.api
-import numpy as np
-
 import os.path
 import sys
+
+import numpy as np
+
+import bempp_cl.api
 
 # run `python generate_matrices.py REGENERATE` to regenerate everything
 REGENERATE = "REGENERATE" in sys.argv

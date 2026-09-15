@@ -1,7 +1,7 @@
 """Definition of potential operators."""
 
 
-class PotentialOperator(object):
+class PotentialOperator:
     """Provides an interface to potential operators.
 
     This class is not supposed to be instantiated directly.
@@ -44,6 +44,7 @@ class PotentialOperator(object):
     def __mul__(self, obj):
         """Multiply."""
         import numpy as np
+
         from bempp_cl.api import GridFunction
 
         if np.isscalar(obj):

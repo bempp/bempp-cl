@@ -51,8 +51,9 @@
 # We start with the usual imports and enable console logging.
 
 # +
-import bempp_cl.api
 import numpy as np
+
+import bempp_cl.api
 
 bempp_cl.api.enable_console_logging()
 # bempp_cl.api.pool.create_device_pool("AMD")
@@ -183,8 +184,8 @@ except NameError:
     ipython = False
 
 from matplotlib import pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.patches import Circle
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 plt.rcParams["figure.figsize"] = (20, 16)  # Increase the figure size in the notebook
 

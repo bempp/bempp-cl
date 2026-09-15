@@ -14,8 +14,7 @@ WAVENUMBER_COMPLEX = 2.5 + 1j
 
 def test_maxwell_electric_field_potential_complex(default_parameters, helpers, device_interface, precision):
     """Test Maxwell efield potential with complex wavenumber."""
-    from bempp_cl.api import function_space
-    from bempp_cl.api import GridFunction
+    from bempp_cl.api import GridFunction, function_space
     from bempp_cl.api.operators.potential.maxwell import electric_field
 
     grid = helpers.load_grid("sphere")
@@ -43,8 +42,7 @@ def test_maxwell_electric_field_potential_complex(default_parameters, helpers, d
 
 def test_maxwell_electric_field_potential_rwg(default_parameters, helpers, device_interface, precision):
     """Test Maxwell efield potential."""
-    from bempp_cl.api import function_space
-    from bempp_cl.api import GridFunction
+    from bempp_cl.api import GridFunction, function_space
     from bempp_cl.api.operators.potential.maxwell import electric_field
 
     grid = helpers.load_grid("sphere")
@@ -72,8 +70,7 @@ def test_maxwell_electric_field_potential_rwg(default_parameters, helpers, devic
 
 def test_maxwell_magnetic_field_potential_rwg(default_parameters, helpers, device_interface, precision):
     """Test Maxwell magnetic potential."""
-    from bempp_cl.api import function_space
-    from bempp_cl.api import GridFunction
+    from bempp_cl.api import GridFunction, function_space
     from bempp_cl.api.operators.potential.maxwell import magnetic_field
 
     grid = helpers.load_grid("sphere")
@@ -101,8 +98,7 @@ def test_maxwell_magnetic_field_potential_rwg(default_parameters, helpers, devic
 
 def test_maxwell_magnetic_field_potential_complex(default_parameters, helpers, device_interface, precision):
     """Test Maxwell magnetic potential with complex wavenumber."""
-    from bempp_cl.api import function_space
-    from bempp_cl.api import GridFunction
+    from bempp_cl.api import GridFunction, function_space
     from bempp_cl.api.operators.potential.maxwell import magnetic_field
 
     grid = helpers.load_grid("sphere")

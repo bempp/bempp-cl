@@ -1,9 +1,10 @@
 """Common helpers uses for all boundary operators."""
 
-from bempp_cl.api.assembly import assembler as _assembler
-from bempp_cl.api.assembly import boundary_operator as _boundary_operator
-from bempp_cl.api.assembly import blocked_operator as _blocked_operator
 import numpy as _np
+
+from bempp_cl.api.assembly import assembler as _assembler
+from bempp_cl.api.assembly import blocked_operator as _blocked_operator
+from bempp_cl.api.assembly import boundary_operator as _boundary_operator
 
 
 # pylint: disable=too-many-arguments
@@ -22,8 +23,8 @@ def create_operator(
     is_complex,
 ):
     """Create a generic operator."""
-    from bempp_cl.api.operators import OperatorDescriptor
     import bempp_cl.api
+    from bempp_cl.api.operators import OperatorDescriptor
 
     if precision is None:
         precision = bempp_cl.api.DEFAULT_PRECISION
@@ -78,8 +79,8 @@ def create_multitrace_operator(
     precision,
 ):
     """Create a generic operator."""
-    from bempp_cl.api.operators import MultitraceOperatorDescriptor
     import bempp_cl.api
+    from bempp_cl.api.operators import MultitraceOperatorDescriptor
 
     if device_interface is None:
         device_interface = bempp_cl.api.DEFAULT_DEVICE

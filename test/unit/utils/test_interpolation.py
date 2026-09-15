@@ -10,7 +10,7 @@ def test_evaluation_of_laplace_kernel_on_interp_points():
 
     order = 5
 
-    nodes, weights = interpolation.chebychev_nodes_and_weights_second_kind(order)
+    nodes, _weights = interpolation.chebychev_nodes_and_weights_second_kind(order)
 
     nnodes = len(nodes)
 

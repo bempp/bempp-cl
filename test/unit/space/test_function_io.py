@@ -1,9 +1,11 @@
 """Unit tests for function io."""
 
 import os
-import pytest
-import bempp_cl.api
+
 import numpy as np
+import pytest
+
+import bempp_cl.api
 
 
 @pytest.fixture

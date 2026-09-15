@@ -1,7 +1,8 @@
 """Main interface class to ExaFMM."""
 
-import numpy as _np
 import atexit as _atexit
+
+import numpy as _np
 
 FMM_TMP_DIR = None
 
@@ -19,7 +20,7 @@ def cleanup_fmm_tmp():
         print("Could not delete FMM temporary files.")
 
 
-class ExafmmInterface(object):
+class ExafmmInterface:
     """Interface to Exafmm."""
 
     def __init__(
@@ -35,8 +36,9 @@ class ExafmmInterface(object):
         singular_correction=None,
     ):
         """Instantiate an Exafmm session."""
-        import bempp_cl.api
         import os
+
+        import bempp_cl.api
         from bempp_cl.api.utils.helpers import create_unique_id
 
         global FMM_TMP_DIR
@@ -209,16 +211,17 @@ class ExafmmInterface(object):
             Either 'numba' or 'opencl'. If not provided, the DEFAULT_DEVICE_INTERFACE
             will be used for the calculation of local interactions.
         """
-        import bempp_cl.api
-        from bempp_cl.api.integration.triangle_gauss import rule
-        from bempp_cl.api.fmm.helpers import get_local_interaction_operator
         import numpy as np
+
+        import bempp_cl.api
+        from bempp_cl.api.fmm.helpers import get_local_interaction_operator
+        from bempp_cl.api.integration.triangle_gauss import rule
 
         parameters = bempp_cl.api.assign_parameters(parameters)
 
         quadrature_order = parameters.quadrature.regular
 
-        local_points, weights = rule(quadrature_order)
+        local_points, _weights = rule(quadrature_order)
 
         if target_grid is None:
             target_grid = source_grid

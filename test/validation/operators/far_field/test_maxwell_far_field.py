@@ -13,8 +13,7 @@ pytestmark = pytest.mark.usefixtures("default_parameters", "helpers")
 
 def test_maxwell_electric_far_field(default_parameters, helpers, device_interface, precision):
     """Test Maxwell electric far field."""
-    from bempp_cl.api import function_space
-    from bempp_cl.api import GridFunction
+    from bempp_cl.api import GridFunction, function_space
     from bempp_cl.api.operators.far_field.maxwell import electric_field
 
     grid = helpers.load_grid("sphere")
@@ -42,8 +41,7 @@ def test_maxwell_electric_far_field(default_parameters, helpers, device_interfac
 
 def test_maxwell_magnetic_far_field(default_parameters, helpers, device_interface, precision):
     """Test Maxwell magnetic far field."""
-    from bempp_cl.api import function_space
-    from bempp_cl.api import GridFunction
+    from bempp_cl.api import GridFunction, function_space
     from bempp_cl.api.operators.far_field.maxwell import magnetic_field
 
     grid = helpers.load_grid("sphere")
@@ -73,9 +71,8 @@ def test_maxwell_far_field_segments(default_parameters, helpers, device_interfac
     """Test Maxwell far field on segments."""
     import bempp_cl.api
     from bempp_cl.api import function_space
-    from bempp_cl.api.operators.far_field.maxwell import electric_field
-    from bempp_cl.api.operators.far_field.maxwell import magnetic_field
     from bempp_cl.api.grid.grid import grid_from_segments
+    from bempp_cl.api.operators.far_field.maxwell import electric_field, magnetic_field
 
     grid = bempp_cl.api.shapes.multitrace_cube()
 
@@ -134,8 +131,7 @@ def test_maxwell_far_field_segments(default_parameters, helpers, device_interfac
 def test_maxwell_far_field_complex_coeffs(default_parameters, helpers, device_interface, precision):
     """Test Maxwell far field ops with complex coefficients."""
     import bempp_cl.api
-    from bempp_cl.api.operators.far_field.maxwell import electric_field
-    from bempp_cl.api.operators.far_field.maxwell import magnetic_field
+    from bempp_cl.api.operators.far_field.maxwell import electric_field, magnetic_field
 
     grid = bempp_cl.api.shapes.regular_sphere(2)
 
@@ -174,9 +170,8 @@ def test_maxwell_far_field_segments_complex_coeffs(default_parameters, helpers, 
     """Test Maxwell potentials on segments with complex coeffs."""
     import bempp_cl.api
     from bempp_cl.api import function_space
-    from bempp_cl.api.operators.far_field.maxwell import electric_field
-    from bempp_cl.api.operators.far_field.maxwell import magnetic_field
     from bempp_cl.api.grid.grid import grid_from_segments
+    from bempp_cl.api.operators.far_field.maxwell import electric_field, magnetic_field
 
     grid = bempp_cl.api.shapes.multitrace_cube()
 
