@@ -352,11 +352,11 @@ class Grid(object):
 
         raise ValueError("codim must be one of 0, 1, or 2.")
 
-    def plot(self, notebook_toggle=True):
+    def plot(self, prefix=None, notebook_toggle=True):
         """Plot the grid."""
         from bempp_cl.api.external.viewers import visualize
 
-        visualize(self, notebook_toggle=notebook_toggle)
+        visualize(self, prefix=prefix, notebook_toggle=notebook_toggle)
 
     def get_element(self, index):
         """Return element with a given index."""
