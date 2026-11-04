@@ -36,7 +36,8 @@ def select_numba_kernels(operator_descriptor, mode="regular"):
         "laplace_single_layer_2nd_deriv": laplace_single_layer_2nd_deriv,
         "laplace_single_layer_3rd_deriv": laplace_single_layer_3rd_deriv,
         "laplace_single_layer_4th_deriv": laplace_single_layer_4th_deriv,
-        "laplace_single_layer_4th_deriv": laplace_single_layer_5th_deriv,
+        "laplace_single_layer_5th_deriv": laplace_single_layer_5th_deriv,
+        "laplace_single_layer_6th_deriv": laplace_single_layer_5th_deriv,
     }
 
     assembly_functions_sparse = {"default_sparse": default_sparse_kernel}
@@ -3678,5 +3679,136 @@ def laplace_single_layer_5th_deriv(
             result[18, point_index] = m_inv_4pi * (945 * invdist11 * diff[1,trial_index] * diff[1,trial_index] * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 105 * invdist9 * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 315 * invdist9 * diff[1,trial_index] * diff[1,trial_index] * diff[1,trial_index] + 45 * invdist7 * diff[2,trial_index]);
             result[19, point_index] = m_inv_4pi * (945 * invdist11 * diff[1,trial_index] * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 630 * invdist9 * diff[1,trial_index] * diff[2,trial_index] * diff[2,trial_index] + 45 * invdist7 * diff[1,trial_index]);
             result[20, point_index] = m_inv_4pi * (945 * invdist11 * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 1050 * invdist9 * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] + 225 * invdist7 * diff[2,trial_index]);
+
+    return result
+
+@_numba.jit(
+    nopython=True, parallel=True, error_model="numpy", fastmath=True, boundscheck=False
+)
+def laplace_single_layer_6th_deriv(
+    dtype,
+    result_type,
+    kernel_dimension,
+    points,
+    x,
+    grid_data,
+    quad_points,
+    quad_weights,
+    number_of_shape_functions,
+    shapeset_evaluate,
+    kernel_function,
+    kernel_parameters,
+    normal_multipliers,
+    support_elements,
+):
+    """Implement the gradient of single layer potential"""
+    dtype = grid_data.vertices.dtype
+    m_inv_4pi = dtype.type(M_INV_4PI)
+
+    result = _np.zeros((kernel_dimension, points.shape[1]), dtype=result_type)
+    n_support_elements = len(support_elements)
+    number_of_quad_points = len(quad_weights)
+    number_of_points = points.shape[1]
+
+    global_points = _np.zeros(
+        (3, number_of_quad_points * n_support_elements), dtype=dtype
+    )
+
+    basis_functions = get_piola_transform(grid_data, support_elements, quad_points)
+
+    edge_lengths = get_edge_lengths(grid_data, support_elements)
+
+    tmp1 = _np.zeros((3, number_of_quad_points * n_support_elements), dtype=result_type)
+
+    for element_index, element in enumerate(support_elements):
+        global_points[
+            :,
+            number_of_quad_points
+            * element_index : number_of_quad_points
+            * (1 + element_index),
+        ] = grid_data.local2global(element, quad_points)
+
+    for element_index, element in enumerate(support_elements):
+        for quad_point_index in range(number_of_quad_points):
+            for fun_index in range(number_of_shape_functions):
+                factor = (
+                    quad_weights[quad_point_index]
+                    * x[number_of_shape_functions * element + fun_index]
+                    * edge_lengths[element_index, fun_index]
+                )
+                tmp1[:, number_of_quad_points * element_index + quad_point_index] += (
+                    factor
+                    * basis_functions[element_index, fun_index, :, quad_point_index]
+                    * grid_data.integration_elements[element]
+                )
+
+    for point_index in _numba.prange(number_of_points):
+        test_point = points[:, point_index].copy()
+
+        diff = test_point.reshape(3, 1) - global_points
+        dist = _np.zeros(number_of_quad_points * n_support_elements, dtype=dtype)
+        for dim in range(3):
+            for index in range(number_of_quad_points * n_support_elements):
+                dist[index] += diff[dim, index] * diff[dim, index]
+        dist = _np.sqrt(dist)
+
+        for trial_index in range(number_of_quad_points * n_support_elements):
+            ldist = dist[trial_index]
+            invdist7 = 1 / ldist**7
+            invdist9 = 1 / ldist**9
+            invdist11 = 1 / ldist**11
+            invdist13 = 1 / ldist**13
+
+            result[0, point_index] = m_inv_4pi * (945 * invdist11 * diff[0,trial_index] * diff[0,trial_index] * diff[0,trial_index] * diff[0,trial_index] * diff[0,trial_index] - 1050 * invdist9 * diff[0,trial_index] * diff[0,trial_index] * diff[0,trial_index] + 225 * invdist7 * diff[0,trial_index]);
+            result[1, point_index] = m_inv_4pi * (945 * invdist11 * diff[0,trial_index] * diff[0,trial_index] * diff[0,trial_index] * diff[0,trial_index] * diff[1,trial_index] - 630 * invdist9 * diff[0,trial_index] * diff[0,trial_index] * diff[1,trial_index] + 45 * invdist7 * diff[1,trial_index]);
+            result[2, point_index] = m_inv_4pi * (945 * invdist11 * diff[0,trial_index] * diff[0,trial_index] * diff[0,trial_index] * diff[0,trial_index] * diff[2,trial_index] - 630 * invdist9 * diff[0,trial_index] * diff[0,trial_index] * diff[2,trial_index] + 45 * invdist7 * diff[2,trial_index]);
+            result[3, point_index] = m_inv_4pi * (945 * invdist11 * diff[0,trial_index] * diff[0,trial_index] * diff[0,trial_index] * diff[1,trial_index] * diff[1,trial_index] - 105 * invdist9 * diff[0,trial_index] * diff[0,trial_index] * diff[0,trial_index] - 315 * invdist9 * diff[0,trial_index] * diff[1,trial_index] * diff[1,trial_index] + 45 * invdist7 * diff[0,trial_index]);
+            result[4, point_index] = m_inv_4pi * (945 * invdist11 * diff[0,trial_index] * diff[0,trial_index] * diff[0,trial_index] * diff[1,trial_index] * diff[2,trial_index] - 310 * invdist9 * diff[0,trial_index] * diff[1,trial_index] * diff[2,trial_index]);
+            result[5, point_index] = m_inv_4pi * (945 * invdist11 * diff[0,trial_index] * diff[0,trial_index] * diff[0,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 105 * invdist9 * diff[0,trial_index] * diff[0,trial_index] * diff[0,trial_index] - 315 * invdist9 * diff[0,trial_index] * diff[2,trial_index] * diff[2,trial_index] + 45 * invdist7 * diff[0,trial_index]);
+            result[6, point_index] = m_inv_4pi * (945 * invdist11 * diff[0,trial_index] * diff[0,trial_index] * diff[1,trial_index] * diff[1,trial_index] * diff[1,trial_index] - 105 * invdist9 * diff[1,trial_index] * diff[1,trial_index] * diff[1,trial_index] - 315 * invdist9 * diff[0,trial_index] * diff[0,trial_index] * diff[1,trial_index] + 45 * invdist7 * diff[1,trial_index]);
+            result[7, point_index] = m_inv_4pi * (945 * invdist11 * diff[0,trial_index] * diff[0,trial_index] * diff[1,trial_index] * diff[1,trial_index] * diff[2,trial_index] - 105 * invdist9 * diff[0,trial_index] * diff[0,trial_index] * diff[2,trial_index] - 105 * invdist9 * diff[1,trial_index] * diff[1,trial_index] * diff[2,trial_index] + 15 * invdist7 * diff[2,trial_index]);
+            result[8, point_index] = m_inv_4pi * (945 * invdist11 * diff[0,trial_index] * diff[0,trial_index] * diff[1,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 105 * invdist9 * diff[0,trial_index] * diff[0,trial_index] * diff[1,trial_index] - 105 * invdist9 * diff[1,trial_index] * diff[2,trial_index] * diff[2,trial_index] + 15 * invdist7 * diff[1,trial_index]);
+            result[9, point_index] = m_inv_4pi * (945 * invdist11 * diff[0,trial_index] * diff[0,trial_index] * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 105 * invdist9 * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 315 * invdist9 * diff[0,trial_index] * diff[0,trial_index] * diff[2,trial_index] + 45 * invdist7 * diff[2,trial_index]);
+            result[10, point_index] = m_inv_4pi * (945 * invdist11 * diff[0,trial_index] * diff[1,trial_index] * diff[1,trial_index] * diff[1,trial_index] * diff[1,trial_index] - 630 * invdist9 * diff[0,trial_index] * diff[1,trial_index] * diff[1,trial_index] + 45 * invdist7 * diff[0,trial_index]);
+            result[11, point_index] = m_inv_4pi * (945 * invdist11 * diff[0,trial_index] * diff[1,trial_index] * diff[1,trial_index] * diff[1,trial_index] * diff[2,trial_index] - 310 * invdist9 * diff[0,trial_index] * diff[1,trial_index] * diff[2,trial_index]);
+            result[12, point_index] = m_inv_4pi * (945 * invdist11 * diff[0,trial_index] * diff[1,trial_index] * diff[1,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 105 * invdist9 * diff[0,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 105 * invdist9 * diff[0,trial_index] * diff[1,trial_index] * diff[1,trial_index] + 15 * invdist7 * diff[0,trial_index]);
+            result[13, point_index] = m_inv_4pi * (945 * invdist11 * diff[0,trial_index] * diff[1,trial_index] * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 310 * invdist9 * diff[0,trial_index] * diff[1,trial_index] * diff[2,trial_index]);
+            result[14, point_index] = m_inv_4pi * (945 * invdist11 * diff[0,trial_index] * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 630 * invdist9 * diff[0,trial_index] * diff[2,trial_index] * diff[2,trial_index] + 45 * invdist7 * diff[0,trial_index]);
+            result[15, point_index] = m_inv_4pi * (945 * invdist11 * diff[1,trial_index] * diff[1,trial_index] * diff[1,trial_index] * diff[1,trial_index] * diff[1,trial_index] - 1050 * invdist9 * diff[1,trial_index] * diff[1,trial_index] * diff[1,trial_index] + 225 * invdist7 * diff[1,trial_index]);
+            result[16, point_index] = m_inv_4pi * (945 * invdist11 * diff[1,trial_index] * diff[1,trial_index] * diff[1,trial_index] * diff[1,trial_index] * diff[2,trial_index] - 630 * invdist9 * diff[1,trial_index] * diff[1,trial_index] * diff[2,trial_index] + 45 * invdist7 * diff[2,trial_index]);
+            result[17, point_index] = m_inv_4pi * (945 * invdist11 * diff[1,trial_index] * diff[1,trial_index] * diff[1,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 105 * invdist9 * diff[1,trial_index] * diff[1,trial_index] * diff[1,trial_index] - 315 * invdist9 * diff[1,trial_index] * diff[2,trial_index] * diff[2,trial_index] + 45 * invdist7 * diff[1,trial_index]);
+            result[18, point_index] = m_inv_4pi * (945 * invdist11 * diff[1,trial_index] * diff[1,trial_index] * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 105 * invdist9 * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 315 * invdist9 * diff[1,trial_index] * diff[1,trial_index] * diff[1,trial_index] + 45 * invdist7 * diff[2,trial_index]);
+            result[19, point_index] = m_inv_4pi * (945 * invdist11 * diff[1,trial_index] * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 630 * invdist9 * diff[1,trial_index] * diff[2,trial_index] * diff[2,trial_index] + 45 * invdist7 * diff[1,trial_index]);
+            result[20, point_index] = m_inv_4pi * (945 * invdist11 * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] - 1050 * invdist9 * diff[2,trial_index] * diff[2,trial_index] * diff[2,trial_index] + 225 * invdist7 * diff[2,trial_index]);
+
+            result[0, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]-14175*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]+4725*invdist9*diff[0,trial_index]*diff[0,trial_index]-225*invdist7);
+            result[1, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]-9450*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]+1575*invdist9*diff[0,trial_index]*diff[1,trial_index]);
+            result[2, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[2,trial_index]-9450*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[2,trial_index]+1575*invdist9*diff[0,trial_index]*diff[2,trial_index]);
+            result[3, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]-945*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]-5670*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]+630*invdist9*diff[0,trial_index]*diff[0,trial_index]+315*invdist9*diff[1,trial_index]*diff[1,trial_index]-45*invdist7);
+            result[4, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]*diff[2,trial_index]-5670*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]*diff[2,trial_index]+315*invdist9);
+            result[5, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[2,trial_index]*diff[2,trial_index]-945*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]-5670*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[2,trial_index]*diff[2,trial_index]+630*invdist9*diff[0,trial_index]*diff[0,trial_index]+315*invdist9*diff[2,trial_index]*diff[2,trial_index]-45*invdist7);
+            result[6, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]-2835*invdist11*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]-2835*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]+945*invdist9*diff[0,trial_index]*diff[1,trial_index]);
+            result[7, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]-945*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[2,trial_index]-2835*invdist11*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]+415*invdist9*diff[0,trial_index]*diff[2,trial_index]);
+            result[8, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]-945*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]-2835*invdist11*diff[0,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]+415*invdist9*diff[0,trial_index]*diff[1,trial_index]);
+            result[9, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]-2835*invdist11*diff[0,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]-2835*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[0,trial_index]*diff[2,trial_index]+945*invdist9*diff[0,trial_index]*diff[2,trial_index]);
+            result[10, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]-945*invdist11*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]-5670*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]+630*invdist9*diff[1,trial_index]*diff[1,trial_index]+315*invdist9*diff[0,trial_index]*diff[0,trial_index]-45*invdist7);
+            result[11, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]-945*invdist11*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]-2835*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]*diff[2,trial_index]+415*invdist9*diff[1,trial_index]*diff[2,trial_index]);
+            result[12, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index] -945*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[2,trial_index]*diff[2,trial_index]-945*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]-945*invdist11*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]+105* invdist9*diff[0,trial_index]*diff[0,trial_index]+105* invdist9*diff[1,trial_index]*diff[1,trial_index]+105* invdist9*diff[2,trial_index]*diff[2,trial_index]);
+            result[13, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]-945*invdist11*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]-2835*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[1,trial_index]*diff[2,trial_index]+415*invdist9*diff[1,trial_index]*diff[2,trial_index]);
+            result[14, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[0,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]-945*invdist11*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]-5670*invdist11*diff[0,trial_index]*diff[0,trial_index]*diff[2,trial_index]*diff[2,trial_index]+630*invdist9*diff[2,trial_index]*diff[2,trial_index]+315*invdist9*diff[0,trial_index]*diff[0,trial_index]-45*invdist7);
+            result[15, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]-9450*invdist11*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]+1575*invdist9*diff[0,trial_index]*diff[1,trial_index]);
+            result[16, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]-5670*invdist11*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]+315*invdist9);
+            result[17, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]-945*invdist11*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]-2835*invdist11*diff[0,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]+415*invdist9*diff[0,trial_index]*diff[1,trial_index]);
+            result[18, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]-945*invdist11*diff[0,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]-2835*invdist11*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]+415*invdist9*diff[0,trial_index]*diff[2,trial_index]);
+            result[19, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]-5670*invdist11*diff[0,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]+315*invdist9);
+            result[20, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]-9450*invdist11*diff[0,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]+1575*invdist9*diff[0,trial_index]*diff[2,trial_index]);
+            result[21, point_index] = -m_inv_4pi*(10395*invdist13*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]-14175*invdist11*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]+4725*invdist9*diff[1,trial_index]*diff[1,trial_index]-225*invdist7);
+            result[22, point_index] = -m_inv_4pi*(10395*invdist13*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]-9450*invdist11*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]+1575*invdist9*diff[1,trial_index]*diff[2,trial_index]);
+            result[23, point_index] = -m_inv_4pi*(10395*invdist13*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]-945*invdist11*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]-5670*invdist11*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]+630*invdist9*diff[1,trial_index]*diff[1,trial_index]+315*invdist9*diff[2,trial_index]*diff[2,trial_index]-45*invdist7);
+            result[24, point_index] = -m_inv_4pi*(10395*invdist13*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]-945*invdist11*diff[0,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]-2835*invdist11*diff[0,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]+415*invdist9*diff[0,trial_index]*diff[1,trial_index]);
+            result[25, point_index] = -m_inv_4pi*(10395*invdist13*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]-2835*invdist11*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]-2835*invdist11*diff[1,trial_index]*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]+945*invdist9*diff[1,trial_index]*diff[2,trial_index]);
+            result[26, point_index] = -m_inv_4pi*(10395*invdist13*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]-945*invdist11*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]-5670*invdist11*diff[1,trial_index]*diff[1,trial_index]*diff[2,trial_index]*diff[2,trial_index]+630*invdist9*diff[2,trial_index]*diff[2,trial_index]+315*invdist9*diff[1,trial_index]*diff[1,trial_index]-45*invdist7);
+            result[27, point_index] = -m_inv_4pi*(10395*invdist13*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]-14175*invdist11*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]*diff[2,trial_index]+4725*invdist9*diff[2,trial_index]*diff[2,trial_index]-225*invdist7);
+
 
     return result

@@ -43,13 +43,10 @@ def select_cl_kernel(operator_descriptor, mode):
         "laplace_single_layer_gradient": "evaluate_laplace_single_layer_gradient",
         "laplace_double_layer_gradient": "evaluate_laplace_double_layer_gradient",
         "laplace_single_layer_2nd_deriv": "evaluate_laplace_single_layer_2nd_deriv",
-        "laplace_double_layer_2nd_deriv": "evaluate_laplace_single_layer_2nd_deriv",
         "laplace_single_layer_3rd_deriv": "evaluate_laplace_single_layer_3rd_deriv",
-        "laplace_double_layer_3rd_deriv": "evaluate_laplace_single_layer_3rd_deriv",
         "laplace_single_layer_4th_deriv": "evaluate_laplace_single_layer_4th_deriv",
-        "laplace_double_layer_4th_deriv": "evaluate_laplace_single_layer_4th_deriv",
         "laplace_single_layer_5th_deriv": "evaluate_laplace_single_layer_5th_deriv",
-        "laplace_double_layer_5th_deriv": "evaluate_laplace_single_layer_5th_deriv",
+        "laplace_single_layer_6th_deriv": "evaluate_laplace_single_layer_6th_deriv",
     }
 
     kernels = {
