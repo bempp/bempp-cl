@@ -40,6 +40,13 @@ def select_cl_kernel(operator_descriptor, mode):
         "maxwell_magnetic_field": "evaluate_magnetic_field_potential",
         "maxwell_electric_far_field": "evaluate_maxwell_electric_far_field",
         "maxwell_magnetic_far_field": "evaluate_maxwell_magnetic_far_field",
+        "laplace_single_layer_gradient": "evaluate_laplace_single_layer_gradient",
+        "laplace_double_layer_gradient": "evaluate_laplace_double_layer_gradient",
+        "laplace_single_layer_2nd_deriv": "evaluate_laplace_single_layer_2nd_deriv",
+        "laplace_single_layer_3rd_deriv": "evaluate_laplace_single_layer_3rd_deriv",
+        "laplace_single_layer_4th_deriv": "evaluate_laplace_single_layer_4th_deriv",
+        "laplace_single_layer_5th_deriv": "evaluate_laplace_single_layer_5th_deriv",
+        "laplace_single_layer_6th_deriv": "evaluate_laplace_single_layer_6th_deriv",
     }
 
     kernels = {
@@ -90,7 +97,9 @@ def get_kernel_compile_options(options, precision):
         if value is None:
             compile_options += ["-D", "{0}".format(key)]
         else:
-            if isinstance(value, numbers.Real) and not isinstance(value, numbers.Integral):
+            if isinstance(value, numbers.Real) and not isinstance(
+                value, numbers.Integral
+            ):
                 value_string = str(value) + literal
             else:
                 value_string = str(value)
@@ -118,10 +127,16 @@ def build_program(assembly_function, options, precision, device_type="cpu"):
     kernel_string = open(kernel_file).read()
     kernel_options = get_kernel_compile_options(options, precision)
 
-    return _cl.Program(default_context(device_type), kernel_string).build(options=kernel_options).kernel_function
+    return (
+        _cl.Program(default_context(device_type), kernel_string)
+        .build(options=kernel_options)
+        .kernel_function
+    )
 
 
-def get_kernel_from_operator_descriptor(operator_descriptor, options, mode, force_novec=False, device_type="cpu"):
+def get_kernel_from_operator_descriptor(
+    operator_descriptor, options, mode, force_novec=False, device_type="cpu"
+):
     """Return compiled kernel from operator descriptor."""
     precision = operator_descriptor.precision
     assembly_function, kernel_name = select_cl_kernel(operator_descriptor, mode=mode)
@@ -189,7 +204,7 @@ def default_cpu_device():
     if _DEFAULT_CPU_DEVICE is None:
         try:
             ctx, device = find_cpu_driver(name)
-        except:  # noqa: E722
+        except:
             raise RuntimeError("Could not find suitable OpenCL CPU driver.")
         _DEFAULT_CPU_CONTEXT = ctx
         _DEFAULT_CPU_DEVICE = device
@@ -214,7 +229,7 @@ def default_gpu_device():
     if _DEFAULT_GPU_DEVICE is None:
         try:
             ctx, device = find_gpu_driver(name)
-        except:  # noqa: E722
+        except:
             raise RuntimeError("Could not find a suitable OpenCL GPU driver.")
         _DEFAULT_GPU_CONTEXT = ctx
         _DEFAULT_GPU_DEVICE = device
@@ -323,7 +338,7 @@ def set_default_cpu_device_by_name(name):
 
     try:
         context, device = find_cpu_driver(name)
-    except:  # noqa: E722
+    except:
         raise RuntimeError("No CPU driver with given name found.")
 
     _DEFAULT_CPU_CONTEXT = context
@@ -348,7 +363,9 @@ def set_default_cpu_device(platform_index, device_index):
 
     platform = _cl.get_platforms()[platform_index]
     device = platform.get_devices()[device_index]
-    _DEFAULT_CPU_CONTEXT = _cl.Context(devices=[device], properties=[(_cl.context_properties.PLATFORM, platform)])
+    _DEFAULT_CPU_CONTEXT = _cl.Context(
+        devices=[device], properties=[(_cl.context_properties.PLATFORM, platform)]
+    )
     _DEFAULT_CPU_DEVICE = _DEFAULT_CPU_CONTEXT.devices[0]
 
     vector_width_single = _DEFAULT_CPU_DEVICE.native_vector_width_float
@@ -378,7 +395,7 @@ def set_default_gpu_device_by_name(name):
     try:
         pair = find_gpu_driver(name)
         context, device = pair[0], pair[1]
-    except:  # noqa: E722
+    except:
         raise RuntimeError("No GPU driver with given name found.")
 
     _DEFAULT_GPU_CONTEXT = context
@@ -403,7 +420,9 @@ def set_default_gpu_device(platform_index, device_index):
 
     platform = _cl.get_platforms()[platform_index]
     device = platform.get_devices()[device_index]
-    _DEFAULT_GPU_CONTEXT = _cl.Context(devices=[device], properties=[(_cl.context_properties.PLATFORM, platform)])
+    _DEFAULT_GPU_CONTEXT = _cl.Context(
+        devices=[device], properties=[(_cl.context_properties.PLATFORM, platform)]
+    )
     _DEFAULT_GPU_DEVICE = _DEFAULT_GPU_CONTEXT.devices[0]
 
     vector_width_single = _DEFAULT_GPU_DEVICE.native_vector_width_float
@@ -423,7 +442,12 @@ def show_available_platforms_and_devices():
         print(str(platform_index) + ": " + platform.get_info(_cl.platform_info.NAME))
         devices = platform.get_devices()
         for device_index, device in enumerate(devices):
-            print(4 * " " + str(device_index) + ": " + device.get_info(_cl.device_info.NAME))
+            print(
+                4 * " "
+                + str(device_index)
+                + ": "
+                + device.get_info(_cl.device_info.NAME)
+            )
 
 
 def get_native_vector_width(device, precision):
