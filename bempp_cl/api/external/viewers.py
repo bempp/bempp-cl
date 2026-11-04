@@ -1,9 +1,10 @@
 """Define interfaces to external viewers."""
 
+from matplotlib.pylab import norm
 import numpy as _np
 
 
-def visualize(obj, mode=None, transformation=None, notebook_toggle=True):
+def visualize(obj, mode=None, transformation=None,prefix=None, notebook_toggle=True):
     """
     Create a visualisation.
 
@@ -46,7 +47,7 @@ def visualize(obj, mode=None, transformation=None, notebook_toggle=True):
         transform = transformation
 
     if bempp_cl.api.PLOT_BACKEND == "gmsh":
-        visualize_with_gmsh(obj, mode, transform)
+        visualize_with_gmsh(obj, mode, transform, prefix=prefix)
     if bempp_cl.api.PLOT_BACKEND == "paraview":
         visualize_with_paraview(obj, mode, transform)
     if bempp_cl.api.PLOT_BACKEND == "jupyter_notebook":
@@ -63,11 +64,15 @@ def visualize_with_jupyter_notebook(obj, mode=None, transformation=None):
     from bempp_cl.api import GridFunction
     from bempp_cl.api.grid.grid import Grid
     import numpy as np
+    import pyvista as pv
+
+    #pv.set_jupyter_backend("trame")
+    #pl = pv.Plotter(notebook=True)
 
     if transformation is None:
         transformation = np.real
 
-    plotly.offline.init_notebook_mode()
+    #plotly.offline.init_notebook_mode()
 
     if isinstance(obj, Grid):
         vertices = obj.vertices
@@ -80,6 +85,10 @@ def visualize_with_jupyter_notebook(obj, mode=None, transformation=None):
             color_func=elements.shape[1] * ["rgb(255, 222, 173)"],
         )
         fig["layout"]["scene"].update(go.layout.Scene(aspectmode="data"))
+        #faces = np.hstack([3 * np.ones((elements.shape[1], 1)), elements.T]).astype(np.int32)
+        #mesh = pv.PolyData(vertices.T, faces)
+        #pl.add_mesh(mesh, color="w", show_edges=True)
+        #pl.show()
         plotly.offline.iplot(fig)
 
     elif isinstance(obj, GridFunction):
@@ -111,10 +120,9 @@ def visualize_with_jupyter_notebook(obj, mode=None, transformation=None):
         )
         fig["layout"]["scene"].update(go.layout.Scene(aspectmode="data"))
         plotly.offline.iplot(fig)
-    else:
-        raise TypeError("Unsupported type")
 
-def visualize_with_gmsh(obj, mode=None, transformation=None):
+
+def visualize_with_gmsh(obj, mode=None, transformation=None, prefix=None):
     """
     View a grid or grid function with Gmsh.
 
@@ -139,14 +147,12 @@ def visualize_with_gmsh(obj, mode=None, transformation=None):
     import subprocess
     from bempp_cl.api import export, GMSH_PATH, TMP_PATH, GridFunction
     from bempp_cl.api.grid.grid import Grid
-    import shutil
-    import os
 
     if GMSH_PATH is None:
         print("Gmsh not available for visualization.")
         return None
 
-    outfile = tempfile.NamedTemporaryFile(suffix=".msh", dir=TMP_PATH, delete=False)
+    outfile = tempfile.NamedTemporaryFile(suffix=".msh", prefix = prefix,dir=TMP_PATH, delete=False)
     if isinstance(obj, Grid):
         export(outfile.name, grid=obj)
     elif isinstance(obj, GridFunction):
@@ -156,16 +162,9 @@ def visualize_with_gmsh(obj, mode=None, transformation=None):
             transformation=transformation,
             data_type=mode,
         )
-    else:
-        raise TypeError("Unsupported type")
     outfile.close()
 
-    gmsh_path = shutil.which("gmsh")
-    env = os.environ.copy()
-    if gmsh_path.lower().endswith(".bat"):
-        subprocess.Popen(f'"{gmsh_path}" "{outfile.name}"', shell=True, env=env)
-    else:
-        subprocess.Popen([gmsh_path, outfile.name], env=env)
+    subprocess.Popen([GMSH_PATH, outfile.name])
 
 
 def visualize_with_paraview(obj, mode=None, transformation=None):
@@ -214,11 +213,11 @@ def visualize_with_paraview(obj, mode=None, transformation=None):
             transformation=transformation,
             data_type=mode,
         )
-    else:
-        raise TypeError("Unsupported type")
     outfile.close()
 
     subprocess.Popen([pview, outfile.name])
+
+
 
 def visualize_with_pyvista(obj, mode=None, transformation=None, notebook_toggle=True):
     from bempp_cl.api import GridFunction
@@ -276,6 +275,8 @@ def visualize_with_pyvista(obj, mode=None, transformation=None, notebook_toggle=
             raise ValueError("input bool value")
     else:
         raise TypeError("Unsupported type")
+
+
 
 def enable_gmsh_viewer():
     """Change plotting default to Gmsh."""
